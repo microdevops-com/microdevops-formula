@@ -1,2 +1,2 @@
 # sysadmws-formula
-SaltStack Formula for common tasks
+SaltStack Formula for server management automation.
