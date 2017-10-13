@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [[ -f /srv/scripts/cloudflare-add-record.conf ]]; then
         . /srv/scripts/cloudflare-add-record.conf
 	curl -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE/dns_records" \
