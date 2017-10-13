@@ -100,6 +100,7 @@ pkg_deb_packages:
   {%- endif %}
       - resolvconf
       - apt-transport-https
+      - ca-certificates
       # some python deps for apps
       - python-boto
       - python-setuptools
@@ -112,6 +113,7 @@ pkg_deb_packages:
       - ethtool
       - iotop
       - htop
+      - nload
       - lsof
       - dnsutils
       - psmisc
