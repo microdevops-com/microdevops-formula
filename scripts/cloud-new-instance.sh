@@ -94,13 +94,15 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # CloudFlare IP
-echo
-echo "Detected cloud IP in pillars: $HN_IP" | ccze -A
-echo "Going to run: /srv/scripts/cloudflare-add-record.sh $HN $HN_IP" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	/srv/scripts/cloudflare-add-record.sh $HN $HN_IP
+if [[ "_$CLOUDFLARE_DNS" = "_yes" ]]; then
+	echo
+	echo "Detected cloud IP in pillars: $HN_IP" | ccze -A
+	echo "Going to run: /srv/scripts/cloudflare-add-record.sh $HN $HN_IP" | ccze -A
+	read -p "Are we OK with that? " -n 1 -r
+	echo
+	if [[ $REPLY =~ ^[Yy]$ ]]; then
+		/srv/scripts/cloudflare-add-record.sh $HN $HN_IP
+	fi
 fi
 
 # sysPass password
