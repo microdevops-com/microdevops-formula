@@ -106,12 +106,14 @@ if [[ "_$CLOUDFLARE_DNS" = "_yes" ]]; then
 fi
 
 # sysPass password
-echo
-echo "Going to run: /srv/scripts/syspass-add-unix-root.sh $HN" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	/srv/scripts/syspass-add-unix-root.sh $HN
+if [[ "_$SYSPASS" = "_yes" ]]; then
+	echo
+	echo "Going to run: /srv/scripts/syspass-add-unix-root.sh $HN" | ccze -A
+	read -p "Are we OK with that? " -n 1 -r
+	echo
+	if [[ $REPLY =~ ^[Yy]$ ]]; then
+		/srv/scripts/syspass-add-unix-root.sh $HN
+	fi
 fi
 
 # cloud.profile
