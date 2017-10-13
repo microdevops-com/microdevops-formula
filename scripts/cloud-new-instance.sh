@@ -17,7 +17,7 @@ if [[ "_$1" = "_" ]]; then
 fi
 echo "By now you should have done:" | ccze -A
 echo "- Allocate IP for the container ($MY_HN:/srv/pillar/ip/ip.jinja IP_192_168_100 array)" | ccze -A
-echo "- Add IP from which the minion will connect to salt servers ($MY_HN:/srv/pillar/ufw/vars.jinja All_Servers array)" | ccze -A
+echo "- Add IP from which the minion will connect to salt servers ($MY_HN:/srv/pillar/ufw_simple/vars.jinja All_Servers array)" | ccze -A
 echo "- Remove any existing instances of $HN" | ccze -A
 echo "- Remove any existing additional logical volumes of $HN" | ccze -A
 echo "- Inventory info in /srv/pillar/inventory/$HN_UNDER.sls and /srv/pillar/top.sls" | ccze -A
@@ -36,12 +36,12 @@ fi
 
 # Update firewall
 echo
-echo "Going to refresh firewall on $MY_HN to reread the file /srv/pillar/ufw/vars.jinja." | ccze -A
-echo "Going to run: salt $MY_HN state.apply ufw.ufw" | ccze -A
+echo "Going to refresh firewall on $MY_HN to reread the file /srv/pillar/ufw_simple/vars.jinja." | ccze -A
+echo "Going to run: salt $MY_HN state.apply ufw_simple.ufw_simple" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $MY_HN state.apply ufw.ufw
+	salt $MY_HN state.apply ufw_simple.ufw_simple
 fi
 
 # Get some config vars
