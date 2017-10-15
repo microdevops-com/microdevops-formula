@@ -8,6 +8,8 @@
 #   ufw-before-forward
 #
 
+# THIS FILE IS MANAGED BY SALT, CHANGES WILL BE OVERWRITTEN
+
 # nat table rules
 *nat
 :PREROUTING ACCEPT [0:0]
