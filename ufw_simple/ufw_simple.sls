@@ -5,7 +5,8 @@ ufw_simple_update_deb:
     - sources:
       - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all.deb'
 
-    {%- if  (pillar['ufw_simple']['nat_enabled'] is defined) and (pillar['ufw_simple']['nat_enabled'] is not none) and (pillar['ufw_simple']['nat_enabled']) %}
+    # not managed nat - to be removed
+    {%- if (pillar['ufw_simple']['nat_enabled'] is defined) and (pillar['ufw_simple']['nat_enabled'] is not none) and (pillar['ufw_simple']['nat_enabled']) %}
 ufw_simple_nat_file_1:
   file.managed:
     - name: '/etc/ufw/sysctl.conf'
@@ -25,6 +26,46 @@ ufw_simple_restart:
     - onchanges:
       - file: '/etc/ufw/sysctl.conf'
       - file: '/etc/default/ufw'
+    {%- endif %}
+
+    # managed nat
+    {%- if
+           (pillar['ufw_simple']['nat'] is defined) and (pillar['ufw_simple']['nat'] is not none) and
+           (pillar['ufw_simple']['nat']['enabled'] is defined) and (pillar['ufw_simple']['nat']['enabled'] is not none) and (pillar['ufw_simple']['nat']['enabled'])
+    %}
+ufw_simple_nat_managed_file_1:
+  file.managed:
+    - name: '/etc/ufw/sysctl.conf'
+    - source: 'salt://ufw_simple/files/ufw_sysctl.conf'
+    - mode: 0644
+
+ufw_simple_nat_managed_file_2:
+  file.managed:
+    - name: '/etc/default/ufw'
+    - source: 'salt://ufw_simple/files/etc_default_ufw'
+    - mode: 0644
+
+ufw_simple_nat_managed_file_3:
+  file.managed:
+    - name: '/etc/ufw/before.rules'
+    - source: 'salt://ufw_simple/files/before.rules'
+    - mode: 0640
+    - template: jinja
+    - defaults:
+        foo: 'bar'
+      {%- if (pillar['ufw_simple']['nat']['masquerade'] is defined) and (pillar['ufw_simple']['nat']['masquerade'] is not none) %}
+        {%- set masquerade = pillar.get('ufw_simple:nat:masquerade')|join('\n') %}
+        masquerade: {{ masquerade }}
+      {%- endif %}
+
+ufw_simple_nat_managed_restart:
+  cmd.run:
+    - name: 'ufw disable && sleep 5 && ufw enable'
+    - runas: root
+    - onchanges:
+      - file: '/etc/ufw/sysctl.conf'
+      - file: '/etc/default/ufw'
+      - file: '/etc/ufw/before.rules'
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['logging'] is defined) and (pillar['ufw_simple']['logging'] is not none) %}
