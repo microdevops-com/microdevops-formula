@@ -52,10 +52,21 @@ ufw_simple_nat_managed_file_3:
     - mode: 0640
     - template: jinja
     - defaults:
-        foo: 'bar'
       {%- if (pillar['ufw_simple']['nat']['masquerade'] is defined) and (pillar['ufw_simple']['nat']['masquerade'] is not none) %}
-        {%- set masquerade = pillar.get('ufw_simple:nat:masquerade')|join('\n') %}
-        masquerade: {{ masquerade }}
+        masquerade: |
+        {%- for m_item in pillar['ufw_simple']['nat']['masquerade']['source']|sort %}
+          -A POSTROUTING -s {{ m_item }} -o {{ pillar['ufw_simple']['nat']['masquerade']['out'] }} -j MASQUERADE
+        {%- endfor %}
+      {%- else %}
+        masquerade: ''
+      {%- endif %}
+      {%- if (pillar['ufw_simple']['nat']['dnat'] is defined) and (pillar['ufw_simple']['nat']['dnat'] is not none) %}
+        dnat: |
+        {%- for d_key, d_val in pillar['ufw_simple']['nat']['dnat']['destination'].items()|sort %}
+          -A PREROUTING -i {{ pillar['ufw_simple']['nat']['dnat']['in'] }} -p {{ d_val['proto'] }} --dport {{ d_key }} -j DNAT --to-destination {{ d_val['to'] }}
+        {%- endfor %}
+      {%- else %}
+        dnat: ''
       {%- endif %}
 
 ufw_simple_nat_managed_restart:
