@@ -3,3 +3,34 @@ resolv_domain: example.com
 salt_masters:
   salt1.example.com: 1.2.3.4
   salt2.example.com: 4.3.2.1
+
+# ufw_simple
+ufw_simple:
+  enabled: True
+  logging: 'off'
+  nat:
+    enabled: True
+    masquerade:
+      source:
+        - '10.0.0.0/16'
+        - '192.168.0.0/24'
+      out: 'br0'
+    dnat:
+      destination:
+        '2222':
+          to: '10.0.0.2:22'
+          proto: 'tcp'
+        '8080':
+          to: '192.168.0.2:80'
+          proto: 'tcp'
+      in: 'br0'
+  allow:
+    rule_1:
+      proto: 'tcp'
+      from:
+        hostname_1: '1.2.3.4'
+        hostname_2: '4.3.2.1'
+      to_port: '8080,8090'
+    rule_2:
+      proto: 'tcp'
+      to_port: '3306'
