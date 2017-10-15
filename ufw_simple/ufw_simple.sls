@@ -58,7 +58,7 @@ ufw_simple_nat_managed_file_3:
           -A POSTROUTING -s {{ m_item }} -o {{ pillar['ufw_simple']['nat']['masquerade']['out'] }} -j MASQUERADE
         {%- endfor %}
       {%- else %}
-        masquerade: ''
+        masquerade: '# empty'
       {%- endif %}
       {%- if (pillar['ufw_simple']['nat']['dnat'] is defined) and (pillar['ufw_simple']['nat']['dnat'] is not none) %}
         dnat: |
@@ -66,7 +66,7 @@ ufw_simple_nat_managed_file_3:
           -A PREROUTING -i {{ pillar['ufw_simple']['nat']['dnat']['in'] }} -p {{ d_val['proto'] }} --dport {{ d_key }} -j DNAT --to-destination {{ d_val['to'] }}
         {%- endfor %}
       {%- else %}
-        dnat: ''
+        dnat: '# empty'
       {%- endif %}
 
 ufw_simple_nat_managed_restart:
