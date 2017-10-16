@@ -6,8 +6,8 @@ HN=$1
 HN_UNDER=`echo "$1" | sed -e 's/\./_/g'`
 
 # Get some more vars from config
-if [[ -f /srv/scripts/cloud-new-instance.conf ]]; then
-	. /srv/scripts/cloud-new-instance.conf
+if [[ -f /srv/salt/cloud/cloud_new_instance.conf ]]; then
+	. /srv/salt/cloud/cloud_new_instance.conf
 fi 
 
 # Some checks and info
@@ -97,22 +97,22 @@ fi
 if [[ "_$CLOUDFLARE_DNS" = "_yes" ]]; then
 	echo
 	echo "Detected cloud IP in pillars: $HN_IP" | ccze -A
-	echo "Going to run: /srv/scripts/cloudflare-add-record.sh $HN $HN_IP" | ccze -A
+	echo "Going to run: /srv/salt/cloud/cloudflare_add_record.sh $HN $HN_IP" | ccze -A
 	read -p "Are we OK with that? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		/srv/scripts/cloudflare-add-record.sh $HN $HN_IP
+		/srv/salt/cloud/cloudflare_add_record.sh $HN $HN_IP
 	fi
 fi
 
 # sysPass password
 if [[ "_$SYSPASS" = "_yes" ]]; then
 	echo
-	echo "Going to run: /srv/scripts/syspass-add-unix-root.sh $HN" | ccze -A
+	echo "Going to run: /srv/salt/cloud/syspass_add_unix_root.sh $HN" | ccze -A
 	read -p "Are we OK with that? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		/srv/scripts/syspass-add-unix-root.sh $HN
+		/srv/salt/cloud/syspass_add_unix_root.sh $HN
 	fi
 fi
 
