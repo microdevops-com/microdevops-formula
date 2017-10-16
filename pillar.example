@@ -92,3 +92,8 @@ windows_users:
     remove_groups: False
     password: coolpassword
     is_admin: True
+
+# test
+test:
+  git_commit:
+    - '/srv'
