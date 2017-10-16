@@ -113,3 +113,20 @@ r:
 # redis
 redis:
   enabled: True
+
+# php-fpm
+php-fpm:
+  enabled: True
+  version_5_6: True
+  modules:
+    php5_6:
+      - php5.6-mysql
+      - php5.6-curl
+      - php5.6-zip
+      - php5.6-gd
+      - php5.6-mcrypt
+      - php5.6-mbstring
+      - php5.6-xml
+      - php5.6-soap
+      - php5.6-ioncube
+
