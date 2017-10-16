@@ -130,3 +130,18 @@ php-fpm:
       - php5.6-soap
       - php5.6-ioncube
 
+# percona
+percona:
+  enabled: True
+  version: 5.6
+  root_password: 'cooldnpassword'
+  databases:
+    - db
+  users:
+    db:
+      host: localhost
+      password: 'userpass'
+      databases:
+        - database: db
+          grant: ['all privileges']
+
