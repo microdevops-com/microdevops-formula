@@ -1,4 +1,4 @@
-# cloud vm targeted
+# should be cloud vm targeted
 resolv_domain: example.com
 salt_masters:
   salt1.example.com: 1.2.3.4
@@ -6,7 +6,7 @@ salt_masters:
 location: host.example.com
 highstated: True
 
-# cloud salt master targeted
+# should be cloud salt master targeted
 cloud:
   config_dir: /etc/salt # mandatory bug fix
   providers:
@@ -85,7 +85,7 @@ ufw_simple:
 # users/unix -> users-formula/pillar.example
 
 # users/windows
-windows_unrestricted: True # leave the powershell in unrestricted state
+windows_unrestricted: True # leave the powershell in the unrestricted mode
 windows_users:
   john:
     fullname: John Doe
@@ -97,3 +97,19 @@ windows_users:
 test:
   git_commit:
     - '/srv'
+
+# pyenv
+# limited set of versions supported in the state
+pyenv:
+  enabled: True
+  version_2_7_13: True
+  version_3_5_2: True
+  version_3_5_3: True
+
+# r
+r:
+  enabled: True
+
+# redis
+redis:
+  enabled: True
