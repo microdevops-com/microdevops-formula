@@ -1,8 +1,55 @@
-# cloud
+# cloud vm targeted
 resolv_domain: example.com
 salt_masters:
   salt1.example.com: 1.2.3.4
   salt2.example.com: 4.3.2.1
+location: host.example.com
+highstated: True
+
+# cloud salt master targeted
+cloud:
+  config_dir: /etc/salt # mandatory bug fix
+  providers:
+    lxc-host_example_com:
+      target: host.example.com
+      driver: lxc
+{% set vm   = 'vm.example.com' %}
+  profiles:
+    {{ vm|replace(".", "_") }}:
+      provider: lxc-host_example_com
+      lxc_profile:
+        backing: lvm
+        vgname: vg_md3
+        size: 10G
+        template: download
+        options:
+          dist: debian
+          release: jessie
+          arch: amd64
+      network_profile:
+        eth0:
+          link: br1
+          type: veth
+          flags: up
+          ipv4: 10.0.0.2/24
+          gateway: 10.0.0.1
+      minion:
+        master:
+          - salt1.example.com
+          - salt2.example.com
+        id: {{ vm }}
+        grains:
+          fqdn: {{ vm }}
+      lxc_conf:
+        - lxc.utsname: {{ vm }}
+      password: coolvmpassword
+      dnsservers:
+        - 8.8.8.8
+        - 8.8.4.4
+      lxc_post_profile:
+        # 16 symbols max
+        net_veth_pair_name: vgvmbr1
+        lvm_root_resize: 100G
 
 # ufw_simple
 ufw_simple:
@@ -34,3 +81,14 @@ ufw_simple:
     rule_2:
       proto: 'tcp'
       to_port: '3306'
+
+# users/unix -> users-formula/pillar.example
+
+# users/windows
+windows_unrestricted: True # leave the powershell in unrestricted state
+windows_users:
+  john:
+    fullname: John Doe
+    remove_groups: False
+    password: coolpassword
+    is_admin: True
