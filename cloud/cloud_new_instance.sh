@@ -216,7 +216,7 @@ if [[ ! -z $VETH_PAIR_ETH0 ]]; then
 	read -p "Are we OK with that? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH0'" /var/lib/lxc/'$HN'/config'
+		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH0'/" /var/lib/lxc/'$HN'/config'
 	fi
 fi
 if [[ ! -z $VETH_PAIR_ETH1 ]]; then
@@ -227,7 +227,7 @@ if [[ ! -z $VETH_PAIR_ETH1 ]]; then
 	read -p "Are we OK with that? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH1'" /var/lib/lxc/'$HN'/config'
+		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH1'/" /var/lib/lxc/'$HN'/config'
 	fi
 fi
 if [[ ! -z $VETH_PAIR_ETH2 ]]; then
@@ -238,7 +238,7 @@ if [[ ! -z $VETH_PAIR_ETH2 ]]; then
 	read -p "Are we OK with that? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH2'" /var/lib/lxc/'$HN'/config'
+		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH2'/" /var/lib/lxc/'$HN'/config'
 	fi
 fi
 
