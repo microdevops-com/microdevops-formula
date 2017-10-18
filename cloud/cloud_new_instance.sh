@@ -48,7 +48,7 @@ fi
 HN_IP=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:network_profile:eth0:ipv4 | sed -e 's#/.*##'`
 VETH_PAIR_ETH0=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:net_veth_pair_name:eth0`
 VETH_PAIR_ETH1=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:net_veth_pair_name:eth1`
-VETH_PAIR_ETH2=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:net_veth_pair_name:eth1`
+VETH_PAIR_ETH2=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:net_veth_pair_name:eth2`
 ROOT_VGNAME=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_profile:vgname`
 ROOT_RESIZE=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:lvm_root_resize`
 declare -A LVM_ADD_MOUNT
@@ -221,24 +221,24 @@ if [[ ! -z $VETH_PAIR_ETH0 ]]; then
 fi
 if [[ ! -z $VETH_PAIR_ETH1 ]]; then
 	echo
-	echo "Adding lxc.network.veth.pair for eth0 to minion config on the host server" | ccze -A
+	echo "Adding lxc.network.veth.pair for eth1 to minion config on the host server" | ccze -A
 	echo "Going to run: salt $HOST_SERVER cmd.shell " | ccze -A
 	echo 'sed -i "s/eth1/eth1\nlxc.network.veth.pair = '$VETH_PAIR_ETH1'" /var/lib/lxc/'$HN'/config' | ccze -A
 	read -p "Are we OK with that? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH1'/" /var/lib/lxc/'$HN'/config'
+		salt $HOST_SERVER cmd.shell 'sed -i "s/eth1/eth1\nlxc.network.veth.pair = '$VETH_PAIR_ETH1'/" /var/lib/lxc/'$HN'/config'
 	fi
 fi
 if [[ ! -z $VETH_PAIR_ETH2 ]]; then
 	echo
-	echo "Adding lxc.network.veth.pair for eth0 to minion config on the host server" | ccze -A
+	echo "Adding lxc.network.veth.pair for eth2 to minion config on the host server" | ccze -A
 	echo "Going to run: salt $HOST_SERVER cmd.shell " | ccze -A
 	echo 'sed -i "s/eth2/eth2\nlxc.network.veth.pair = '$VETH_PAIR_ETH2'" /var/lib/lxc/'$HN'/config' | ccze -A
 	read -p "Are we OK with that? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		salt $HOST_SERVER cmd.shell 'sed -i "s/eth0/eth0\nlxc.network.veth.pair = '$VETH_PAIR_ETH2'/" /var/lib/lxc/'$HN'/config'
+		salt $HOST_SERVER cmd.shell 'sed -i "s/eth2/eth2\nlxc.network.veth.pair = '$VETH_PAIR_ETH2'/" /var/lib/lxc/'$HN'/config'
 	fi
 fi
 
