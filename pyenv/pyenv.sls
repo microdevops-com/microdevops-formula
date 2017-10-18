@@ -25,6 +25,12 @@ pyenv_2_7_13_installed:
     - name: python-2.7.13
   {%- endif %}
 
+  {%- if (pillar['pyenv']['version_2_7_14'] is defined) and (pillar['pyenv']['version_2_7_14'] is not none) and (pillar['pyenv']['version_2_7_14']) %}
+pyenv_2_7_14_installed:
+  pyenv.installed:
+    - name: python-2.7.14
+  {%- endif %}
+
   {%- if (pillar['pyenv']['version_3_5_2'] is defined) and (pillar['pyenv']['version_3_5_2'] is not none) and (pillar['pyenv']['version_3_5_2']) %}
 pyenv_3_5_2_installed:
   pyenv.installed:
