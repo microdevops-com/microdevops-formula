@@ -15,5 +15,13 @@ postgres_ext_uuid_ossp_{{ loop.index }}:
         {%- endif %}
       {%- endif %}
     {%- endif %}
+    {%- if (pillar['postgres']['local']['superusers'] is defined) and (pillar['postgres']['local']['superusers'] is not none) %}
+      {%- for postgres_su in pillar['postgres']['local']['superusers'] %}
+postgres_superusers_{{ loop.index }}:
+  postgres_user.present:
+    - name: {{ postgres_su }}
+    - superuser: True
+      {%- endfor %}
+    {%- endif %}
   {%- endif %}
 {% endif %}
