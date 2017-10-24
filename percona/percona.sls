@@ -78,10 +78,20 @@ percona_disallow_root_remote_connection:
   mysql_query.run:
     - database: mysql
     - query: "DELETE FROM user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
+    - require:
+      - pkg: mysql_python_dep
+      - service: percona_svc
 
 percona_remove_default_database_test:
   mysql_database.absent:
     - name: test
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
+    - require:
+      - pkg: mysql_python_dep
+      - service: percona_svc
       {%- endif %}
 
         {%- if (pillar['percona']['databases'] is defined) and (pillar['percona']['databases'] is not none) %}
