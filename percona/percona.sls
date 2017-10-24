@@ -72,14 +72,16 @@ percona_remove_limits:
       - service: percona_svc
         {%- endif %}
 
-percona_disallow_root_remoute_connection:
-  mysql_query.run
+      {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) %}
+percona_disallow_root_remote_connection:
+  mysql_query.run:
     - database: mysql
-    - query:    "DELETE FROM user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+    - query: "DELETE FROM user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
 
 percona_remove_default_database_test:
   mysql_database.absent:
     - name: test
+      {%- endif %}
 
         {%- if (pillar['percona']['databases'] is defined) and (pillar['percona']['databases'] is not none) %}
           {%- for name in pillar['percona']['databases'] %}
