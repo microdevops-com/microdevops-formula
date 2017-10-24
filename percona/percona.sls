@@ -9,6 +9,7 @@ percona_repo_deb:
 percona_client:
   pkg.installed:
     - name: percona-server-client-{{ pillar['percona']['version'] }}
+    - refresh: True
 
 percona_config_dir:
   file.directory:
