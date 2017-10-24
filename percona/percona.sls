@@ -99,6 +99,8 @@ percona_remove_default_database_test:
 mysql_database_{{ name }}:
   mysql_database.present:
     - name: {{ name }}
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
       - pkg: mysql_python_dep
       - service: percona_svc
