@@ -1,0 +1,19 @@
+mail.backend: 'smtp'
+mail.from: '{{ email_user }}'
+mail.host: '{{ email_host }}'
+mail.port: {{ email_port }}
+mail.username: '{{ email_user }}'
+mail.password: '{{ email_pass }}'
+mail.use-tls: {{ email_tls }}
+system.secret-key: '{{ secret }}'
+redis.clusters:
+  default:
+    hosts:
+      0:
+        host: 127.0.0.1
+        port: 6379
+filestore.backend: 'filesystem'
+filestore.options:
+  location: '/opt/sentry/data'
+system.admin-email: '{{ admin_email }}'
+system.url-prefix: '{{ url }}'

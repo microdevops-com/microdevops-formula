@@ -1,0 +1,3 @@
+#!/bin/sh
+export PYENV_VERSION='{{ pyenv_version }}'
+/usr/local/pyenv/shims/virtualenv "$@"
