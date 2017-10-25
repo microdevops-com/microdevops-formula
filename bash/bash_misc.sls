@@ -98,8 +98,9 @@ bash_skel_root_bashrc:
          (pillar['users'] is defined) and (pillar['users'] is not none) and
          (pillar['users'][name] is defined) and (pillar['users'][name] is not none) and
          (pillar['users'][name]['skip_bashrc'] is defined) and (pillar['users'][name]['skip_bashrc'] is not none) and
-         (not pillar['users'][name]['skip_bashrc'])
+         (pillar['users'][name]['skip_bashrc'])
   %}
+  {%- else %}
     {%- set home = user.get('home', current.get('home', "/home/%s" % name)) -%}
 bash_skel_{{ name }}_bashrc:
   file.managed:
