@@ -1,0 +1,15 @@
+include:
+  - postgresql.postgresql
+  - percona.percona
+  - redis.redis
+  - pyenv.pyenv
+  - r.r
+  - sentry.sentry
+  - php-fpm.php-fpm
+  - nginx.nginx
+  - certbot.certbot
+  - supervisor.supervisor
+  - app.service_manager
+  - app.python_apps
+  - app.php-fpm_apps
+  - app.static
