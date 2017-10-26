@@ -84,9 +84,29 @@ percona_disallow_root_remote_connection:
       - pkg: mysql_python_dep
       - service: percona_svc
 
+percona_remove_anonimus_user:
+  mysql_query.run:
+    - database: mysql
+    - query: "DELETE FROM user WHERE User='';"
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
+    - require:
+      - pkg: mysql_python_dep
+      - service: percona_svc
+
 percona_remove_default_database_test:
   mysql_database.absent:
     - name: test
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
+    - require:
+      - pkg: mysql_python_dep
+      - service: percona_svc
+
+percona_delete_privileges_database_test:
+  mysql_query.run:
+    - database: mysql
+    - query: "DELETE FROM db WHERE Db='test' OR Db='test\\_%'"
     - connection_user: root
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
