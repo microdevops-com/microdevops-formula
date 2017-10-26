@@ -103,6 +103,7 @@ test:
 pyenv:
   enabled: True
   version_2_7_13: True
+  version_2_7_14: True
   version_3_5_2: True
   version_3_5_3: True
 
@@ -153,7 +154,7 @@ percona:
 postgres:
 ...
   databases:                                                                                                                                                                                                                           
-    sentry:                                                                                                                                                                                                                            
+    db1:                                                                                                                                                                                                                            
       owner: 'db1'
       ...
   local:
@@ -161,3 +162,189 @@ postgres:
       enabled: True
       databases:
         - db1
+
+# r
+r:
+  enabled: True
+
+# postfix
+postfix:
+  enabled: True
+
+# certbot
+certbot:
+  enabled: True
+
+# nginx
+nginx:
+  enabled: True
+  configs: 'nginx/app_hosting'
+
+# supervisor
+supervisor:
+  enabled: True
+
+# sentry
+certbot:
+  enabled: True
+
+supervisor:
+  enabled: True
+
+pyenv:
+  enabled: True
+  version_2_7_14: True
+
+nginx:
+  enabled: True
+  configs: 'sentry/files'
+
+sentry:
+  enabled: True
+  pyenv_version: '2.7.14'
+  secret: 'xxx'
+  workers: '10'
+  url: 'https://sentry.example.com'
+  admin_email: 'admin@example.com'
+  admin_password: 'adminpass'
+  email:
+    user: 'sentry@example.com'
+    pass: 'gmailmailpass'
+    host: 'smtp.gmail.com'
+    port: 587
+    tls: True
+  db:
+    db_name: 'sentry'
+    user: 'sentry'
+    password: 'dbpass'
+    host: 'localhost'
+    port: '5432'
+  nginx:
+    server_name: 'sentry.example.com'
+    server_name_301: 'www.sentry.example.com'
+    access_log: '/var/log/nginx/sentry.access.log'
+    error_log: '/var/log/nginx/sentry.error.log'
+    certbot_email: 'admin@example.com'
+  plugins: # Unofficial plugins only, official come with sentry-plugins, sentry-telegram already adopted
+    - sentry-xxx
+
+# app example_php-fpm_app_1
+certbot:
+  enabled: True
+
+nginx:
+  enabled: True
+  configs: 'nginx/app_hosting'
+
+php-fpm:
+  enabled: True
+  version_5_6: True
+  modules:
+    php5_6:
+      - php5.6-mysql
+      - php5.6-curl
+      - php5.6-zip
+      - php5.6-gd
+      - php5.6-mcrypt
+      - php5.6-mbstring
+      - php5.6-xml
+      - php5.6-soap
+      - php5.6-ioncube
+
+app:
+  php-fpm_apps:
+    app_1:
+      enabled: True
+      user: 'app_1'
+      group: 'app_1'
+      app_root: '/var/www/app_1'
+      app_auth_keys: |
+        ssh-rsa AAAA...== rsa-key-19700101
+      shell: '/bin/bash'
+      nginx:
+        vhost_config: 'app/files/example_php-fpm_app_1/vhost.conf'
+        root: '/var/www/app_1/src/public'
+        server_name: 'example.com'
+        server_name_301: 'www.example.com www2.example.com'
+        access_log: '/var/log/nginx/app_1.access.log'
+        error_log: '/var/log/nginx/app_1.error.log'
+        ssl: # commercial cert example
+          certs_dir: 'app/files/example_php-fpm_app_1/ssl' # those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
+          ssl_cert: 'ssl/app_1/app_1.crt' # in terms of nginx, e.g. as for files abobe, or you can use absolute path
+          ssl_key: 'ssl/app_1/app_1.key'
+          ssl_chain: 'ssl/app_1/gd_bundle-g2-g1.crt'
+          certbot_for_301: True
+          certbot_email: 'admin@example.com'
+      pool:
+        pool_config: 'app/files/example_php-fpm_app_1/pool.conf'
+        php_version: '5.6'
+        pm: |
+          pm = ondemand
+          pm.max_children = 50
+          pm.process_idle_timeout = 10s
+          pm.max_requests = 500
+        php_admin: |
+          php_admin_flag[html_errors] = off
+          php_admin_value[post_max_size] = 25M
+          php_admin_value[upload_max_filesize] = 25M
+      git_source:
+        enabled: True
+        git: 'ssh://git@bitbucket.org/myorg/app_1'
+        rev: 'master'
+        target: '/var/www/app_1/src'
+        branch: 'master'
+        key: 'app/files/example_php-fpm_app_1/id_app_1' # that is not very secure and should be changed to reference as text some time later in state code
+        key_pub: 'app/files/example_php-fpm_app_1/id_app_1.pub'
+      files: # you can copy app configs from salt, not to store them in repo
+        src: 'app/files/example_php-fpm_app_1/files'
+        dst: '/var/www/app_1/src/public'
+      setup_script: # e.g. after git pull to change permissions and create missing folders
+        cwd: '/var/www/app_1/src'
+        name: 'bash /var/www/app_1/src/etc/setup.sh'
+    app_2:
+      enabled: True
+      user: 'app_2'
+      group: 'app_2'
+      app_root: '/var/www/app_2'
+      app_auth_keys: |
+        ssh-rsa AAAA...== rsa-key-19700101
+      shell: '/bin/bash'
+      nginx:
+        auth_basic:
+          user: 'basicuser'
+          pass: 'basicpassword'
+        vhost_config: 'app/files/example_php-fpm_app_2/vhost.conf'
+        root: '/var/www/app_2/src/public'
+        server_name: 'example.com'
+        server_name_301: 'www.example.com www2.example.com'
+        access_log: '/var/log/nginx/app_2.access.log'
+        error_log: '/var/log/nginx/app_2.error.log'
+        ssl: # certbot example
+          certbot: True
+          certbot_email: 'admin@example.com'
+      pool:
+        pool_config: 'app/files/example_php-fpm_app_2/pool.conf'
+        php_version: '5.6'
+        pm: |
+          pm = ondemand
+          pm.max_children = 50
+          pm.process_idle_timeout = 10s
+          pm.max_requests = 500
+        php_admin: |
+          php_admin_flag[html_errors] = off
+          php_admin_value[post_max_size] = 25M
+          php_admin_value[upload_max_filesize] = 25M
+      git_source:
+        enabled: True
+        git: 'ssh://git@bitbucket.org/myorg/app_2'
+        rev: 'develop'
+        target: '/var/www/app_2/src'
+        branch: 'develop'
+        key: 'app/files/example_php-fpm_app_2/id_app_2' # that is not very secure and should be changed to reference as text some time later in state code
+        key_pub: 'app/files/example_php-fpm_app_2/id_app_2.pub'
+      files: # you can copy app configs from salt, not to store them in repo
+        src: 'app/files/example_php-fpm_app_2/files'
+        dst: '/var/www/app_2/src/public'
+      setup_script: # e.g. after git pull to change permissions and create missing folders
+        cwd: '/var/www/app_2/src'
+        name: 'bash /var/www/app_2/src/etc/setup.sh'
