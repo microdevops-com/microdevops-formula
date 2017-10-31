@@ -68,7 +68,7 @@ ufw_simple_nat_managed_file_3:
           {%- else %}
             {%- set src_block = ' ' %}
           {%- endif %}
-          -A PREROUTING -i {{ src_block }} {{ pillar['ufw_simple']['nat']['dnat']['in'] }} -p {{ d_val['proto'] }} --dport {{ d_key }} -j DNAT --to-destination {{ d_val['to'] }}
+          -A PREROUTING -i {{ pillar['ufw_simple']['nat']['dnat']['in'] }} {{ src_block }} -p {{ d_val['proto'] }} --dport {{ d_key }} -j DNAT --to-destination {{ d_val['to'] }}
         {%- endfor %}
       {%- else %}
         dnat: '# empty'
