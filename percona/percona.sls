@@ -73,6 +73,13 @@ percona_remove_limits:
       - service: percona_svc
         {%- endif %}
 
+        {% if not salt['file.directory_exists' ]('/root/.my.cnf') %}
+percona_create_symlinc_debian_sys_maint_to_root:
+  file.symlink:
+    - name: /etc/mysql/debian.cnf
+    - target: /root/.my.cnf
+        {% endif %}
+
       {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) %}
 percona_disallow_root_remote_connection:
   mysql_query.run:
@@ -107,6 +114,16 @@ percona_delete_privileges_database_test:
   mysql_query.run:
     - database: mysql
     - query: "DELETE FROM db WHERE Db='test' OR Db='test\\_%'"
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
+    - require:
+      - pkg: mysql_python_dep
+      - service: percona_svc
+
+percona_create_post_install_toolkit_functions:
+    mysql_query.run:
+    - database: mysql
+    - query: "CREATE FUNCTION fnv1a_64 RETURNS INTEGER SONAME 'libfnv1a_udf.so'; CREATE FUNCTION fnv_64 RETURNS INTEGER SONAME 'libfnv_udf.so'; CREATE FUNCTION murmur_hash RETURNS INTEGER SONAME 'libmurmur_udf.so'"
     - connection_user: root
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
