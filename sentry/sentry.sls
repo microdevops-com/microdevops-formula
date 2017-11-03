@@ -112,7 +112,7 @@ sentry_supervisor_conf:
 
 sentry_supervisor_reload:
   cmd.run:
-    - cwd: /root
+    - runas: 'root'
     - name: 'supervisorctl reread && supervisorctl update && supervisorctl stop all'
 
 sentry_req_txt:
@@ -211,13 +211,12 @@ sentry_upgrade:
 
 sentry_superuser:
   cmd.run:
-    - name: 'SENTRY_CONF=/opt/sentry/etc /opt/sentry/env/bin/sentry createuser --email "{{ pillar['sentry']['admin_email'] }}" --password "{{ pillar['sentry']['admin_password'] }}" --superuser --no-input'
-    - cwd: '/opt/sentry'
-    - runas: 'sentry'
+    - name: '( echo "select id from auth_user where email = ''{{ pillar['sentry']['admin_email'] }}'' and is_superuser is true" | su -l postgres -c "psql sentry" | grep -q "(0 row)" ) && su -l sentry -c "SENTRY_CONF=/opt/sentry/etc /opt/sentry/env/bin/sentry createuser --email ''{{ pillar['sentry']['admin_email'] }}'' --password ''{{ pillar['sentry']['admin_password'] }}'' --superuser --no-input" || true'
+    - runas: 'root'
 
 sentry_supervisor_start:
   cmd.run:
-    - cwd: /root
+    - runas: 'root'
     - name: 'supervisorctl start all'
 
 sentry_nginx_vhost_config_snake:
@@ -243,7 +242,7 @@ sentry_nginx_vhost_symlink:
 
 sentry_nginx_reload:
   cmd.run:
-    - cwd: /root
+    - runas: 'root'
     - name: 'service nginx configtest && service nginx restart'
 
 sentry_certbot_dir:
@@ -256,7 +255,7 @@ sentry_certbot_dir:
     {%- set cert_dom = pillar['sentry']['nginx']['server_name'] ~ ' ' ~ pillar['sentry']['nginx']['server_name_301'] %}
 sentry_certbot_run:
   cmd.run:
-    - cwd: /root
+    - runas: 'root'
     - name: '/opt/certbot/certbot-auto -n certonly --webroot --reinstall --allow-subset-of-names --agree-tos --cert-name sentry --email {{ pillar['sentry']['nginx']['certbot_email'] }} -w /opt/sentry/www/certbot -d "{{ cert_dom|replace(" ", ",") }}"'
 
 sentry_nginx_vhost_config:
@@ -277,7 +276,7 @@ sentry_nginx_vhost_config:
 
 sentry_nginx_reload_2:
   cmd.run:
-    - cwd: /root
+    - runas: 'root'
     - name: 'service nginx configtest && service nginx restart'
 
 sentry_certbot_cron:
