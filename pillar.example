@@ -225,6 +225,9 @@ sentry:
     access_log: '/var/log/nginx/sentry.access.log'
     error_log: '/var/log/nginx/sentry.error.log'
     certbot_email: 'admin@example.com'
+    allow_hosts: # sentry / location will be limited by nginx to those ip, while ~ /api/([\w_-]+/)?store will be open to everyone
+      - '1.2.3.4'
+      - '4.3.2.1'
   plugins: # Unofficial plugins only, official come with sentry-plugins, sentry-telegram already adopted
     - sentry-xxx
 
