@@ -234,6 +234,13 @@ sentry_nginx_vhost_config_snake:
         url: '{{ pillar['sentry']['url'] }}'
         ssl_cert: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
         ssl_key: '/etc/ssl/private/ssl-cert-snakeoil.key'
+    {%- if (pillar['sentry']['nginx']['allow_hosts'] is defined) and (pillar['sentry']['nginx']['allow_hosts'] is not none) %}
+        allow_hosts_block: |
+      {%- for host_line in pillar['sentry']['nginx']['allow_hosts'] %}
+          {{ host_line }};
+      {%- endfor %}
+          deny all;
+    {%- endif %}
 
 sentry_nginx_vhost_symlink:
   file.symlink:
