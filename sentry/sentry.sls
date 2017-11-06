@@ -235,11 +235,14 @@ sentry_nginx_vhost_config_snake:
         ssl_cert: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
         ssl_key: '/etc/ssl/private/ssl-cert-snakeoil.key'
     {%- if (pillar['sentry']['nginx']['allow_hosts'] is defined) and (pillar['sentry']['nginx']['allow_hosts'] is not none) %}
-        allow_hosts_block: |
+        allow_hosts_block: >-2
       {%- for host_line in pillar['sentry']['nginx']['allow_hosts'] %}
-          {{ host_line }};
+              allow {{ host_line }};
+
       {%- endfor %}
-          deny all;
+              deny all;
+    {%- else %}
+        allow_hosts_block: ''
     {%- endif %}
 
 sentry_nginx_vhost_symlink:
@@ -280,6 +283,16 @@ sentry_nginx_vhost_config:
         url: '{{ pillar['sentry']['url'] }}'
         ssl_cert: '/etc/letsencrypt/live/sentry/fullchain.pem'
         ssl_key: '/etc/letsencrypt/live/sentry/privkey.pem'
+    {%- if (pillar['sentry']['nginx']['allow_hosts'] is defined) and (pillar['sentry']['nginx']['allow_hosts'] is not none) %}
+        allow_hosts_block: >-2
+      {%- for host_line in pillar['sentry']['nginx']['allow_hosts'] %}
+              allow {{ host_line }};
+
+      {%- endfor %}
+              deny all;
+    {%- else %}
+        allow_hosts_block: ''
+    {%- endif %}
 
 sentry_nginx_reload_2:
   cmd.run:
