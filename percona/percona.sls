@@ -80,7 +80,7 @@ percona_create_symlink_debian_sys_maint_to_root:
     - target: /etc/mysql/debian.cnf
         {% endif %}
 
-      {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) %}
+        {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) %}
 percona_disallow_root_remote_connection:
   mysql_query.run:
     - database: mysql
@@ -91,7 +91,7 @@ percona_disallow_root_remote_connection:
       - pkg: mysql_python_dep
       - service: percona_svc
 
-percona_remove_anonimus_user:
+percona_remove_anonymous_user:
   mysql_query.run:
     - database: mysql
     - query: "DELETE FROM user WHERE User='';"
@@ -119,6 +119,7 @@ percona_delete_privileges_database_test:
     - require:
       - pkg: mysql_python_dep
       - service: percona_svc
+        {%- endif %}
 
 percona_create_post_install_toolkit_functions:
     mysql_query.run:
@@ -129,7 +130,6 @@ percona_create_post_install_toolkit_functions:
     - require:
       - pkg: mysql_python_dep
       - service: percona_svc
-      {%- endif %}
 
         {%- if (pillar['percona']['databases'] is defined) and (pillar['percona']['databases'] is not none) %}
           {%- for name in pillar['percona']['databases'] %}
