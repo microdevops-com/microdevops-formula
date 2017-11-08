@@ -73,11 +73,11 @@ percona_remove_limits:
       - service: percona_svc
         {%- endif %}
 
-        {% if not salt['file.directory_exists' ]('/root/.my.cnf') %}
-percona_create_symlinc_debian_sys_maint_to_root:
+        {% if not salt['file.file_exists' ]('/root/.my.cnf') %}
+percona_create_symlink_debian_sys_maint_to_root:
   file.symlink:
-    - name: /etc/mysql/debian.cnf
-    - target: /root/.my.cnf
+    - name: /root/.my.cnf
+    - target: /etc/mysql/debian.cnf
         {% endif %}
 
       {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) %}
