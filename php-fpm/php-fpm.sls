@@ -1,5 +1,6 @@
 {% if (pillar['php-fpm'] is defined) and (pillar['php-fpm'] is not none) %}
   {%- if (pillar['php-fpm']['enabled'] is defined) and (pillar['php-fpm']['enabled'] is not none) and (pillar['php-fpm']['enabled']) %}
+    {%- if (pillar['php-fpm']['version_5_6'] is defined) and (pillar['php-fpm']['version_5_6'] is not none) and (pillar['php-fpm']['version_5_6']) %}
 php-fpm_repo_deb:
   pkgrepo.managed:
     - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu xenial main
@@ -9,7 +10,6 @@ php-fpm_repo_deb:
     - keyid: E5267A6C
     - refresh_db: true
 
-    {%- if (pillar['php-fpm']['version_5_6'] is defined) and (pillar['php-fpm']['version_5_6'] is not none) and (pillar['php-fpm']['version_5_6']) %}
 php-fpm_5_6_installed:
   pkg.installed:
     - pkgs:
@@ -52,6 +52,24 @@ php-fpm_5_6_modules_ioncube_3:
     - target: '/etc/php/5.6/mods-available/ioncube.ini'
 
             {%- endif %}
+          {%- endfor %}
+        {%- endif %}
+      {%- endif %}
+    {%- endif %}
+    {%- if (pillar['php-fpm']['version_5_5'] is defined) and (pillar['php-fpm']['version_5_5'] is not none) and (pillar['php-fpm']['version_5_5']) %}
+php-fpm_5_5_installed:
+  pkg.installed:
+    - pkgs:
+      - php5-cli
+      - php5-fpm
+
+      {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
+        {%- if (pillar['php-fpm']['modules']['php5_5'] is defined) and (pillar['php-fpm']['modules']['php5_5'] is not none) %}
+php-fpm_5_5_modules_installed:
+  pkg.installed:
+    - pkgs:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php5_5'] %}
+      - {{ pkg_name }}
           {%- endfor %}
 
         {%- endif %}
