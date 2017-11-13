@@ -1,5 +1,10 @@
 {% if (pillar['ufw_simple'] is defined) and (pillar['ufw_simple'] is not none) %}
   {%- if (pillar['ufw_simple']['enabled'] is defined) and (pillar['ufw_simple']['enabled'] is not none) and (pillar['ufw_simple']['enabled']) %}
+ufw_simple_deps:
+  pkg.installed:
+    - pkgs:
+      - init-system-helpers
+
 ufw_simple_update_deb:
   pkg.installed:
     - sources:
