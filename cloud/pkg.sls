@@ -51,7 +51,6 @@ pkg_deb_packages:
       - less
       - whois
       - nfacct
-      - nfs-common
       - bc
       - wamerican
       - ucf
@@ -63,7 +62,6 @@ pkg_deb_packages:
       - kmod
       - gettext-base
       - dbus
-      - rpcbind
       - libclass-isa-perl
       - dnsutils
       - libswitch-perl
@@ -93,11 +91,10 @@ pkg_deb_packages:
       - task-english
       - task-ssh-server
       - libxtables10
-      - exim4
-  {%- elif grains['oscodename'] == 'xenial' %}
+  {%- elif grains['os'] == 'Ubuntu' %}
       - openssh-server
-      - postfix
   {%- endif %}
+      - postfix
       - resolvconf
       - apt-transport-https
       - ca-certificates
