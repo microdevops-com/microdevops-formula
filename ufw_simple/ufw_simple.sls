@@ -62,21 +62,23 @@ ufw_simple_nat_managed_file_3:
     - defaults:
       {%- if (pillar['ufw_simple']['nat']['masquerade'] is defined) and (pillar['ufw_simple']['nat']['masquerade'] is not none) %}
         masquerade: |
-        {%- for m_item in pillar['ufw_simple']['nat']['masquerade']['source']|sort %}
-          -A POSTROUTING -s {{ m_item }} -o {{ pillar['ufw_simple']['nat']['masquerade']['out'] }} -j MASQUERADE
+        {%- for m_key, m_val in pillar['ufw_simple']['nat']['masquerade'].items()|sort %}
+          # {{ m_key }}
+          -A POSTROUTING -s {{ m_val['source'] }} -o {{ m_val['out'] }} -j MASQUERADE
         {%- endfor %}
       {%- else %}
         masquerade: '# empty'
       {%- endif %}
       {%- if (pillar['ufw_simple']['nat']['dnat'] is defined) and (pillar['ufw_simple']['nat']['dnat'] is not none) %}
         dnat: |
-        {%- for d_key, d_val in pillar['ufw_simple']['nat']['dnat']['destination'].items()|sort %}
+        {%- for d_key, d_val in pillar['ufw_simple']['nat']['dnat'].items()|sort %}
+          # {{ d_key }}
           {%- if (d_val['from'] is defined) and (d_val['from'] is not none) %}
             {%- set src_block = '-s ' ~ d_val['from'] %}
           {%- else %}
             {%- set src_block = ' ' %}
           {%- endif %}
-          -A PREROUTING -i {{ pillar['ufw_simple']['nat']['dnat']['in'] }} {{ src_block }} -p {{ d_val['proto'] }} --dport {{ d_key }} -j DNAT --to-destination {{ d_val['to'] }}
+          -A PREROUTING -i {{ d_val['in'] }} {{ src_block }} -p {{ d_val['proto'] }} --dport {{ d_val['dport'] }} -j DNAT --to-destination {{ d_val['to'] }}
         {%- endfor %}
       {%- else %}
         dnat: '# empty'
