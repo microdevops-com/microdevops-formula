@@ -1,9 +1,12 @@
 {% if (pillar['ufw_simple'] is defined) and (pillar['ufw_simple'] is not none) %}
   {%- if (pillar['ufw_simple']['enabled'] is defined) and (pillar['ufw_simple']['enabled'] is not none) and (pillar['ufw_simple']['enabled']) %}
-ufw_simple_deps:
+
+    {%- if (grains['oscodename'] == 'trusty') %}
+ufw_simple_dep_deb:
   pkg.installed:
-    - pkgs:
-      - init-system-helpers
+    - sources:
+      - ufw: 'salt://ufw_simple/files/init-system-helpers_1.18_all.deb'
+    {%- endif %}
 
 ufw_simple_update_deb:
   pkg.installed:
