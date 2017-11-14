@@ -355,7 +355,7 @@ php-fpm_apps_app_certbot_cron_{{ loop.index }}:
         {%- if (app_params['pool']['php_version'] == '5.6' ) %}
           {%- set etc_php = '/etc/php/5.6/' %}
         {%- elif (app_params['pool']['php_version'] == '5.5' ) %}
-          {%- set etc_php = '/etc/php/' %}
+          {%- set etc_php = '/etc/php5/' %}
         {%- endif %}
 php-fpm_apps_app_pool_config_{{ loop.index }}:
   file.managed:
