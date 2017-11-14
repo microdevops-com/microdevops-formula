@@ -69,9 +69,37 @@ php-fpm_5_5_modules_installed:
   pkg.installed:
     - pkgs:
           {%- for pkg_name in pillar['php-fpm']['modules']['php5_5'] %}
+            {%- if (pkg_name != 'php5-ioncube') %}
       - {{ pkg_name }}
+            {%- endif %}
           {%- endfor %}
 
+          {%- for pkg_name in pillar['php-fpm']['modules']['php5_5'] %}
+            {%- if (pkg_name == 'php5-ioncube') %}
+php-fpm_5_5_modules_ioncube_1:
+  file.managed:
+    - name: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_5.5.so'
+
+php-fpm_5_5_modules_ioncube_2:
+  file.managed:
+    - name: '/etc/php5/mods-available/ioncube.ini'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
+    - template: jinja
+    - defaults:
+        path: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+
+php-fpm_5_6_modules_ioncube_3:
+  file.symlink:
+    - name: '/etc/php5/fpm/conf.d/00-ioncube.ini'
+    - target: '/etc/php5/mods-available/ioncube.ini'
+
+            {%- endif %}
+          {%- endfor %}
         {%- endif %}
       {%- endif %}
     {%- endif %}
