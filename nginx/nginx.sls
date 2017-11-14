@@ -15,40 +15,6 @@ nginx_files_2:
   file.absent:
     - name: '/etc/nginx/sites-enabled/default'
 
-{#
-nginx_dir_1:
-  file.directory:
-    - name: '/etc/nginx/upstream'
-    - user: root
-    - group: root
-    - mode: 755
-    - makedirs: True
-
-nginx_dir_2:
-  file.directory:
-    - name: '/etc/nginx/ssl'
-    - user: root
-    - group: root
-    - mode: 755
-    - makedirs: True
-
-nginx_dir_3:
-  file.directory:
-    - name: '/etc/nginx/sites-enabled'
-    - user: root
-    - group: root
-    - mode: 755
-    - makedirs: True
-
-nginx_dir_4:
-  file.directory:
-    - name: '/etc/nginx/sites-available'
-    - user: root
-    - group: root
-    - mode: 755
-    - makedirs: True
-#}
-
     {%- endif %}
   {%- endif %}
 {% endif %}
