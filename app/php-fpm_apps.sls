@@ -352,9 +352,14 @@ php-fpm_apps_app_certbot_cron_{{ loop.index }}:
         {%- endif %}
 
         {%- set php_admin = app_params['pool'].get('php_admin', '; no other admin vals') %}
+        {%- if (app_params['pool']['php_version'] == '5.6' ) %}
+          {%- set etc_php = '/etc/php/5.6/' %}
+        {%- elif (app_params['pool']['php_version'] == '5.5' ) %}
+          {%- set etc_php = '/etc/php/' %}
+        {%- endif %}
 php-fpm_apps_app_pool_config_{{ loop.index }}:
   file.managed:
-    - name: '/etc/php/{{ app_params['pool']['php_version'] }}/fpm/pool.d/{{ phpfpm_app }}.conf'
+    - name: '{{ etc_php }}/fpm/pool.d/{{ phpfpm_app }}.conf'
     - user: root
     - group: root
     - source: 'salt://{{ app_params['pool']['pool_config'] }}'
