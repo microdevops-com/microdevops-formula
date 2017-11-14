@@ -9,7 +9,5 @@ include:
   - nginx.nginx
   - certbot.certbot
   - supervisor.supervisor
-  - app.service_manager
-  - app.python_apps
   - app.php-fpm_apps
-  - app.static
+  - app.local
