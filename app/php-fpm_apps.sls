@@ -349,6 +349,25 @@ php-fpm_apps_app_certbot_cron_{{ loop.index }}:
     - hour: 2
     - dayweek: 1
           {%- endif %}
+
+        {%- else %}
+php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
+  file.managed:
+    - name: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'
+    - user: root
+    - group: root
+    - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
+    - template: jinja
+    - defaults:
+        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name_301: '{{ server_name_301 }}'
+        nginx_root: {{ app_params['nginx']['root'] }}
+        access_log: {{ app_params['nginx']['access_log'] }}
+        error_log: {{ app_params['nginx']['error_log'] }}
+        php_version: {{ app_params['pool']['php_version'] }}
+        app_name: {{ phpfpm_app }}
+        app_root: {{ app_params['app_root'] }}
+        auth_basic_block: '{{ auth_basic_block }}'
         {%- endif %}
 
         {%- set php_admin = app_params['pool'].get('php_admin', '; no other admin vals') %}
