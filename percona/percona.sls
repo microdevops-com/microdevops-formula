@@ -165,7 +165,7 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
 percona_create_post_install_toolkit_functions:
     mysql_query.run:
     - database: mysql
-    - query: "CREATE FUNCTION fnv1a_64 RETURNS INTEGER SONAME 'libfnv1a_udf.so'; CREATE FUNCTION fnv_64 RETURNS INTEGER SONAME 'libfnv_udf.so'; CREATE FUNCTION murmur_hash RETURNS INTEGER SONAME 'libmurmur_udf.so'"
+    - query: "DROP FUNCTION IF EXISTS fnv1a_64; CREATE FUNCTION fnv1a_64 RETURNS INTEGER SONAME 'libfnv1a_udf.so'; DROP FUNCTION IF EXISTS fnv_64; CREATE FUNCTION fnv_64 RETURNS INTEGER SONAME 'libfnv_udf.so'; DROP FUNCTION IF EXISTS murmur_hash; CREATE FUNCTION murmur_hash RETURNS INTEGER SONAME 'libmurmur_udf.so'"
     - connection_user: root
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
