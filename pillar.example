@@ -357,3 +357,27 @@ app:
       setup_script: # e.g. after git pull to change permissions and create missing folders
         cwd: '/var/www/app_2/src'
         name: 'bash /var/www/app_2/src/etc/setup.sh'
+
+# pkg
+pkg:
+  common: True # will install common base packages needed for states (software-properties-common, virt-what)
+  specific:
+    package: # any dict name
+      pkg_installed: # list of packages to be installed
+        - package1
+        - package2
+      files_managed: # params of files.managed, - name: could be taken from dict key
+        '/etc/package1/main.conf':
+          - source: 'salt://pkg/package/main.conf'
+        '/etc/package1/secondary.conf':
+          - contents: |
+              xxx
+              yyy
+              zzz
+      cmd_run: # params of cmd.run, - name: could be taken from dict key
+        1:
+          - name: 'compile /etc/package1/main.conf'
+          - runas: 'root'
+        2:
+          - name: 'service package restart'
+          - runas: 'root'
