@@ -121,16 +121,6 @@ percona_delete_privileges_database_test:
       - service: percona_svc
         {%- endif %}
 
-percona_create_post_install_toolkit_functions:
-    mysql_query.run:
-    - database: mysql
-    - query: "CREATE FUNCTION fnv1a_64 RETURNS INTEGER SONAME 'libfnv1a_udf.so'; CREATE FUNCTION fnv_64 RETURNS INTEGER SONAME 'libfnv_udf.so'; CREATE FUNCTION murmur_hash RETURNS INTEGER SONAME 'libmurmur_udf.so'"
-    - connection_user: root
-    - connection_pass: {{ pillar['percona']['root_password'] }}
-    - require:
-      - pkg: mysql_python_dep
-      - service: percona_svc
-
         {%- if (pillar['percona']['databases'] is defined) and (pillar['percona']['databases'] is not none) %}
           {%- for name in pillar['percona']['databases'] %}
 mysql_database_{{ name }}:
@@ -171,6 +161,17 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
             {%- endfor %}
           {%- endfor %}
         {%- endif %}
+
+percona_create_post_install_toolkit_functions:
+    mysql_query.run:
+    - database: mysql
+    - query: "CREATE FUNCTION fnv1a_64 RETURNS INTEGER SONAME 'libfnv1a_udf.so'; CREATE FUNCTION fnv_64 RETURNS INTEGER SONAME 'libfnv_udf.so'; CREATE FUNCTION murmur_hash RETURNS INTEGER SONAME 'libmurmur_udf.so'"
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
+    - require:
+      - pkg: mysql_python_dep
+      - service: percona_svc
+
       {%- endif %}
     {%- endif %}
   {%- endif %}
