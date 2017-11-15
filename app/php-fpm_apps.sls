@@ -373,6 +373,10 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
         {%- set php_admin = app_params['pool'].get('php_admin', '; no other admin vals') %}
         {%- if (app_params['pool']['php_version'] == '5.6' ) %}
           {%- set etc_php = '/etc/php/5.6/' %}
+        {%- elif (app_params['pool']['php_version'] == '7.0' ) %}
+          {%- set etc_php = '/etc/php/7.0/' %}
+        {%- elif (app_params['pool']['php_version'] == '7.1' ) %}
+          {%- set etc_php = '/etc/php/7.1/' %}
         {%- elif (app_params['pool']['php_version'] == '5.5' ) %}
           {%- set etc_php = '/etc/php5/' %}
         {%- endif %}
