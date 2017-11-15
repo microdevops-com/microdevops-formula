@@ -11,3 +11,4 @@ include:
   - supervisor.supervisor
   - app.php-fpm_apps
   - app.local
+  - app.pkg

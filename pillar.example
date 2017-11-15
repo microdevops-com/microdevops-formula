@@ -361,7 +361,7 @@ app:
 # pkg
 pkg:
   common: True # will install common base packages needed for states (software-properties-common, virt-what)
-  specific:
+  specific: # change 'specific' to 'app' to install via app/pkg.sls
     package: # any dict name
       pkg_installed: # list of packages to be installed
         - package1
