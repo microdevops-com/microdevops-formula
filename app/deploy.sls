@@ -1,4 +1,5 @@
 include:
+  - pkg.before_deploy
   - postgresql.postgresql
   - percona.percona
   - redis.redis
@@ -11,4 +12,4 @@ include:
   - supervisor.supervisor
   - app.php-fpm_apps
   - app.local
-  - app.pkg
+  - pkg.after_deploy
