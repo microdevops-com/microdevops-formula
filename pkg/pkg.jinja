@@ -9,6 +9,13 @@ pkg_installed_{{ PKG_WHEN }}_{{ loop.index }}:
         {{ pkg_val['pkg_installed'] }}
 
       {%- endif %}
+      {%- if (pkg_val['pkg_purged'] is defined) and (pkg_val['pkg_purged'] is not none) %}
+pkg_purged_{{ PKG_WHEN }}_{{ loop.index }}:
+  pkg.purged:
+    - pkgs:
+        {{ pkg_val['pkg_purged'] }}
+
+      {%- endif %}
       {%- if (pkg_val['files_managed'] is defined) and (pkg_val['files_managed'] is not none) %}
         {%- for fm_key, fm_val in pkg_val['files_managed'].items()|sort %}
 pkg_files_managed_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
