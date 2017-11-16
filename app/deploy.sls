@@ -4,7 +4,6 @@ include:
   - percona.percona
   - redis.redis
   - pyenv.pyenv
-  - r.r
   - sentry.sentry
   - php-fpm.php-fpm
   - nginx.nginx
