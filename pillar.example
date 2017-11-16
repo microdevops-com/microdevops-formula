@@ -360,24 +360,23 @@ app:
 
 # pkg
 pkg:
-  common: True # will install common base packages needed for states (software-properties-common, virt-what)
-  specific: # change 'specific' to 'app' to install via app/pkg.sls
-    package: # any dict name
-      pkg_installed: # list of packages to be installed
-        - package1
-        - package2
-      files_managed: # params of files.managed, - name: could be taken from dict key
-        '/etc/package1/main.conf':
-          - source: 'salt://pkg/package/main.conf'
-        '/etc/package1/secondary.conf':
-          - contents: |
-              xxx
-              yyy
-              zzz
-      cmd_run: # params of cmd.run, - name: could be taken from dict key
-        1:
-          - name: 'compile /etc/package1/main.conf'
-          - runas: 'root'
-        2:
-          - name: 'service package restart'
-          - runas: 'root'
+  some_package_group_name: # just to group to copy-paste
+    when: 'PKG_PKG' # pkg.pkg will apply that group, when: 'PKG_BEFORE_DEPLOY' - pkg.before_deploy applies, when: 'PKG_AFTER_DEPLOY' - pkg.after_deploy applies
+    pkg_installed: # list of packages to be installed
+      - package1
+      - package2
+    files_managed: # params of files.managed, - name: could be taken from dict key
+      '/etc/package1/main.conf':
+        - source: 'salt://pkg/package/main.conf'
+      '/etc/package1/secondary.conf':
+        - contents: |
+            xxx
+            yyy
+            zzz
+    cmd_run: # params of cmd.run, - name: could be taken from dict key
+      1:
+        - name: 'compile /etc/package1/main.conf'
+        - runas: 'root'
+      2:
+        - name: 'service package restart'
+        - runas: 'root'
