@@ -152,14 +152,6 @@ postgres:
       databases:
         - db1
 
-# r
-r:
-  enabled: True
-
-# postfix
-postfix:
-  enabled: True
-
 # certbot
 certbot:
   enabled: True
