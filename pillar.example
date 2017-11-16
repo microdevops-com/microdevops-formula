@@ -152,20 +152,21 @@ postgres:
       databases:
         - db1
 
-# certbot
-certbot:
-  enabled: True
-
 # nginx
 nginx:
   enabled: True
   configs: 'nginx/app_hosting'
 
 # sentry
-certbot:
-  enabled: True
-
 pkg:
+  certbot:
+    when: 'PKG_BEFORE_DEPLOY'
+    git_latest:
+      certbot:
+        - name: https://github.com/certbot/certbot
+        - target: /opt/certbot
+        - force_reset: True
+        - force_fetch: True
   supervisor:
     when: 'PKG_BEFORE_DEPLOY'
     pkg_installed:
@@ -229,8 +230,15 @@ php-fpm:
 
 # app example_php-fpm_app_1
 # php 5.6 is taken from ondrej repo
-certbot:
-  enabled: True
+pkg:
+  certbot:
+    when: 'PKG_BEFORE_DEPLOY'
+    git_latest:
+      certbot:
+        - name: https://github.com/certbot/certbot
+        - target: /opt/certbot
+        - force_reset: True
+        - force_fetch: True
 
 nginx:
   enabled: True

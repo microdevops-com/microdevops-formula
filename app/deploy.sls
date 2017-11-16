@@ -7,7 +7,6 @@ include:
   - sentry.sentry
   - php-fpm.php-fpm
   - nginx.nginx
-  - certbot.certbot
   - app.php-fpm_apps
   - app.local
   - pkg.after_deploy
