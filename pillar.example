@@ -161,16 +161,15 @@ nginx:
   enabled: True
   configs: 'nginx/app_hosting'
 
-# supervisor
-supervisor:
-  enabled: True
-
 # sentry
 certbot:
   enabled: True
 
-supervisor:
-  enabled: True
+pkg:
+  supervisor:
+    when: 'PKG_BEFORE_DEPLOY'
+    pkg_installed:
+      - supervisor
 
 pyenv:
   enabled: True
@@ -372,3 +371,17 @@ pkg:
       2:
         - name: 'service package restart'
         - runas: 'root'
+  postfix: # change exim to postfix for debian example
+    when: 'PKG_PKG'
+    pkg_installed:
+      - postfix
+      - bsd-mailx
+      - heirloom-mailx
+    pkg_purged:
+      - exim4
+      - exim4-base
+      - exim4-config
+      - exim4-daemon-light
+    cmd_run:
+      'dpkg --purge exim4 exim4-base exim4-config exim4-daemon-light':
+        - runas: root

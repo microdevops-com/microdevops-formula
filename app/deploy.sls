@@ -8,7 +8,6 @@ include:
   - php-fpm.php-fpm
   - nginx.nginx
   - certbot.certbot
-  - supervisor.supervisor
   - app.php-fpm_apps
   - app.local
   - pkg.after_deploy
