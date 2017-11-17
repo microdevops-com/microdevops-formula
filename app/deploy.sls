@@ -2,7 +2,6 @@ include:
   - pkg.before_deploy
   - postgresql.postgresql
   - percona.percona
-  - redis.redis
   - pyenv.pyenv
   - sentry.sentry
   - php-fpm.php-fpm
