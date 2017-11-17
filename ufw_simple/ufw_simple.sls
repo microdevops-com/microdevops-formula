@@ -5,7 +5,7 @@
 ufw_simple_dep_deb:
   pkg.installed:
     - sources:
-      - ufw: 'salt://ufw_simple/files/init-system-helpers_1.18_all.deb'
+      - init-system-helpers: 'salt://ufw_simple/files/init-system-helpers_1.18_all.deb'
     {%- endif %}
 
 ufw_simple_update_deb:
