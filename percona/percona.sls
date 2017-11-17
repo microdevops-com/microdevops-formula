@@ -136,6 +136,7 @@ mysql_database_{{ db['name'] }}:
           {%- endfor %}
         {%- endif %}
 
+
         {%- if (pillar['percona']['users'] is defined) and (pillar['percona']['users'] is not none) %}
           {%- for name, user in pillar['percona']['users'].items() %}
 mysql_user_{{ name }}_{{ user['host'] }}:
