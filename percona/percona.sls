@@ -122,11 +122,13 @@ percona_delete_privileges_database_test:
         {%- endif %}
 
         {%- if (pillar['percona']['databases'] is defined) and (pillar['percona']['databases'] is not none) %}
-          {%- for name in pillar['percona']['databases'] %}
-mysql_database_{{ name }}:
+          {%- for db in pillar['percona']['databases'] %}
+mysql_database_{{ db['name'] }}:
   mysql_database.present:
-    - name: {{ name }}
+    - name: {{ db['name'] }}
     - connection_user: root
+    - character_set: {{ db['character_set']|default('utf8mb4') }}
+    - collate: {{ db['collate']|default('utf8mb4_unicode_ci') }}
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
       - pkg: mysql_python_dep

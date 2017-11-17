@@ -126,7 +126,9 @@ percona:
   version: 5.6
   root_password: 'cooldnpassword'
   databases:
-    - db
+    - name: db
+      character_set: utf8mb4 # optional, utf8mb4 is used by default
+      collate: utf8mb4_unicode_ci # optional, utf8mb4_unicode_ci is used by default
   users:
     db:
       host: localhost
