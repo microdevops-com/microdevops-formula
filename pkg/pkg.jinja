@@ -1,15 +1,17 @@
 {% if (pillar['pkg'] is defined) and (pillar['pkg'] is not none) %}
   {%- for pkg_key, pkg_val in pillar['pkg'].items()|sort %}
     {%- if (pkg_val['when'] is defined) and (pkg_val['when'] is not none) and (PKG_WHEN is defined) and (PKG_WHEN is not none) and (pkg_val['when'] == PKG_WHEN) %}
-      {%- for state in pkg_val['states']|sort %}
-        {%- for s_key, s_val in pkg_val['states'][state].items()|sort %}
-pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ state }}_{{ s_key }}:
-  {{ state }}:
-          {%- if not ((s_val['name'] is defined) and (s_val['name'] is not none)) %}
-    - name: {{ s_key }}
-          {%- endif %}
-{{ s_val|yaml(False)|indent(width=4,indentfirst=True) }}
+      {%- for state in pkg_val['states'] %}
+        {%- for s_key, s_val in state.items() %}
+          {%- for ss_key, ss_val in s_val.items()|sort %}
+pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}:
+  {{ s_key }}:
+            {%- if not ((ss_val['name'] is defined) and (ss_val['name'] is not none)) %}
+    - name: {{ ss_key }}
+            {%- endif %}
+{{ ss_val|yaml(False)|indent(width=4,indentfirst=True) }}
 
+          {% endfor %}
         {% endfor %}
       {% endfor %}
     {%- endif %}
