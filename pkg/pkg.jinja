@@ -2,6 +2,7 @@
   {%- for pkg_key, pkg_val in pillar['pkg'].items()|sort %}
     {%- set out_loop = loop %}
     {%- if (pkg_val['when'] is defined) and (pkg_val['when'] is not none) and (PKG_WHEN is defined) and (PKG_WHEN is not none) and (pkg_val['when'] == PKG_WHEN) %}
+
       {%- if (pkg_val['pkg_installed'] is defined) and (pkg_val['pkg_installed'] is not none) %}
 pkg_installed_{{ PKG_WHEN }}_{{ loop.index }}:
   pkg.installed:
@@ -9,6 +10,7 @@ pkg_installed_{{ PKG_WHEN }}_{{ loop.index }}:
         {{ pkg_val['pkg_installed'] }}
 
       {%- endif %}
+
       {%- if (pkg_val['pkg_purged'] is defined) and (pkg_val['pkg_purged'] is not none) %}
 pkg_purged_{{ PKG_WHEN }}_{{ loop.index }}:
   pkg.purged:
@@ -16,9 +18,10 @@ pkg_purged_{{ PKG_WHEN }}_{{ loop.index }}:
         {{ pkg_val['pkg_purged'] }}
 
       {%- endif %}
-      {%- if (pkg_val['files_managed'] is defined) and (pkg_val['files_managed'] is not none) %}
-        {%- for fm_key, fm_val in pkg_val['files_managed'].items()|sort %}
-pkg_files_managed_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
+
+      {%- if (pkg_val['file_managed'] is defined) and (pkg_val['file_managed'] is not none) %}
+        {%- for fm_key, fm_val in pkg_val['file_managed'].items()|sort %}
+pkg_file_managed_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
   file.managed:
           {%- if not ((fm_val['name'] is defined) and (fm_val['name'] is not none)) %}
     - name: {{ fm_key }}
@@ -27,6 +30,19 @@ pkg_files_managed_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
 
         {% endfor %}
       {%- endif %}
+
+      {%- if (pkg_val['file_directory'] is defined) and (pkg_val['file_directory'] is not none) %}
+        {%- for fd_key, fd_val in pkg_val['file_directory'].items()|sort %}
+pkg_file_directory_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
+  file.directory:
+          {%- if not ((fd_val['name'] is defined) and (fd_val['name'] is not none)) %}
+    - name: {{ fd_key }}
+          {%- endif %}
+{{ fd_val|yaml(False)|indent(width=4,indentfirst=True) }}
+
+        {% endfor %}
+      {%- endif %}
+
       {%- if (pkg_val['git_latest'] is defined) and (pkg_val['git_latest'] is not none) %}
         {%- for gl_key, gl_val in pkg_val['git_latest'].items()|sort %}
 pkg_git_latest_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
@@ -38,6 +54,7 @@ pkg_git_latest_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
 
         {% endfor %}
       {%- endif %}
+
       {%- if (pkg_val['cmd_run'] is defined) and (pkg_val['cmd_run'] is not none) %}
         {%- for cr_key, cr_val in pkg_val['cmd_run'].items()|sort %}
 pkg_cmd_run_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
@@ -49,6 +66,7 @@ pkg_cmd_run_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
 
         {% endfor %}
       {%- endif %}
+
     {%- endif %}
   {%- endfor %}
 {% endif %}

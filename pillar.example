@@ -366,7 +366,7 @@ pkg:
     pkg_installed: # list of packages to be installed
       - package1
       - package2
-    files_managed: # params of files.managed, - name: could be taken from dict key
+    file_managed: # params of files.managed, - name: could be taken from dict key
       '/etc/package1/main.conf':
         - source: 'salt://pkg/package/main.conf'
       '/etc/package1/secondary.conf':
@@ -374,6 +374,9 @@ pkg:
             xxx
             yyy
             zzz
+    file_directory:
+      '/var/www/.well-known/':
+        - makedirs: True
     cmd_run: # params of cmd.run, - name: could be taken from dict key
       1:
         - name: 'compile /etc/package1/main.conf'
