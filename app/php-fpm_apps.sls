@@ -429,8 +429,6 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
 
       {%- endif %}
     {%- endfor %}
-  {%- endif %}
-{%- endif %}
 
 php-fpm_apps_info_warning:
   test.configurable_test_state:
@@ -451,3 +449,5 @@ php-fpm_apps_info_warning:
         WARNING: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
         NOTICE:  You can run only one app with pillar:
         NOTICE:  state.apply ... pillar='{"app_only_one": "<app_name>"}'
+  {%- endif %}
+{%- endif %}
