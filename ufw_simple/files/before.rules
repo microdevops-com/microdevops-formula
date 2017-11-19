@@ -18,6 +18,9 @@
 # flush previous rules
 -F
 
+# redirect
+{{ redirect }}
+
 # port forwardings
 {{ dnat }}
 

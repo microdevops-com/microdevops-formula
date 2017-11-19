@@ -76,6 +76,14 @@ ufw_simple:
         to: '192.168.0.2:80'
         proto: 'tcp'
         in: 'br0'
+    redirect:
+      rule_1:
+        dport: '5555'
+        src: '11.22.33.44' # optional
+        dst: '11.22.33.44' # optional
+        to_ports: '6666'
+        proto: 'tcp'
+        in: 'br0'
   allow:
     rule_1:
       proto: 'tcp'

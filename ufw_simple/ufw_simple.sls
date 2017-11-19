@@ -83,6 +83,25 @@ ufw_simple_nat_managed_file_3:
       {%- else %}
         dnat: '# empty'
       {%- endif %}
+      {%- if (pillar['ufw_simple']['nat']['redirect'] is defined) and (pillar['ufw_simple']['nat']['redirect'] is not none) %}
+        redirect: |
+        {%- for r_key, r_val in pillar['ufw_simple']['nat']['redirect'].items()|sort %}
+          # {{ r_key }}
+          {%- if (r_val['src'] is defined) and (r_val['src'] is not none) %}
+            {%- set src_block = '--src ' ~ r_val['src'] %}
+          {%- else %}
+            {%- set src_block = ' ' %}
+          {%- endif %}
+          {%- if (r_val['dst'] is defined) and (r_val['dst'] is not none) %}
+            {%- set dst_block = '--dst ' ~ r_val['dst'] %}
+          {%- else %}
+            {%- set dst_block = ' ' %}
+          {%- endif %}
+          -A PREROUTING -i {{ r_val['in'] }} {{ src_block }} {{ dst_block }} -p {{ r_val['proto'] }} --dport {{ r_val['dport'] }} -j REDIRECT --to-ports {{ r_val['to_ports'] }}
+        {%- endfor %}
+      {%- else %}
+        redirect: '# empty'
+      {%- endif %}
 
 ufw_simple_nat_managed_restart:
   cmd.run:
