@@ -3,6 +3,18 @@
     {%- set out_loop = loop %}
     {%- if (pkg_val['when'] is defined) and (pkg_val['when'] is not none) and (PKG_WHEN is defined) and (PKG_WHEN is not none) and (pkg_val['when'] == PKG_WHEN) %}
 
+      {%- if (pkg_val['pkgrepo_managed'] is defined) and (pkg_val['pkgrepo_managed'] is not none) %}
+        {%- for pm_key, pm_val in pkg_val['pkgrepo_managed'].items()|sort %}
+pkg_pkgrepo_managed_{{ PKG_WHEN }}_{{ out_loop.index }}_{{ loop.index }}:
+  pkgrepo.managed:
+          {%- if not ((pm_val['name'] is defined) and (pm_val['name'] is not none)) %}
+    - name: {{ pm_key }}
+          {%- endif %}
+{{ pm_val|yaml(False)|indent(width=4,indentfirst=True) }}
+
+        {% endfor %}
+      {%- endif %}
+
       {%- if (pkg_val['pkg_installed'] is defined) and (pkg_val['pkg_installed'] is not none) %}
 pkg_installed_{{ PKG_WHEN }}_{{ loop.index }}:
   pkg.installed:
