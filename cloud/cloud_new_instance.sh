@@ -16,7 +16,7 @@ if [[ "_$1" = "_" ]]; then
 	exit
 fi
 echo "By now you should have done:" | ccze -A
-echo "- Allocate IP for the container ($MY_HN:/srv/pillar/ip/ip.jinja IP_192_168_100 array)" | ccze -A
+echo "- Allocate IPs for the container ($MY_HN:/srv/pillar/ip/*.jinja)" | ccze -A
 echo "- Add IP from which the minion will connect to salt servers ($MY_HN:/srv/pillar/ufw_simple/vars.jinja All_Servers array)" | ccze -A
 echo "- Remove any existing instances of $HN" | ccze -A
 echo "- Remove any existing additional logical volumes of $HN" | ccze -A
