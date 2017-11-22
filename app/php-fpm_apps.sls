@@ -427,6 +427,13 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
           su root adm
         }
 
+        {%- if (pillar['nginx_reload'] is defined) and (pillar['nginx_reload'] is not none) and (pillar['nginx_reload']) %}
+php-fpm_apps__nginx_reload__{{ loop.index }}:
+  cmd.run:
+    - runas: 'root'
+    - name: 'service nginx configtest && service nginx reload'
+
+        {%- endif %}
       {%- endif %}
     {%- endfor %}
 
@@ -449,5 +456,7 @@ php-fpm_apps_info_warning:
         WARNING: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
         NOTICE:  You can run only one app with pillar:
         NOTICE:  state.apply ... pillar='{"app_only_one": "<app_name>"}'
+        NOTICE:  You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
+        NOTICE:  state.apply ... pillar='{"nginx_reload": True}'
   {%- endif %}
 {%- endif %}
