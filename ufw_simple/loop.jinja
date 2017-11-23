@@ -1,3 +1,4 @@
+      {%- for item_name, item_params in pillar['ufw_simple'][item_action].items() %}
         {%- if (item_params['from'] is defined) and (item_params['from'] is not none) %}
           {%- set item_from = item_params['from'] %}
         {%- else %}
@@ -29,3 +30,4 @@ ufw_simple_{{ item_action }}_rule_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.
 
           {%- endfor %}
         {%- endfor %}
+      {%- endfor %}

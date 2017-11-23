@@ -121,45 +121,33 @@ ufw_simple_set_logging:
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['allow'] is defined) and (pillar['ufw_simple']['allow'] is not none) %}
-      {%- for item_name, item_params in pillar['ufw_simple']['allow'].items() %}
-        {%- set item_action = 'allow' %}
-        {% include 'ufw_simple/loop.jinja' with context %}
-      {%- endfor %}
+      {%- set item_action = 'allow' %}
+      {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['deny'] is defined) and (pillar['ufw_simple']['deny'] is not none) %}
-      {%- for item_name, item_params in pillar['ufw_simple']['deny'].items() %}
-        {%- set item_action = 'deny' %}
-        {% include 'ufw_simple/loop.jinja' with context %}
-      {%- endfor %}
+      {%- set item_action = 'deny' %}
+      {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['reject'] is defined) and (pillar['ufw_simple']['reject'] is not none) %}
-      {%- for item_name, item_params in pillar['ufw_simple']['reject'].items() %}
-        {%- set item_action = 'reject' %}
-        {% include 'ufw_simple/loop.jinja' with context %}
-      {%- endfor %}
+      {%- set item_action = 'reject' %}
+      {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['limit'] is defined) and (pillar['ufw_simple']['limit'] is not none) %}
-      {%- for item_name, item_params in pillar['ufw_simple']['limit'].items() %}
-        {%- set item_action = 'limit' %}
-        {% include 'ufw_simple/loop.jinja' with context %}
-      {%- endfor %}
+      {%- set item_action = 'limit' %}
+      {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['limit_in'] is defined) and (pillar['ufw_simple']['limit_in'] is not none) %}
-      {%- for item_name, item_params in pillar['ufw_simple']['limit_in'].items() %}
-        {%- set item_action = 'limit_in' %}
-        {% include 'ufw_simple/loop.jinja' with context %}
-      {%- endfor %}
+      {%- set item_action = 'limit_in' %}
+      {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['limit_out'] is defined) and (pillar['ufw_simple']['limit_out'] is not none) %}
-      {%- for item_name, item_params in pillar['ufw_simple']['limit_out'].items() %}
-        {%- set item_action = 'limit_out' %}
-        {% include 'ufw_simple/loop.jinja' with context %}
-      {%- endfor %}
+      {%- set item_action = 'limit_out' %}
+      {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
 ufw_simple_enable:
