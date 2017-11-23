@@ -85,16 +85,26 @@ ufw_simple:
         to_ports: '6666'
         proto: 'tcp'
         in: 'br0'
-  allow:
-    rule_1:
+  allow: # allow/deny/reject/limit/limit_in/limit_out
+    rule_1: # from list to list with to port
       proto: 'tcp'
       from:
         hostname_1: '1.2.3.4'
         hostname_2: '4.3.2.1'
+      to:
+        hostname_3: '2.3.4.5'
+        hostname_4: '5.4.3.2'
       to_port: '8080,8090'
-    rule_2:
+    rule_2: # from any to any with to port
       proto: 'tcp'
       to_port: '3306'
+    rule_3: # from list to list any traffic
+      from: # any if empty
+        hostname_1: '1.2.3.4'
+        hostname_2: '4.3.2.1'
+      to: # any if empty
+        hostname_3: '2.3.4.5'
+        hostname_4: '5.4.3.2'
 
 # users/unix -> users-formula/pillar.example
 

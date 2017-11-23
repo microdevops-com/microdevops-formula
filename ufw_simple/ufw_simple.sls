@@ -122,26 +122,43 @@ ufw_simple_set_logging:
 
     {%- if  (pillar['ufw_simple']['allow'] is defined) and (pillar['ufw_simple']['allow'] is not none) %}
       {%- for item_name, item_params in pillar['ufw_simple']['allow'].items() %}
-        {%- if (item_params['from'] is defined) and (item_params['from'] is not none) %}
-          {%- set item_from = item_params['from'] %}
-        {%- else %}
-          {%- set item_from = {'any': 'any'} %}
-        {%- endif %}
-        {%- if (item_params['to'] is defined) and (item_params['to'] is not none) %}
-          {%- set item_to = item_params['to'] %}
-        {%- else %}
-          {%- set item_to = {'any': 'any'} %}
-        {%- endif %}
-        {%- set i_loop = loop %}
-        {%- for i_from in item_from %}
-          {%- set j_loop = loop %}
-          {%- for i_to in item_to %}
-ufw_simple_allow_rule_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.index }}:
-  cmd.run:
-    - name: {{ 'ufw allow proto ' ~ item_params['proto'] ~ ' from ' ~ item_from[i_from] ~ ' to ' ~ item_to[i_to] ~ ' port ' ~ item_params['to_port'] ~ ' comment \'' ~ item_name ~ ' from ' ~ i_from ~ ' to ' ~ i_to ~ '\'' }}
-    - runas: root
-          {%- endfor %}
-        {%- endfor %}
+        {%- set item_action = 'allow' %}
+        {% include 'ufw_simple/loop.jinja' with context %}
+      {%- endfor %}
+    {%- endif %}
+
+    {%- if  (pillar['ufw_simple']['deny'] is defined) and (pillar['ufw_simple']['deny'] is not none) %}
+      {%- for item_name, item_params in pillar['ufw_simple']['deny'].items() %}
+        {%- set item_action = 'deny' %}
+        {% include 'ufw_simple/loop.jinja' with context %}
+      {%- endfor %}
+    {%- endif %}
+
+    {%- if  (pillar['ufw_simple']['reject'] is defined) and (pillar['ufw_simple']['reject'] is not none) %}
+      {%- for item_name, item_params in pillar['ufw_simple']['reject'].items() %}
+        {%- set item_action = 'reject' %}
+        {% include 'ufw_simple/loop.jinja' with context %}
+      {%- endfor %}
+    {%- endif %}
+
+    {%- if  (pillar['ufw_simple']['limit'] is defined) and (pillar['ufw_simple']['limit'] is not none) %}
+      {%- for item_name, item_params in pillar['ufw_simple']['limit'].items() %}
+        {%- set item_action = 'limit' %}
+        {% include 'ufw_simple/loop.jinja' with context %}
+      {%- endfor %}
+    {%- endif %}
+
+    {%- if  (pillar['ufw_simple']['limit_in'] is defined) and (pillar['ufw_simple']['limit_in'] is not none) %}
+      {%- for item_name, item_params in pillar['ufw_simple']['limit_in'].items() %}
+        {%- set item_action = 'limit_in' %}
+        {% include 'ufw_simple/loop.jinja' with context %}
+      {%- endfor %}
+    {%- endif %}
+
+    {%- if  (pillar['ufw_simple']['limit_out'] is defined) and (pillar['ufw_simple']['limit_out'] is not none) %}
+      {%- for item_name, item_params in pillar['ufw_simple']['limit_out'].items() %}
+        {%- set item_action = 'limit_out' %}
+        {% include 'ufw_simple/loop.jinja' with context %}
       {%- endfor %}
     {%- endif %}
 
