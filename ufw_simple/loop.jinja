@@ -23,7 +23,7 @@
         {%- for i_from in item_from %}
           {%- set j_loop = loop %}
           {%- for i_to in item_to %}
-ufw_simple_{{ item_action }}_rule_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.index }}:
+ufw_simple_{{ item_delete }}_{{ item_action }}_rule_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.index }}:
   cmd.run:
     - name: {{ 'ufw ' ~ item_delete ~ ' ' ~ item_action ~ ' ' ~ item_proto ~ ' from ' ~ item_from[i_from] ~ ' to ' ~ item_to[i_to] ~ ' ' ~ item_to_port ~ ' comment \'' ~ item_name ~ ' from ' ~ i_from ~ ' to ' ~ i_to ~ '\'' }}
     - runas: root

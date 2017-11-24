@@ -122,42 +122,42 @@ ufw_simple_set_logging:
 
     {%- if  (pillar['ufw_simple']['allow'] is defined) and (pillar['ufw_simple']['allow'] is not none) %}
       {%- set item_action = 'allow' %}
-      {%- set item_delete = ' ' %}
+      {%- set item_delete = '' %}
       {%- set pillar_context = pillar['ufw_simple']['allow'] %}
       {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['deny'] is defined) and (pillar['ufw_simple']['deny'] is not none) %}
       {%- set item_action = 'deny' %}
-      {%- set item_delete = ' ' %}
+      {%- set item_delete = '' %}
       {%- set pillar_context = pillar['ufw_simple']['deny'] %}
       {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['reject'] is defined) and (pillar['ufw_simple']['reject'] is not none) %}
       {%- set item_action = 'reject' %}
-      {%- set item_delete = ' ' %}
+      {%- set item_delete = '' %}
       {%- set pillar_context = pillar['ufw_simple']['reject'] %}
       {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['limit'] is defined) and (pillar['ufw_simple']['limit'] is not none) %}
       {%- set item_action = 'limit' %}
-      {%- set item_delete = ' ' %}
+      {%- set item_delete = '' %}
       {%- set pillar_context = pillar['ufw_simple']['limit'] %}
       {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['limit_in'] is defined) and (pillar['ufw_simple']['limit_in'] is not none) %}
       {%- set item_action = 'limit_in' %}
-      {%- set item_delete = ' ' %}
+      {%- set item_delete = '' %}
       {%- set pillar_context = pillar['ufw_simple']['limit_in'] %}
       {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
 
     {%- if  (pillar['ufw_simple']['limit_out'] is defined) and (pillar['ufw_simple']['limit_out'] is not none) %}
       {%- set item_action = 'limit_out' %}
-      {%- set item_delete = ' ' %}
+      {%- set item_delete = '' %}
       {%- set pillar_context = pillar['ufw_simple']['limit_out'] %}
       {% include 'ufw_simple/loop.jinja' with context %}
     {%- endif %}
