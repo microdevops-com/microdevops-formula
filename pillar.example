@@ -105,6 +105,11 @@ ufw_simple:
       to: # any if empty
         hostname_3: '2.3.4.5'
         hostname_4: '5.4.3.2'
+  delete:
+    allow:
+      rule_2: # from any to any with to port
+        proto: 'tcp'
+        to_port: '3306'
 
 # users/unix -> users-formula/pillar.example
 

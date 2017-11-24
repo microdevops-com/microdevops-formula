@@ -1,4 +1,4 @@
-      {%- for item_name, item_params in pillar['ufw_simple'][item_action].items() %}
+      {%- for item_name, item_params in pillar_context.items() %}
         {%- if (item_params['from'] is defined) and (item_params['from'] is not none) %}
           {%- set item_from = item_params['from'] %}
         {%- else %}
@@ -25,7 +25,7 @@
           {%- for i_to in item_to %}
 ufw_simple_{{ item_action }}_rule_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: {{ 'ufw ' ~ item_action ~ ' ' ~ item_proto ~ ' from ' ~ item_from[i_from] ~ ' to ' ~ item_to[i_to] ~ ' ' ~ item_to_port ~ ' comment \'' ~ item_name ~ ' from ' ~ i_from ~ ' to ' ~ i_to ~ '\'' }}
+    - name: {{ 'ufw ' ~ item_delete ~ ' ' ~ item_action ~ ' ' ~ item_proto ~ ' from ' ~ item_from[i_from] ~ ' to ' ~ item_to[i_to] ~ ' ' ~ item_to_port ~ ' comment \'' ~ item_name ~ ' from ' ~ i_from ~ ' to ' ~ i_to ~ '\'' }}
     - runas: root
 
           {%- endfor %}
