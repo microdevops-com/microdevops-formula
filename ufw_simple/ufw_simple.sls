@@ -1,6 +1,41 @@
 {% if (pillar['ufw_simple'] is defined) and (pillar['ufw_simple'] is not none) %}
   {%- if (pillar['ufw_simple']['enabled'] is defined) and (pillar['ufw_simple']['enabled'] is not none) and (pillar['ufw_simple']['enabled']) %}
 
+    {%- if (grains['oscodename'] == 'precise') %}
+python_snakes_repo:
+  pkgrepo.managed:
+    - name: deb http://ppa.launchpad.net/fkrull/deadsnakes/ubuntu precise main
+    - dist: precise
+    - file: /etc/apt/sources.list.d/fkrull-deadsnakes-precise.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: DB82666C
+    - refresh_db: true
+
+python_33_installed:
+  pkg.latest:
+    - pkgs:
+        - python3.3
+
+python_33_inst_alt:
+  alternatives.install:
+    - name: 'python3'
+    - link: '/usr/bin/python3'
+    - path: '/usr/bin/python3.3'
+    - priority: 30
+    - require:
+        - pkg: python_33_installed
+
+python_33_set_alt:
+  alternatives.set:
+    - name: 'python3'
+    - path: '/usr/bin/python3.3'
+
+ufw_simple_dep_deb:
+  pkg.installed:
+    - sources:
+      - init-system-helpers: 'salt://ufw_simple/files/init-system-helpers_1.18_all.deb'
+    {%- endif %}
+
     {%- if (grains['oscodename'] == 'trusty') %}
 ufw_simple_dep_deb:
   pkg.installed:
@@ -8,10 +43,17 @@ ufw_simple_dep_deb:
       - init-system-helpers: 'salt://ufw_simple/files/init-system-helpers_1.18_all.deb'
     {%- endif %}
 
+    {%- if (grains['oscodename'] == 'precise') %}
+ufw_simple_update_deb:
+  pkg.installed:
+    - sources:
+      - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all_deadsnakes.deb'
+    {%- else %}
 ufw_simple_update_deb:
   pkg.installed:
     - sources:
       - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all.deb'
+    {%- endif %}
 
     # not managed nat - to be removed
     {%- if (pillar['ufw_simple']['nat_enabled'] is defined) and (pillar['ufw_simple']['nat_enabled'] is not none) and (pillar['ufw_simple']['nat_enabled']) %}
