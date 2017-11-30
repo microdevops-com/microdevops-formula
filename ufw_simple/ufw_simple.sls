@@ -29,6 +29,8 @@ python_33_set_alt:
   alternatives.set:
     - name: 'python3'
     - path: '/usr/bin/python3.3'
+    - require:
+        - pkg: python_33_installed
 
 ufw_simple_dep_deb:
   pkg.installed:
