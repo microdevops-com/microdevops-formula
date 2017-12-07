@@ -142,8 +142,8 @@ mysql_database_{{ db['name'] }}:
 mysql_user_{{ name }}_{{ user['host'] }}:
   mysql_user.present:
     - name: {{ name }}
-    - host: {{ user['host'] }}
-    - password: {{ user['password'] }}
+    - host: '{{ user["host"] }}'
+    - password: '{{ user["password"] }}'
     - connection_user: root
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
@@ -155,7 +155,7 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
     - grant: '{{db['grant']|join(",")}}'
     - database: '{{ db['database'] }}.*'
     - user: {{ name }}
-    - host: {{ user['host'] }}
+    - host: '{{ user["host"] }}'
     - connection_user: root
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - grant_option: {{ db['grant_option']|default(False) }}
