@@ -8,8 +8,10 @@ percona_repo_deb:
     {%- if (pillar['percona']['version'] is defined) and (pillar['percona']['version'] is not none) %}
 percona_client:
   pkg.installed:
-    - name: percona-server-client-{{ pillar['percona']['version'] }}
     - refresh: True
+    - pkgs:
+        - libmysqlclient-dev
+        - percona-server-client-{{ pillar['percona']['version'] }}
 
 percona_config_dir:
   file.directory:
