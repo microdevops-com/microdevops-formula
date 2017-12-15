@@ -7,5 +7,6 @@ include:
   - php-fpm.php-fpm
   - nginx.nginx
   - app.php-fpm_apps
+  - app.python_apps
   - app.local
   - pkg.after_deploy
