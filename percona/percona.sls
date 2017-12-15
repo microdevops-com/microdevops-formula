@@ -175,6 +175,25 @@ percona_create_post_install_toolkit_functions:
     - require:
       - pkg: mysql_python_dep
       - service: percona_svc
+        {%- else %}
+percona_debian_conf:
+  file.managed:
+    - name: '/etc/mysql/debian.cnf'
+    - user: 'root'
+    - group: 'root'
+    - mode: '0600'
+    - contents: |
+        [client]
+        host     = localhost
+        user     = root
+        password = {{ pillar['percona']['root_password'] }}
+        socket   = /var/run/mysqld/mysqld.sock
+        [mysql_upgrade]
+        host     = localhost
+        user     = root
+        password = {{ pillar['percona']['root_password'] }}
+        socket   = /var/run/mysqld/mysqld.sock
+        basedir  = /usr
         {%- endif %}
 
       {%- endif %}
