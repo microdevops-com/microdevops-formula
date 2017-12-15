@@ -165,7 +165,7 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
           {%- endfor %}
         {%- endif %}
 
-        {%- if (pillar['percona']['version'] != '5.7') %}
+        {%- if ((pillar['percona']['version'] != '5.7') and (pillar['percona']['version'] != 5.7)) %}
 percona_create_post_install_toolkit_functions:
     mysql_query.run:
     - database: mysql
