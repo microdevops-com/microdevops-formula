@@ -86,6 +86,7 @@ python_apps_user_ssh_auth_keys_{{ loop.index }}:
                (app_params['source']['rev'] is defined) and (app_params['source']['rev'] is not none) and
                (app_params['source']['target'] is defined) and (app_params['source']['target'] is not none)
         %}
+
           {%- if
                  (app_params['source']['repo_key'] is defined) and (app_params['source']['repo_key'] is not none) and
                  (app_params['source']['repo_key_pub'] is defined) and (app_params['source']['repo_key_pub'] is not none)
