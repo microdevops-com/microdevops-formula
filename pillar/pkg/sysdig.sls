@@ -10,5 +10,6 @@ pkg:
             - key_url: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
       - pkg.latest:
           1:
+            - refresh: True
             - pkgs:
               - sysdig
