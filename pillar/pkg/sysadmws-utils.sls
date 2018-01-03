@@ -10,7 +10,7 @@ pkg:
             - keyserver: keyserver.ubuntu.com
       - pkg.latest:
           1:
-            - refresh: true
+            - refresh: True
             - pkgs:
                 - sysadmws-utils
       - file.managed:
