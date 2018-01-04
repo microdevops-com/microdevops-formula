@@ -16,3 +16,7 @@ pkg:
       - file.managed:
           '/opt/sysadmws-utils/notify_devilry/notify_devilry.yaml.jinja':
             - source: 'salt://pkg/files/sysadmws-utils/notify_devilry.yaml.jinja'
+      - module.run:
+          1:
+            - name: state.sls
+            - mods: disk_alert.disk_alert
