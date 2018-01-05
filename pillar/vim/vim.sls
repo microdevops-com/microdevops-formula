@@ -4,6 +4,7 @@ vim:
   config:
     syntax: 'on'
     colors: koehler
+    filetype: indent plugin on
   settings:
     hlsearch:
     nocompatible:
