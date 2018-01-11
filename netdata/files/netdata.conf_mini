@@ -13,3 +13,4 @@
 	enabled = yes
 [web]
 	mode = none
+{{ container_block }}

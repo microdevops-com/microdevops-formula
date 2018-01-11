@@ -6,7 +6,7 @@
     {%- set netdata_registry = pillar['netdata']['registry'] %}
     {%- set netdata_api_key = pillar['netdata']['api_key'] %}
     {%- set netdata_central_server = pillar['netdata']['central_server'] %}
-    {%- set netdata_central = pillar['netdata'].get('server', False) %}
+    {%- set netdata_central = pillar['netdata'].get('central', False) %}
     {%- set netdata_container = pillar['netdata'].get('container', False) %}
     {%- set netdata_mini = pillar['netdata'].get('mini', False) %}
     {%- set netdata_fpinger = pillar['netdata'].get('fpinger', False) %}
@@ -128,7 +128,7 @@ netdata_install_run:
       {%- endif %}
     {%- endif %}
 
-netdata_config_health_alarm_central:
+netdata_config_health_alarm:
   file.managed:
     - name: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
     {%- if netdata_central %}
@@ -143,8 +143,6 @@ netdata_config_netdata:
     - name: '/opt/netdata/etc/netdata/netdata.conf'
     {%- if netdata_central %}
     - source: 'salt://netdata/files/netdata.conf_central'
-    {%- elif netdata_container %}
-    - source: 'salt://netdata/files/netdata.conf_container'
     {%- elif netdata_mini %}
     - source: 'salt://netdata/files/netdata.conf_mini'
     {%- else %}
@@ -156,6 +154,14 @@ netdata_config_netdata:
         host_name: {{ hostname_under }}
         history_seconds: {{ netdata_seconds }}
         registry_server: {{ netdata_registry }}
+    {%- if netdata_container %}
+        container_block: |
+[plugins]                                                                                                                                                                                                                                    
+        cgroups = no                                                                                                                                                                                                                         
+        proc = no
+    {%- else %}
+        container_block: ''
+    {%- endif %}
 
     {%- if netdata_container %}
 netdata_config_pythond:
