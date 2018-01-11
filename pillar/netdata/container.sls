@@ -1,0 +1,2 @@
+netdata:
+  container: True

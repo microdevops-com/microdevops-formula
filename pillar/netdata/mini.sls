@@ -1,0 +1,2 @@
+netdata:
+  mini: True
