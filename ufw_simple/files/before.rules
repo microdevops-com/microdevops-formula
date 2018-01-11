@@ -23,6 +23,7 @@
 
 # port forwardings
 {{ dnat }}
+{{ snat }}
 
 # nat to the internet
 {{ masquerade }}

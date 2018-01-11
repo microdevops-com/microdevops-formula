@@ -127,6 +127,20 @@ ufw_simple_nat_managed_file_3:
       {%- else %}
         dnat: '# empty'
       {%- endif %}
+      {%- if (pillar['ufw_simple']['nat']['snat'] is defined) and (pillar['ufw_simple']['nat']['snat'] is not none) %}
+        snat: |
+        {%- for s_key, s_val in pillar['ufw_simple']['nat']['snat'].items()|sort %}
+          # {{ s_key }}
+          {%- if (s_val['from'] is defined) and (s_val['from'] is not none) %}
+            {%- set src_block = '-s ' ~ s_val['from'] %}
+          {%- else %}
+            {%- set src_block = ' ' %}
+          {%- endif %}
+          -A POSTROUTING -o {{ s_val['out'] }} {{ src_block }} -p {{ s_val['proto'] }} --dport {{ s_val['dport'] }} -j SNAT --to {{ s_val['to'] }}
+        {%- endfor %}
+      {%- else %}
+        snat: '# empty'
+      {%- endif %}
       {%- if (pillar['ufw_simple']['nat']['redirect'] is defined) and (pillar['ufw_simple']['nat']['redirect'] is not none) %}
         redirect: |
         {%- for r_key, r_val in pillar['ufw_simple']['nat']['redirect'].items()|sort %}
