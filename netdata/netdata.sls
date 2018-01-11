@@ -307,7 +307,9 @@ netdata_service_running:
     - watch:
       - file: '/opt/netdata/etc/netdata/netdata.conf'
       - file: '/opt/netdata/etc/netdata/stream.conf'
+    {%- if netdata_fpinger %}
       - file: '/opt/netdata/etc/netdata/fping.conf'
+    {%- endif %}
       - file: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
     {%- if netdata_container %}
       - file: '/opt/netdata/etc/netdata/python.d.conf'
