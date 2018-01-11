@@ -62,9 +62,7 @@ netdata_depencies_installed:
       - git
     {%- endif %}
 
-    {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
-      {%- if not netdata_container %}
-        {%- if grains['virtual'] != "kvm" %}
+    {%- if grains['os'] in ['Ubuntu', 'Debian'] and not netdata_container and grains['virtual'] != "kvm" %}
 # Install depencies for bare metal hosts
 hddtemp:
   pkg:
@@ -97,8 +95,14 @@ smartmontools:
     - source: 'salt://netdata/files/deps/smartmontools'
     - require:
       - pkg: smartmontools
-        {%- endif %}
-      {%- endif %}
+
+netdata_dir_smartd:
+  file.directory:
+    - name: /var/log/smartd
+    - user: root
+    - group: root
+    - mode: 755
+    - makedirs: True
     {%- endif %}
 
 # Install netdata
@@ -123,11 +127,6 @@ netdata_install_run:
     - name: ./netdata-installer.sh --dont-wait --install /opt && service netdata stop
       {%- endif %}
     {%- endif %}
-
-
-
-
-
 
 netdata_config_health_alarm_central:
   file.managed:
@@ -181,21 +180,27 @@ netdata_config_stream_central:
         default_history: {{ netdata_seconds }}
         central_server: {{ netdata_central_server }}
 
+    # Check postgres and configure agent if exists
+    {%- if (grains['roles'] is defined) and ('postgresql' in grains['roles']) %}
+      {%- set post_pass = salt['cmd.shell']("grep postgres.pass /etc/salt/minion | sed -e 's/^postgres.pass: .\\(.*\\)./\\1/'") %}
+netdata_config_postgresql:
+  file.managed:
+    - name: '/opt/netdata/etc/netdata/python.d/postgres.conf'
+    - source: 'salt://netdata/files/deps/postgres.conf'
+    - mode: 0660
+    - template: jinja
+    - defaults:
+        postgresql_pass: {{ post_pass }}
+    {%- endif %}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    {%- if grains['os'] in ['Ubuntu', 'Debian'] and not netdata_container and grains['virtual'] != "kvm" %}
+netdata_config_smartd:
+  file.managed:
+    - name: '/opt/netdata/etc/netdata/python.d/smartd_log.conf'
+    - source: 'salt://netdata/files/deps/smartd_log.conf'
+    - mode: 0660
+    {%- endif %}
+    
     {%- if netdata_fpinger %}
 # Netdata needs its own modified fping, should be run after netdata install
 netdata_depencies_fping:
@@ -212,52 +217,8 @@ netdata_config_fping:
     - defaults:
         fping_hosts: {{ netdata_fpinger_hosts }}
     {%- endif %}
-
-  {%- endif %}
-{% endif %}
-
-
-
-
-
-{#
-
-
-
-
-
-
-  {%- if (grains['roles'] is defined) and ('postgresql' in grains['roles']) %}
-    {%- set post_pass = salt['cmd.shell']("grep postgres.pass /etc/salt/minion | sed -e 's/^postgres.pass: .\\(.*\\)./\\1/'") %}
-netdata_config_postgresql:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/python.d/postgres.conf'
-    - source: 'salt://netdata/files/deps/postgres.conf'
-    - mode: 0660
-    - template: jinja
-    - defaults:
-        postgresql_pass: {{ post_pass }}
-  {%- endif %}
-
-  {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
-    {%- if not netdata_container %}
-netdata_dir_smartd:
-  file.directory:
-    - name: /var/log/smartd
-    - user: root
-    - group: root
-    - mode: 755
-    - makedirs: True
-
-netdata_config_smartd:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/python.d/smartd_log.conf'
-    - source: 'salt://netdata/files/deps/smartd_log.conf'
-    - mode: 0660
-    {%- endif %}
-  {%- endif %}
-
-  # Custom alarms
+  
+  # Custom fping alarms (higher thresholds), maybe /custom/ location doesn't work, need to check
 netdata_dir_custom_health:
   file.directory:
     - name: /opt/netdata/etc/netdata/health.d/custom
@@ -268,7 +229,7 @@ netdata_dir_custom_health:
 
 netdata_config_custom_fping:
   file.managed:
-    - name: '/opt/netdata/etc/netdata/health.d/fping.conf'
+    - name: '/opt/netdata/etc/netdata/health.d/custom/fping.conf'
     - source: 'salt://netdata/files/alarms/fping.conf'
     - mode: 0664
 
@@ -277,12 +238,15 @@ netdata_config_custom_fping_reload:
     - cwd: /root
     - name: 'killall -USR2 netdata; true'
     - onchanges:
-      - file: '/opt/netdata/etc/netdata/health.d/fping.conf'
+      - file: '/opt/netdata/etc/netdata/health.d/custom/fping.conf'
 
-  {%- if (pillar['monitoring'] is defined) and (pillar['monitoring'] is not none) %}
-    {%- if (pillar['monitoring']['high_load_disks'] is defined) and (pillar['monitoring']['high_load_disks'] is not none) %}
-      {%- for server_disk in pillar['monitoring']['high_load_disks']|sort %}
-        {%- if (pillar['monitoring']['high_load_disks'][server_disk]['alarm_minutes'] is defined) and (pillar['monitoring']['high_load_disks'][server_disk]['alarm_minutes'] is not none) %}
+    # Custom configs for monitoring
+
+    # Custom thresholds for high load disks
+    {%- if (pillar['monitoring'] is defined) and (pillar['monitoring'] is not none) %}
+      {%- if (pillar['monitoring']['high_load_disks'] is defined) and (pillar['monitoring']['high_load_disks'] is not none) %}
+        {%- for server_disk in pillar['monitoring']['high_load_disks']|sort %}
+          {%- if (pillar['monitoring']['high_load_disks'][server_disk]['alarm_minutes'] is defined) and (pillar['monitoring']['high_load_disks'][server_disk]['alarm_minutes'] is not none) %}
 netdata_config_custom_high_load_disks_{{ loop.index }}:
   file.managed:
     - name: '/opt/netdata/etc/netdata/health.d/custom/disk_{{ loop.index }}.conf'
@@ -299,11 +263,12 @@ netdata_config_custom_high_load_disks_reload_{{ loop.index }}:
     - name: 'killall -USR2 netdata'
     - onchanges:
       - file: '/opt/netdata/etc/netdata/health.d/custom/disk_{{ loop.index }}.conf'
+          {%- endif %}
+        {%- endfor %}
+      {%- endif %}
 
-        {%- endif %}
-      {%- endfor %}
-    {%- endif %}
-    {%- if (pillar['monitoring']['ipmi_events_ok'] is defined) and (pillar['monitoring']['ipmi_events_ok'] is not none) %}
+      # Ipmi workarounds
+      {%- if (pillar['monitoring']['ipmi_events_ok'] is defined) and (pillar['monitoring']['ipmi_events_ok'] is not none) %}
 netdata_config_custom_ipmi_events_ok:
   file.managed:
     - name: '/opt/netdata/etc/netdata/health.d/ipmi.conf'
@@ -319,23 +284,23 @@ netdata_config_custom_pmi_events_ok_reload:
     - name: 'killall -USR2 netdata'
     - onchanges:
       - file: '/opt/netdata/etc/netdata/health.d/ipmi.conf'
-
+      {%- endif %}
     {%- endif %}
-  {%- endif %}
 
+# Netdata service enable
 netdata_start_script_file:
   file.managed:
-  {%- if grains['init'] == 'systemd' %}
+    {%- if grains['init'] == 'systemd' %}
     - name: '/etc/systemd/system/netdata.service'
     - source: '/opt/netdata/git/system/netdata.service'
     - mode: 0644
-  {%- elif grains['init'] in ['upstart','sysvinit'] %}
+    {%- elif grains['init'] in ['upstart','sysvinit'] %}
     - name: '/etc/init.d/netdata'
     - source: '/opt/netdata/git/system/netdata-lsb'
     - mode: 0755
-  {%- else %}
+    {%- else %}
     'do not know which script to use'
-  {%- endif %}
+    {%- endif %}
 
 netdata_service_running:
   service.running:
@@ -344,19 +309,17 @@ netdata_service_running:
       - file: '/opt/netdata/etc/netdata/stream.conf'
       - file: '/opt/netdata/etc/netdata/fping.conf'
       - file: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
-  {%- if netdata_container %}
+    {%- if netdata_container %}
       - file: '/opt/netdata/etc/netdata/python.d.conf'
-  {%- endif %}
-  {%- if (grains['roles'] is defined) and ('postgresql' in grains['roles']) %}
+    {%- endif %}
+    {%- if (grains['roles'] is defined) and ('postgresql' in grains['roles']) %}
       - file: '/opt/netdata/etc/netdata/python.d/postgres.conf'
-  {%- endif %}
-  {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
-    {%- if not netdata_container %}
+    {%- endif %}
+    {%- if grains['os'] in ['Ubuntu', 'Debian'] and not netdata_container and grains['virtual'] != "kvm" %}
       - file: '/opt/netdata/etc/netdata/python.d/smartd_log.conf'
     {%- endif %}
-  {%- endif %}
     - name: netdata
     - enable: True
 
+  {%- endif %}
 {% endif %}
-#}
