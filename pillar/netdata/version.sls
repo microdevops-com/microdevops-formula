@@ -1,2 +1,2 @@
 netdata:
-  version: '488c9ab42ad01cb3ced008d762c62183d4d8fde9'
+  version: '092f260d7ea1256d2802dc49ed6f71004a2029af'
