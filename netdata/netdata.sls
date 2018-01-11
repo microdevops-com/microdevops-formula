@@ -156,9 +156,9 @@ netdata_config_netdata:
         registry_server: {{ netdata_registry }}
     {%- if netdata_container %}
         container_block: |
-[plugins]                                                                                                                                                                                                                                    
-        cgroups = no                                                                                                                                                                                                                         
-        proc = no
+          [plugins]
+          	cgroups = no
+          	proc = no
     {%- else %}
         container_block: ''
     {%- endif %}
