@@ -4,7 +4,7 @@
     {%- set netdata_seconds = pillar['netdata']['seconds'] %}
     {%- set netdata_version = pillar['netdata']['version'] %}
     {%- set netdata_registry = pillar['netdata']['registry'] %}
-    {%- set netdata_netdata_api_key = pillar['netdata']['api_key'] %}
+    {%- set netdata_api_key = pillar['netdata']['api_key'] %}
     {%- set netdata_central_server = pillar['netdata']['central_server'] %}
     {%- set netdata_central = pillar['netdata'].get('server', False) %}
     {%- set netdata_container = pillar['netdata'].get('container', False) %}
