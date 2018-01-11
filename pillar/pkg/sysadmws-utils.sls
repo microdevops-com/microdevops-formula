@@ -36,7 +36,7 @@ pkg:
             - name: 'rm -f /root/sysadmws-utils.tar.gz'
             - runas: 'root'
           2:
-            - name: 'cd /root && wget --no-check-certificate https://github.com/sysadmws/sysadmws-utils/raw/master/tgz/sysadmws-utils.tar.gz'
+            - name: 'cd /root && wget --no-check-certificate https://repo.sysadm.ws/tgz/sysadmws-utils.tar.gz'
             - runas: 'root'
           3:
             - name: 'tar zxf /root/sysadmws-utils.tar.gz -C /'
@@ -50,6 +50,7 @@ pkg:
       - file.managed:
           '/opt/sysadmws-utils/notify_devilry/notify_devilry.yaml.jinja':
             - source: 'salt://pkg/files/sysadmws-utils/notify_devilry.yaml.jinja'
+            - mode: 0600
       - module.run:
           1:
             - name: state.sls
