@@ -59,12 +59,6 @@ netdata_depencies_installed:
       - git
     {%- endif %}
 
-# Netdata needs its own modified fping
-netdata_depencies_fping:
-  cmd.run:
-    - cwd: /root
-    - name: '[ ! -x /usr/local/bin/fping ] && /opt/netdata/usr/libexec/netdata/plugins.d/fping.plugin install; true'
-
     {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
       {%- if not netdata_container  %}
         {%- if grains['virtual'] != "kvm" %}
@@ -104,11 +98,44 @@ smartmontools:
       {%- endif %}
     {%- endif %}
 
+# Install netdata
+netdata_repo:
+  git.latest:
+    - name: https://github.com/firehol/netdata.git
+    - rev: {{ netdata_version }}
+    - target: /opt/netdata/git
+    - force_reset: True
+    - force_clone: True
+
+    # Get current installed netdata version
+    {%- set netdata_installed_version = salt['cmd.shell']('cd /opt/netdata/git && git rev-parse --verify HEAD') %}
+    # If installed version differs from pillar or netdata_force_install set - install netdata
+    {%- if (netdata_version != netdata_installed_version) or (pillar['netdata_force_install'] is defined and pillar['netdata_force_install'] is not none and pillar['netdata_force_install']) %}
+netdata_install_run:
+  cmd.run:
+    - cwd: /opt/netdata/git
+      {%- if grains['osmajorrelease']|int <= 10 and grains['os'] == 'Ubuntu' %}
+    - name: ./netdata-installer.sh --dont-wait --libs-are-really-here --install /opt && service netdata stop
+      {%- else %}
+    - name: ./netdata-installer.sh --dont-wait --install /opt && service netdata stop
+      {%- endif %}
+    {%- endif %}
 
 
 
 
 
+
+
+
+
+
+
+# Netdata needs its own modified fping, should be run after netdata install
+netdata_depencies_fping:
+  cmd.run:
+    - cwd: /root
+    - name: '[ ! -x /usr/local/bin/fping ] && /opt/netdata/usr/libexec/netdata/plugins.d/fping.plugin install; true'
 
   {%- endif %}
 {% endif %}
@@ -121,26 +148,7 @@ smartmontools:
 
 
 
-netdata_repo:
-  git.latest:
-    - name: https://github.com/firehol/netdata.git
-    - rev: {{ netdata_version }}
-    - target: /opt/netdata/git
-    - force_reset: True
-    - force_clone: True
 
-# It seems that jinja value is evaluated before some states run at all, so this works
-  {%- set netdata_installed_version = salt['cmd.shell']('cd /opt/netdata/git && git rev-parse --verify HEAD') %}
-  {%- if (netdata_version != netdata_installed_version) or (pillar['force_install'] is defined and pillar['force_install'] is not none and pillar['force_install']) %}
-netdata_install_run:
-  cmd.run:
-    - cwd: /opt/netdata/git
-    {%- if grains['osmajorrelease']|int <= 10 and grains['os'] == 'Ubuntu' %}
-    - name: ./netdata-installer.sh --dont-wait --libs-are-really-here --install /opt && service netdata stop
-    {%- else %}
-    - name: ./netdata-installer.sh --dont-wait --install /opt && service netdata stop
-    {%- endif %}
-  {%- endif %}
 
   {%- if netdata_server  %}
 netdata_config_netdata_server:
