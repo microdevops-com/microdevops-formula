@@ -3,6 +3,9 @@
     # Set some vars
     {%- set netdata_seconds = pillar['netdata']['seconds'] %}
     {%- set netdata_version = pillar['netdata']['version'] %}
+    {%- set netdata_registry = pillar['netdata']['registry'] %}
+    {%- set netdata_netdata_api_key = pillar['netdata']['api_key'] %}
+    {%- set netdata_central_server = pillar['netdata']['central_server'] %}
     {%- set netdata_central = pillar['netdata'].get('server', False) %}
     {%- set netdata_container = pillar['netdata'].get('container', False) %}
     {%- set netdata_mini = pillar['netdata'].get('mini', False) %}
@@ -22,7 +25,7 @@ netdata_depencies_installed:
       - pkg-config
       - libuuid1
       - zlib1g
-      {%- if not netdata_container  %}
+      {%- if not netdata_container %}
       - lm-sensors
       - libipmimonitoring-dev
       - freeipmi-tools
@@ -35,7 +38,7 @@ netdata_depencies_installed:
       - pkgconfig
       - libuuid
       - zlib
-      {%- if not netdata_container  %}
+      {%- if not netdata_container %}
       - lm_sensors
       - freeipmi-devel
       - freeipmi
@@ -60,7 +63,7 @@ netdata_depencies_installed:
     {%- endif %}
 
     {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
-      {%- if not netdata_container  %}
+      {%- if not netdata_container %}
         {%- if grains['virtual'] != "kvm" %}
 # Install depencies for bare metal hosts
 hddtemp:
@@ -75,7 +78,7 @@ hddtemp:
 
 /etc/default/hddtemp:
   file.managed:
-    - source: 'salt://netdata/files/hddtemp'
+    - source: 'salt://netdata/files/deps/hddtemp'
     - require:
       - pkg: hddtemp
 
@@ -91,7 +94,7 @@ smartmontools:
 
 /etc/default/smartmontools:
   file.managed:
-    - source: 'salt://netdata/files/smartmontools'
+    - source: 'salt://netdata/files/deps/smartmontools'
     - require:
       - pkg: smartmontools
         {%- endif %}
@@ -126,16 +129,89 @@ netdata_install_run:
 
 
 
+netdata_config_health_alarm_central:
+  file.managed:
+    - name: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
+    {%- if netdata_central %}
+    - source: 'salt://netdata/files/health_alarm_notify.conf_central'
+    {%- else %}
+    - source: 'salt://netdata/files/health_alarm_notify.conf_host'
+    {%- endif %}
+    - mode: 0644
+
+netdata_config_netdata:
+  file.managed:
+    - name: '/opt/netdata/etc/netdata/netdata.conf'
+    {%- if netdata_central %}
+    - source: 'salt://netdata/files/netdata.conf_central'
+    {%- elif netdata_container %}
+    - source: 'salt://netdata/files/netdata.conf_container'
+    {%- elif netdata_mini %}
+    - source: 'salt://netdata/files/netdata.conf_mini'
+    {%- else %}
+    - source: 'salt://netdata/files/netdata.conf_host'
+    {%- endif %}
+    - mode: 0644
+    - template: jinja
+    - defaults:
+        host_name: {{ hostname_under }}
+        history_seconds: {{ netdata_seconds }}
+        registry_server: {{ netdata_registry }}
+
+    {%- if netdata_container %}
+netdata_config_pythond:
+  file.managed:
+    - name: '/opt/netdata/etc/netdata/python.d.conf'
+    - source: 'salt://netdata/files/python.d.conf_container'
+    - mode: 0644
+    {%- endif %}
+
+netdata_config_stream_central:
+  file.managed:
+    - name: '/opt/netdata/etc/netdata/stream.conf'
+    {%- if netdata_central %}
+    - source: 'salt://netdata/files/stream.conf_central'
+    {%- else %}
+    - source: 'salt://netdata/files/stream.conf_host'
+    {%- endif %}
+    - mode: 0644
+    - template: jinja
+    - defaults:
+        api_key: {{ netdata_api_key }}
+        default_history: {{ netdata_seconds }}
+        central_server: {{ netdata_central_server }}
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+    {%- if netdata_fpinger %}
 # Netdata needs its own modified fping, should be run after netdata install
 netdata_depencies_fping:
   cmd.run:
     - cwd: /root
     - name: '[ ! -x /usr/local/bin/fping ] && /opt/netdata/usr/libexec/netdata/plugins.d/fping.plugin install; true'
+
+netdata_config_fping:
+  file.managed:
+    - name: '/opt/netdata/etc/netdata/fping.conf'
+    - source: 'salt://netdata/files/deps/fping.conf'
+    - mode: 0644
+    - template: jinja
+    - defaults:
+        fping_hosts: {{ netdata_fpinger_hosts }}
+    {%- endif %}
 
   {%- endif %}
 {% endif %}
@@ -150,97 +226,13 @@ netdata_depencies_fping:
 
 
 
-  {%- if netdata_server  %}
-netdata_config_netdata_server:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/netdata.conf'
-    - source: 'salt://netdata/files/netdata.conf_server'
-    - mode: 0644
-
-netdata_config_stream_server:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/stream.conf'
-    - source: 'salt://netdata/files/stream.conf_server'
-    - mode: 0644
-
-netdata_config_health_alarm_server:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
-    - source: 'salt://netdata/files/health_alarm_notify.conf_server'
-    - mode: 0644
-
-netdata_config_pythond:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/python.d.conf'
-    - source: 'salt://netdata/files/python.d.conf_container'
-    - mode: 0644
-  {%- else %}
-    {%- if netdata_container  %}
-netdata_config_netdata:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/netdata.conf'
-    - source: 'salt://netdata/files/netdata.conf_container'
-    - mode: 0644
-    - template: jinja
-    - defaults:
-        host_name: {{ hostname_under }}
-        history_seconds: {{ netdata_seconds }}
-
-netdata_config_pythond:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/python.d.conf'
-    - source: 'salt://netdata/files/python.d.conf_container'
-    - mode: 0644
-    {%- elif netdata_nowebnomemory %}
-netdata_config_netdata:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/netdata.conf'
-    - source: 'salt://netdata/files/netdata.conf_nowebnomemory'
-    - mode: 0644
-    - template: jinja
-    - defaults:
-        host_name: {{ hostname_under }}
-        history_seconds: {{ netdata_seconds }}
-    {%- else %}
-netdata_config_netdata:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/netdata.conf'
-    - source: 'salt://netdata/files/netdata.conf'
-    - mode: 0644
-    - template: jinja
-    - defaults:
-        host_name: {{ hostname_under }}
-        history_seconds: {{ netdata_seconds }}
-    {%- endif %}
-
-netdata_config_stream:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/stream.conf'
-    - source: 'salt://netdata/files/stream.conf'
-    - mode: 0644
-
-netdata_config_health_alarm:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
-    - source: 'salt://netdata/files/health_alarm_notify.conf'
-    - mode: 0644
-  {%- endif %}
-
-netdata_config_fping:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/fping.conf'
-    - source: 'salt://netdata/files/fping.conf'
-    - mode: 0644
-    - template: jinja
-    - defaults:
-        fping_hosts: {{ fping_hosts }}
 
   {%- if (grains['roles'] is defined) and ('postgresql' in grains['roles']) %}
     {%- set post_pass = salt['cmd.shell']("grep postgres.pass /etc/salt/minion | sed -e 's/^postgres.pass: .\\(.*\\)./\\1/'") %}
 netdata_config_postgresql:
   file.managed:
     - name: '/opt/netdata/etc/netdata/python.d/postgres.conf'
-    - source: 'salt://netdata/files/postgres.conf'
+    - source: 'salt://netdata/files/deps/postgres.conf'
     - mode: 0660
     - template: jinja
     - defaults:
@@ -248,7 +240,7 @@ netdata_config_postgresql:
   {%- endif %}
 
   {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
-    {%- if not netdata_container  %}
+    {%- if not netdata_container %}
 netdata_dir_smartd:
   file.directory:
     - name: /var/log/smartd
@@ -260,7 +252,7 @@ netdata_dir_smartd:
 netdata_config_smartd:
   file.managed:
     - name: '/opt/netdata/etc/netdata/python.d/smartd_log.conf'
-    - source: 'salt://netdata/files/smartd_log.conf'
+    - source: 'salt://netdata/files/deps/smartd_log.conf'
     - mode: 0660
     {%- endif %}
   {%- endif %}
@@ -352,14 +344,14 @@ netdata_service_running:
       - file: '/opt/netdata/etc/netdata/stream.conf'
       - file: '/opt/netdata/etc/netdata/fping.conf'
       - file: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
-  {%- if netdata_container  %}
+  {%- if netdata_container %}
       - file: '/opt/netdata/etc/netdata/python.d.conf'
   {%- endif %}
   {%- if (grains['roles'] is defined) and ('postgresql' in grains['roles']) %}
       - file: '/opt/netdata/etc/netdata/python.d/postgres.conf'
   {%- endif %}
   {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
-    {%- if not netdata_container  %}
+    {%- if not netdata_container %}
       - file: '/opt/netdata/etc/netdata/python.d/smartd_log.conf'
     {%- endif %}
   {%- endif %}
