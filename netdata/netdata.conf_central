@@ -1,0 +1,26 @@
+[global]
+        hostname = {{ host_name }}
+	history = {{ history_seconds }}
+	memory mode = save
+[web]
+	mode = multi-threaded
+[statsd]
+	enabled = yes
+[backend]
+        enabled = yes
+        data source = average
+        type = graphite
+        destination = localhost
+        prefix = netdata
+        update every = 10
+        buffer on failures = 10
+        timeout ms = 20000
+[registry]
+	enabled = yes
+	registry to announce = {{ registry_server }}
+[health]
+	# For now we send health alarms not from the central netdata server, but from each host (central host doesn't supprt alarm customizations)
+	enabled = no
+[plugins]
+	cgroups = no
+	proc = no

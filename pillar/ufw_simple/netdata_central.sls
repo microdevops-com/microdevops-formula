@@ -4,18 +4,13 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    netdata_1:
+    netdata_2:
       proto: 'tcp'
       from:
-        {{ vars['Office_And_VPN'] }}
+        {{ vars['All_Servers'] }}
       to_port: '19999'
-    ssh_1:
+    web_1:
       proto: 'tcp'
       from:
         {{ vars['Office_And_VPN'] }}
-      to_port: '22'
-    ssh_2:
-      proto: 'tcp'
-      from:
-        {{ vars['Backup_Servers'] }}
-      to_port: '22'
+      to_port: '80,443'

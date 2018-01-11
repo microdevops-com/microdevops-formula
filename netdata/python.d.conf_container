@@ -1,0 +1,15 @@
+enabled: yes
+logs_per_interval: 200
+log_interval: 3600
+apache_cache: no
+example: no
+gunicorn_log: no
+go_expvar: no
+nginx_log: no
+
+cpufreq: no
+cpuidle: no
+hddtemp: no
+mdstat: no
+sensors: no
+smartd_log: no

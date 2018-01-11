@@ -1,0 +1,6 @@
+[{{ api_key }}]
+	enabled = yes
+	default history = {{ default_history }}
+	default memory mode = save
+	health enabled by default = auto
+	default postpone alarms on connect seconds = 60
