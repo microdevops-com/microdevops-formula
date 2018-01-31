@@ -423,9 +423,15 @@ pkg:
           'dpkg --purge exim4 exim4-base exim4-config exim4-daemon-light':
             - runas: root
 
+# sysadmws-utils
+sysadmws-utils:
 # disk_alert
 # just plain contents of disk_alert config file (see /opt/sysadmws-utils/disk_alert/disk_alert.conf)
-disk_alert: |
-  DISK_ALERT_USAGE_CHECK="FREE_SPACE"
-  DISK_ALERT_FREE_SPACE_CRITICAL["/"]="10000"
-  DISK_ALERT_FREE_SPACE_CRITICAL["/mnt/ext"]="4000"
+  disk_alert: |
+    DISK_ALERT_USAGE_CHECK="FREE_SPACE"
+    DISK_ALERT_FREE_SPACE_CRITICAL["/"]="10000"
+    DISK_ALERT_FREE_SPACE_CRITICAL["/mnt/ext"]="4000"
+# mysql_replica_checker
+# just plain contents of mysql_replica_checker config file (see /opt/sysadmws-utils/mysql_replica_checker/mysql_replica_checker.conf)
+  mysql_replica_checker: |
+    BEHIND_MASTER_THR="2000"

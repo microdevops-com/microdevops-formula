@@ -54,4 +54,4 @@ pkg:
       - module.run:
           1:
             - name: state.sls
-            - mods: disk_alert.disk_alert
+            - mods: sysadmws-utils.sysadmws-utils
