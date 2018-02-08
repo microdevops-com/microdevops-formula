@@ -21,8 +21,10 @@
 # redirect
 {{ redirect }}
 
-# port forwardings
+# port forwardings dnat
 {{ dnat }}
+
+# port forwardings snat
 {{ snat }}
 
 # nat to the internet
