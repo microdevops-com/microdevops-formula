@@ -162,15 +162,21 @@ ufw_simple_nat_managed_file_3:
       {%- endif %}
       {%- if (pillar['ufw_simple']['nat']['custom'] is defined) and (pillar['ufw_simple']['nat']['custom'] is not none) %}
         {%- if (pillar['ufw_simple']['nat']['custom']['nat'] is defined) and (pillar['ufw_simple']['nat']['custom']['nat'] is not none) %}
-          custom_nat: {{ pillar['ufw_simple']['nat']['custom']['nat'] | yaml_encode }}
+        custom_nat: {{ pillar['ufw_simple']['nat']['custom']['nat'] | yaml_encode }}
         {%- else %}
-          custom_nat: '# empty'
+        custom_nat: '# empty'
         {%- endif %}
+      {%- else %}
+        custom_nat: '# empty'
+      {%- endif %}
+      {%- if (pillar['ufw_simple']['nat']['custom'] is defined) and (pillar['ufw_simple']['nat']['custom'] is not none) %}
         {%- if (pillar['ufw_simple']['nat']['custom']['filter'] is defined) and (pillar['ufw_simple']['nat']['custom']['filter'] is not none) %}
-          custom_filter: {{ pillar['ufw_simple']['nat']['custom']['filter'] | yaml_encode }}
+        custom_filter: {{ pillar['ufw_simple']['nat']['custom']['filter'] | yaml_encode }}
         {%- else %}
-          custom_filter: '# empty'
+        custom_filter: '# empty'
         {%- endif %}
+      {%- else %}
+        custom_filter: '# empty'
       {%- endif %}
 
 ufw_simple_nat_managed_restart:
