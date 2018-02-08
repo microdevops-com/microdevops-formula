@@ -77,6 +77,18 @@ ufw_simple:
         to: '192.168.0.2:80'
         proto: 'tcp'
         in: 'br0'
+    snat:
+      rule_1:
+        dport: '22'
+        from: '11.22.33.44'
+        to: '10.0.0.2'
+        proto: 'tcp'
+        out: 'br1'
+      rule_2:
+        dport: '80'
+        to: '192.168.0.2'
+        proto: 'tcp'
+        out: 'br1'
     redirect:
       rule_1:
         dport: '5555'
@@ -85,6 +97,12 @@ ufw_simple:
         to_ports: '6666'
         proto: 'tcp'
         in: 'br0'
+    custom: # direclty paste custom iptables rules to before.rules
+      nat: | # nat table
+        -A POSTROUTING -s 10.0.10.0/24 -o br0 -j MASQUERADE
+      filter: | # filter table
+        -A FORWARD -s 10.0.0.10/32 -j ACCEPT
+        -A FORWARD -d 10.0.0.10/32 -j ACCEPT
   allow: # allow/deny/reject/limit/limit_in/limit_out
     rule_1: # from list to list with to port
       proto: 'tcp'

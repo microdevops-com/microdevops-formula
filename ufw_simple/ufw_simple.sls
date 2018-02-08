@@ -160,6 +160,18 @@ ufw_simple_nat_managed_file_3:
       {%- else %}
         redirect: '# empty'
       {%- endif %}
+      {%- if (pillar['ufw_simple']['nat']['custom'] is defined) and (pillar['ufw_simple']['nat']['custom'] is not none) %}
+        {%- if (pillar['ufw_simple']['nat']['custom']['nat'] is defined) and (pillar['ufw_simple']['nat']['custom']['nat'] is not none) %}
+          custom_nat: {{ pillar['ufw_simple']['nat']['custom']['nat'] | yaml_encode }}
+        {%- else %}
+          custom_nat: '# empty'
+        {%- endif %}
+        {%- if (pillar['ufw_simple']['nat']['custom']['filter'] is defined) and (pillar['ufw_simple']['nat']['custom']['filter'] is not none) %}
+          custom_filter: {{ pillar['ufw_simple']['nat']['custom']['filter'] | yaml_encode }}
+        {%- else %}
+          custom_filter: '# empty'
+        {%- endif %}
+      {%- endif %}
 
 ufw_simple_nat_managed_restart:
   cmd.run:
