@@ -71,59 +71,67 @@ php-fpm_apps_user_ssh_auth_keys_{{ loop.index }}:
         {%- endif %}
 
         {%- if
-               (app_params['git_source'] is defined) and (app_params['git_source'] is not none) and
-               (app_params['git_source']['enabled'] is defined) and (app_params['git_source']['enabled'] is not none) and (app_params['git_source']['enabled']) and
-               (app_params['git_source']['git'] is defined) and (app_params['git_source']['git'] is not none) and
-               (app_params['git_source']['rev'] is defined) and (app_params['git_source']['rev'] is not none) and
-               (app_params['git_source']['target'] is defined) and (app_params['git_source']['target'] is not none) and
-               (app_params['git_source']['branch'] is defined) and (app_params['git_source']['branch'] is not none)
+               (app_params['source'] is defined) and (app_params['source'] is not none) and
+               (app_params['source']['enabled'] is defined) and (app_params['source']['enabled'] is not none) and (app_params['source']['enabled']) and
+               (
+                 ((app_params['source']['git'] is defined) and (app_params['source']['git'] is not none)) or
+                 ((app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none))
+               ) and
+               (app_params['source']['rev'] is defined) and (app_params['source']['rev'] is not none) and
+               (app_params['source']['target'] is defined) and (app_params['source']['target'] is not none)
         %}
+
           {%- if
-                 (app_params['git_source']['key'] is defined) and (app_params['git_source']['key'] is not none) and
-                 (app_params['git_source']['key_pub'] is defined) and (app_params['git_source']['key_pub'] is not none)
+                 (app_params['source']['repo_key'] is defined) and (app_params['source']['repo_key'] is not none) and
+                 (app_params['source']['repo_key_pub'] is defined) and (app_params['source']['repo_key_pub'] is not none)
           %}
 php-fpm_apps_user_ssh_id_{{ loop.index }}:
   file.managed:
-    - name: {{ app_params['app_root'] ~ '/.ssh/id_git' }}
+    - name: {{ app_params['app_root'] ~ '/.ssh/id_repo' }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - mode: '0600'
-    - source: 'salt://{{ app_params['git_source']['key'] }}'
+    - contents: {{ app_params['source']['repo_key'] | yaml_encode }}
 
 php-fpm_apps_user_ssh_id_pub_{{ loop.index }}:
   file.managed:
-    - name: {{ app_params['app_root'] ~ '/.ssh/id_git.pub' }}
+    - name: {{ app_params['app_root'] ~ '/.ssh/id_repo.pub' }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - mode: '0600'
-    - source: 'salt://{{ app_params['git_source']['key_pub'] }}'
+    - contents: {{ app_params['source']['repo_key_pub'] | yaml_encode }}
 
 php-fpm_apps_user_ssh_config_{{ loop.index }}:
   file.managed:
     - name: {{ app_params['app_root'] ~ '/.ssh/config' }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
-    - source: 'salt://app/files/ssh_config'
-    - template: jinja
-    - defaults:
-        identity_file: {{ app_params['app_root'] ~ '/.ssh/id_git' }}
     - mode: '0600'
+    - contents: {{ app_params['source']['ssh_config'] | yaml_encode }}
           {%- endif %}
 
-php-fpm_apps_app_git_checkout_{{ loop.index }}:
+php-fpm_apps_app_checkout_{{ loop.index }}:
+          {%- if (app_params['source']['git'] is defined) and (app_params['source']['git'] is not none) %}
   git.latest:
-    - name: {{ app_params['git_source']['git'] }}
-    - rev: {{ app_params['git_source']['rev'] }}
-    - target: {{ app_params['git_source']['target'] }}
-    - branch: {{ app_params['git_source']['branch'] }}
+    - name: {{ app_params['source']['git'] }}
+    - rev: {{ app_params['source']['rev'] }}
+    - target: {{ app_params['source']['target'] }}
+    - branch: {{ app_params['source']['branch'] }}
     - force_reset: True
     - force_fetch: True
     - user: {{ app_params['user'] }}
+          {%- elif (app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none)  %}
+  hg.latest:
+    - name: {{ app_params['source']['hg'] }}
+    - rev: {{ app_params['source']['rev'] }}
+    - target: {{ app_params['source']['target'] }}
+    - user: {{ app_params['user'] }}
+          {%- endif %}
           {%- if
-                 (app_params['git_source']['key'] is defined) and (app_params['git_source']['key'] is not none) and
-                 (app_params['git_source']['key_pub'] is defined) and (app_params['git_source']['key_pub'] is not none)
+                 (app_params['source']['repo_key'] is defined) and (app_params['source']['repo_key'] is not none) and
+                 (app_params['source']['repo_key_pub'] is defined) and (app_params['source']['repo_key_pub'] is not none)
           %}
-    - identity: {{ app_params['app_root'] ~ '/.ssh/id_git' }}
+    - identity: {{ app_params['app_root'] ~ '/.ssh/id_repo' }}
           {%- endif %}
         {%- endif %}
 
