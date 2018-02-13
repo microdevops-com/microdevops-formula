@@ -336,14 +336,27 @@ app:
           php_admin_flag[html_errors] = off
           php_admin_value[post_max_size] = 25M
           php_admin_value[upload_max_filesize] = 25M
-      git_source:
+      source:
         enabled: True
         git: 'ssh://git@bitbucket.org/myorg/app_1'
         rev: 'master'
         target: '/var/www/app_1/src'
         branch: 'master'
-        key: 'app/files/example_php-fpm_app_1/id_app_1' # that is not very secure and should be changed to reference as text some time later in state code
-        key_pub: 'app/files/example_php-fpm_app_1/id_app_1.pub'
+        # use ssh-keygen -t ed25519, if possible since this improves readability
+        repo_key: |
+          -----BEGIN OPENSSH PRIVATE KEY-----
+          b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+          QyNTUxOQAAACDlfFq6KxK7rX/yKLyoCNUVYOuAvXaFW6v1INborpJXqAAAAJCdEKGVnRCh
+          lQAAAAtzc2gtZWQyNTUxOQAAACDlfFq6KxK7rX/yKLyoCNUVYOuAvXaFW6v1INborpJXqA
+          AAAEBRlKSA+tQlkWOsUjddiVTbDB/+6zIWPBtz+MMGnADwOOV8WrorErutf/IovKgI1RVg
+          64C9doVbq/Ug1uiukleoAAAACnZsYWRAbGVlY2gBAgM=
+          -----END OPENSSH PRIVATE KEY-----
+        repo_key_pub: |
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOV8WrorErutf/IovKgI1RVg64C9doVbq/Ug1uiukleo
+        ssh_config: |
+          Host: bitbucket.org
+            User: git
+            Identityfile /var/www/app_2/.ssh/id_repo
       files: # you can copy app configs from salt, not to store them in repo
         src: 'app/files/example_php-fpm_app_1/files'
         dst: '/var/www/app_1/src/public'
@@ -383,14 +396,46 @@ app:
           php_admin_flag[html_errors] = off
           php_admin_value[post_max_size] = 25M
           php_admin_value[upload_max_filesize] = 25M
-      git_source:
+      source:
         enabled: True
         git: 'ssh://git@bitbucket.org/myorg/app_2'
         rev: 'develop'
         target: '/var/www/app_2/src'
         branch: 'develop'
-        key: 'app/files/example_php-fpm_app_2/id_app_2' # that is not very secure and should be changed to reference as text some time later in state code
-        key_pub: 'app/files/example_php-fpm_app_2/id_app_2.pub'
+        # use ssh-keygen -t ed25519, if possible since this improves readability
+        repo_key: |
+          -----BEGIN OPENSSH PRIVATE KEY-----
+          b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+          QyNTUxOQAAACAF9827XpYH2ojI7fQjfTK7v8tFt4m8xhFyBLwrSohSbwAAAJCAcZkJgHGZ
+          CQAAAAtzc2gtZWQyNTUxOQAAACAF9827XpYH2ojI7fQjfTK7v8tFt4m8xhFyBLwrSohSbw
+          AAAECmesAGa3iKp+pSl085v3jGiUn9aIYzx2tIMV1aSBLJKgX3zbtelgfaiMjt9CN9Mru/
+          y0W3ibzGEXIEvCtKiFJvAAAACnZsYWRAbGVlY2gBAgM=
+          -----END OPENSSH PRIVATE KEY-----
+        repo_key_pub: |
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAX3zbtelgfaiMjt9CN9Mru/y0W3ibzGEXIEvCtKiFJv
+        ssh_config: |
+          Host: bitbucket.org
+            User: git
+            Identityfile /var/www/app_2/.ssh/id_repo
+      #source:
+      #  enabled: True
+      #  hg: 'ssh://hg@bitbucket.org/myorg/app_2'
+      #  rev: 'develop'
+      #  target: '/var/www/app_2/src'
+      #  repo_key: |
+      #    -----BEGIN OPENSSH PRIVATE KEY-----
+      #    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+      #    QyNTUxOQAAACAF9827XpYH2ojI7fQjfTK7v8tFt4m8xhFyBLwrSohSbwAAAJCAcZkJgHGZ
+      #    CQAAAAtzc2gtZWQyNTUxOQAAACAF9827XpYH2ojI7fQjfTK7v8tFt4m8xhFyBLwrSohSbw
+      #    AAAECmesAGa3iKp+pSl085v3jGiUn9aIYzx2tIMV1aSBLJKgX3zbtelgfaiMjt9CN9Mru/
+      #    y0W3ibzGEXIEvCtKiFJvAAAACnZsYWRAbGVlY2gBAgM=
+      #    -----END OPENSSH PRIVATE KEY-----
+      #  repo_key_pub: |
+      #    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAX3zbtelgfaiMjt9CN9Mru/y0W3ibzGEXIEvCtKiFJv
+      #  ssh_config: |
+      #    Host: bitbucket.org
+      #      User: hg
+      #      Identityfile /var/www/app_2/.ssh/id_repo
       files: # you can copy app configs from salt, not to store them in repo
         src: 'app/files/example_php-fpm_app_2/files'
         dst: '/var/www/app_2/src/public'
