@@ -168,6 +168,62 @@ php-fpm_7_1_modules_ioncube_3:
         {%- endif %}
       {%- endif %}
     {%- endif %}
+    {%- if (pillar['php-fpm']['version_7_2'] is defined) and (pillar['php-fpm']['version_7_2'] is not none) and (pillar['php-fpm']['version_7_2']) %}
+php-fpm_repo_deb:
+  pkgrepo.managed:
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu xenial main
+    - dist: xenial
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-xenial.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: E5267A6C
+    - refresh_db: true
+
+php-fpm_7_2_installed:
+  pkg.installed:
+    - pkgs:
+      - php7.2-cli
+      - php7.2-fpm
+
+      {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
+        {%- if (pillar['php-fpm']['modules']['php7_2'] is defined) and (pillar['php-fpm']['modules']['php7_2'] is not none) %}
+php-fpm_7_2_modules_installed:
+  pkg.installed:
+    - pkgs:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php7_2'] %}
+            {%- if (pkg_name != 'php7.2-ioncube') %}
+      - {{ pkg_name }}
+            {%- endif %}
+          {%- endfor %}
+
+          {%- for pkg_name in pillar['php-fpm']['modules']['php7_2'] %}
+            {%- if (pkg_name == 'php7.2-ioncube') %}
+php-fpm_7_2_modules_ioncube_1:
+  file.managed:
+    - name: '/usr/lib/php/20160505/ioncube_loader_lin_7.2.so'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.2.so'
+
+php-fpm_7_2_modules_ioncube_2:
+  file.managed:
+    - name: '/etc/php/7.2/mods-available/ioncube.ini'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
+    - template: jinja
+    - defaults:
+        path: '/usr/lib/php/20160505/ioncube_loader_lin_7.2.so'
+
+php-fpm_7_2_modules_ioncube_3:
+  file.symlink:
+    - name: '/etc/php/7.2/fpm/conf.d/00-ioncube.ini'
+    - target: '/etc/php/7.2/mods-available/ioncube.ini'
+
+            {%- endif %}
+          {%- endfor %}
+        {%- endif %}
+      {%- endif %}
+    {%- endif %}
     {%- if (pillar['php-fpm']['version_5_5'] is defined) and (pillar['php-fpm']['version_5_5'] is not none) and (pillar['php-fpm']['version_5_5']) %}
 php-fpm_5_5_installed:
   pkg.installed:
