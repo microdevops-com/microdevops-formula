@@ -4,10 +4,17 @@ tip: to clean up previous install:
   - rm -rf /etc/gitlab /opt/gitlab /var/opt/gitlab /run/gitlab /var/log/gitlab
   - reboot
 
+tip:
 This file should be included in pillar like this:
 {% set gitlab_ext_name = "gitlab.example.com" %}
 {% set gitlab_admin_email = "admin@example.com" %}
+{% set gitlab_google_app_id = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com" %}
+{% set gitlab_google_app_secret = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
 {% include 'pkg/gitlab-ce.jinja' with context %}
+
+tip:
+Here are the steps needed to connect google auth:
+https://docs.gitlab.com/ee/integration/google.html
 #}
 
 pkg:
@@ -59,6 +66,17 @@ pkg:
                 nginx['redirect_http_to_https'] = true
                 nginx['ssl_certificate'] = "/etc/letsencrypt/live/gitlab/fullchain.pem"
                 nginx['ssl_certificate_key'] = "/etc/letsencrypt/live/gitlab/privkey.pem"
+                gitlab_rails['omniauth_enabled'] = true
+                gitlab_rails['omniauth_allow_single_sign_on'] = ['google_oauth2']
+                gitlab_rails['omniauth_block_auto_created_users'] = true
+                gitlab_rails['omniauth_providers'] = [
+                  { 
+                    "name" => "google_oauth2",
+                    "app_id" => "{{ gitlab_google_app_id }}",
+                    "app_secret" => "{{ gitlab_google_app_secret }}",
+                    "args" => { "access_type" => "offline", "approval_prompt" => '' }
+                  }
+                ]
       - environ.setenv:
           1:
             - name: EXTERNAL_URL
