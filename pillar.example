@@ -252,12 +252,18 @@ sentry:
   plugins: # Unofficial plugins only, official come with sentry-plugins, sentry-telegram already adopted
     - sentry-xxx
 
-# php 5.5 example, system repo, ubuntu 14 is required
+# php-fpm
 php-fpm:
   enabled: True
-  version_5_5: True
+  version_5_5: True # php 5.5, system repo, ubuntu 14 is required
+  version_5_6: True # php 5.6, ondrej repo
+  version_7_0: True # php 7.0, ondrej repo
+  version_7_1: True # php 7.1, ondrej repo
+  version_7_2: True # php 7.2, ondrej repo
+  tz:
+    php5_5: 'Etc/UTC'
   modules:
-    php5_5:
+    php5_5: # and/or php5_6, php7_0, php7_1, php7_2
       - php5-mysql
       - php5-curl
       - php5-gd
