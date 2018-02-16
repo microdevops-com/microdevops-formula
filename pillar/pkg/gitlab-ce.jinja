@@ -1,0 +1,77 @@
+{#
+tip: to clean up previous install:
+  - apt-get purge gitlab-ce
+  - rm -rf /etc/gitlab /opt/gitlab /var/opt/gitlab /run/gitlab /var/log/gitlab
+  - reboot
+
+This file should be included in pillar like this:
+{% set gitlab_ext_name = "gitlab.example.com" %}
+{% set gitlab_admin_email = "admin@example.com" %}
+{% include 'pkg/gitlab-ce.jinja' with context %}
+#}
+
+pkg:
+  gitlab-ce:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - pkgrepo.managed:
+          1:
+            - humanname: Gitlab CE Repository
+            - name: deb https://packages.gitlab.com/gitlab/gitlab-ce/{{ grains['os']|lower }}/ {{ grains['oscodename'] }} main
+            - file: /etc/apt/sources.list.d/gitlab-ce.list
+            - key_url: https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+      - environ.setenv:
+          1:
+            - name: EXTERNAL_URL
+            - value: "http://{{ gitlab_ext_name }}"
+            - update_minion: True
+      - pkg.latest:
+          1:
+            - refresh: True
+            - pkgs:
+              - gitlab-ce
+      - cmd.run:
+          1:
+            - name: 'test ! -f /etc/gitlab/gitlab.rb.orig && cp /etc/gitlab/gitlab.rb /etc/gitlab/gitlab.rb.orig || true'
+            - runas: 'root'
+      - file.directory:
+          '/opt/gitlab/certbot':
+            - makedirs: True
+      - file.managed:
+          1:
+            - name: /etc/gitlab/gitlab.rb
+            - contents: |
+                external_url 'http://{{ gitlab_ext_name }}'
+                nginx['custom_gitlab_server_config'] = "location ^~ /.well-known { root /opt/gitlab/certbot; }"
+      - cmd.run:
+          1:
+            - name: 'gitlab-ctl reconfigure'
+            - runas: 'root'
+          2:
+            - name: '/opt/certbot/certbot-auto -n certonly --webroot --reinstall --agree-tos --cert-name gitlab --email {{ gitlab_admin_email }} -w /opt/gitlab/certbot -d {{ gitlab_ext_name }}'
+            - runas: 'root'
+      - file.managed:
+          1:
+            - name: /etc/gitlab/gitlab.rb
+            - contents: |
+                external_url 'https://{{ gitlab_ext_name }}'
+                nginx['custom_gitlab_server_config'] = "location ^~ /.well-known { root /opt/gitlab/certbot; }"
+                nginx['redirect_http_to_https'] = true
+                nginx['ssl_certificate'] = "/etc/letsencrypt/live/gitlab/fullchain.pem"
+                nginx['ssl_certificate_key'] = "/etc/letsencrypt/live/gitlab/privkey.pem"
+      - environ.setenv:
+          1:
+            - name: EXTERNAL_URL
+            - value: "https://{{ gitlab_ext_name }}"
+            - update_minion: True
+      - cmd.run:
+          1:
+            - name: 'gitlab-ctl reconfigure'
+            - runas: 'root'
+      - cron.present:
+          '/opt/certbot/certbot-auto renew --renew-hook "gitlab-ctl restart"':
+            - identifier: 'certbot_cron'
+            - user: root
+            - minute: 10
+            - hour: 2
+            - dayweek: 1

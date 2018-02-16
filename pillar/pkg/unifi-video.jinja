@@ -1,6 +1,3 @@
-{% from '/srv/pillar/pkg/unifi-video.jinja' import unifi_server_name with context %}
-{% from '/srv/pillar/pkg/unifi-video.jinja' import unifi_admin_email with context %}
-
 pkg:
   unifi-video:
     when: 'PKG_AFTER_DEPLOY'
