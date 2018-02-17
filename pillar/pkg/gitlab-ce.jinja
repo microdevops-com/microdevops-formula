@@ -4,10 +4,14 @@ tip: to clean up previous install:
   - rm -rf /etc/gitlab /opt/gitlab /var/opt/gitlab /run/gitlab /var/log/gitlab
   - reboot
 
+tip: you need to add and setup acme.sh like setting up pillar:
+{% set acme_auth_id = "xxxx" %}
+{% set acme_auth_password = "xxxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% include 'pkg/acme_cloudns.jinja' with context %}
+
 tip:
 This file should be included in pillar like this:
 {% set gitlab_ext_name = "gitlab.example.com" %}
-{% set gitlab_admin_email = "admin@example.com" %}
 {% set gitlab_google_app_id = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com" %}
 {% set gitlab_google_app_secret = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
 {% include 'pkg/gitlab-ce.jinja' with context %}
@@ -41,31 +45,19 @@ pkg:
           1:
             - name: 'test ! -f /etc/gitlab/gitlab.rb.orig && cp /etc/gitlab/gitlab.rb /etc/gitlab/gitlab.rb.orig || true'
             - runas: 'root'
-      - file.directory:
-          '/opt/gitlab/certbot':
-            - makedirs: True
-      - file.managed:
-          1:
-            - name: /etc/gitlab/gitlab.rb
-            - contents: |
-                external_url 'http://{{ gitlab_ext_name }}'
-                nginx['custom_gitlab_server_config'] = "location ^~ /.well-known { root /opt/gitlab/certbot; }"
       - cmd.run:
           1:
-            - name: 'gitlab-ctl reconfigure'
-            - runas: 'root'
-          2:
-            - name: '/opt/certbot/certbot-auto -n certonly --webroot --reinstall --agree-tos --cert-name gitlab --email {{ gitlab_admin_email }} -w /opt/gitlab/certbot -d {{ gitlab_ext_name }}'
-            - runas: 'root'
+            - name: '/opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --issue --dns dns_cloudns -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
+            - cwd: /opt/acme/home
+            - runas: root
       - file.managed:
           1:
             - name: /etc/gitlab/gitlab.rb
             - contents: |
                 external_url 'https://{{ gitlab_ext_name }}'
-                nginx['custom_gitlab_server_config'] = "location ^~ /.well-known { root /opt/gitlab/certbot; }"
                 nginx['redirect_http_to_https'] = true
-                nginx['ssl_certificate'] = "/etc/letsencrypt/live/gitlab/fullchain.pem"
-                nginx['ssl_certificate_key'] = "/etc/letsencrypt/live/gitlab/privkey.pem"
+                nginx['ssl_certificate'] = "/opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer"
+                nginx['ssl_certificate_key'] = "/opt/acme/cert/{{ gitlab_ext_name }}/{{ gitlab_ext_name }}.key"
                 gitlab_rails['omniauth_enabled'] = true
                 gitlab_rails['omniauth_allow_single_sign_on'] = ['google_oauth2']
                 gitlab_rails['omniauth_block_auto_created_users'] = true
@@ -86,10 +78,3 @@ pkg:
           1:
             - name: 'gitlab-ctl reconfigure'
             - runas: 'root'
-      - cron.present:
-          '/opt/certbot/certbot-auto renew --renew-hook "gitlab-ctl restart"':
-            - identifier: 'certbot_cron'
-            - user: root
-            - minute: 10
-            - hour: 2
-            - dayweek: 1
