@@ -51,7 +51,7 @@ pkg:
             - runas: 'root'
       - cmd.run:
           1:
-            - name: '#/opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --issue --dns dns_cloudns -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
+            - name: '/opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --issue --dns dns_cloudns -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
             - cwd: /opt/acme/home
             - runas: root
       - file.directory:
