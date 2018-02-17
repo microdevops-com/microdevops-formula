@@ -12,8 +12,12 @@ tip: you need to add and setup acme.sh like setting up pillar:
 tip:
 This file should be included in pillar like this:
 {% set gitlab_ext_name = "gitlab.example.com" %}
+{% set gitlab_hostname = "gitlab1.example.com" %}
 {% set gitlab_google_app_id = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com" %}
 {% set gitlab_google_app_secret = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% set gitlab_gmail_user = "user@example.com" %}
+{% set gitlab_gmail_password = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% set gitlab_gmail_email_with_key = "user+%{key}@example.com" %}
 {% include 'pkg/gitlab-ce.jinja' with context %}
 
 tip:
@@ -47,9 +51,19 @@ pkg:
             - runas: 'root'
       - cmd.run:
           1:
-            - name: '/opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --issue --dns dns_cloudns -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
+            - name: '#/opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --issue --dns dns_cloudns -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
             - cwd: /opt/acme/home
             - runas: root
+      - file.directory:
+          1:
+            - name: /var/lib/gitlab_docker_registry
+            - makedirs: True
+          2:
+            - name: /var/lib/gitlab_artifacts
+            - makedirs: True
+          3:
+            - name: /var/backups/gitlab_backups
+            - makedirs: True
       - file.managed:
           1:
             - name: /etc/gitlab/gitlab.rb
@@ -69,6 +83,35 @@ pkg:
                     "args" => { "access_type" => "offline", "approval_prompt" => '' }
                   }
                 ]
+                gitlab_rails['smtp_enable'] = true
+                gitlab_rails['smtp_address'] = "smtp.gmail.com"
+                gitlab_rails['smtp_port'] = 587
+                gitlab_rails['smtp_user_name'] = "{{ gitlab_gmail_user }}"
+                gitlab_rails['smtp_password'] = "{{ gitlab_gmail_password }}"
+                gitlab_rails['smtp_domain'] = "smtp.gmail.com"
+                gitlab_rails['smtp_authentication'] = "login"
+                gitlab_rails['smtp_enable_starttls_auto'] = true
+                gitlab_rails['smtp_tls'] = false
+                gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
+                gitlab_rails['incoming_email_enabled'] = true
+                gitlab_rails['incoming_email_address'] = "{{ gitlab_gmail_email_with_key }}"
+                gitlab_rails['incoming_email_email'] = "{{ gitlab_gmail_user }}"
+                gitlab_rails['incoming_email_password'] = "{{ gitlab_gmail_password }}"
+                gitlab_rails['incoming_email_host'] = "imap.gmail.com"
+                gitlab_rails['incoming_email_port'] = 993
+                gitlab_rails['incoming_email_ssl'] = true
+                gitlab_rails['incoming_email_start_tls'] = false
+                gitlab_rails['incoming_email_mailbox_name'] = "inbox"
+                gitlab_rails['incoming_email_idle_timeout'] = 60
+                registry['enable'] = true
+                registry_external_url 'https://{{ gitlab_ext_name }}:5001'
+                registry['registry_http_addr'] = "localhost:5000"
+                registry_nginx['ssl_certificate'] = "/opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer"
+                registry_nginx['ssl_certificate_key'] = "/opt/acme/cert/{{ gitlab_ext_name }}/{{ gitlab_ext_name }}.key"
+                gitlab_rails['registry_path'] = "/var/lib/gitlab_docker_registry"
+                gitlab_rails['artifacts_enabled'] = true
+                gitlab_rails['artifacts_path'] = "/var/lib/gitlab_artifacts"
+                gitlab_rails['backup_path'] = '/var/backups/gitlab_backups'
       - environ.setenv:
           1:
             - name: EXTERNAL_URL
@@ -78,3 +121,20 @@ pkg:
           1:
             - name: 'gitlab-ctl reconfigure'
             - runas: 'root'
+      - file.managed:
+          1:
+            - name: /opt/sysadmws-utils/rsnapshot_backup/rsnapshot_backup.conf
+            - contents: |
+                {{ gitlab_hostname }}		FS_RSYNC_SSH		UBUNTU					/var/backups/{{ gitlab_hostname }}
+                {{ gitlab_hostname }}		FS_RSYNC_SSH		/opt/gitlab				/var/backups/{{ gitlab_hostname }}
+                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/opt/gitlab				/var/backups/{{ gitlab_hostname }}
+                {{ gitlab_hostname }}		FS_RSYNC_SSH		/opt/acme				/var/backups/{{ gitlab_hostname }}
+                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/lib/gitlab_docker_registry		/var/backups/{{ gitlab_hostname }}
+                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/lib/gitlab_artifacts		/var/backups/{{ gitlab_hostname }}
+                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/backups/gitlab_backups		/var/backups/{{ gitlab_hostname }}
+      - cron.present:
+          'gitlab-rake gitlab:backup:create':
+            - identifier: 'gitlab_backups'
+            - user: root
+            - minute: 10
+            - hour: 5
