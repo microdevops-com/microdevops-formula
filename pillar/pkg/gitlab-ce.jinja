@@ -19,7 +19,7 @@ https://docs.gitlab.com/ee/integration/google.html
 
 pkg:
   gitlab-ce:
-    when: 'PKG_BEFORE_DEPLOY'
+    when: 'PKG_AFTER_DEPLOY'
     states:
       - pkgrepo.managed:
           1:
