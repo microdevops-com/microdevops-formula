@@ -9,3 +9,10 @@ ufw_simple:
       from:
         {{ vars['All_Servers'] }}
       to_port: '4505,4506'
+  delete:
+    allow:
+      salt:
+        proto: 'tcp'
+        from:
+          {{ vars['Delete_All_Servers'] }}
+        to_port: '4505,4506'
