@@ -47,7 +47,7 @@ python_apps_user_{{ loop.index }}:
       - adm
     - home: {{ app_params['app_root'] }}
     - createhome: True
-    - password: '!'
+    - password: '{{ app_params['pass'] }}'
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ python_app }}
 
