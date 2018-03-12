@@ -32,8 +32,10 @@ cloud:
           link: br1
           type: veth
           flags: up
-          ipv4: 10.0.0.2/24
-          gateway: 10.0.0.1
+          ipv4: '10.0.0.2/24'
+          ipv4.gateway: '10.0.0.1'
+          #ipv6: 'abcd::1234/64'
+          #ipv6.gateway: 'abcd::4321/64'
       minion:
         master:
           - salt1.example.com
