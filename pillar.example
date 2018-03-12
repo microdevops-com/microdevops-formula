@@ -313,6 +313,7 @@ app:
       enabled: True
       user: 'app_1'
       group: 'app_1'
+      pass: '!'
       app_root: '/var/www/app_1'
       app_auth_keys: |
         ssh-rsa AAAA...== rsa-key-19700101
@@ -372,6 +373,7 @@ app:
       enabled: True
       user: 'app_2'
       group: 'app_2'
+      pass: '!'
       app_root: '/var/www/app_2'
       app_auth_keys: |
         ssh-rsa AAAA...== rsa-key-19700101
