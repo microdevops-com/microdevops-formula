@@ -1,4 +1,5 @@
 {% if (pillar['sysadmws-utils'] is defined) and (pillar['sysadmws-utils'] is not none) %}
+
   {% if (pillar['sysadmws-utils']['disk_alert'] is defined) and (pillar['sysadmws-utils']['disk_alert'] is not none) %}
 swsu_disk_alert_config_managed:
   file.managed:
@@ -18,4 +19,14 @@ swsu_mysql_replica_checker_config_managed:
     - group: root
     - contents: {{ pillar['sysadmws-utils']['mysql_replica_checker'] | yaml_encode }}
   {% endif %}
+
+  {% if (pillar['sysadmws-utils']['notify_devilry'] is defined) and (pillar['sysadmws-utils']['notify_devilry'] is not none) %}
+    {% if (pillar['sysadmws-utils']['notify_devilry']['config_file'] is defined) and (pillar['sysadmws-utils']['notify_devilry']['config_file'] is not none) %}
+  file.managed:
+    - name: '/opt/sysadmws-utils/notify_devilry/notify_devilry.yaml.jinja'
+    - mode: 0600
+    - source: {{ pillar['sysadmws-utils']['notify_devilry']['config_file'] }}
+    {% endif %}
+  {% endif %}
+
 {% endif %}

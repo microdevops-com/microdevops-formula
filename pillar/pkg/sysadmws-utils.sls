@@ -47,10 +47,6 @@ pkg:
             - runas: 'root'
   {%- endif %}
 {% endif %}
-      - file.managed:
-          '/opt/sysadmws-utils/notify_devilry/notify_devilry.yaml.jinja':
-            - source: 'salt://pkg/files/sysadmws-utils/notify_devilry.yaml.jinja'
-            - mode: 0600
       - module.run:
           1:
             - name: state.sls
