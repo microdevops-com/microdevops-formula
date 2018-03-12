@@ -22,6 +22,7 @@ swsu_mysql_replica_checker_config_managed:
 
   {% if (pillar['sysadmws-utils']['notify_devilry'] is defined) and (pillar['sysadmws-utils']['notify_devilry'] is not none) %}
     {% if (pillar['sysadmws-utils']['notify_devilry']['config_file'] is defined) and (pillar['sysadmws-utils']['notify_devilry']['config_file'] is not none) %}
+swsu_notify_devilry_config_managed:
   file.managed:
     - name: '/opt/sysadmws-utils/notify_devilry/notify_devilry.yaml.jinja'
     - mode: 0600
