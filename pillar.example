@@ -51,6 +51,7 @@ cloud:
         # 16 symbols max
         net_veth_pair_name: vgvmbr1
         lvm_root_resize: 100G
+        dns_add_hn_ip: 10.0.0.2
 
 # ufw_simple
 ufw_simple:

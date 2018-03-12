@@ -45,7 +45,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # Get some config vars
-HN_IP=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:network_profile:eth0:ipv4 | sed -e 's#/.*##'`
+HN_IP=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:dns_add_hn_ip | sed -e 's#/.*##'`
 VETH_PAIR_ETH0=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:net_veth_pair_name:eth0`
 VETH_PAIR_ETH1=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:net_veth_pair_name:eth1`
 VETH_PAIR_ETH2=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:net_veth_pair_name:eth2`
@@ -64,14 +64,6 @@ for LVM_NUM in 1 2 3 4 5 6 7 8 9; do
 		LVM_ADD_SIZE[$LVM_NUM]=`salt --out newline_values_only $MY_HN pillar.get cloud:profiles:$HN_UNDER:lxc_post_profile:lvm_add_$LVM_NUM:size`
 	fi
 done
-
-# Exit if there is no IP
-if [[ -z $HN_IP ]]; then
-	echo
-	echo "Cloud IP not found, something went wrong. Exiting." | ccze -A
-	echo
-	exit
-fi
 
 # Remove minion key
 for O_S_M in $OTHER_SALT_MASTERS; do
@@ -95,15 +87,22 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	salt $MY_HN cmd.shell 'salt-key -y -d '$HN
 fi
 
-# CloudFlare IP
-if [[ "_$CLOUDFLARE_DNS" = "_yes" ]]; then
+# If $HN_IP is set, try to add dns
+if [[ ! -z $HN_IP ]]; then
 	echo
-	echo "Detected cloud IP in pillars: $HN_IP" | ccze -A
-	echo "Going to run: /srv/salt/cloud/cloudflare_add_record.sh $HN $HN_IP" | ccze -A
-	read -p "Are we OK with that? " -n 1 -r
+	echo "Cloud IP not found, something went wrong. Exiting." | ccze -A
 	echo
-	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		/srv/salt/cloud/cloudflare_add_record.sh $HN $HN_IP
+	exit
+	# CloudFlare IP
+	if [[ "_$CLOUDFLARE_DNS" = "_yes" ]]; then
+		echo
+		echo "Detected cloud IP in pillars: $HN_IP" | ccze -A
+		echo "Going to run: /srv/salt/cloud/cloudflare_add_record.sh $HN $HN_IP" | ccze -A
+		read -p "Are we OK with that? " -n 1 -r
+		echo
+		if [[ $REPLY =~ ^[Yy]$ ]]; then
+			/srv/salt/cloud/cloudflare_add_record.sh $HN $HN_IP
+		fi
 	fi
 fi
 
