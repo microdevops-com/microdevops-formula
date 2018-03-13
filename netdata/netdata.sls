@@ -19,10 +19,11 @@
 netdata_newer_git_repo:
   pkg.installed:
     - sources:
-      - wandisco-git-release-6-1: http://opensource.wandisco.com/centos/6/git/x86_64/wandisco-git-release-6-1.noarch.rpm
+      - wandisco-git-release: http://opensource.wandisco.com/centos/6/git/x86_64/wandisco-git-release-6-1.noarch.rpm
 
 netdata_newer_git:
-  pkg.installed:
+  pkg.latest:
+    - refresh: True
     - pkgs:
       - git
     {%- endif %}
