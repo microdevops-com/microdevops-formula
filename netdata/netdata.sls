@@ -315,6 +315,10 @@ netdata_start_script_file:
     - name: '/etc/systemd/system/netdata.service'
     - source: '/opt/netdata/git/system/netdata.service'
     - mode: 0644
+    {%- elif grains['os'] in ['CentOS', 'RedHat'] and grains['osmajorrelease']|int == 6 %}
+    - name: '/etc/init.d/netdata'
+    - source: '/opt/netdata/git/system/netdata-init-d'
+    - mode: 0755
     {%- elif grains['init'] in ['upstart','sysvinit'] %}
     - name: '/etc/init.d/netdata'
     - source: '/opt/netdata/git/system/netdata-lsb'
