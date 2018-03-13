@@ -26,6 +26,8 @@ netdata_newer_git:
     - refresh: True
     - pkgs:
       - git
+      - nss
+      - curl
     {%- endif %}
 
 netdata_depencies_installed:
