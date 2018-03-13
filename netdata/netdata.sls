@@ -15,6 +15,18 @@
     {%- set gateway = salt['cmd.shell']("/sbin/ip route | awk '/default/ { print $3 }'") %}
     {%- set netdata_fpinger_hosts = netdata_fpinger_hosts + " " + gateway %}
 
+    {%- if grains['os'] in ['CentOS', 'RedHat'] and grains['osmajorrelease']|int == 6 %}
+netdata_newer_git_repo:
+  pkg.installed:
+    - sources:
+      - wandisco-git-release-6-1: http://opensource.wandisco.com/centos/6/git/x86_64/wandisco-git-release-6-1.noarch.rpm
+
+netdata_newer_git:
+  pkg.installed:
+    - pkgs:
+      - git
+    {%- endif %}
+
 netdata_depencies_installed:
   pkg.installed:
     - pkgs:
@@ -25,6 +37,8 @@ netdata_depencies_installed:
       - pkg-config
       - libuuid1
       - zlib1g
+      - autoconf-archive
+      - autogen
       {%- if not netdata_container %}
       - lm-sensors
       - libipmimonitoring-dev
@@ -34,7 +48,7 @@ netdata_depencies_installed:
       - zlib-devel
       - libuuid-devel
       - libmnl-devel
-      - nmap-ncat
+      - nmap
       - pkgconfig
       - libuuid
       - zlib
@@ -47,8 +61,6 @@ netdata_depencies_installed:
       - gcc
       - make
       - autoconf
-      - autoconf-archive
-      - autogen
       - automake
       - curl
     {%- if grains['osmajorrelease']|int >= 12 and grains['os'] == 'Ubuntu' %}
