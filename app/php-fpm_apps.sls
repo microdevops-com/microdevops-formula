@@ -5,6 +5,11 @@
     {%- else %}
       {%- set certbot_staging = " " %}
     {%- endif %}
+    {%- if (pillar['certbot_force_renewal'] is defined) and (pillar['certbot_force_renewal'] is not none) and (pillar['certbot_force_renewal']) %}
+      {%- set certbot_force_renewal = "--force-renewal" %}
+    {%- else %}
+      {%- set certbot_force_renewal = " " %}
+    {%- endif %}
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
     {%- else %}
@@ -269,7 +274,7 @@ php-fpm_apps_app_certbot_dir_{{ loop.index }}:
 php-fpm_apps_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
 
 php-fpm_apps_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -341,7 +346,7 @@ php-fpm_apps_app_certbot_dir_{{ loop.index }}:
 php-fpm_apps_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
 
 php-fpm_apps_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -460,18 +465,28 @@ php-fpm_apps_info_warning:
     - comment: |
         WARNING: State configures nginx virtual hosts, BUT it doesn't reload or restart nginx, php-fpm.
         WARNING: It is done so not to break running production sites on the host.
-        WARNING: You should state.apply this state first, then check configs, reload or restart nginx, pfp-fpm manually.
-        WARNING: After that there will be /.well-known/ location ready to serve certbot request.
-        WARNING: For the second time you can run:
-        WARNING: state.apply ... pillar='{"certbot_run_ready": True}'
-        WARNING: This will activate certbot execution and active its certs in nginx.
-        WARNING: After that you can check and reload again.
-        WARNING: Also, not to be temp banned by LE when making test runs, you can run:
-        WARNING: state.apply ... pillar='{"certbot_run_ready": True, "certbot_staging": True}'
-        WARNING: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
-        NOTICE:  You can run only one app with pillar:
-        NOTICE:  state.apply ... pillar='{"app_only_one": "<app_name>"}'
-        NOTICE:  You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
-        NOTICE:  state.apply ... pillar='{"nginx_reload": True}'
+         NOTICE:
+         NOTICE: You should state.apply this state first, then check configs, reload or restart nginx, pfp-fpm manually.
+         NOTICE: After that there will be /.well-known/ location ready to serve certbot request.
+         NOTICE:
+         NOTICE: For the second time you can run:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True}'
+         NOTICE: This will activate certbot execution and active its certs in nginx.
+         NOTICE:
+         NOTICE: After that you can check and reload again.
+         NOTICE:
+         NOTICE: Also, not to be temp banned by LE when making test runs, you can run:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_staging": True}'
+         NOTICE: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
+         NOTICE:
+         NOTICE: After staging experiments you can force renewal with:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_force_renewal": True}'
+         NOTICE: This will add --force-renewal option to certbot.
+         NOTICE:
+         NOTICE: You can run only one app with pillar:
+         NOTICE: state.apply ... pillar='{"app_only_one": "<app_name>"}'
+         NOTICE:
+         NOTICE: You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
+         NOTICE: state.apply ... pillar='{"nginx_reload": True}'
   {%- endif %}
 {%- endif %}
