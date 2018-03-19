@@ -349,10 +349,10 @@ app:
       source:
         enabled: True
         git: 'ssh://git@bitbucket.org/myorg/app_1'
-        hg: 'ssh://hg@bitbucket.org/myorg/app_2' # or, do not use simultaneously
-        rev: 'master' # Remote branch, like origin/{{ rev }}
+        #hg: 'ssh://hg@bitbucket.org/myorg/app_2' # do not use simultaneously git and hg
+        rev: 'master' # Remote repo branch or revision or tag to clone, like origin/{{ rev }}
         target: '/var/www/app_1/src'
-        branch: 'master' # Local branch, HG does not honor 'branch'
+        branch: 'master' # Local clone branch, HG does not honor 'branch'
         # use ssh-keygen -t ed25519, if possible since this improves readability
         repo_key: |
           -----BEGIN OPENSSH PRIVATE KEY-----
