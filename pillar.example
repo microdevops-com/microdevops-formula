@@ -349,9 +349,10 @@ app:
       source:
         enabled: True
         git: 'ssh://git@bitbucket.org/myorg/app_1'
-        rev: 'master'
+        hg: 'ssh://hg@bitbucket.org/myorg/app_2' # or, do not use simultaneously
+        rev: 'master' # Remote branch, like origin/{{ rev }}
         target: '/var/www/app_1/src'
-        branch: 'master'
+        branch: 'master' # Local branch, HG does not honor 'branch'
         # use ssh-keygen -t ed25519, if possible since this improves readability
         repo_key: |
           -----BEGIN OPENSSH PRIVATE KEY-----
@@ -409,9 +410,9 @@ app:
         enabled: True
         git: 'ssh://git@bitbucket.org/myorg/app_2' # either, do not use simultaneously
         hg: 'ssh://hg@bitbucket.org/myorg/app_2' # or, do not use simultaneously
-        rev: 'develop'
+        rev: 'develop' # Remote branch, like origin/{{ rev }}
         target: '/var/www/app_2/src'
-        branch: 'develop'
+        branch: 'develop' # Local branch, HG does not honor 'branch'
         # use ssh-keygen -t ed25519, if possible since this improves readability
         repo_key: |
           -----BEGIN OPENSSH PRIVATE KEY-----
