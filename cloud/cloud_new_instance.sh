@@ -89,10 +89,6 @@ fi
 
 # If $HN_IP is set, try to add dns
 if [[ ! -z $HN_IP ]]; then
-	echo
-	echo "Cloud IP not found, something went wrong. Exiting." | ccze -A
-	echo
-	exit
 	# CloudFlare IP
 	if [[ "_$CLOUDFLARE_DNS" = "_yes" ]]; then
 		echo
