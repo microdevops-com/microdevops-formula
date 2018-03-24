@@ -1,4 +1,4 @@
-{% if (pillar['ntp'] is defined) and (pillar['ntp'] is not none) and (pillar['ntp'] == 'ntpdate_unprivileged_cron') %}
+{% if (pillar['ntp'] is defined) and (pillar['ntp'] is not none) and (pillar['ntp']['sync_type'] is defined) and (pillar['ntp']['sync_type'] is not none) and (pillar['ntp']['sync_type'] == 'ntpdate_unprivileged_cron') %}
 ntp_ntpdate_installed:
   pkg.installed:
     - pkgs:
