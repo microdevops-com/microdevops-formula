@@ -70,6 +70,12 @@ eth0:
     - enabled: True
     - type: eth
     - proto: manual
+    {%- elif (grains['oscodename'] == 'stretch') %}
+eth0:
+  network.managed:
+    - enabled: True
+    - type: eth
+    - proto: manual
     {%- elif grains['oscodename'] == 'xenial' %}
 # state above for some reason doesn't work for xenial, ugly hack below
 xenial_network_interfaces:

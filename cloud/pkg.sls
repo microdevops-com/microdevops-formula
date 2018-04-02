@@ -10,6 +10,12 @@ pkg_jessie_sources_list:
     - name: '/etc/apt/sources.list'
     - source: salt://cloud/files/jessie_sources_list
     - mode: 0644
+  {%- elif grains['oscodename'] == 'stretch' %}
+pkg_stretch_sources_list:
+  file.managed:
+    - name: '/etc/apt/sources.list'
+    - source: salt://cloud/files/stretch_sources_list
+    - mode: 0644
   {%- elif grains['oscodename'] == 'xenial' %}
 pkg_xenial_sources_list:
   file.managed:
@@ -91,6 +97,10 @@ pkg_deb_packages:
       - task-english
       - task-ssh-server
       - libxtables10
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - task-english
+      - task-ssh-server
+      - libxtables10
   {%- elif grains['os'] == 'Ubuntu' %}
       - openssh-server
   {%- endif %}
@@ -151,6 +161,12 @@ jessie_bashrc:
   file.managed:
     - name: '/etc/bash.bashrc'
     - source: salt://cloud/files/jessie_bashrc
+    - mode: 0644
+  {%- elif grains['oscodename'] == 'stretch' %}
+stretch_bashrc:
+  file.managed:
+    - name: '/etc/bash.bashrc'
+    - source: salt://cloud/files/stretch_bashrc
     - mode: 0644
   {%- elif grains['oscodename'] == 'xenial' %}
 xenial_bashrc:
