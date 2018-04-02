@@ -7,12 +7,12 @@ ufw_simple:
     salt:
       proto: 'tcp'
       from:
-        {{ vars['All_Servers'] }}
+        {{ vars['Office_And_VPN'] }}
       to_port: '8006'
   delete:
     allow:
       salt:
         proto: 'tcp'
         from:
-          {{ vars['Delete_All_Servers'] }}
+          {{ vars['Delete_Office_And_VPN'] }}
         to_port: '8006'
