@@ -87,9 +87,9 @@ pkg_deb_packages:
   {%- if grains['oscodename'] == 'jessie' %}
       - python-reportbug
   {%- elif grains['oscodename'] == 'xenial' %}
-      - python3-reportbug
-  {%- elif grains['oscodename'] == 'stretch' %}
       - python-reportbug
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - python3-reportbug
   {%- endif %}
       - lsof
       - reportbug
