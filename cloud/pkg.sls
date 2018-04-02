@@ -42,7 +42,13 @@ pkg_deb_packages:
       - vim
       - wget
       - apt-utils
+  {%- if grains['oscodename'] == 'jessie' %}
       - python-software-properties
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - software-properties-common
+  {%- elif grains['oscodename'] == 'xenial' %}
+      - python-software-properties
+  {%- endif %}
       - at
       - doc-debian
       - ftp
