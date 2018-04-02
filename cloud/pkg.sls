@@ -84,7 +84,13 @@ pkg_deb_packages:
       - mlocate
       - telnet
       - iptables
+  {%- if grains['oscodename'] == 'jessie' %}
       - python-reportbug
+  {%- elif grains['oscodename'] == 'xenial' %}
+      - python3-reportbug
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - python-reportbug
+  {%- endif %}
       - lsof
       - reportbug
       - vim
@@ -106,7 +112,7 @@ pkg_deb_packages:
   {%- elif grains['oscodename'] == 'stretch' %}
       - task-english
       - task-ssh-server
-      - libxtables10
+      - libxtables12
   {%- elif grains['os'] == 'Ubuntu' %}
       - openssh-server
   {%- endif %}
