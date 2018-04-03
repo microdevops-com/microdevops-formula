@@ -1,5 +1,5 @@
 pkg:
-  tz:
+  locale:
     when: 'PKG_PKG'
     states:
       - locale.present:
