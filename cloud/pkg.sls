@@ -144,7 +144,6 @@ pkg_deb_packages:
       - byobu
       - mc
       - ncftp
-      - man
       - ncdu
       - ccze
       - pv
