@@ -14,7 +14,6 @@ cert is aquired via acme.sh which should be configured beforehand, set vars for 
 {% include 'pkg/acme_cloudflare.jinja' with context %}
 #}
 
-
 percona:
   enabled: True
   version: 5.6
