@@ -43,7 +43,7 @@ nginx_files_3:
 
 nginx_dhparam:
   cmd.run:
-    - name: '[[ ! -f /etc/ssl/certs/dhparam.pem ]] && openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048'
+    - name: '[ ! -f /etc/ssl/certs/dhparam.pem ] && openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048'
 
     {%- endif %}
   {%- endif %}
