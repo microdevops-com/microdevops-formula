@@ -155,7 +155,8 @@ mysql_user_{{ name }}_{{ user['host'] }}:
 mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
   mysql_grants.present:
     - grant: '{{db['grant']|join(",")}}'
-    - database: '{{ db['database'] }}.*'
+    - database: '`{{ db['database'] }}`.*'
+    - escape: False
     - user: {{ name }}
     - host: '{{ user["host"] }}'
     - connection_user: root
