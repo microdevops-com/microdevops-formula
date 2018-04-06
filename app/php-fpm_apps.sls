@@ -1,15 +1,30 @@
 {% if (pillar['app'] is defined) and (pillar['app'] is not none) %}
   {%- if (pillar['app']['php-fpm_apps'] is defined) and (pillar['app']['php-fpm_apps'] is not none) %}
+
     {%- if (pillar['certbot_staging'] is defined) and (pillar['certbot_staging'] is not none) and (pillar['certbot_staging']) %}
       {%- set certbot_staging = "--staging" %}
     {%- else %}
       {%- set certbot_staging = " " %}
     {%- endif %}
+
     {%- if (pillar['certbot_force_renewal'] is defined) and (pillar['certbot_force_renewal'] is not none) and (pillar['certbot_force_renewal']) %}
       {%- set certbot_force_renewal = "--force-renewal" %}
     {%- else %}
       {%- set certbot_force_renewal = " " %}
     {%- endif %}
+
+    {%- if (pillar['acme_staging'] is defined) and (pillar['acme_staging'] is not none) and (pillar['acme_staging']) %}
+      {%- set acme_staging = "--staging" %}
+    {%- else %}
+      {%- set acme_staging = " " %}
+    {%- endif %}
+
+    {%- if (pillar['acme_force_renewal'] is defined) and (pillar['acme_force_renewal'] is not none) and (pillar['acme_force_renewal']) %}
+      {%- set acme_force_renewal = "--force" %}
+    {%- else %}
+      {%- set acme_force_renewal = " " %}
+    {%- endif %}
+
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
     {%- else %}
@@ -368,6 +383,70 @@ php-fpm_apps_app_certbot_cron_{{ loop.index }}:
     - dayweek: 1
           {%- endif %}
 
+        {%- elif
+               (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
+               (app_params['nginx']['ssl']['acme'] is defined) and (app_params['nginx']['ssl']['acme'] is not none) and (app_params['nginx']['ssl']['acme'])
+        %}
+php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
+  file.managed:
+    - name: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'
+    - user: root
+    - group: root
+    - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
+    - template: jinja
+    - defaults:
+        server_name: {{ app_params['nginx']['server_name'] }}
+          {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+        server_name_301: '{{ app_params['nginx']['server_name_301'] }}'
+          {%- else %}
+        server_name_301: '{{ phpfpm_app }}.example.com'
+          {%- endif %}
+        nginx_root: {{ app_params['nginx']['root'] }}
+        access_log: {{ app_params['nginx']['access_log'] }}
+        error_log: {{ app_params['nginx']['error_log'] }}
+        php_version: {{ app_params['pool']['php_version'] }}
+        app_name: {{ phpfpm_app }}
+        app_root: {{ app_params['app_root'] }}
+        ssl_cert: '/etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem'
+        ssl_key: '/etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem'
+        auth_basic_block: '{{ auth_basic_block }}'
+
+          {# at least we have snakeoil, if cert req fails #}
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ phpfpm_app ~ '/fullchain.pem') %}
+php-fpm_apps_app_nginx_ssl_link_1_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem'
+    - target: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
+          {%- endif %}
+
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ phpfpm_app ~ '/privkey.pem') %}
+php-fpm_apps_app_nginx_ssl_link_2_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem'
+    - target: '/etc/ssl/private/ssl-cert-snakeoil.key'
+          {%- endif %}
+
+          {%- if (pillar['acme_run_ready'] is defined) and (pillar['acme_run_ready'] is not none) and (pillar['acme_run_ready']) %}
+php-fpm_apps_app_acme_run_{{ loop.index }}:
+  cmd.run:
+    - cwd: /opt/acme/home
+            {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+    - name: '/opt/acme/home/acme.sh {{ acme_staging }} {{ acme_force_renewal }} --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue --dns dns_cf -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }}'
+            {%- else %}
+    - name: '/opt/acme/home/acme.sh {{ acme_staging }} {{ acme_force_renewal }} --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue --dns dns_cf -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }}'
+            {%- endif %}
+
+php-fpm_apps_app_acme_replace_symlink_1_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer && ln -s -f /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer /etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem || true'
+
+php-fpm_apps_app_acme_replace_symlink_2_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ phpfpm_app }}_key.key && ln -s -f /opt/acme/cert/{{ phpfpm_app }}_key.key /etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem || true'
+          {%- endif %}
+
         {%- else %}
 php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
   file.managed:
@@ -466,6 +545,8 @@ php-fpm_apps_info_warning:
         WARNING: State configures nginx virtual hosts, BUT it doesn't reload or restart nginx, php-fpm.
         WARNING: It is done so not to break running production sites on the host.
          NOTICE:
+         NOTICE: CERTBOT workflow:
+         NOTICE: --------------------------------------------------------------------------------------------------------------
          NOTICE: You should state.apply this state first, then check configs, reload or restart nginx, pfp-fpm manually.
          NOTICE: After that there will be /.well-known/ location ready to serve certbot request.
          NOTICE:
@@ -482,6 +563,22 @@ php-fpm_apps_info_warning:
          NOTICE: After staging experiments you can force renewal with:
          NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_force_renewal": True}'
          NOTICE: This will add --force-renewal option to certbot.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE:
+         NOTICE: ACME.SH workflow:
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE: acme.sh should be configured beforehand. You need to specify pillar acme_run_ready to use it:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True}'
+         NOTICE: This will activate acme.sh execution.
+         NOTICE:
+         NOTICE: Also, not to be temp banned by LE when making test runs, you can run:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_staging": True}'
+         NOTICE: This will add --staging option to acme.sh. Certificate will be not trusted, but LE will allow much more tests.
+         NOTICE:
+         NOTICE: After staging experiments you can force renewal with:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_force_renewal": True}'
+         NOTICE: This will add --force option to acme.sh.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
          NOTICE:
          NOTICE: You can run only one app with pillar:
          NOTICE: state.apply ... pillar='{"app_only_one": "<app_name>"}'
