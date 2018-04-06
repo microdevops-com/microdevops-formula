@@ -12,9 +12,11 @@ cert is aquired via acme.sh which should be configured beforehand, set vars for 
 {% set acme_cf_email = "login@cloudflare.com" %}
 {% set acme_mode = "--dns dns_cf" %}
 {% include 'pkg/acme_cloudflare.jinja' with context %}
+{% include 'app/syspass.sls' with context %}
 
-also you need to put files or make symlink:
+also you need to copy files or make symlinks:
 salt://app/syspass -> /srv/formulas/sysadmws-formula/app/files/syspass
+/srv/pillar/app/syspass.sls -> /srv/formulas/sysadmws-formula/pillar/app/syspass.sls
 #}
 
 percona:
