@@ -82,7 +82,7 @@ percona_create_symlink_debian_sys_maint_to_root:
     - target: /etc/mysql/debian.cnf
         {% endif %}
 
-        {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) %}
+        {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) and (pillar['percona']['version'] != '5.7') %}
 percona_disallow_root_remote_connection:
   mysql_query.run:
     - database: mysql
@@ -168,7 +168,7 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
           {%- endfor %}
         {%- endif %}
 
-        {%- if ((pillar['percona']['version'] != '5.7') and (pillar['percona']['version'] != 5.7)) %}
+        {%- if (pillar['percona']['version'] != '5.7') %}
 percona_create_post_install_toolkit_functions:
     mysql_query.run:
     - database: mysql
