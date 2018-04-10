@@ -18,4 +18,7 @@ include:
   - zookeeper.config
   - zookeeper.server
 {% endif %}
+{% if (pillar['atlassian-jira'] is defined) and (pillar['atlassian-jira'] is not none) %}
+  - atlassian-jira
+{% endif %}
   - pkg.after_deploy
