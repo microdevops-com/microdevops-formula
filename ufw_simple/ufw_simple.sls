@@ -122,7 +122,12 @@ ufw_simple_nat_managed_file_3:
           {%- else %}
             {%- set src_block = ' ' %}
           {%- endif %}
-          -A PREROUTING -i {{ d_val['in'] }} {{ src_block }} -p {{ d_val['proto'] }} --dport {{ d_val['dport'] }} -j DNAT --to-destination {{ d_val['to'] }}
+          {%- if (d_val['daddr'] is defined) and (d_val['daddr'] is not none) %}
+            {%- set daddr_block = '-d ' ~ d_val['daddr'] %}
+          {%- else %}
+            {%- set daddr_block = ' ' %}
+          {%- endif %}
+          -A PREROUTING -i {{ d_val['in'] }} {{ src_block }} -p {{ d_val['proto'] }} {{ daddr_block }} --dport {{ d_val['dport'] }} -j DNAT --to-destination {{ d_val['to'] }}
         {%- endfor %}
       {%- else %}
         dnat: '# empty'

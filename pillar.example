@@ -70,6 +70,7 @@ ufw_simple:
         out: 'br0'
     dnat:
       rule_1:
+        daddr: '22.33.44.55'
         dport: '2222'
         from: '11.22.33.44'
         to: '10.0.0.2:22'
