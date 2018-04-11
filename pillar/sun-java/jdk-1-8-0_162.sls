@@ -1,5 +1,4 @@
 {% set java_version = '1.8.0_162' %}
-
 java_home: /opt/java/jdk{{ java_version }}
 java:
   prefix: /usr/share/java
