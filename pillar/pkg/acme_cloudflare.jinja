@@ -23,14 +23,6 @@ pkg:
             - name: '/opt/acme/git/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --install'
             - runas: root
             - cwd: /opt/acme/git
-      - file.managed:
-          1:
-            - name: '/opt/acme/git/acme_local.sh
-            - contents: |
-                #!/bin/bash
-                export CF_Key="{{ acme_cf_key }}"
-                export CF_Email="{{ acme_cf_email }}"
-                /opt/acme/git/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config {{ acme_mode }} "$@"
       - environ.setenv:
           1:
             - name: CF_Key
@@ -40,3 +32,11 @@ pkg:
             - name: CF_Email
             - value: "{{ acme_cf_email }}"
             - update_minion: True
+      - file.managed:
+          1:
+            - name: '/opt/acme/git/acme_local.sh'
+            - contents: |
+                #!/bin/bash
+                export CF_Key="{{ acme_cf_key }}"
+                export CF_Email="{{ acme_cf_email }}"
+                /opt/acme/git/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config {{ acme_mode }} "$@"
