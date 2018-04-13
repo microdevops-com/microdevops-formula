@@ -1,16 +1,10 @@
 {#
-tip: to clean up previous install:
+To clean up previous install:
   - apt-get purge gitlab-ce
   - rm -rf /etc/gitlab /opt/gitlab /var/opt/gitlab /run/gitlab /var/log/gitlab
   - reboot
 
-tip: you need to add and setup acme.sh like setting up pillar:
-{% set acme_auth_id = "xxxx" %}
-{% set acme_auth_password = "xxxxxxxxxxxxxxxxxxxxxxxxx" %}
-{% include 'pkg/acme_cloudns.jinja' with context %}
-
-tip:
-This file should be included in pillar like this:
+This file should be included in pillar, which sets the following:
 {% set gitlab_ext_name = "gitlab.example.com" %}
 {% set gitlab_hostname = "gitlab1.example.com" %}
 {% set gitlab_google_app_id = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com" %}
@@ -18,9 +12,13 @@ This file should be included in pillar like this:
 {% set gitlab_gmail_user = "user@example.com" %}
 {% set gitlab_gmail_password = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
 {% set gitlab_gmail_email_with_key = "user+%{key}@example.com" %}
+
+And then:
 {% include 'pkg/gitlab-ce.jinja' with context %}
 
-tip:
+Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pkg/acme_*.jinja.
+
+Tip:
 Here are the steps needed to connect google auth:
 https://docs.gitlab.com/ee/integration/google.html
 #}
@@ -51,7 +49,7 @@ pkg:
             - runas: 'root'
       - cmd.run:
           1:
-            - name: '/opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --issue --dns dns_cloudns -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
+            - name: '/opt/acme/home/acme_local.sh --issue -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
             - cwd: /opt/acme/home
             - runas: root
       - file.directory:

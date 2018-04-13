@@ -1,3 +1,12 @@
+{#
+This file should be included in pillar, which sets the following:
+{% set acme_cf_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% set acme_cf_email = "login@cloudflare.com" %}
+
+And then:
+{% include 'pkg/acme_cloudflare.jinja' with context %}
+#}
+
 pkg:
   acme:
     when: 'PKG_BEFORE_DEPLOY'
@@ -40,4 +49,4 @@ pkg:
                 #!/bin/bash
                 export CF_Key="{{ acme_cf_key }}"
                 export CF_Email="{{ acme_cf_email }}"
-                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config {{ acme_mode }} "$@"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cf "$@"

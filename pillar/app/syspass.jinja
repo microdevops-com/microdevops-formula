@@ -1,22 +1,19 @@
 {#
-this file should be included in pillar, which sets the following:
+This file should be included in pillar, which sets the following:
 {% set appname = 'syspass' %}
 {% set db_root_pass = 'XXX-set-db-root-pass-here-XXX' %}
 {% set db_pass = 'XXX-set-syspass-db-pass-here-XXX' %}
 {% set domain  = 'pass.example.com' %}
-
 {% set syspass_version = '2.1.15.17101701' %}
 
-cert is aquired via acme.sh which should be configured beforehand, set vars for it, e.g. for cloudflare
-{% set acme_cf_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
-{% set acme_cf_email = "login@cloudflare.com" %}
-{% set acme_mode = "--dns dns_cf" %}
-{% include 'pkg/acme_cloudflare.jinja' with context %}
-{% include 'app/syspass.sls' with context %}
+And then:
+{% include 'app/syspass.jinja' with context %}
 
-also you need to copy files or make symlinks:
+Also you need to copy files or make symlinks:
 salt://app/syspass -> /srv/formulas/sysadmws-formula/app/files/syspass
 /srv/pillar/app/syspass.sls -> /srv/formulas/sysadmws-formula/pillar/app/syspass.sls
+
+Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pkg/acme_*.jinja.
 #}
 
 percona:
@@ -70,7 +67,6 @@ app:
         error_log: '/var/log/nginx/{{ appname }}.error.log'
         ssl:
           acme: True
-          acme_mode: '{{ acme_mode }}'
       pool:
         pool_config: 'app/{{ appname }}/pool.conf'
         php_version: '5.6'

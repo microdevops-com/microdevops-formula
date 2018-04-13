@@ -1,3 +1,12 @@
+{#
+This file should be included in pillar, which sets the following:
+{% set acme_auth_id = "XXXX" %}
+{% set acme_auth_password = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" %}
+
+And then:
+{% include 'pkg/acme_cloudns.jinja' with context %}
+#}
+
 pkg:
   acme:
     when: 'PKG_BEFORE_DEPLOY'
@@ -40,4 +49,4 @@ pkg:
                 #!/bin/bash
                 export CLOUDNS_AUTH_ID="{{ acme_auth_id }}"
                 export CLOUDNS_AUTH_PASSWORD="{{ acme_auth_password }}"
-                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config {{ acme_mode }} "$@"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cloudns "$@"
