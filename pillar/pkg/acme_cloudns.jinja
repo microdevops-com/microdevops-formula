@@ -35,6 +35,7 @@ pkg:
       - file.managed:
           1:
             - name: '/opt/acme/home/acme_local.sh'
+            - mode: 0700
             - contents: |
                 #!/bin/bash
                 export CLOUDNS_AUTH_ID="{{ acme_auth_id }}"
