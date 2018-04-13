@@ -385,8 +385,7 @@ php-fpm_apps_app_certbot_cron_{{ loop.index }}:
 
         {%- elif
                (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
-               (app_params['nginx']['ssl']['acme'] is defined) and (app_params['nginx']['ssl']['acme'] is not none) and (app_params['nginx']['ssl']['acme']) and
-               (app_params['nginx']['ssl']['acme_mode'] is defined) and (app_params['nginx']['ssl']['acme_mode'] is not none) and (app_params['nginx']['ssl']['acme_mode'])
+               (app_params['nginx']['ssl']['acme'] is defined) and (app_params['nginx']['ssl']['acme'] is not none) and (app_params['nginx']['ssl']['acme'])
         %}
 php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
   file.managed:
@@ -432,9 +431,9 @@ php-fpm_apps_app_acme_run_{{ loop.index }}:
   cmd.run:
     - cwd: /opt/acme/home
             {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
-    - name: '/opt/acme/home/acme.sh {{ acme_staging }} {{ acme_force_renewal }} --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue {{ app_params['nginx']['ssl']['acme_mode'] }} -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }}'
+    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }}'
             {%- else %}
-    - name: '/opt/acme/home/acme.sh {{ acme_staging }} {{ acme_force_renewal }} --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue {{ app_params['nginx']['ssl']['acme_mode'] }} -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }}'
+    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }}'
             {%- endif %}
 
 php-fpm_apps_app_acme_replace_symlink_1_{{ loop.index }}:
