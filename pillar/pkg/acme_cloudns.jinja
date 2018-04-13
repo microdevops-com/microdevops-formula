@@ -32,3 +32,11 @@ pkg:
             - name: CLOUDNS_AUTH_PASSWORD
             - value: "{{ acme_auth_password }}"
             - update_minion: True
+      - file.managed:
+          1:
+            - name: '/opt/acme/git/acme_local.sh
+            - contents: |
+                #!/bin/bash
+                export CLOUDNS_AUTH_ID="{{ acme_auth_id }}"
+                export CLOUDNS_AUTH_PASSWORD="{{ acme_auth_password }}"
+                /opt/acme/git/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config {{ acme_mode }} "$@"
