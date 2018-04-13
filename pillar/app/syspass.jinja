@@ -49,6 +49,17 @@ php-fpm:
       - php5.6-xml
       - php5.6-soap
       - php5.6-json
+
+pkg:
+  php_maxlifetime:
+    when: 'PKG_AFTER_DEPLOY'
+    states:
+      - file.replace:
+          1:
+            - name: '/etc/php/5.6/fpm/php.ini'
+            - pattern: '^session.gc_maxlifetime = 1440$'
+            - repl: 'session.gc_maxlifetime = 86400'
+
 app:
   php-fpm_apps:
     {{ appname }}:
