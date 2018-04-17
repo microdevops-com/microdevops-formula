@@ -489,3 +489,29 @@ sysadmws-utils:
 # just plain contents of mysql_replica_checker config file (see /opt/sysadmws-utils/mysql_replica_checker/mysql_replica_checker.conf)
   mysql_replica_checker: |
     BEHIND_MASTER_THR="2000"
+
+# softether
+# vpnserver only managed for now
+softether:
+  # Do not use tag here, it cannot be rev parsed then
+  version: 'c23142a8ffc35088047060989fc3d76c5b4e00af'
+  install: True
+  vpnserver:
+    enabled: True
+    cmds:
+      - 'IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:yes /PSK:XXX-SET-OWN-PSK-PASS-HERE-XXX /DEFAULTHUB:myhub'
+      - 'OpenVpnMakeConfig "\/opt/softether/vpnserver/openvpnconfig.zip"'
+    hubs:
+      DEFAULT:
+        password: 'XXX-SET-OWN-DEFAULT-HUB-PASS-HERE-XXX'
+      myhub:
+        password: 'XXX-SET-OWN-HUB-PASS-HERE-XXX'
+        cmds:
+          - 'SecureNatEnable'
+          - 'SetEnumDeny'
+          - 'SecureNatHostSet /MAC:none /IP:192.168.30.1 /MASK:255.255.255.0'
+          - 'DhcpSet /START:192.168.30.10 /END:192.168.30.200 /MASK:255.255.255.0 /EXPIRE:7200 /GW:none /DNS:8.8.8.8 /DNS2:1.1.1.1 /DOMAIN:mydomain.com /LOG:yes /PUSHROUTE:"10.0.0.1/255.255.255.255/192.168.30.1,10.0.0.2/255.255.255.255/192.168.30.1"'
+        users:
+          user1:
+            password: 'XXX-SET-OWN-USER-PASS-HERE-XXX'
+            realname: 'Real Name'
