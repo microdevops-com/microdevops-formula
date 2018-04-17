@@ -14,11 +14,11 @@ bootstrap_unbound_remove_init:
 
 bootstrap_insserv_fix:
   cmd.run:
-     - name: 'sed -i "s/unbound/+unbound/" /etc/insserv.conf.d/unbound'
+    - name: 'sed -i "s/unbound/+unbound/" /etc/insserv.conf.d/unbound'
 
 bootstrap_systemd_reload:
   cmd.run:
-     - name: 'systemctl daemon-reload'
+    - name: 'systemctl daemon-reload'
 
 bootstrap_systemd_init:
   file.managed:
