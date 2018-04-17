@@ -2,6 +2,9 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
+    vpn_over_HTTPS:
+      proto: 'tcp'
+      to_port: '443'
     vpn_IPSec_IKE:
       proto: 'udp'
       to_port: '500'
