@@ -38,7 +38,7 @@ softether_repo:
 softether_make_clean:
   cmd.run:
     - cwd: /opt/softether/git
-    - name: 'make clean'
+    - name: 'make clean || /bin/true'
 
 softether_configure:
   cmd.run:
