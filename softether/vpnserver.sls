@@ -35,6 +35,10 @@ softether_repo:
     - force_reset: True
     - force_clone: True
 
+softether_vpnserver_stop:
+  service.dead:
+    - name: softether-vpnserver
+
 softether_make_clean:
   cmd.run:
     - cwd: /opt/softether/git
@@ -134,7 +138,7 @@ softether_vpnserver_systemd_reload:
   cmd.run:
     - name: 'systemctl daemon-reload'
 
-bootstrap_unbound_start:
+softether_vpnserver__start:
   service.running:
     - name: softether-vpnserver
     - enable: True
