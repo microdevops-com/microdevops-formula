@@ -6,8 +6,9 @@ softether_info_warning:
     - changes: False
     - result: True
     - comment: |
-        WARNING: Use state.apply softether.vpnserver_install pillar='{"vpnserver_force_install": True} to force install.'
-        WARNING: Use state.apply softether.vpnserver_install pillar='{"vpnserver_prev_password": 'previous_pass'} to connect with vpncmd if password is already set.'
+        NOTICE: Use state.apply softether.vpnserver_install pillar='{"vpnserver_force_install": True} to force install.'
+        NOTICE: Use state.apply softether.vpnserver_install pillar='{"vpnserver_prev_password": 'previous_pass'} to connect with vpncmd if password is already set.'
+        WARNING: State will hang and vpncmd will eat CPU if password is already set and not provided in vpnserver_prev_password.
     # Set some vars
     {%- set softether_version = pillar['softether']['version'] %}
     {%- set vpnserver_prev_password = pillar.get('vpnserver_prev_password', '') %}
