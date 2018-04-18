@@ -498,6 +498,8 @@ softether:
   install: True
   vpnserver:
     enabled: True
+    # Main management password
+    password: 'XXX-SET-SERVER-PASS-HERE-XXX'
     cmds:
       - 'IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:yes /PSK:XXX-SET-OWN-PSK-PASS-HERE-XXX /DEFAULTHUB:myhub'
       - 'OpenVpnMakeConfig "\/opt/softether/vpnserver/openvpnconfig.zip"'
