@@ -6,7 +6,7 @@
   {%- if (pillar['softether']['vpnserver'] is defined) and (pillar['softether']['vpnserver'] is not none) %}
     {%- if (pillar['softether']['vpnserver']['enabled'] is defined) and (pillar['softether']['vpnserver']['enabled'] is not none) and (pillar['softether']['vpnserver']['enabled']) %}
 # Update the Manager Password
-softether_vpnserver_manager_password_{{ loop.index }}:
+softether_vpnserver_manager_password:
   cmd.run:
     - name: 'vpncmd localhost:443 /SERVER /CMD ServerPasswordSet {{ pillar['softether']['vpnserver']['password'] }}'
 
