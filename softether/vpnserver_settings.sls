@@ -10,7 +10,7 @@
           {%- if (pillar['softether']['vpnserver']['hubs'][hub]['delete'] is defined) and (pillar['softether']['vpnserver']['hubs'][hub]['delete'] is not none) and (pillar['softether']['vpnserver']['hubs'][hub]['delete']) %}
 softether_vpnserver_delete_hub_{{ loop.index }}:
   cmd.run:
-    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD HubDelete {{ hub }}'
+    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD HubList | grep -q "Virtual Hub Name.*|{{ hub }}$" && vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD HubDelete {{ hub }}'
 
           {%- else %}
 softether_vpnserver_create_hub_{{ loop.index }}:
@@ -38,7 +38,7 @@ softether_vpnserver_hub_cmd_{{ h_loop.index }}_{{ loop.index }}:
               {%- if (pillar['softether']['vpnserver']['hubs'][hub]['users'][user]['delete'] is defined) and (pillar['softether']['vpnserver']['hubs'][hub]['users'][user]['delete'] is not none) and (pillar['softether']['vpnserver']['hubs'][hub]['users'][user]['delete']) %}
 softether_vpnserver_hub_delete_user_{{ h_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /ADMINHUB:{{ hub }} /CMD UserDelete {{ user }}'
+    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /ADMINHUB:{{ hub }} /CMD UserList | grep -q "User Name.*|{{ user }}$" && vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /ADMINHUB:{{ hub }} /CMD UserDelete {{ user }}'
 
               {%- else %}
 softether_vpnserver_hub_create_user_{{ h_loop.index }}_{{ loop.index }}:
