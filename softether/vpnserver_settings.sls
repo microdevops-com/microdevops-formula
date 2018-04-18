@@ -9,12 +9,12 @@
         {%- for hub in pillar['softether']['vpnserver']['hubs'] %}
 softether_vpnserver_create_hub_{{ loop.index }}:
   cmd.run:
-    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD HubList | grep -q "Virtual Hub Name.*|{{ hub }}$" || vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD HubCreate {{ hub }} /Password {{ pillar['softether']['vpnserver']['hubs'][hub]['password'] }}'
+    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD HubList | grep -q "Virtual Hub Name.*|{{ hub }}$" || vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD HubCreate {{ hub }} /Password "{{ pillar['softether']['vpnserver']['hubs'][hub]['password'] }}"'
 
 # Update password even of created with
 softether_vpnserver_hub_password_{{ loop.index }}:
   cmd.run:
-    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /ADMINHUB:{{ hub }} /CMD SetHubPassword {{ pillar['softether']['vpnserver']['hubs'][hub]['password'] }}'
+    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /ADMINHUB:{{ hub }} /CMD SetHubPassword "{{ pillar['softether']['vpnserver']['hubs'][hub]['password'] }}"'
 
           {%- if (pillar['softether']['vpnserver']['hubs'][hub]['cmds'] is defined) and (pillar['softether']['vpnserver']['hubs'][hub]['cmds'] is not none) %}
             {%- set h_loop = loop %}
@@ -34,7 +34,7 @@ softether_vpnserver_hub_create_user_{{ h_loop.index }}_{{ loop.index }}:
 
 softether_vpnserver_hub_user_password_{{ h_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /ADMINHUB:{{ hub }} /CMD UserPasswordSet {{ user }} /PASSWORD:{{ pillar['softether']['vpnserver']['hubs'][hub]['users'][user]['password'] }}'
+    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /ADMINHUB:{{ hub }} /CMD UserPasswordSet {{ user }} /PASSWORD:"{{ pillar['softether']['vpnserver']['hubs'][hub]['users'][user]['password'] }}"'
 
             {%- endfor %}
           {%- endif %}
