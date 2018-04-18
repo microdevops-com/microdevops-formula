@@ -495,10 +495,9 @@ sysadmws-utils:
 softether:
   # Do not use tag here, it cannot be rev parsed then
   version: 'c23142a8ffc35088047060989fc3d76c5b4e00af'
-  install: True
   vpnserver:
-    enabled: True
-    # Main management password
+    install: True
+    # Main management password, state softether.vpnserver_install sets it at the end of install, state softether.vpnserver_settings uses it to connect
     password: 'XXX-SET-SERVER-PASS-HERE-XXX'
     cmds:
       - 'IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:yes /PSK:XXX-SET-OWN-PSK-PASS-HERE-XXX /DEFAULTHUB:myhub'

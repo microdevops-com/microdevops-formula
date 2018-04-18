@@ -1,11 +1,25 @@
-{% if (pillar['softether'] is defined) and (pillar['softether'] is not none) %}
-  {%- if (pillar['softether']['install'] is defined) and (pillar['softether']['install'] is not none) and (pillar['softether']['install']) %}
+{% if (pillar['softether'] is defined) and (pillar['softether'] is not none) and (pillar['softether']['vpnserver'] is defined) and (pillar['softether']['vpnserver'] is not none) %}
+  {%- if (pillar['softether']['vpnserver']['install'] is defined) and (pillar['softether']['vpnserver']['install'] is not none) and (pillar['softether']['vpnserver']['install']) %}
+softether_info_warning:
+  test.configurable_test_state:
+    - name: state_warning
+    - changes: False
+    - result: True
+    - comment: |
+        WARNING: Use state.apply softether.vpnserver_install pillar='{"vpnserver_force_install": True} to force install.'
+        WARNING: Use state.apply softether.vpnserver_install pillar='{"vpnserver_prev_password": 'previous_pass'} to connect with vpncmd if password is already set.'
     # Set some vars
     {%- set softether_version = pillar['softether']['version'] %}
+    {%- set vpnserver_prev_password = pillar.get('vpnserver_prev_password', '') %}
+    {%- if vpnserver_prev_password != '' %}
+      {%- set vpncmd_connect_pass = '/PASSWORD:"' + vpnserver_prev_password +'"' %}
+    {%- else %}
+      {%- set vpncmd_connect_pass = '' %}
+    {%- endif %}
     # This var is collected on jinja compilation, not sls execution
     {%- set softether_installed_version = salt['cmd.shell']("[ -d /opt/softether/git ] && git -C /opt/softether/git rev-parse --verify HEAD || echo ''") %}
-    # If installed version differs from pillar or softether_force_install set - install softether
-    {%- if (softether_version != softether_installed_version) or (pillar['softether_force_install'] is defined and pillar['softether_force_install'] is not none and pillar['softether_force_install']) %}
+    # If installed version differs from pillar or vpnserver_force_install set - install softether
+    {%- if (softether_version != softether_installed_version) or (pillar['vpnserver_force_install'] is defined and pillar['vpnserver_force_install'] is not none and pillar['vpnserver_force_install']) %}
 softether_depencies_installed:
   pkg.installed:
     - pkgs:
@@ -161,5 +175,10 @@ softether_vpnserver_start_script_file:
         {%- endif %}
       {%- endif %}
     {%- endif %}
+# Update the Manager Password
+softether_vpnserver_manager_password:
+  cmd.run:
+    - name: 'vpncmd localhost:443 {{ vpncmd_connect_pass }} /SERVER /CMD ServerPasswordSet {{ pillar['softether']['vpnserver']['password'] }}'
+
   {%- endif %}
 {% endif %}
