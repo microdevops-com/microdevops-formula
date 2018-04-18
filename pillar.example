@@ -504,7 +504,7 @@ softether:
       - 'OpenVpnMakeConfig "\/opt/softether/vpnserver/openvpnconfig.zip"'
     hubs:
       DEFAULT:
-        password: 'XXX-SET-OWN-DEFAULT-HUB-PASS-HERE-XXX'
+        delete: True
       myhub:
         password: 'XXX-SET-OWN-HUB-PASS-HERE-XXX'
         cmds:
