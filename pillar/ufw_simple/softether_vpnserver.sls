@@ -14,6 +14,9 @@ ufw_simple:
     vpn_OpenVpn:
       proto: 'udp'
       to_port: '1194'
+    vpn_OpenVpn:
+      proto: 'tcp'
+      to_port: '1194'
     vpn_SoftEther:
       proto: 'tcp'
       to_port: '5555'
