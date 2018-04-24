@@ -88,7 +88,7 @@ ufw_simple_restart:
            )
            or
            (
-             (pillar['ufw_simple']['custom'] is defined) and (pillar['ufw_simple']['custom'] is not none) and
+             (pillar['ufw_simple']['custom'] is defined) and (pillar['ufw_simple']['custom'] is not none)
            )
     %}
       # only for nat
