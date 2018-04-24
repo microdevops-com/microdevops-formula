@@ -101,12 +101,12 @@ ufw_simple:
         to_ports: '6666'
         proto: 'tcp'
         in: 'br0'
-    custom: # direclty paste custom iptables rules to before.rules
-      nat: | # nat table
-        -A POSTROUTING -s 10.0.10.0/24 -o br0 -j MASQUERADE
-      filter: | # filter table
-        -A FORWARD -s 10.0.0.10/32 -j ACCEPT
-        -A FORWARD -d 10.0.0.10/32 -j ACCEPT
+  custom: # directly paste custom iptables rules to before.rules
+    nat: | # nat table
+      -A POSTROUTING -s 10.0.10.0/24 -o br0 -j MASQUERADE
+    filter: | # filter table
+      -A FORWARD -s 10.0.0.10/32 -j ACCEPT
+      -A FORWARD -d 10.0.0.10/32 -j ACCEPT
   allow: # allow/deny/reject/limit/limit_in/limit_out
     rule_1: # from list to list with to port
       proto: 'tcp'
