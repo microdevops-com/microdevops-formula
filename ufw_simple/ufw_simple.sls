@@ -181,6 +181,12 @@ ufw_simple_nat_or_custom_managed_file_3:
         {%- else %}
         redirect: '# empty'
         {%- endif %}
+      {%- else %}
+        redirect: '# empty'
+        dnat: '# empty'
+        snat: '# empty'
+        masquerade: '# empty'
+        custom_nat: '# empty'
       {%- endif %}
       {%- if (pillar['ufw_simple']['custom'] is defined) and (pillar['ufw_simple']['custom'] is not none) %}
         {%- if (pillar['ufw_simple']['custom']['nat'] is defined) and (pillar['ufw_simple']['custom']['nat'] is not none) %}
