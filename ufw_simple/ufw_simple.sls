@@ -82,9 +82,20 @@ ufw_simple_restart:
 
     # managed nat
     {%- if
-           (pillar['ufw_simple']['nat'] is defined) and (pillar['ufw_simple']['nat'] is not none) and
-           (pillar['ufw_simple']['nat']['enabled'] is defined) and (pillar['ufw_simple']['nat']['enabled'] is not none) and (pillar['ufw_simple']['nat']['enabled'])
+           (
+             (pillar['ufw_simple']['nat'] is defined) and (pillar['ufw_simple']['nat'] is not none) and
+             (pillar['ufw_simple']['nat']['enabled'] is defined) and (pillar['ufw_simple']['nat']['enabled'] is not none) and (pillar['ufw_simple']['nat']['enabled'])
+           )
+           or
+           (
+             (pillar['ufw_simple']['custom'] is defined) and (pillar['ufw_simple']['custom'] is not none) and
+           )
     %}
+      # only for nat
+      {%- if
+             (pillar['ufw_simple']['nat'] is defined) and (pillar['ufw_simple']['nat'] is not none) and
+             (pillar['ufw_simple']['nat']['enabled'] is defined) and (pillar['ufw_simple']['nat']['enabled'] is not none) and (pillar['ufw_simple']['nat']['enabled'])
+      %}
 ufw_simple_nat_managed_file_1:
   file.managed:
     - name: '/etc/ufw/sysctl.conf'
@@ -96,8 +107,9 @@ ufw_simple_nat_managed_file_2:
     - name: '/etc/default/ufw'
     - source: 'salt://ufw_simple/files/etc_default_ufw'
     - mode: 0644
+      {%- endif %}
 
-ufw_simple_nat_managed_file_3:
+ufw_simple_nat_or_custom_managed_file_3:
   file.managed:
     - name: '/etc/ufw/before.rules'
     - source: 'salt://ufw_simple/files/before.rules'
@@ -184,7 +196,7 @@ ufw_simple_nat_managed_file_3:
         custom_filter: '# empty'
       {%- endif %}
 
-ufw_simple_nat_managed_restart:
+ufw_simple_nat_or_custom_managed_restart:
   cmd.run:
     - name: 'ufw disable && sleep 5 && ufw enable'
     - runas: root
