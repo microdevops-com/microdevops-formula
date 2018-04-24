@@ -80,7 +80,7 @@ ufw_simple_restart:
       - file: '/etc/default/ufw'
     {%- endif %}
 
-    # managed nat
+    # managed nat or custom rules
     {%- if
            (
              (pillar['ufw_simple']['nat'] is defined) and (pillar['ufw_simple']['nat'] is not none) and
@@ -182,11 +182,10 @@ ufw_simple_nat_or_custom_managed_file_3:
         redirect: '# empty'
         {%- endif %}
       {%- else %}
-        redirect: '# empty'
+        masquerade: '# empty'
         dnat: '# empty'
         snat: '# empty'
-        masquerade: '# empty'
-        custom_nat: '# empty'
+        redirect: '# empty'
       {%- endif %}
       {%- if (pillar['ufw_simple']['custom'] is defined) and (pillar['ufw_simple']['custom'] is not none) %}
         {%- if (pillar['ufw_simple']['custom']['nat'] is defined) and (pillar['ufw_simple']['custom']['nat'] is not none) %}
@@ -212,8 +211,13 @@ ufw_simple_nat_or_custom_managed_restart:
     - name: 'ufw disable && sleep 5 && ufw enable'
     - runas: root
     - onchanges:
+      {%- if
+             (pillar['ufw_simple']['nat'] is defined) and (pillar['ufw_simple']['nat'] is not none) and
+             (pillar['ufw_simple']['nat']['enabled'] is defined) and (pillar['ufw_simple']['nat']['enabled'] is not none) and (pillar['ufw_simple']['nat']['enabled'])
+      %}
       - file: '/etc/ufw/sysctl.conf'
       - file: '/etc/default/ufw'
+      {%- endif %}
       - file: '/etc/ufw/before.rules'
     {%- endif %}
 
