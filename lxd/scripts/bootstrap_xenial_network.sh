@@ -13,6 +13,8 @@ iface eth0 inet static
         dns-search $5
 EOM
 
+[[ ! -z $6 ]] && echo "        hwaddress ether $6" >> /etc/network/interfaces
+
 /bin/kill -9 `/bin/ps ax | /bin/grep dhclient | /bin/grep -v grep | /usr/bin/awk '{print $1}'`
 /sbin/ifdown --force --all  eth0
 /bin/sleep 2
