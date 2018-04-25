@@ -10,12 +10,12 @@ LXDHOST_UNDER=`echo "$2" | sed -e 's/\./_/g'`
 
 # Some checks and info
 if [[ "_$1" = "_" ]]; then
-        echo "First agrument missing, you should provide new instance hostname as first argument."
-        exit
+	echo "First agrument missing, you should provide new instance hostname as first argument."
+	exit
 fi
 if [[ "_$2" = "_" ]]; then
-        echo "Second agrument missing, you should provide new instance LXD hostname as second argument."
-        exit
+	echo "Second agrument missing, you should provide new instance LXD hostname as second argument."
+	exit
 fi
 echo "By now you should have done:" | ccze -A
 echo "- Allocate IPs for the container ($MY_HN:/srv/pillar/ip/*.jinja)" | ccze -A
@@ -32,8 +32,8 @@ echo "Going to run: salt $MY_HN saltutil.refresh_pillar" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $MY_HN saltutil.refresh_pillar
-        sleep 5
+	salt $MY_HN saltutil.refresh_pillar
+	sleep 5
 fi
 
 # Update firewall
@@ -43,7 +43,7 @@ echo "Going to run: salt $MY_HN state.apply ufw_simple.ufw_simple" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $MY_HN state.apply ufw_simple.ufw_simple
+	salt $MY_HN state.apply ufw_simple.ufw_simple
 fi
 
 # Remove minion key
@@ -53,7 +53,7 @@ echo "Going to run: salt $MY_HN cmd.shell 'salt-key -y -d $HN'" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $MY_HN cmd.shell 'salt-key -y -d '$HN
+	salt $MY_HN cmd.shell 'salt-key -y -d '$HN
 fi
 
 # Make current container symlink
@@ -63,8 +63,8 @@ echo "Going to run: salt $MY_HN cmd.shell 'ln -svf /srv/pillar/lxd/$LXDHOST_UNDE
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $MY_HN cmd.shell 'ln -svf /srv/pillar/lxd/'$LXDHOST_UNDER'/'$HN_UNDER'.sls /srv/pillar/lxd/'$LXDHOST_UNDER'/current_container.sls'
-        sleep 5
+	salt $MY_HN cmd.shell 'ln -svf /srv/pillar/lxd/'$LXDHOST_UNDER'/'$HN_UNDER'.sls /srv/pillar/lxd/'$LXDHOST_UNDER'/current_container.sls'
+	sleep 5
 fi
 
 # Refresh pillar LXD host
@@ -74,8 +74,8 @@ echo "Going to run: salt $LXDHOST saltutil.refresh_pillar" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $LXDHOST saltutil.refresh_pillar
-        sleep 5
+	salt $LXDHOST saltutil.refresh_pillar
+	sleep 5
 fi
 
 # lxd.init
@@ -85,7 +85,7 @@ echo "It could take 10+ minutes." | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        time salt $LXDHOST state.apply lxd.init
+	time salt $LXDHOST state.apply lxd.init
 fi
 
 # Wait minion key comes to master
@@ -101,7 +101,7 @@ echo "Going to run: salt $MY_HN cmd.shell 'salt-key -y -a $HN'" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $MY_HN cmd.shell 'salt-key -y -a '$HN
+	salt $MY_HN cmd.shell 'salt-key -y -a '$HN
 fi
 
 # Wait minion becomes alive
@@ -117,8 +117,8 @@ echo "Going to run: salt $HN saltutil.refresh_pillar" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $HN saltutil.refresh_pillar
-        sleep 5
+	salt $HN saltutil.refresh_pillar
+	sleep 5
 fi
 
 # pkg state
@@ -127,7 +127,7 @@ echo "Going to run: salt $HN state.apply cloud.pkg" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        time salt $HN state.apply cloud.pkg
+	time salt $HN state.apply cloud.pkg
 fi
 
 # network state
@@ -136,7 +136,7 @@ echo "Going to run: salt $HN state.apply cloud.network" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        time salt $HN state.apply cloud.network
+	time salt $HN state.apply cloud.network
 fi
 
 # high state
@@ -145,7 +145,7 @@ echo "Going to run: salt $HN state.highstate" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        time salt $HN state.highstate
+	time salt $HN state.highstate
 fi
 
 # Ubuntu default backups
@@ -154,7 +154,7 @@ echo "Going to run: salt $HN cmd.shell '/opt/sysadmws-utils/rsnapshot_backup/rsn
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $HN cmd.shell '/opt/sysadmws-utils/rsnapshot_backup/rsnapshot_backup.conf_ubuntu.sh'
+	salt $HN cmd.shell '/opt/sysadmws-utils/rsnapshot_backup/rsnapshot_backup.conf_ubuntu.sh'
 fi
 
 # fail2ban
@@ -163,7 +163,7 @@ echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local'
+	salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local'
 fi
 
 # Stop container
@@ -173,7 +173,7 @@ echo "Going to run: salt $LXDHOST cmd.shell \"lxc stop $HN_DASH\"" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        time salt $LXDHOST cmd.shell "lxc stop $HN_DASH"
+	time salt $LXDHOST cmd.shell "lxc stop $HN_DASH"
 fi
 
 # Start container
@@ -183,7 +183,7 @@ echo "Going to run: salt $LXDHOST cmd.shell \"lxc start $HN_DASH\"" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        time salt $LXDHOST cmd.shell "lxc start $HN_DASH"
+	time salt $LXDHOST cmd.shell "lxc start $HN_DASH"
 fi
 
 # Wait minion becomes alive
@@ -198,7 +198,7 @@ echo "Going to run: salt $HN state.apply app.deploy" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-        time salt $HN state.apply app.deploy
+	time salt $HN state.apply app.deploy
 fi
 
 # Final info
