@@ -130,15 +130,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	time salt $HN state.apply cloud.pkg
 fi
 
-# network state
-echo
-echo "Going to run: salt $HN state.apply cloud.network" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $HN state.apply cloud.network
-fi
-
 # high state
 echo
 echo "Going to run: salt $HN state.highstate" | ccze -A
