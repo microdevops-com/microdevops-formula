@@ -271,5 +271,28 @@ php-fpm_5_6_modules_ioncube_3:
         {%- endif %}
       {%- endif %}
     {%- endif %}
+
+    {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
+      {%- for k, v in pillar['php-fpm']['tz'].iteritems() %}
+        {%- set phpversion = k.replace('_','.').split('php')[1] %}
+        {%- set timezone = v %}
+
+        {%- for type in ['cli','fpm'] %}
+php-fpm_{{ k }}_timezone_{{ type }}:
+  ini.options_present:
+          {%- if phpversion == '5.5' %}
+    - name: '/etc/php5/{{ type }}/php.ini'
+          {%- else %}
+    - name: '/etc/php/{{ phpversion }}/{{ type }}/php.ini'
+          {%- endif %}
+    - separator: '='
+    - sections:
+        Date:
+          date.timezone: {{ timezone }}
+        {%- endfor %}
+
+      {%- endfor %}
+    {%- endif %}
+
   {%- endif %}
 {% endif %}
