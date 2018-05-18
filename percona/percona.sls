@@ -75,6 +75,27 @@ percona_remove_limits:
       - service: percona_svc
         {%- endif %}
 
+        {%- if ((pillar['percona']['version'] == '5.7') and (pillar['percona']['version'] == 5.7)) %}
+percona_debian_conf:
+  file.managed:
+    - name: '/etc/mysql/debian.cnf'
+    - user: 'root'
+    - group: 'root'
+    - mode: '0600'
+    - contents: |
+        [client]
+        host     = localhost
+        user     = root
+        password = {{ pillar['percona']['root_password'] }}
+        socket   = /var/run/mysqld/mysqld.sock
+        [mysql_upgrade]
+        host     = localhost
+        user     = root
+        password = {{ pillar['percona']['root_password'] }}
+        socket   = /var/run/mysqld/mysqld.sock
+        basedir  = /usr
+        {%- endif %}
+
         {% if not salt['file.file_exists' ]('/root/.my.cnf') %}
 percona_create_symlink_debian_sys_maint_to_root:
   file.symlink:
@@ -178,25 +199,6 @@ percona_create_post_install_toolkit_functions:
     - require:
       - pkg: mysql_python_dep
       - service: percona_svc
-        {%- else %}
-percona_debian_conf:
-  file.managed:
-    - name: '/etc/mysql/debian.cnf'
-    - user: 'root'
-    - group: 'root'
-    - mode: '0600'
-    - contents: |
-        [client]
-        host     = localhost
-        user     = root
-        password = {{ pillar['percona']['root_password'] }}
-        socket   = /var/run/mysqld/mysqld.sock
-        [mysql_upgrade]
-        host     = localhost
-        user     = root
-        password = {{ pillar['percona']['root_password'] }}
-        socket   = /var/run/mysqld/mysqld.sock
-        basedir  = /usr
         {%- endif %}
 
       {%- endif %}
