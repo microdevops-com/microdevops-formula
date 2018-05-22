@@ -71,7 +71,9 @@ pkg_deb_packages:
       - man-db
       - bzip2
       - whiptail
+  {%- if grains['oscodename'] != 'precise' %}
       - kmod
+  {%- endif %}
       - gettext-base
       - dbus
       - libclass-isa-perl
