@@ -62,7 +62,6 @@ pkg_deb_packages:
       - rsyslog
       - less
       - whois
-      - nfacct
       - bc
       - wamerican
       - ucf
@@ -73,6 +72,8 @@ pkg_deb_packages:
       - whiptail
   {%- if grains['oscodename'] != 'precise' %}
       - kmod
+      - aptitude-common
+      - nfacct
   {%- endif %}
       - gettext-base
       - dbus
@@ -97,7 +98,6 @@ pkg_deb_packages:
       - reportbug
       - vim
       - krb5-locales
-      - aptitude-common
       - ncurses-term
       - aptitude
       - apt-listchanges
