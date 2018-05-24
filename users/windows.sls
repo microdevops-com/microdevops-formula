@@ -27,6 +27,14 @@ windows_user_password_never_expires_{{ loop.index }}:
     - password_never_expires: True
     {%- endif %}
 
+    {%- if (user_params['description'] is defined) and (user_params['description'] is not none) %}
+windows_user_description_{{ loop.index }}:
+  module.run:
+    - name: user.update
+    - m_name: {{ windows_user }}
+    - description: {{ user_params['description'] }}
+    {%- endif %}
+
     {%- if (user_params['admin'] is defined) and (user_params['admin'] is not none) and (user_params['admin']) %}
 windows_user_admin_user_{{ loop.index }}:
   cmd.run:

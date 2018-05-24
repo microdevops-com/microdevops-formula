@@ -140,6 +140,7 @@ windows_unrestricted: True # leave the powershell in the unrestricted mode
 windows_users:
   john:
     fullname: John Doe
+    description: My Org
     remove_groups: False
     password: coolpassword
     admin: True # add user to Administrators (local or domain)
