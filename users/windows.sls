@@ -50,9 +50,9 @@ windows_user_admin_user_{{ loop.index }}:
 windows_user_starting_program_{{ loop.index }}:
   cmd.run:
       {%- if (user_params['start_in'] is defined) and (user_params['start_in'] is not none) %}
-    - name: "powershell.exe C:\Windows\system32\starting_program.ps1 '{{ windows_user }}' '{{ user_params['starting_program'] }}' '{{ user_params['start_in'] }}'"
+    - name: powershell.exe C:\Windows\system32\starting_program.ps1 '{{ windows_user }}' '{{ user_params['starting_program'] }}' '{{ user_params['start_in'] }}'
       {%- else %}
-    - name: "powershell.exe C:\Windows\system32\starting_program.ps1 '{{ windows_user }}' '{{ user_params['starting_program'] }}' ''"
+    - name: powershell.exe C:\Windows\system32\starting_program.ps1 '{{ windows_user }}' '{{ user_params['starting_program'] }}' ''
       {%- endif %}
     {%- endif %}
   {%- endfor %}
