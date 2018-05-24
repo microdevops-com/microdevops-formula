@@ -142,7 +142,10 @@ windows_users:
     fullname: John Doe
     remove_groups: False
     password: coolpassword
-    is_admin: True
+    admin: True # add user to Administrators (local or domain)
+    groups: # optional group list to add user to
+      - RDP
+    password_never_expires: True
 
 # test
 test:
