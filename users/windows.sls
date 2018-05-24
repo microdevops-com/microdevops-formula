@@ -4,6 +4,11 @@ windows_scripts_admin_user:
     - name: 'C:\Windows\System32\admin_user.ps1'
     - source: salt://users/scripts/admin_user.ps1
 
+windows_scripts_starting_program:
+  file.managed:
+    - name: 'C:\Windows\System32\starting_program.ps1'
+    - source: salt://users/scripts/starting_program.ps1
+
 windows_execution_policy_unrestrict:
   cmd.run:
     - name: powershell.exe Set-ExecutionPolicy -Force Unrestricted
@@ -39,6 +44,16 @@ windows_user_description_{{ loop.index }}:
 windows_user_admin_user_{{ loop.index }}:
   cmd.run:
     - name: 'powershell.exe C:\Windows\system32\admin_user.ps1 {{ windows_user }}'
+    {%- endif %}
+
+    {%- if (user_params['starting_program'] is defined) and (user_params['starting_program'] is not none) %}
+windows_user_starting_program_{{ loop.index }}:
+  cmd.run:
+      {%- if (user_params['start_in'] is defined) and (user_params['start_in'] is not none) %}
+    - name: "powershell.exe C:\Windows\system32\starting_program.ps1 '{{ windows_user }}' '{{ user_params['starting_program'] }}' '{{ user_params['start_in'] }}'"
+      {%- else %}
+    - name: "powershell.exe C:\Windows\system32\starting_program.ps1 '{{ windows_user }}' '{{ user_params['starting_program'] }}' ''"
+      {%- endif %}
     {%- endif %}
   {%- endfor %}
 
