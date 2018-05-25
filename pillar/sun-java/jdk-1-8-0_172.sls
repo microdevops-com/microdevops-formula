@@ -1,4 +1,4 @@
-{% set java_version = '1.8.0_162' %}
+{% set java_version = '1.8.0_172' %}
 java_home: /opt/java/jdk{{ java_version }}
 java:
   prefix: /usr/share/java
@@ -7,8 +7,8 @@ java:
   dl_opts: -b oraclelicense=accept-securebackup-cookie -L -s
   archive_type: tar
   version_name: jdk{{ java_version }}
-  source_url: http://download.oracle.com/otn-pub/java/jdk/8u162-b12/0da788060d494f5095bf8624735fa2f1/jdk-8u162-linux-x64.tar.gz
-  source_hash: sha256=68ec82d47fd9c2b8eb84225b6db398a72008285fafc98631b1ff8d2229680257
+  source_url: http://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.tar.gz
+  source_hash: sha256=28a00b9400b6913563553e09e8024c286b506d8523334c93ddec6c9ec7e9d346
   jre_lib_sec: /usr/share/java/jdk{{ java_version }}/jre/lib/security
   java_real_home: /usr/share/java/jdk{{ java_version }}
   java_realcmd: /usr/share/java/jdk{{ java_version }}/bin/java
