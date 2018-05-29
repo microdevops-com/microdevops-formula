@@ -152,7 +152,11 @@ softether_vpnserver_systemd_reload:
   cmd.run:
     - name: 'systemctl daemon-reload'
 
-softether_vpnserver__start:
+softether_vpnserver_systemd_start_hack:
+  cmd.run:
+    - name: 'service softether-vpnserver start'
+
+softether_vpnserver_start:
   service.running:
     - name: softether-vpnserver
     - enable: True
