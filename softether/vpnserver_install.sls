@@ -99,8 +99,7 @@ softether_checkinstall:
     - name: 'checkinstall --install=yes -y --pkgname=softether --nodoc'
 
       {%- if (pillar['softether']['vpnserver'] is defined) and (pillar['softether']['vpnserver'] is not none) %}
-        {%- if (pillar['softether']['vpnserver']['enabled'] is defined) and (pillar['softether']['vpnserver']['enabled'] is not none) and (pillar['softether']['vpnserver']['enabled']) %}
-          {%- if grains['init'] == 'systemd' %}
+        {%- if grains['init'] == 'systemd' %}
 softether_vpnserver_start_script_file:
   file.managed:
     - name: '/etc/systemd/system/softether-vpnserver.service'
@@ -158,21 +157,20 @@ softether_vpnserver__start:
     - name: softether-vpnserver
     - enable: True
 
-          {%- elif grains['os'] in ['CentOS', 'RedHat'] and grains['osmajorrelease']|int == 6 %}
+        {%- elif grains['os'] in ['CentOS', 'RedHat'] and grains['osmajorrelease']|int == 6 %}
 softether_vpnserver_start_script_file:
   file.managed:
     - name: '/etc/init.d/softether-vpnserver'
     - source: '/opt/softether/git/centos/SOURCES/init.d/vpnserver '
     - mode: 0755
 
-          {%- elif grains['init'] in ['upstart','sysvinit'] %}
+        {%- elif grains['init'] in ['upstart','sysvinit'] %}
 softether_vpnserver_start_script_file:
   file.managed:
     - name: '/etc/init.d/softether-vpnserver'
     - source: '/opt/softether/git/debian/softether-vpnserver.init'
     - mode: 0755
 
-          {%- endif %}
         {%- endif %}
       {%- endif %}
     {%- endif %}
