@@ -63,7 +63,7 @@ windows_user_starting_program_{{ loop.index }}:
 
     {%- if (user_params['session_params'] is defined) and (user_params['session_params'] is not none) %}
       {%- set o_loop = loop %}
-      {%- for session_params_key, session_params_val in user_params['session_params'] %}
+      {%- for session_params_key, session_params_val in user_params['session_params'].items() %}
 windows_user_starting_program_{{ o_loop.index }}_{{ loop.index }}:
   cmd.run:
     - name: powershell.exe C:\Windows\system32\session_params.ps1 '{{ windows_user }}' '{{ session_params_key }}' '{{ session_params_val }}'
