@@ -9,6 +9,11 @@ windows_scripts_starting_program:
     - name: 'C:\Windows\System32\starting_program.ps1'
     - source: salt://users/scripts/starting_program.ps1
 
+windows_scripts_session_params:
+  file.managed:
+    - name: 'C:\Windows\System32\session_params.ps1'
+    - source: salt://users/scripts/session_params.ps1
+
 windows_execution_policy_unrestrict:
   cmd.run:
     - name: powershell.exe Set-ExecutionPolicy -Force Unrestricted
@@ -54,6 +59,15 @@ windows_user_starting_program_{{ loop.index }}:
       {%- else %}
     - name: powershell.exe C:\Windows\system32\starting_program.ps1 '{{ windows_user }}' '{{ user_params['starting_program'] }}' ''
       {%- endif %}
+    {%- endif %}
+
+    {%- if (user_params['session_params'] is defined) and (user_params['session_params'] is not none) %}
+      {%- set o_loop = loop %}
+      {%- for session_params_key, session_params_val in user_params['session_params'] %}
+windows_user_starting_program_{{ o_loop.index }}_{{ loop.index }}:
+  cmd.run:
+    - name: powershell.exe C:\Windows\system32\session_params.ps1 '{{ windows_user }}' '{{ session_params_key }}' '{{ session_params_val }}'
+      {%- endfor %}
     {%- endif %}
   {%- endfor %}
 
