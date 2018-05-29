@@ -149,6 +149,9 @@ windows_users:
     password_never_expires: True
     starting_program: '\"C:\Program Files\My Cool Program\My Cool Program.exe\" myparameter /H\"localhost\"' # double quotes should be backslashed, don't use \" after \ - it wil be a backslashed backslash
     start_in: 'C:\Program Files\My Cool Program\' # optional for starting_program, usually you dont need double quotes here
+    session_params:
+      BrokenConnectionAction: "1"
+      MaxDisconnectionTime: "1"
 
 # test
 test:
