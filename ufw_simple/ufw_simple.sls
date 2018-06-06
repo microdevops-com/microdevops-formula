@@ -228,6 +228,13 @@ ufw_simple_set_logging:
     - runas: root
     {%- endif %}
 
+    {%- if  (pillar['ufw_simple']['reset'] is defined) and (pillar['ufw_simple']['reset'] is not none) and (pillar['ufw_simple']['reset']) %}
+ufw_simple_reset:
+  cmd.run:
+    - name: 'ufw reset && sleep 5 && ufw enable'
+    - runas: root
+    {%- endif %}
+
     {%- if  (pillar['ufw_simple']['allow'] is defined) and (pillar['ufw_simple']['allow'] is not none) %}
       {%- set item_action = 'allow' %}
       {%- set item_delete = '' %}

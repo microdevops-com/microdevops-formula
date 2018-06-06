@@ -58,6 +58,7 @@ cloud:
 # ufw_simple
 ufw_simple:
   enabled: True
+  reset: False # True => reset ufw every time to clear out manual rules (beware: every time state applies fw is disabled for several seconds)
   logging: 'off'
   nat:
     enabled: True
