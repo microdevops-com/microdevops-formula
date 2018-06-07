@@ -320,6 +320,7 @@ php-fpm:
       - php5.6-soap
       - php5.6-ioncube
 
+# wordpress app example see in app/files/wordpress
 app:
   php-fpm_apps:
     app_1:
