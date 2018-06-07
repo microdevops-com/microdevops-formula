@@ -98,6 +98,23 @@ php-fpm_apps_user_ssh_auth_keys_{{ loop.index }}:
         {%- if
                (app_params['source'] is defined) and (app_params['source'] is not none) and
                (app_params['source']['enabled'] is defined) and (app_params['source']['enabled'] is not none) and (app_params['source']['enabled']) and
+               (app_params['source']['archive'] is defined) and (app_params['source']['archive'] is not none)
+        %}
+php-fpm_apps_app_download_arc_{{ loop.index }}:
+  archive.extracted:
+    - name: {{ app_params['source']['target'] }}
+    - source: {{ app_params['source']['archive'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - overwrite: {{ app_params['source']['overwrite'] }}
+          {%- if (app_params['source']['if_missing'] is defined) and (app_params['source']['if_missing'] is not none) %}
+    - if_missing: {{ app_params['source']['if_missing'] }}
+          {%- endif %}
+        {%- endif %}
+
+        {%- if
+               (app_params['source'] is defined) and (app_params['source'] is not none) and
+               (app_params['source']['enabled'] is defined) and (app_params['source']['enabled'] is not none) and (app_params['source']['enabled']) and
                (
                  ((app_params['source']['git'] is defined) and (app_params['source']['git'] is not none)) or
                  ((app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none))
