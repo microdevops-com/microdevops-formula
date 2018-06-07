@@ -104,6 +104,7 @@ php-fpm_apps_app_download_arc_{{ loop.index }}:
   archive.extracted:
     - name: {{ app_params['source']['target'] }}
     - source: {{ app_params['source']['archive'] }}
+    - source_hash: {{ app_params['source']['archive_hash'] }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - overwrite: {{ app_params['source']['overwrite'] }}
