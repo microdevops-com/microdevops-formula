@@ -33,7 +33,6 @@ php-fpm:
 
 {% set appname = 'mywp' %}
 {% set domain = 'mywp.example.com' %}
-{% set wp_version = '4.9.6' %}
 app:
   php-fpm_apps:
     {{ appname }}:
@@ -67,7 +66,7 @@ app:
           php_admin_value[upload_max_filesize] = 25M
       source:
         enabled: True
-        archive: 'https://wordpress.org/wordpress-{{ wp_version }}.tar.gz'
+        archive: 'https://wordpress.org/wordpress-4.9.6.tar.gz'
         archive_hash: 'md5=f168643b20001cc46b3478facd4f539b'
         overwrite: False
         if_missing: '/var/www/{{ appname }}/wordpress'
