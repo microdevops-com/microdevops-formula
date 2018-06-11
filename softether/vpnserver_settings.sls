@@ -79,6 +79,10 @@ softether_vpnserver_cert_cert:
     - user: root
     - group: root
     - contents: {{ pillar['softether']['vpnserver']['server_cert'] | yaml_encode }}
+
+softether_vpnserver_cmd_cert_set:
+  cmd.run:
+    - name: 'vpncmd localhost:443 /PASSWORD:"{{ pillar['softether']['vpnserver']['password'] }}" /SERVER /CMD ServerCertSet /LOADCERT:"/opt/softether/vpnserver/server_cert" /LOADKEY:"/opt/softether/vpnserver/server_key"'
       {%- endif %}
     {%- endif %}
   {%- endif %}
