@@ -62,9 +62,9 @@ softether_vpnserver_cmd_{{ loop.index }}:
 
         {%- endfor %}
       {%- endif %}
-      {%-
-          if (pillar['softether']['vpnserver']['server_key'] is defined) and (pillar['softether']['vpnserver']['server_key'] is not none) and
-          if (pillar['softether']['vpnserver']['server_cert'] is defined) and (pillar['softether']['vpnserver']['server_cert'] is not none)
+      {%- if
+             (pillar['softether']['vpnserver']['server_key'] is defined) and (pillar['softether']['vpnserver']['server_key'] is not none) and
+             (pillar['softether']['vpnserver']['server_cert'] is defined) and (pillar['softether']['vpnserver']['server_cert'] is not none)
       %}
 softether_vpnserver_cert_key:
   file.managed:
