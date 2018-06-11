@@ -62,6 +62,24 @@ softether_vpnserver_cmd_{{ loop.index }}:
 
         {%- endfor %}
       {%- endif %}
+      {%-
+          if (pillar['softether']['vpnserver']['server_key'] is defined) and (pillar['softether']['vpnserver']['server_key'] is not none) and
+          if (pillar['softether']['vpnserver']['server_cert'] is defined) and (pillar['softether']['vpnserver']['server_cert'] is not none)
+      %}
+softether_vpnserver_cert_key:
+  file.managed:
+    - name: '/opt/softether/vpnserver/server_key'
+    - user: root
+    - group: root
+    - contents: {{ pillar['softether']['vpnserver']['server_key'] | yaml_encode }}
+
+softether_vpnserver_cert_cert:
+  file.managed:
+    - name: '/opt/softether/vpnserver/server_cert'
+    - user: root
+    - group: root
+    - contents: {{ pillar['softether']['vpnserver']['server_cert'] | yaml_encode }}
+      {%- endif %}
     {%- endif %}
   {%- endif %}
 {% endif %}
