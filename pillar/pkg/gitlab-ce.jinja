@@ -13,6 +13,9 @@ This file should be included in pillar, which sets the following:
 {% set gitlab_gmail_password = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
 {% set gitlab_gmail_email_with_key = "user+%{key}@example.com" %}
 
+Optionally you can override cron backup command, e.g. to skip Docker registry:
+{% set gitlab_cron_backup_cmd = "find /var/backups/gitlab_backups -name '*_gitlab_backup.tar' -delete; gitlab-rake gitlab:backup:create SKIP=registry" %}
+
 And then:
 {% include 'pkg/gitlab-ce.jinja' with context %}
 
@@ -131,7 +134,7 @@ pkg:
                 {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/lib/gitlab_artifacts		/var/backups/{{ gitlab_hostname }}
                 {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/backups/gitlab_backups		/var/backups/{{ gitlab_hostname }}
       - cron.present:
-          'gitlab-rake gitlab:backup:create':
+          '{% if gitlab_cron_backup_cmd is defined and gitlab_cron_backup_cmd is not none %}{{ gitlab_cron_backup_cmd }}{% else %}gitlab-rake gitlab:backup:create{% fi %}':
             - identifier: 'gitlab_backups'
             - user: root
             - minute: 10
