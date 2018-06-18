@@ -78,7 +78,7 @@ pkg:
                 postgresql['listen_address'] = '*'
                 postgresql['port'] = 5432
                 postgresql['md5_auth_cidr_addresses'] = %w({{ gitlab_postgresql_md5_auth_cidr_addresses }})
-                postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24)
+                postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24 ::1/128)
                 postgresql['sql_user'] = "gitlab"
                 postgresql['sql_user_password'] = Digest::MD5.hexdigest "{{ gitlab_postgresql_sql_user_password }}" << postgresql['sql_user']
                 gitlab_rails['db_host'] = '/var/opt/gitlab/postgresql/'
