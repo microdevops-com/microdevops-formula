@@ -185,23 +185,6 @@ percona:
         - database: db
           grant: ['all privileges']
 
-# postgresql
-# extensions in postgres-formula are broken:
-#     Warnings: 'extensions' is an invalid keyword argument for
-#              'postgres_database.present'
-# hack to add uuid_ossp by formula wrapper
-postgres:
-...
-  databases:                                                                                                                                                                                                                           
-    db1:                                                                                                                                                                                                                            
-      owner: 'db1'
-      ...
-  local:
-    uuid_ossp:
-      enabled: True
-      databases:
-        - db1
-
 # nginx
 nginx:
   enabled: True
