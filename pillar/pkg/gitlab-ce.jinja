@@ -12,6 +12,8 @@ This file should be included in pillar, which sets the following:
 {% set gitlab_gmail_user = "user@example.com" %}
 {% set gitlab_gmail_password = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
 {% set gitlab_gmail_email_with_key = "user+%{key}@example.com" %}
+{% set gitlab_postgresql_md5_auth_cidr_addresses = "1.2.3.4/32" %}
+{% set gitlab_postgresql_sql_user_password = "securesqlpassword" %}
 
 Optionally you can override cron backup command, e.g. to skip Docker registry:
 {% set gitlab_cron_backup_cmd = "find /var/backups/gitlab_backups -name '*_gitlab_backup.tar' -delete; gitlab-rake gitlab:backup:create SKIP=registry" %}
@@ -73,6 +75,16 @@ pkg:
                 nginx['redirect_http_to_https'] = true
                 nginx['ssl_certificate'] = "/opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer"
                 nginx['ssl_certificate_key'] = "/opt/acme/cert/{{ gitlab_ext_name }}/{{ gitlab_ext_name }}.key"
+                postgresql['listen_address'] = '*'
+                postgresql['port'] = 5432
+                postgresql['md5_auth_cidr_addresses'] = %w({{ gitlab_postgresql_md5_auth_cidr_addresses }})
+                postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24)
+                postgresql['sql_user'] = "gitlab"
+                postgresql['sql_user_password'] = Digest::MD5.hexdigest "{{ gitlab_postgresql_sql_user_password }}" << postgresql['sql_user']
+                gitlab_rails['db_host'] = '127.0.0.1'
+                gitlab_rails['db_port'] = 5432
+                gitlab_rails['db_username'] = "gitlab"
+                gitlab_rails['db_password'] = "{{ gitlab_postgresql_sql_user_password }}"
                 gitlab_rails['omniauth_enabled'] = true
                 gitlab_rails['omniauth_allow_single_sign_on'] = ['google_oauth2']
                 gitlab_rails['omniauth_block_auto_created_users'] = true
