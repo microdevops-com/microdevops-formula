@@ -1,6 +1,6 @@
 include:
   - pkg.before_deploy
-  - postgresql.postgresql
+  - postgres
   - percona.percona
   - pyenv.pyenv
   - sentry.sentry
