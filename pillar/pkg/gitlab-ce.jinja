@@ -81,10 +81,6 @@ pkg:
                 postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24)
                 postgresql['sql_user'] = "gitlab"
                 postgresql['sql_user_password'] = Digest::MD5.hexdigest "{{ gitlab_postgresql_sql_user_password }}" << postgresql['sql_user']
-                gitlab_rails['db_host'] = '127.0.0.1'
-                gitlab_rails['db_port'] = 5432
-                gitlab_rails['db_username'] = "gitlab"
-                gitlab_rails['db_password'] = "{{ gitlab_postgresql_sql_user_password }}"
                 gitlab_rails['omniauth_enabled'] = true
                 gitlab_rails['omniauth_allow_single_sign_on'] = ['google_oauth2']
                 gitlab_rails['omniauth_block_auto_created_users'] = true
