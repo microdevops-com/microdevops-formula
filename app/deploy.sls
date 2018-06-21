@@ -1,6 +1,8 @@
 include:
   - pkg.before_deploy
+{% if (pillar['postgres'] is defined) and (pillar['postgres'] is not none) %}
   - postgres
+{% endif %}
   - percona.percona
   - pyenv.pyenv
   - sentry.sentry
