@@ -4,6 +4,7 @@ echo "#" >> /etc/hosts
 echo "$SALT_MASTER_IP $SALT_MASTER_NAME" >> /etc/hosts
 
 /usr/bin/apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install wget
+/bin/rm -f /etc/apt/sources.list.d/saltstack.list
 echo "deb http://repo.saltstack.com/apt/ubuntu/$(lsb_release -sr)/amd64/latest $(lsb_release -sc) main">> /etc/apt/sources.list.d/saltstack.list
 /usr/bin/wget -qO - https://repo.saltstack.com/apt/ubuntu/$(lsb_release -sr)/amd64/latest/SALTSTACK-GPG-KEY.pub | apt-key add -
 
