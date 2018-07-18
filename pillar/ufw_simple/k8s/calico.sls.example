@@ -1,0 +1,15 @@
+{% from '/srv/pillar/ip/dc.jinja' import srv1_br0 with context %}
+{% from '/srv/pillar/ip/dc.jinja' import srv2_br0 with context %}
+
+ufw_simple:
+  allow:
+    k8s-calico:
+      proto: 'tcp'
+      from:
+        'srv1.domain.com': {{ srv1_br0['srv1.domain.com'] }}
+        'srv2.domain.com': {{ srv2_br0['srv2.domain.com'] }}
+      to_port: '179'
+  custom:
+    filter: |
+      -A INPUT -s {{ srv1_br0['srv1.domain.com'] }}/32 -p ipencap -j ACCEPT
+      -A INPUT -s {{ srv2_br0['srv2.domain.com'] }}/32 -p ipencap -j ACCEPT
