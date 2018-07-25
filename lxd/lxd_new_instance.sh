@@ -59,11 +59,11 @@ fi
 # Make current container symlink
 echo
 echo "Going to change current container pillar symlink for $LXDHOST on $MY_HN." | ccze -A
-echo "Going to run: salt $MY_HN cmd.shell 'ln -svf /srv/pillar/lxd/$LXDHOST_UNDER/$HN_UNDER.sls /srv/pillar/lxd/$LXDHOST_UNDER/current_container.sls'" | ccze -A
+echo "Going to run: salt $MY_HN cmd.shell 'ln -svf $HN_UNDER.sls /srv/pillar/lxd/$LXDHOST_UNDER/current_container.sls'" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $MY_HN cmd.shell 'ln -svf /srv/pillar/lxd/'$LXDHOST_UNDER'/'$HN_UNDER'.sls /srv/pillar/lxd/'$LXDHOST_UNDER'/current_container.sls'
+	salt $MY_HN cmd.shell 'ln -svf '$HN_UNDER'.sls /srv/pillar/lxd/'$LXDHOST_UNDER'/current_container.sls'
 	sleep 5
 fi
 
