@@ -11,7 +11,7 @@ pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ 
             {%- if not ((ss_val['name'] is defined) and (ss_val['name'] is not none)) %}
     - name: {{ ss_key }}
             {%- endif %}
-{{ ss_val|yaml(False)|indent(width=4,indentfirst=True) }}
+{{ ss_val|yaml(False)|replace("&#39;", "'")|indent(width=4,indentfirst=True) }}
 
           {% endfor %}
         {% endfor %}
