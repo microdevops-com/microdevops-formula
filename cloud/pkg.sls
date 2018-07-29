@@ -129,7 +129,11 @@ pkg_deb_packages:
       - gawk
       - curl
       - wget
+  {%- if grains['oscodename'] == 'bionic' %}
+      - s-nail 
+  {%- else %}
       - heirloom-mailx
+  {%- endif %}
       # diag tools
       - ethtool
       - iotop
