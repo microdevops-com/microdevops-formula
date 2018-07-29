@@ -22,6 +22,7 @@ rsnapshot_backup_conf:
     - formatter: json
     - dataset:
         - enabled: False # The first item in the dataset list is always empty, just to have at least somthing in the list, if no backups found (empty datase produces errors)
+          comment: This file is managed by Salt, local changes will be overwritten.
   {%- for host, host_backups in pillar['rsnapshot_backup'].items()|sort %}
     {%- set host_loop = loop %}
     {%- for backup in host_backups['backups'] %}
