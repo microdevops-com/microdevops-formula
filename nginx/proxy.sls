@@ -170,7 +170,7 @@ forward_app_nginx_ssl_link_2_{{ loop.index }}:
           %}
 forward_app_certbot_dir_{{ loop.index }}:
   file.directory:
-    - name: '{{ app_params['root'] }}//certbot/.well-known'
+    - name: '{{ pillar['nginx']['www_dir'] }}/{{ forward_app }}/certbot/.well-known'
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - makedirs: True
@@ -247,7 +247,7 @@ forward_app_certbot_dir_{{ loop.index }}:
 forward_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ forward_app }} --email {{ app_params['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['server_name']|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ forward_app }} --email {{ app_params['ssl']['certbot_email'] }} -w {{ pillar['nginx']['www_dir'] }}/{{ forward_app }}/certbot -d "{{ app_params['server_name']|replace(" ", ",") }}"'
 
 forward_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
