@@ -87,11 +87,8 @@ nginx_dhparam:
       {%- if
              (app_params['enabled'] is defined) and (app_params['enabled'] is not none) and
 
-             (app_params['nginx'] is defined) and (app_params['nginx'] is not none) and
-             (app_params['nginx']['server_name'] is defined) and (app_params['nginx']['server_name'] is not none) and
-             (app_params['nginx']['access_log'] is defined) and (app_params['nginx']['access_log'] is not none) and
-             (app_params['nginx']['error_log'] is defined) and (app_params['nginx']['error_log'] is not none) and
-             (app_params['nginx']['proxy_to'] is defined) and (app_params['nginx']['proxy_to'] is not none) and
+             (app_params['server_name'] is defined) and (app_params['server_name'] is not none) and
+             (app_params['proxy_to'] is defined) and (app_params['proxy_to'] is not none) and
 
 
              (
@@ -99,8 +96,14 @@ nginx_dhparam:
                (app_selector == forward_app)
              )
       %}
+forward_app_nginx_create_www_dir_{{ loop.index }}:
+    file.directory:
+      - name: '{{ pillar['nginx']['www_dir'] }}/{{ forward_app }}'
+      - user: 'www-data'
+      - group: 'www-data'
+      - makedirs: True
 
-      {%- if (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) %}
+      {%- if (app_params['ssl'] is defined) and (app_params['ssl'] is not none) %}
 forward_app_nginx_ssl_dir_{{ loop.index }}:
   file.directory:
     - name: '/etc/nginx/ssl/{{ forward_app }}'
@@ -109,18 +112,18 @@ forward_app_nginx_ssl_dir_{{ loop.index }}:
     - makedirs: True
         {%- endif %}
 
-        {%- set server_name_301 = app_params['nginx'].get('server_name_301', forward_app ~ '.example.com') %}
+        {%- set server_name_301 = app_params.get('server_name_301', forward_app ~ '.example.com') %}
         {%- if
-               (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
-               (app_params['nginx']['ssl']['certs_dir'] is defined) and (app_params['nginx']['ssl']['certs_dir'] is not none) and
-               (app_params['nginx']['ssl']['ssl_cert'] is defined) and (app_params['nginx']['ssl']['ssl_cert'] is not none) and
-               (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none) and
-               (app_params['nginx']['ssl']['ssl_chain'] is defined) and (app_params['nginx']['ssl']['ssl_chain'] is not none)
+               (app_params['ssl'] is defined) and (app_params['ssl'] is not none) and
+               (app_params['ssl']['certs_dir'] is defined) and (app_params['ssl']['certs_dir'] is not none) and
+               (app_params['ssl']['ssl_cert'] is defined) and (app_params['ssl']['ssl_cert'] is not none) and
+               (app_params['ssl']['ssl_key'] is defined) and (app_params['ssl']['ssl_key'] is not none) and
+               (app_params['ssl']['ssl_chain'] is defined) and (app_params['ssl']['ssl_chain'] is not none)
         %}
 forward_app_nginx_ssl_certs_copy_{{ loop.index }}:
   file.recurse:
     - name: '/etc/nginx/ssl/{{ forward_app }}'
-    - source: {{ 'salt://' ~ app_params['nginx']['ssl']['certs_dir'] }}
+    - source: {{ 'salt://' ~ app_params['ssl']['certs_dir'] }}
     - user: root
     - group: root
     - dir_mode: 700
@@ -134,15 +137,15 @@ forward_app_nginx_vhost_config_ssl_custom{{ loop.index }}:
     - source: 'salt://{{ pillar['nginx']['configs'] }}/vhost-http-ssl.conf'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: {{ app_params['server_name'] }}
         server_name_301: '{{ server_name_301 }}'
-        proxy_to: {{ app_params['nginx']['proxy_to'] }}
-        access_log: {{ app_params['nginx']['access_log'] | default('/var/log/nginx/forward.access.log', true) }}
-        error_log: {{ app_params['nginx']['error_log'] | default('/var/log/nginx/forward.error.log', true) }}
-        app_root: {{ app_params['app_root'] }}
-        ssl_cert: {{ app_params['nginx']['ssl']['ssl_cert'] }}
-        ssl_key: {{ app_params['nginx']['ssl']['ssl_key'] }}
-        ssl_chain: {{ app_params['nginx']['ssl']['ssl_chain'] }}
+        proxy_to: {{ app_params['proxy_to'] }}
+        access_log: {{ app_params['access_log'] | default('/var/log/nginx/forward.access.log', true) }}
+        error_log: {{ app_params['error_log'] | default('/var/log/nginx/forward.error.log', true) }}
+        app_root: '{{ pillar['nginx']['www_dir'] }}/{{ forward_app }}'
+        ssl_cert: {{ app_params['ssl']['ssl_cert'] }}
+        ssl_key: {{ app_params['ssl']['ssl_key'] }}
+        ssl_chain: {{ app_params['ssl']['ssl_chain'] }}
         ssl_cert_301: '/etc/nginx/ssl/{{ forward_app }}/301_fullchain.pem'
         ssl_key_301: '/etc/nginx/ssl/{{ forward_app }}/301_privkey.pem'
 
@@ -161,13 +164,13 @@ forward_app_nginx_ssl_link_2_{{ loop.index }}:
           {%- endif %}
 
           {%- if
-                 (app_params['nginx']['ssl']['certbot_for_301'] is defined) and (app_params['nginx']['ssl']['certbot_for_301'] is not none) and (app_params['nginx']['ssl']['certbot_for_301']) and
-                 (app_params['nginx']['ssl']['certbot_email'] is defined) and (app_params['nginx']['ssl']['certbot_email'] is not none) and
+                 (app_params['ssl']['certbot_for_301'] is defined) and (app_params['ssl']['certbot_for_301'] is not none) and (app_params['ssl']['certbot_for_301']) and
+                 (app_params['ssl']['certbot_email'] is defined) and (app_params['ssl']['certbot_email'] is not none) and
                  (pillar['certbot_run_ready'] is defined) and (pillar['certbot_run_ready'] is not none) and (pillar['certbot_run_ready'])
           %}
 forward_app_certbot_dir_{{ loop.index }}:
   file.directory:
-    - name: '{{ app_params['app_root'] }}/certbot/.well-known'
+    - name: '{{ pillar['nginx']['www_dir'] }}/{{ forward_app }}/certbot/.well-known'
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - makedirs: True
@@ -175,7 +178,7 @@ forward_app_certbot_dir_{{ loop.index }}:
 forward_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ forward_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ forward_app }} --email {{ app_params['ssl']['certbot_email'] }} -w {{ pillar['nginx']['www_dir'] }}/{{ forward_app }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
 
 forward_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -198,9 +201,9 @@ forward_app_certbot_cron_{{ loop.index }}:
           {%- endif %}
 
         {%- elif
-               (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
-               (app_params['nginx']['ssl']['certbot'] is defined) and (app_params['nginx']['ssl']['certbot'] is not none) and (app_params['nginx']['ssl']['certbot']) and
-               (app_params['nginx']['ssl']['certbot_email'] is defined) and (app_params['nginx']['ssl']['certbot_email'] is not none)
+               (app_params['ssl'] is defined) and (app_params['ssl'] is not none) and
+               (app_params['ssl']['certbot'] is defined) and (app_params['ssl']['certbot'] is not none) and (app_params['ssl']['certbot']) and
+               (app_params['ssl']['certbot_email'] is defined) and (app_params['ssl']['certbot_email'] is not none)
         %}
 forward_app_nginx_vhost_ssl_certbot_config_{{ loop.index }}:
   file.managed:
@@ -210,12 +213,12 @@ forward_app_nginx_vhost_ssl_certbot_config_{{ loop.index }}:
     - source: 'salt://{{ pillar['nginx']['configs'] }}/vhost-http-ssl-acme.conf'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: {{ app_params['server_name'] }}
         server_name_301: '{{ server_name_301 }}'
-        proxy_to: {{ app_params['nginx']['proxy_to'] }}
-        access_log: {{ app_params['nginx']['access_log'] }}
-        error_log: {{ app_params['nginx']['error_log'] }}
-        app_root: {{ app_params['app_root'] }}
+        proxy_to: {{ app_params['proxy_to'] }}
+        access_log: {{ app_params['access_log'] | default('/var/log/nginx/forward.access.log', true) }}
+        error_log: {{ app_params['error_log'] | default('/var/log/nginx/forward.error.log', true) }}
+        app_root: '{{ pillar['nginx']['www_dir'] }}/{{ forward_app }}'
         ssl_cert: '/etc/nginx/ssl/{{ forward_app }}/fullchain.pem'
         ssl_key: '/etc/nginx/ssl/{{ forward_app }}/privkey.pem'
 
@@ -236,7 +239,7 @@ forward_app_nginx_ssl_link_2_{{ loop.index }}:
           {%- if (pillar['certbot_run_ready'] is defined) and (pillar['certbot_run_ready'] is not none) and (pillar['certbot_run_ready']) %}
 forward_app_certbot_dir_{{ loop.index }}:
   file.directory:
-    - name: '{{ app_params['app_root'] }}/certbot/.well-known'
+    - name: '{{ pillar['nginx']['www_dir'] }}/{{ forward_app }}/certbot/.well-known'
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - makedirs: True
@@ -244,7 +247,7 @@ forward_app_certbot_dir_{{ loop.index }}:
 forward_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ forward_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ forward_app }} --email {{ app_params['ssl']['certbot_email'] }} -w {{ pillar['nginx']['www_dir'] }}/{{ forward_app }}/certbot -d "{{ app_params['server_name']|replace(" ", ",") }}"'
 
 forward_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -267,8 +270,8 @@ forward_app_certbot_cron_{{ loop.index }}:
           {%- endif %}
 
         {%- elif
-               (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
-               (app_params['nginx']['ssl']['acme'] is defined) and (app_params['nginx']['ssl']['acme'] is not none) and (app_params['nginx']['ssl']['acme'])
+               (app_params['ssl'] is defined) and (app_params['ssl'] is not none) and
+               (app_params['ssl']['acme'] is defined) and (app_params['ssl']['acme'] is not none) and (app_params['ssl']['acme'])
         %}
 forward_app_nginx_vhost_ssl_acme_config_{{ loop.index }}:
   file.managed:
@@ -278,16 +281,16 @@ forward_app_nginx_vhost_ssl_acme_config_{{ loop.index }}:
     - source: 'salt://{{ pillar['nginx']['configs'] }}/vhost-http-ssl-acme.conf'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
-          {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
-        server_name_301: '{{ app_params['nginx']['server_name_301'] }}'
+        server_name: {{ app_params['server_name'] }}
+          {%- if (app_params['server_name_301'] is defined) and (app_params['server_name_301'] is not none) %}
+        server_name_301: '{{ app_params['server_name_301'] }}'
           {%- else %}
         server_name_301: '{{ forward_app }}.example.com'
           {%- endif %}
-        proxy_to: {{ app_params['nginx']['proxy_to'] }}
-        access_log: {{ app_params['nginx']['access_log'] }}
-        error_log: {{ app_params['nginx']['error_log'] }}
-        app_root: {{ app_params['nginx']['root'] }}
+        proxy_to: {{ app_params['proxy_to'] }}
+        access_log: {{ app_params['access_log'] | default('/var/log/nginx/forward.access.log', true) }}
+        error_log: {{ app_params['error_log'] | default('/var/log/nginx/forward.error.log', true) }}
+        app_root: '{{ pillar['nginx']['www_dir'] }}/{{ forward_app }}'
         ssl_cert: '/etc/nginx/ssl/{{ forward_app }}/fullchain.pem'
         ssl_key: '/etc/nginx/ssl/{{ forward_app }}/privkey.pem'
 
@@ -310,10 +313,10 @@ forward_app_nginx_ssl_link_2_{{ loop.index }}:
 forward_app_acme_run_{{ loop.index }}:
   cmd.run:
     - cwd: /opt/acme/home
-            {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
-    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }}'
+            {%- if (app_params['server_name_301'] is defined) and (app_params['server_name_301'] is not none) %}
+    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['server_name']|replace(" ", " -d ") }} -d {{ app_params['server_name_301']|replace(" ", " -d ") }}'
             {%- else %}
-    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }}'
+    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['server_name']|replace(" ", " -d ") }}'
             {%- endif %}
 
 forward_app_acme_replace_symlink_1_{{ loop.index }}:
@@ -336,11 +339,11 @@ forward_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ pillar['nginx']['configs'] }}/vhost-http.conf'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: {{ app_params['server_name'] }}
         server_name_301: '{{ server_name_301 }}'
-        proxy_to: {{ app_params['nginx']['proxy_to'] }}
-        access_log: {{ app_params['nginx']['access_log'] }}
-        error_log: {{ app_params['nginx']['error_log'] }}
+        proxy_to: {{ app_params['proxy_to'] }}
+        access_log: {{ app_params['access_log'] | default('/var/log/nginx/forward.access.log', true) }}
+        error_log: {{ app_params['error_log'] | default('/var/log/nginx/forward.error.log', true) }}
         app_name: {{ forward_app }}
         {%- endif %}
 
