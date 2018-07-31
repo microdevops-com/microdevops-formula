@@ -60,9 +60,10 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
           # Even if you define several sources and this check type, file will be overwritten by the last one.
           {%- if check_item['type'] == ".backup_check_s3" %}
 
-put_check_files_{{ i_loop.index }}_{{ j_loop.index }}:
+put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
   file.managed:
     - name: '/tmp/backup_check/.backup_check_s3'
+    - makedirs: True
     - contents:
       - 'Bucket: {{ check_item['s3_bucket'] }}'
       - 'Dir: {{ check_item['s3_dir'] }}'
@@ -71,6 +72,15 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}:
             {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
+
+put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
+  module.run:
+    - name: s3.put
+    - bucket: '{{ check_item['s3_bucket'] }}'
+    - path: '{{ check_item['s3_dir'] }}/.backup_check_s3'
+    - local_file: '/tmp/backup_check/.backup_check_s3'
+    - keyid: '{{ check_item['s3_keyid'] }}'
+    - key: '{{ check_item['s3_key'] }}'
 
             {%- endfor %}
           {%- endif %}
