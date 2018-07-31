@@ -3,7 +3,7 @@
 percona_repo_deb:
   pkg.installed:
     - sources:
-      - percona-release: 'salt://percona/files/percona-release_0.1-4.{{ grains['oscodename'] }}_all.deb'
+      - percona-release: 'salt://percona/files/percona-release_0.1-6.{{ grains['oscodename'] }}_all.deb'
 
     {%- if (pillar['percona']['version'] is defined) and (pillar['percona']['version'] is not none) %}
 percona_client:
