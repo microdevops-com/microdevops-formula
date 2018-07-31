@@ -55,8 +55,8 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
           {%- endif %}
 
           # Type .backup_check_s3
-          # The idea is to put .backup_check to bucket, which somehow is synced to backup then.
-          # Loop over sources - not done, because .backup_check file path is defined by s3_ keys of the check.
+          # The idea is to put .backup_check to the bucket, which somehow is synced to backup then.
+          # Loop over sources - no need, because .backup_check_s3 file path is defined by s3_ keys of the check.
           # Even if you define several sources and this check type, file will be overwritten by the last one.
           {%- if check_item['type'] == ".backup_check_s3" %}
 
