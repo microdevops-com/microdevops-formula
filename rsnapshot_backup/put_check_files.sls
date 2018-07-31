@@ -14,7 +14,7 @@
         {%- for check_item in data_item['checks'] %}
         {%- set j_loop = loop %}
 
-          # Only .backup_check requires putting check files for now
+          # Type .backup_check
           {%- if check_item['type'] == ".backup_check" %}
 
             # Loop over sources
@@ -48,10 +48,33 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
                 {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
+
                 {%- endfor %}
               {%- endfor %}
             {%- endfor %}
           {%- endif %}
+
+          # Type .backup_check_s3
+          # The idea is to put .backup_check to bucket, which somehow is synced to backup then.
+          # Loop over sources - not done, because .backup_check file path is defined by s3_ keys of the check.
+          # Even if you define several sources and this check type, file will be overwritten by the last one.
+          {%- if check_item['type'] == ".backup_check_s3" %}
+
+put_check_files_{{ i_loop.index }}_{{ j_loop.index }}:
+  file.managed:
+    - name: '/tmp/backup_check/.backup_check_s3'
+    - contents:
+      - 'Bucket: {{ check_item['s3_bucket'] }}'
+      - 'Dir: {{ check_item['s3_dir'] }}'
+      - 'UTC: {{ salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
+            {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
+            {%- set m_loop = loop %}
+      - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
+      - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
+
+            {%- endfor %}
+          {%- endif %}
+
         {%- endfor %}
       {%- endif %}
     {%- endfor %}
