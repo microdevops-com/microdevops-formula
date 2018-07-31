@@ -48,8 +48,8 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
                 {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
-
                 {%- endfor %}
+
               {%- endfor %}
             {%- endfor %}
           {%- endif %}
@@ -72,6 +72,7 @@ put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
             {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
+            {%- endfor %}
 
 put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
   module.run:
@@ -82,7 +83,6 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
     - keyid: '{{ check_item['s3_keyid'] }}'
     - key: '{{ check_item['s3_key'] }}'
 
-            {%- endfor %}
           {%- endif %}
 
         {%- endfor %}
