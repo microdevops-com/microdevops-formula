@@ -3,9 +3,9 @@
     {%- if (pillar['php-fpm']['version_5_6'] is defined) and (pillar['php-fpm']['version_5_6'] is not none) and (pillar['php-fpm']['version_5_6']) %}
 php-fpm_repo_deb_5_6:
   pkgrepo.managed:
-    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu xenial main
-    - dist: xenial
-    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-xenial.list
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
     - refresh_db: true
@@ -59,9 +59,9 @@ php-fpm_5_6_modules_ioncube_3:
     {%- if (pillar['php-fpm']['version_7_0'] is defined) and (pillar['php-fpm']['version_7_0'] is not none) and (pillar['php-fpm']['version_7_0']) %}
 php-fpm_repo_deb_7_0:
   pkgrepo.managed:
-    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu xenial main
-    - dist: xenial
-    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-xenial.list
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
     - refresh_db: true
@@ -115,9 +115,9 @@ php-fpm_7_0_modules_ioncube_3:
     {%- if (pillar['php-fpm']['version_7_1'] is defined) and (pillar['php-fpm']['version_7_1'] is not none) and (pillar['php-fpm']['version_7_1']) %}
 php-fpm_repo_deb_7_1:
   pkgrepo.managed:
-    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu xenial main
-    - dist: xenial
-    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-xenial.list
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
     - refresh_db: true
@@ -171,9 +171,9 @@ php-fpm_7_1_modules_ioncube_3:
     {%- if (pillar['php-fpm']['version_7_2'] is defined) and (pillar['php-fpm']['version_7_2'] is not none) and (pillar['php-fpm']['version_7_2']) %}
 php-fpm_repo_deb_7_2:
   pkgrepo.managed:
-    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu xenial main
-    - dist: xenial
-    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-xenial.list
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
     - refresh_db: true
