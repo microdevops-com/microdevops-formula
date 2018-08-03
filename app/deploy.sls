@@ -9,6 +9,7 @@ include:
   - php-fpm.php-fpm
   - nginx.nginx
   - app.php-fpm_apps
+  - app.static_apps
   - app.python_apps
 {% if (pillar['java'] is defined) and (pillar['java'] is not none) %}
   - sun-java.opt_dir
