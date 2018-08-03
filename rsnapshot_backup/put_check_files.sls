@@ -14,29 +14,43 @@
         {%- for check_item in data_item['checks'] %}
         {%- set j_loop = loop %}
 
-          # Type .backup_check
-          {%- if check_item['type'] == ".backup_check" %}
+          # Simulate loop control with check_condition var
+          {%- set check_condition = True %}
 
-            # Loop over sources
-            {%- for source in data_item['sources'] %}
-            {%- set k_loop = loop %}
+          # Check put_at_utc_hour
+          {%- if check_item['put_at_utc_hour'] is defined and check_item['put_at_utc_hour'] is not none %}
+            {%- set current_utc_hour = salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('HH')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%H"') %}
+            {%- if current_utc_hour|string != check_item['put_at_utc_hour']|string %}
+              {%- set check_condition = False %}
+            {%- endif %}
+          {%- endif %}
 
-              # Expand special words in the source
-              {%- if source == 'UBUNTU' %}
-                {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws-utils'] -%}
-              {%- elif source == 'DEBIAN' %}
-                {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws-utils'] -%}
-              {%- elif source == 'CENTOS' %}
-                {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
-              {%- else %}
-                # Just one item - source itself
-                {%- set source_items = [source] -%}
-              {%- endif %}
-              
-              # Loop over expanded list of sources
-              {%- for source_item in source_items %}
-              {%- set l_loop = loop %}
-            
+          # Check condition
+          {%- if check_condition %}
+
+            # Type .backup_check
+            {%- if check_item['type'] == ".backup_check" %}
+
+              # Loop over sources
+              {%- for source in data_item['sources'] %}
+              {%- set k_loop = loop %}
+
+                # Expand special words in the source
+                {%- if source == 'UBUNTU' %}
+                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws-utils'] -%}
+                {%- elif source == 'DEBIAN' %}
+                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws-utils'] -%}
+                {%- elif source == 'CENTOS' %}
+                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
+                {%- else %}
+                  # Just one item - source itself
+                  {%- set source_items = [source] -%}
+                {%- endif %}
+
+                # Loop over expanded list of sources
+                {%- for source_item in source_items %}
+                {%- set l_loop = loop %}
+
 put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_loop.index }}:
   file.managed:
     - name: '{{ source_item }}{{ '\\' if grains['os'] == "Windows" else '/' }}.backup_check'
@@ -44,21 +58,21 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
       - 'Host: {{ grains['fqdn'] }}'
       - 'Path: {{ source_item }}'
       - 'UTC: {{ salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-                {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
-                {%- set m_loop = loop %}
+                  {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
+                  {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
+                  {%- endfor %}
+
                 {%- endfor %}
-
               {%- endfor %}
-            {%- endfor %}
-          {%- endif %}
+            {%- endif %}
 
-          # Type .backup_check_s3
-          # The idea is to put .backup_check to the bucket, which somehow is synced to backup then.
-          # Loop over sources - no need, because .backup_check_s3 file path is defined by s3_ keys of the check.
-          # Even if you define several sources and this check type, file will be overwritten by the last one.
-          {%- if check_item['type'] == ".backup_check_s3" %}
+            # Type .backup_check_s3
+            # The idea is to put .backup_check to bucket, which somehow is synced to backup then.
+            # Loop over sources - not done, because .backup_check file path is defined by s3_ keys of the check.
+            # Even if you define several sources and this check type, file will be overwritten by the last one.
+            {%- if check_item['type'] == ".backup_check_s3" %}
 
 put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
   file.managed:
@@ -68,11 +82,11 @@ put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
       - 'Bucket: {{ check_item['s3_bucket'] }}'
       - 'Dir: {{ check_item['s3_dir'] }}'
       - 'UTC: {{ salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-            {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
-            {%- set m_loop = loop %}
+              {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
+              {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
-            {%- endfor %}
+              {%- endfor %}
 
 put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
   module.run:
@@ -83,6 +97,8 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
     - keyid: '{{ check_item['s3_keyid'] }}'
     - key: '{{ check_item['s3_key'] }}'
 
+            {%- endif %}
+
           {%- endif %}
 
         {%- endfor %}
@@ -90,3 +106,4 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
     {%- endfor %}
   {%- endif %}
 {% endif %}
+~                   
