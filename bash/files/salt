@@ -50,6 +50,22 @@ _salt_list_functions(){
     fi
 }
 
+_salt_list_states(){
+    if [ "$1" = 'local' ] ; then
+        salt-call --log-level=quiet --out=txt -- state.show_state_usage \
+          | sed -e "s/u'/\n'/g" \
+          | grep -v -e "count_used" -e "'top'" -e "'used'" -e "count_unused" -e "count_all" -e "'unused'" -e "'base'" -e "local:" \
+          | sed -e "s/^'//" -e "s/'.*$//" \
+          | sort -u
+    else
+        salt '*' --timeout 2 --hide-timeout --log-level=quiet --out=txt -- state.show_state_usage \
+          | sed -e "s/u'/\n'/g" \
+          | grep -v -e "count_used" -e "'top'" -e "'used'" -e "count_unused" -e "count_all" -e "'unused'" -e "'base'" -e "local:" -e ".*: {" \
+          | sed -e "s/^'//" -e "s/'.*$//" \
+          | sort -u
+    fi
+}
+
 _salt_get_coms() {
     CACHE_DIR="$HOME/.cache/salt-${1}-comp-cache_functions"
     local _salt_cache_functions=${SALT_COMP_CACHE_FUNCTIONS:=$CACHE_DIR}
@@ -62,6 +78,7 @@ _salt_get_coms() {
     # Regenerate cache if timed out
     if [[ "$(stat --format=%Z ${_salt_cache_functions} 2>/dev/null)" -lt "$(date --date="${_salt_cache_timeout}" +%s)" ]]; then
 	_salt_list_functions $1 > "${_salt_cache_functions}"
+	_salt_list_states $1 >> "${_salt_cache_functions}"
     fi
 
     # filter results, to only print the part to next dot (or end of function)
