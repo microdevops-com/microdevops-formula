@@ -31,6 +31,7 @@ rsnapshot_backup_conf:
           {%- for source in data['sources'] %}
         - enabled: True
           connect: {{ backup['connect'] if backup['connect'] is defined else host }}
+          host: {{ host }}
           type: {{ data['type'] }}
           source: {{ source }}
           path: {{ backup['path'] }}
