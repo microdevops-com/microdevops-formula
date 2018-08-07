@@ -44,7 +44,7 @@ _salt_list_functions(){
           | sed "s/^.*\[//;s/[],']//g;s/ /\n/g" \
           | sort -u
     else
-        salt '*' --timeout 2 --hide-timeout --log-level=quiet --out=txt -- sys.list_functions | sed -e "s/u'/'/g" \
+        salt $(hostname) --timeout 2 --hide-timeout --log-level=quiet --out=txt -- sys.list_functions | sed -e "s/u'/'/g" \
           | sed "s/^.*\[//;s/[],']//g;s/ /\n/g" \
           | sort -u
     fi
@@ -58,9 +58,9 @@ _salt_list_states(){
           | sed -e "s/^'//" -e "s/'.*$//" \
           | sort -u
     else
-        salt '*' --timeout 10 --hide-timeout --log-level=quiet --out=txt -- state.show_state_usage \
+        salt $(hostname) --timeout 2 --hide-timeout --log-level=quiet --out=txt -- state.show_state_usage \
           | sed -e "s/u'/\n'/g" \
-          | grep -v -e "count_used" -e "'top'" -e "'used'" -e "count_unused" -e "count_all" -e "'unused'" -e "'base'" -e "local:" -e ".*: {" \
+          | grep -v -e "count_used" -e "'top'" -e "'used'" -e "count_unused" -e "count_all" -e "'unused'" -e "'base'" -e "local:" -e ".*:" \
           | sed -e "s/^'//" -e "s/'.*$//" \
           | sort -u
     fi
