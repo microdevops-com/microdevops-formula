@@ -10,7 +10,7 @@
       # Only if check defined at all
       {%- if data_item['checks'] is defined and data_item['checks'] is not none %}
 
-        # Get every check inside with .backup_check check type
+        # Get every check inside with .backup check type
         {%- for check_item in data_item['checks'] %}
         {%- set j_loop = loop %}
 
@@ -28,8 +28,8 @@
           # Check condition
           {%- if check_condition %}
 
-            # Type .backup_check
-            {%- if check_item['type'] == ".backup_check" %}
+            # Type .backup
+            {%- if check_item['type'] == ".backup" %}
 
               # Loop over sources
               {%- for source in data_item['sources'] %}
@@ -37,9 +37,9 @@
 
                 # Expand special words in the source
                 {%- if source == 'UBUNTU' %}
-                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws-utils'] -%}
+                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
                 {%- elif source == 'DEBIAN' %}
-                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws-utils'] -%}
+                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
                 {%- elif source == 'CENTOS' %}
                   {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
                 {%- else %}
@@ -53,7 +53,7 @@
 
 put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_loop.index }}:
   file.managed:
-    - name: '{{ source_item }}{{ '\\' if grains['os'] == "Windows" else '/' }}.backup_check'
+    - name: '{{ source_item }}{{ '\\' if grains['os'] == "Windows" else '/' }}.backup'
     - contents:
       - 'Host: {{ grains['fqdn'] }}'
       - 'Path: {{ source_item }}'
@@ -68,15 +68,15 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
               {%- endfor %}
             {%- endif %}
 
-            # Type .backup_check_s3
-            # The idea is to put .backup_check to bucket, which somehow is synced to backup then.
-            # Loop over sources - not done, because .backup_check file path is defined by s3_ keys of the check.
+            # Type s3/.backup
+            # The idea is to put .backup to bucket, which somehow is synced to backup then.
+            # Loop over sources - not done, because .backup file path is defined by s3_ keys of the check.
             # Even if you define several sources and this check type, file will be overwritten by the last one.
-            {%- if check_item['type'] == ".backup_check_s3" %}
+            {%- if check_item['type'] == "s3/.backup" %}
 
 put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
   file.managed:
-    - name: '/tmp/backup_check/.backup_check_s3'
+    - name: '/tmp/put_check_files/.backup'
     - makedirs: True
     - contents:
       - 'Bucket: {{ check_item['s3_bucket'] }}'
@@ -92,8 +92,8 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
   module.run:
     - name: s3.put
     - bucket: '{{ check_item['s3_bucket'] }}'
-    - path: '{{ check_item['s3_dir'] }}/.backup_check_s3'
-    - local_file: '/tmp/backup_check/.backup_check_s3'
+    - path: '{{ check_item['s3_dir'] }}/.backup'
+    - local_file: '/tmp/put_check_files/.backup'
     - keyid: '{{ check_item['s3_keyid'] }}'
     - key: '{{ check_item['s3_key'] }}'
 
