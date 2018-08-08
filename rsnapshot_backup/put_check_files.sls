@@ -80,7 +80,7 @@ put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
     - makedirs: True
     - contents:
       - 'Bucket: {{ check_item['s3_bucket'] }}'
-      - 'Dir: {{ check_item['s3_dir'] }}'
+      - 'Path: {{ check_item['s3_path'] }}'
       - 'UTC: {{ salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
               {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
               {%- set m_loop = loop %}
@@ -92,7 +92,7 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
   module.run:
     - name: s3.put
     - bucket: '{{ check_item['s3_bucket'] }}'
-    - path: '{{ check_item['s3_dir'] }}/.backup'
+    - path: '{{ check_item['s3_path'] }}/.backup'
     - local_file: '/tmp/put_check_files/.backup'
     - keyid: '{{ check_item['s3_keyid'] }}'
     - key: '{{ check_item['s3_key'] }}'
