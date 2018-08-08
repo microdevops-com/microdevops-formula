@@ -38,7 +38,9 @@ rsnapshot_backup_conf:
           checks:
             {%- for check in data['checks'] %}
             - type: {{ check['type'] }}
-              empty_db: {{ check['empty_db']|default(['null']) }}
+              {%- if check['empty_db'] is defined and check['empty_db'] is not none %}
+              empty_db: {{ check['empty_db'] }}
+              {%- endif %}
             {%- endfor %}
           {%- endfor  %}
         {%- endfor  %}
