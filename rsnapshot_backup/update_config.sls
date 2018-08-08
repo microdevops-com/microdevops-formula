@@ -37,7 +37,7 @@ rsnapshot_backup_conf:
           path: {{ backup['path'] }}
           checks:
             {%- for check in data['checks'] %}
-            type: {{ check['type'] }}
+            - type: {{ check['type'] }}
             {%- endfor %}
           {%- endfor  %}
         {%- endfor  %}
