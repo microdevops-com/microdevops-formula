@@ -1,10 +1,10 @@
-{% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none %}
+{% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
 
   # Check if data definition exists for this host (there may be other hosts in this pillar)
-  {%- if pillar['rsnapshot_backup'][grains['fqdn']] is defined and pillar['rsnapshot_backup'][grains['fqdn']] is not none  %}
+  {%- if pillar['rsnapshot_backup']['sources'][grains['fqdn']] is defined and pillar['rsnapshot_backup']['sources'][grains['fqdn']] is not none  %}
 
     # Get every data item
-    {%- for data_item in pillar['rsnapshot_backup'][grains['fqdn']]['data'] %}
+    {%- for data_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']]['data'] %}
       {%- set i_loop = loop %}
 
       # Only if check defined at all
@@ -58,7 +58,7 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
       - 'Host: {{ grains['fqdn'] }}'
       - 'Path: {{ source_item }}'
       - 'UTC: {{ salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-                  {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
+                  {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']]['backups'] %}
                   {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
@@ -82,7 +82,7 @@ put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
       - 'Bucket: {{ check_item['s3_bucket'] }}'
       - 'Path: {{ check_item['s3_path'] }}'
       - 'UTC: {{ salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-              {%- for backup_item in pillar['rsnapshot_backup'][grains['fqdn']]['backups'] %}
+              {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']]['backups'] %}
               {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'

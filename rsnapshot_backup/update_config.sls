@@ -1,4 +1,4 @@
-{% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none %}
+{% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
 
 # We don't know yet if there will be backups for this host as backup host, but start creating dir and config.
 # This is done to make things simplier and not to accumulate pillars in separate dict.
@@ -23,7 +23,7 @@ rsnapshot_backup_conf:
     - dataset:
         - enabled: False # The first item in the dataset list is always empty, just to have at least somthing in the list, if no backups found (empty datase produces errors)
           comment: This file is managed by Salt, local changes will be overwritten.
-  {%- for host, host_backups in pillar['rsnapshot_backup'].items()|sort %}
+  {%- for host, host_backups in pillar['rsnapshot_backup']['sources'].items()|sort %}
     {%- set host_loop = loop %}
     {%- for backup in host_backups['backups'] %}
       {%- if grains['fqdn'] == backup['host'] %}
