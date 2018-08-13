@@ -51,3 +51,51 @@ pkg:
           1:
             - name: state.sls
             - mods: sysadmws-utils.sysadmws-utils
+  sysadmws-utils-v1:
+    when: 'PKG_PKG'
+    states:
+{% if grains['os'] in ['Ubuntu', 'Debian'] and not grains['oscodename'] in ['karmic'] %}
+      - pkgrepo.managed:
+          1:
+            - file: /etc/apt/sources.list.d/sysadmws.list
+            - name: 'deb https://repo.sysadm.ws/sysadmws-apt/ any main'
+            - keyid: 2E7DCF8C
+            - keyserver: keyserver.ubuntu.com
+      - pkg.latest:
+          1:
+            - refresh: True
+            - pkgs:
+                - sysadmws-utils-v1
+{% else %}
+  {%- if grains['osfinger'] in ['CentOS-6'] %}
+      - pkg.installed:
+          1:
+            - pkgs:
+                - python34
+                - python34-PyYAML
+                - python34-jinja2
+  {%- endif %}
+  {%- if grains['oscodename'] in ['karmic'] %}
+      - pkg.installed:
+          1:
+            - pkgs:
+                - python2.6
+                - python-jinja2
+                - python-yaml
+  {%- endif %}
+      - cmd.run:
+          1:
+            - name: 'rm -f /root/sysadmws-utils-v1.tar.gz'
+            - runas: 'root'
+          2:
+            - name: 'cd /root && wget --no-check-certificate https://repo.sysadm.ws/tgz/sysadmws-utils-v1.tar.gz'
+            - runas: 'root'
+          3:
+            - name: 'tar zxf /root/sysadmws-utils-v1.tar.gz -C /'
+            - runas: 'root'
+  {%- if grains['osfinger'] in ['CentOS-6'] %}
+          4:
+            - name: 'sed -i "1s_.*_#!/usr/bin/python3.4_" /opt/sysadmws/notify_devilry/notify_devilry.py'
+            - runas: 'root'
+  {%- endif %}
+{% endif %}
