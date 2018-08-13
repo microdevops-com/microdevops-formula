@@ -534,3 +534,6 @@ softether:
           user1:
             password: 'XXX-SET-OWN-USER-PASS-HERE-XXX'
             realname: 'Real Name'
+
+# rsnapshot_backup -> rsnapshot_backup/pillar.example
+
