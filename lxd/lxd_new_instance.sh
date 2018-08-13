@@ -139,15 +139,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	time salt $HN state.highstate
 fi
 
-# Ubuntu default backups
-echo
-echo "Going to run: salt $HN cmd.shell '/opt/sysadmws-utils/rsnapshot_backup/rsnapshot_backup.conf_ubuntu.sh'" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $HN cmd.shell '/opt/sysadmws-utils/rsnapshot_backup/rsnapshot_backup.conf_ubuntu.sh'
-fi
-
 # fail2ban
 echo
 echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local'" | ccze -A
