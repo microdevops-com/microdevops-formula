@@ -35,6 +35,27 @@ rsnapshot_backup_conf:
           type: {{ data['type'] }}
           source: {{ source }}
           path: {{ backup['path'] }}
+            {%- if data['retain_hourly'] is defined and data['retain_hourly'] is not none %}
+          retain_hourly:
+            {%- endif %}
+            {%- if data['retain_daily'] is defined and data['retain_daily'] is not none %}
+          retain_daily:
+            {%- endif %}
+            {%- if data['retain_weekly'] is defined and data['retain_weekly'] is not none %}
+          retain_weekly:
+            {%- endif %}
+            {%- if data['retain_monthly'] is defined and data['retain_monthly'] is not none %}
+          retain_monthly:
+            {%- endif %}
+            {%- if data['run_args'] is defined and data['run_args'] is not none %}
+          run_args:
+            {%- endif %}
+            {%- if data['connect_user'] is defined and data['connect_user'] is not none %}
+          connect_user:
+            {%- endif %}
+            {%- if data['connect_password'] is defined and data['connect_password'] is not none %}
+          connect_password:
+            {%- endif %}
           checks:
             {%- for check in data['checks'] %}
             - type: {{ check['type'] }}
