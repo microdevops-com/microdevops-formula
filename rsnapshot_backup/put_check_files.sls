@@ -4,14 +4,14 @@
   {%- if pillar['rsnapshot_backup']['sources'][grains['fqdn']] is defined and pillar['rsnapshot_backup']['sources'][grains['fqdn']] is not none  %}
 
     # Get every data item
-    {%- for data_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']]['data'] %}
+    {%- for source_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']] %}
       {%- set i_loop = loop %}
 
       # Only if check defined at all
-      {%- if data_item['checks'] is defined and data_item['checks'] is not none %}
+      {%- if source_item['checks'] is defined and source_item['checks'] is not none %}
 
         # Get every check inside with .backup check type
-        {%- for check_item in data_item['checks'] %}
+        {%- for check_item in source_item['checks'] %}
         {%- set j_loop = loop %}
 
           # Simulate loop control with check_condition var
@@ -32,33 +32,33 @@
             {%- if check_item['type'] == ".backup" %}
 
               # Loop over sources
-              {%- for source in data_item['sources'] %}
+              {%- for data_item in source_item['data'] %}
               {%- set k_loop = loop %}
 
-                # Expand special words in the source
-                {%- if source == 'UBUNTU' %}
-                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
-                {%- elif source == 'DEBIAN' %}
-                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
-                {%- elif source == 'CENTOS' %}
-                  {%- set source_items = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
+                # Expand special words in the data_item
+                {%- if data_item == 'UBUNTU' %}
+                  {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
+                {%- elif data_item == 'DEBIAN' %}
+                  {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
+                {%- elif data_item == 'CENTOS' %}
+                  {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
                 {%- else %}
-                  # Just one item - source itself
-                  {%- set source_items = [source] -%}
+                  # Just one item - data_item itself
+                  {%- set expanded_data = [data_item] -%}
                 {%- endif %}
 
-                # Loop over expanded list of sources
-                {%- for source_item in source_items %}
+                # Loop over expanded list
+                {%- for expanded_data_item in expanded_data %}
                 {%- set l_loop = loop %}
 
 put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_loop.index }}:
   file.managed:
-    - name: '{{ source_item }}{{ '\\' if grains['os'] == "Windows" else '/' }}.backup'
+    - name: '{{ expanded_data_item }}{{ '\\' if grains['os'] == "Windows" else '/' }}.backup'
     - contents:
       - 'Host: {{ grains['fqdn'] }}'
-      - 'Path: {{ source_item }}'
+      - 'Path: {{ expanded_data_item }}'
       - 'UTC: {{ salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-                  {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']]['backups'] %}
+                  {%- for backup_item in source_item['backups'] %}
                   {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
@@ -70,8 +70,8 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
 
             # Type s3/.backup
             # The idea is to put .backup to bucket, which somehow is synced to backup then.
-            # Loop over sources - not done, because .backup file path is defined by s3_ keys of the check.
-            # Even if you define several sources and this check type, file will be overwritten by the last one.
+            # Loop over data - no need to be done, because .backup file path is defined by s3_ keys of the check.
+            # Even if you define several data and this check type, file would be overwritten by the last one.
             {%- if check_item['type'] == "s3/.backup" %}
 
 put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
@@ -82,7 +82,7 @@ put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
       - 'Bucket: {{ check_item['s3_bucket'] }}'
       - 'Path: {{ check_item['s3_path'] }}'
       - 'UTC: {{ salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-              {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']]['backups'] %}
+              {%- for backup_item in source_item['backups'] %}
               {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
