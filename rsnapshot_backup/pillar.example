@@ -6,39 +6,43 @@ rsnapshot_backup:
   backup_server: True
   sources:
     backup1.domain.com:
-      data:
-        - type: FS_RSYNC_SSH
-          sources:
-            - UBUNTU
-          checks:
-            - type: .backup
-      backups:
-        - host: backup1.domain.com
-          path: /var/backups/backup1.domain.com
+      - type: FS_RSYNC_SSH
+        data:
+          - UBUNTU
+        checks:
+          - type: .backup
+        backups:
+          - host: backup1.domain.com
+            path: /var/backups/backup1.domain.com
 
 # srv1.domain.com, backup1.domain.com
 rsnapshot_backup:
   sources:
     srv1.domain.com:
-      data:
-        - type: FS_RSYNC_SSH
-          sources:
-            - UBUNTU
-            - /srv
-          checks:
-            - type: .backup
-        - type: POSTGRESQL
-          sources:
-            - ALL
-          checks:
-            - type: POSTGRESQL
-              empty_db:
-                - postgres
-                - template0
-                - template1
-      backups:
-        - host: srv1.domain.com
-          path: /var/backups/srv1.domain.com
-        - host: backup1.domain.com
-          path: /var/backups/srv1.domain.com
-          connect: srv1.domain.com:221
+      - type: FS_RSYNC_SSH
+        data:
+          - UBUNTU
+          - /srv
+        checks:
+          - type: .backup
+        backups:
+          - host: srv1.domain.com
+            path: /var/backups/srv1.domain.com
+          - host: backup1.domain.com
+            path: /var/backups/srv1.domain.com
+            connect: srv1.domain.com:221
+      - type: POSTGRESQL
+        data:
+          - ALL
+        checks:
+          - type: POSTGRESQL
+            empty_db:
+              - postgres
+              - template0
+              - template1
+        backups:
+          - host: srv1.domain.com
+            path: /var/backups/srv1.domain.com
+          - host: backup1.domain.com
+            path: /var/backups/srv1.domain.com
+            connect: srv1.domain.com:221

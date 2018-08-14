@@ -24,40 +24,39 @@ rsnapshot_backup_conf:
         - enabled: False # The first item in the dataset list is always empty, just to have at least somthing in the list, if no backups found (empty datase produces errors)
           comment: This file is managed by Salt, local changes will be overwritten.
   {%- for host, host_backups in pillar['rsnapshot_backup']['sources'].items()|sort %}
-    {%- set host_loop = loop %}
-    {%- for backup in host_backups['backups'] %}
-      {%- if grains['fqdn'] == backup['host'] %}
-        {%- for data in host_backups['data'] %}
-          {%- for source in data['sources'] %}
+    {%- for host_backups_item in host_backups %}
+      {%- for backup in host_backups_item['backups'] %}
+        {%- if grains['fqdn'] == backup['host'] %}
+          {%- for source in host_backups_item['data'] %}
         - enabled: True
           connect: {{ backup['connect'] if backup['connect'] is defined else host }}
           host: {{ host }}
-          type: {{ data['type'] }}
+          type: {{ host_backups_item['type'] }}
           source: {{ source }}
           path: {{ backup['path'] }}
-            {%- if data['retain_hourly'] is defined and data['retain_hourly'] is not none %}
-          retain_hourly: {{ data['retain_hourly'] }}
+            {%- if host_backups_item['retain_hourly'] is defined and host_backups_item['retain_hourly'] is not none %}
+          retain_hourly: {{ host_backups_item['retain_hourly'] }}
             {%- endif %}
-            {%- if data['retain_daily'] is defined and data['retain_daily'] is not none %}
-          retain_daily: {{ data['retain_daily'] }}
+            {%- if host_backups_item['retain_daily'] is defined and host_backups_item['retain_daily'] is not none %}
+          retain_daily: {{ host_backups_item['retain_daily'] }}
             {%- endif %}
-            {%- if data['retain_weekly'] is defined and data['retain_weekly'] is not none %}
-          retain_weekly: {{ data['retain_weekly'] }}
+            {%- if host_backups_item['retain_weekly'] is defined and host_backups_item['retain_weekly'] is not none %}
+          retain_weekly: {{ host_backups_item['retain_weekly'] }}
             {%- endif %}
-            {%- if data['retain_monthly'] is defined and data['retain_monthly'] is not none %}
-          retain_monthly: {{ data['retain_monthly'] }}
+            {%- if host_backups_item['retain_monthly'] is defined and host_backups_item['retain_monthly'] is not none %}
+          retain_monthly: {{ host_backups_item['retain_monthly'] }}
             {%- endif %}
-            {%- if data['run_args'] is defined and data['run_args'] is not none %}
-          run_args: {{ data['run_args'] }}
+            {%- if host_backups_item['run_args'] is defined and host_backups_item['run_args'] is not none %}
+          run_args: {{ host_backups_item['run_args'] }}
             {%- endif %}
-            {%- if data['connect_user'] is defined and data['connect_user'] is not none %}
-          connect_user: {{ data['connect_user'] }}
+            {%- if host_backups_item['connect_user'] is defined and host_backups_item['connect_user'] is not none %}
+          connect_user: {{ host_backups_item['connect_user'] }}
             {%- endif %}
-            {%- if data['connect_password'] is defined and data['connect_password'] is not none %}
-          connect_password: {{ data['connect_password'] }}
+            {%- if host_backups_item['connect_password'] is defined and host_backups_item['connect_password'] is not none %}
+          connect_password: {{ host_backups_item['connect_password'] }}
             {%- endif %}
           checks:
-            {%- for check in data['checks'] %}
+            {%- for check in host_backups_item['checks'] %}
             - type: {{ check['type'] }}
               {%- if check['empty_db'] is defined and check['empty_db'] is not none %}
               empty_db: {{ check['empty_db'] }}
@@ -79,8 +78,8 @@ rsnapshot_backup_conf:
               {%- endif %}
             {%- endfor %}
           {%- endfor  %}
-        {%- endfor  %}
-      {%- endif %}
+        {%- endif  %}
+      {%- endfor %}
     {%- endfor %}
   {%- endfor %}
 
