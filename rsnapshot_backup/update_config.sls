@@ -55,28 +55,30 @@ rsnapshot_backup_conf:
             {%- if host_backups_item['connect_password'] is defined and host_backups_item['connect_password'] is not none %}
           connect_password: {{ host_backups_item['connect_password'] }}
             {%- endif %}
+            {%- if host_backups_item['checks'] is defined and host_backups_item['checks'] is not none %}
           checks:
-            {%- for check in host_backups_item['checks'] %}
+              {%- for check in host_backups_item['checks'] %}
             - type: {{ check['type'] }}
-              {%- if check['empty_db'] is defined and check['empty_db'] is not none %}
+                {%- if check['empty_db'] is defined and check['empty_db'] is not none %}
               empty_db: {{ check['empty_db'] }}
-              {%- endif %}
-              {%- if check['min_file_size'] is defined and check['min_file_size'] is not none %}
+                {%- endif %}
+                {%- if check['min_file_size'] is defined and check['min_file_size'] is not none %}
               min_file_size: {{ check['min_file_size'] }}
-              {%- endif %}
-              {%- if check['file_type'] is defined and check['file_type'] is not none %}
+                {%- endif %}
+                {%- if check['file_type'] is defined and check['file_type'] is not none %}
               file_type: {{ check['file_type'] }}
-              {%- endif %}
-              {%- if check['last_file_age'] is defined and check['last_file_age'] is not none %}
+                {%- endif %}
+                {%- if check['last_file_age'] is defined and check['last_file_age'] is not none %}
               last_file_age: {{ check['last_file_age'] }}
-              {%- endif %}
-              {%- if check['files_total'] is defined and check['files_total'] is not none %}
+                {%- endif %}
+                {%- if check['files_total'] is defined and check['files_total'] is not none %}
               files_total: {{ check['files_total'] }}
-              {%- endif %}
-              {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
+                {%- endif %}
+                {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
               files_mask: {{ check['files_mask'] }}
-              {%- endif %}
-            {%- endfor %}
+                {%- endif %}
+              {%- endfor %}
+            {%- endif %}
           {%- endfor  %}
         {%- endif  %}
       {%- endfor %}
