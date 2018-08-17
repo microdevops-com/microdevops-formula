@@ -1,33 +1,94 @@
-{% if (pillar['sysadmws-utils'] is defined) and (pillar['sysadmws-utils'] is not none) %}
+{% if pillar['sysadmws-utils'] is defined and pillar['sysadmws-utils'] is not none %}
+  {%- if (pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest") or
+         (pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest")
+   %}
+    {%- if grains['os'] in ['Ubuntu', 'Debian'] and not grains['oscodename'] in ['karmic'] %}
+pkgrepo_sysadmws:
+  pkgrepo.managed:
+    - file: /etc/apt/sources.list.d/sysadmws.list
+    - name: 'deb https://repo.sysadm.ws/sysadmws-apt/ any main'
+    - keyid: 2E7DCF8C
+    - keyserver: keyserver.ubuntu.com
 
-  {% if (pillar['sysadmws-utils']['disk_alert'] is defined) and (pillar['sysadmws-utils']['disk_alert'] is not none) %}
-swsu_disk_alert_config_managed:
-  file.managed:
-    - name: '/opt/sysadmws-utils/disk_alert/disk_alert.conf'
-    - mode: 0600
-    - user: root
-    - group: root
-    - contents: {{ pillar['sysadmws-utils']['disk_alert'] | yaml_encode }}
-  {% endif %}
+pkg_latest_utils:
+  pkg.latest:
+    - refresh: True
+    - pkgs:
+      {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest" %}
+        - sysadmws-utils
+      {%- endif %}
+      {%- if pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest" %}
+        - sysadmws-utils-v1
+      {%- endif %}
 
-  {% if (pillar['sysadmws-utils']['mysql_replica_checker'] is defined) and (pillar['sysadmws-utils']['mysql_replica_checker'] is not none) %}
-swsu_mysql_replica_checker_config_managed:
-  file.managed:
-    - name: '/opt/sysadmws-utils/mysql_replica_checker/mysql_replica_checker.conf'
-    - mode: 0600
-    - user: root
-    - group: root
-    - contents: {{ pillar['sysadmws-utils']['mysql_replica_checker'] | yaml_encode }}
-  {% endif %}
+    {%- else %}
+      {%- if grains['osfinger'] in ['CentOS-6'] %}
+install_utils_deps_centos:
+  pkg.installed:
+    - pkgs:
+        - python34
+        - python34-PyYAML
+        - python34-jinja2
+      {%- endif %}
 
-  {% if (pillar['sysadmws-utils']['notify_devilry'] is defined) and (pillar['sysadmws-utils']['notify_devilry'] is not none) %}
-    {% if (pillar['sysadmws-utils']['notify_devilry']['config_file'] is defined) and (pillar['sysadmws-utils']['notify_devilry']['config_file'] is not none) %}
-swsu_notify_devilry_config_managed:
-  file.managed:
-    - name: '/opt/sysadmws-utils/notify_devilry/notify_devilry.yaml.jinja'
-    - mode: 0600
-    - source: {{ pillar['sysadmws-utils']['notify_devilry']['config_file'] }}
-    {% endif %}
-  {% endif %}
+      {%- if grains['oscodename'] in ['karmic'] %}
+install_utils_deps_karmic:
+  pkg.installed:
+    - pkgs:
+        - python2.6
+        - python-jinja2
+        - python-yaml
+      {%- endif %}
 
+      {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest" %}
+install_utils_tgz_v0_1:
+  cmd.run:
+    - name: 'rm -f /root/sysadmws-utils.tar.gz'
+    - runas: 'root'
+
+install_utils_tgz_v0_2:
+  cmd.run:
+    - name: 'cd /root && wget --no-check-certificate https://repo.sysadm.ws/tgz/sysadmws-utils.tar.gz'
+    - runas: 'root'
+
+install_utils_tgz_v0_3:
+  cmd.run:
+    - name: 'tar zxf /root/sysadmws-utils.tar.gz -C /'
+    - runas: 'root'
+
+        {%- if grains['osfinger'] in ['CentOS-6'] %}
+install_utils_tgz_v0_4:
+  cmd.run:
+    - name: 'sed -i "1s_.*_#!/usr/bin/python3.4_" /opt/sysadmws-utils/notify_devilry/notify_devilry.py'
+    - runas: 'root'
+        {%- endif %}
+
+      {%- endif %}
+
+      {%- if pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest" %}
+install_utils_tgz_v1_1:
+  cmd.run:
+    - name: 'rm -f /root/sysadmws-utils-v1.tar.gz'
+    - runas: 'root'
+
+install_utils_tgz_v1_2:
+  cmd.run:
+    - name: 'cd /root && wget --no-check-certificate https://repo.sysadm.ws/tgz/sysadmws-utils-v1.tar.gz'
+    - runas: 'root'
+
+install_utils_tgz_v1_3:
+  cmd.run:
+    - name: 'tar zxf /root/sysadmws-utils-v1.tar.gz -C /'
+    - runas: 'root'
+
+        {%- if grains['osfinger'] in ['CentOS-6'] %}
+install_utils_tgz_v1_4:
+  cmd.run:
+    - name: 'sed -i "1s_.*_#!/usr/bin/python3.4_" /opt/sysadmws/notify_devilry/notify_devilry.py'
+    - runas: 'root'
+        {%- endif %}
+
+      {%- endif %}
+    {%- endif %}
+  {%- endif %}
 {% endif %}
