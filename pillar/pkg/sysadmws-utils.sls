@@ -12,6 +12,7 @@ pkg:
       - pkg.latest:
           1:
             - refresh: True
+            - only_upgrade: True
             - pkgs:
                 - sysadmws-utils
 {% else %}
