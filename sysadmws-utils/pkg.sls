@@ -63,12 +63,8 @@ install_utils_tgz_v0_4:
     - runas: 'root'
         {%- endif %}
 
-install_utils_tgz_v0_5:
-  module.run:
-    - name: state.sls
-    - mods: sysadmws-utils.sysadmws-utils
       {%- endif %}
-      
+
       {%- if pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest" %}
 install_utils_tgz_v1_1:
   cmd.run:
@@ -94,5 +90,13 @@ install_utils_tgz_v1_4:
       {%- endif %}
 
     {%- endif %}
+
+    {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest" %}
+install_utils_v0_config:
+  module.run:
+    - name: state.sls
+    - mods: sysadmws-utils.sysadmws-utils
+    {%- endif %}
+      
   {%- endif %}
 {% endif %}
