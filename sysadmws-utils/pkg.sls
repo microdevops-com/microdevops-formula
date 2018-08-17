@@ -87,16 +87,8 @@ install_utils_tgz_v1_4:
     - name: 'sed -i "1s_.*_#!/usr/bin/python3.4_" /opt/sysadmws/notify_devilry/notify_devilry.py'
     - runas: 'root'
         {%- endif %}
+
       {%- endif %}
-
     {%- endif %}
-
-    {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest" %}
-install_utils_v0_config:
-  module.run:
-    - name: state.sls
-    - mods: sysadmws-utils.sysadmws-utils
-    {%- endif %}
-      
   {%- endif %}
 {% endif %}
