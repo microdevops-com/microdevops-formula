@@ -4,7 +4,7 @@
 swsu_v0_notify_devilry_config_managed:
   file.managed:
     - name: '/opt/sysadmws-utils/notify_devilry/notify_devilry.yaml.jinja'
-    - mode: 0644
+    - mode: 0600
     - user: root
     - group: root
     - source: {{ pillar['notify_devilry']['config_file'] }}
@@ -14,7 +14,7 @@ swsu_v0_notify_devilry_config_managed:
 swsu_v1_notify_devilry_config_managed:
   file.managed:
     - name: '/opt/sysadmws/notify_devilry/notify_devilry.yaml.jinja'
-    - mode: 0644
+    - mode: 0600
     - user: root
     - group: root
     - source: {{ pillar['notify_devilry']['config_file'] }}
