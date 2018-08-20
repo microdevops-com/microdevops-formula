@@ -110,7 +110,7 @@ rm_utils_v0_2:
   file.absent:
     - name: /opt/sysadmws-utils
 
-rm_utils_v0_2:
+rm_utils_v0_3:
   file.absent:
     - name: /etc/cron.d/sysadmws-rsnapshot-backup
 
