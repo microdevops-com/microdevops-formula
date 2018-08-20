@@ -15,6 +15,9 @@ exec > >(tee ${OUT_FILE})
 exec 2>&1
 
 stdbuf -oL -eL echo '---'
+stdbuf -oL -eL echo 'CMD: salt --force-color -t 300 -C "I@rsnapshot_backup:*'${MOD}'" state.apply --state-output=filter --state-verbose=False exclude=True, sysadmws-utils.sysadmws-utils'
+stdbuf -oL -eL salt --force-color -t 300 -C "I@rsnapshot_backup:*${MOD}" state.apply --state-output=filter --state-verbose=False exclude=True, sysadmws-utils.sysadmws-utils || GRAND_EXIT=1
+stdbuf -oL -eL echo '---'
 stdbuf -oL -eL echo 'CMD: salt --force-color -t 300 -C "I@rsnapshot_backup:*'${MOD}'" state.apply --state-output=filter --state-verbose=False exclude=True, rsnapshot_backup.put_check_files'
 stdbuf -oL -eL salt --force-color -t 300 -C "I@rsnapshot_backup:*${MOD}" state.apply --state-output=filter --state-verbose=False exclude=True, rsnapshot_backup.put_check_files || GRAND_EXIT=1
 stdbuf -oL -eL echo '---'
