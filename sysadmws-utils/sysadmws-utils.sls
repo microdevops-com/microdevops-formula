@@ -91,4 +91,29 @@ install_utils_tgz_v1_4:
       {%- endif %}
     {%- endif %}
   {%- endif %}
+
+  {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "purged" %}
+    {%- if grains['os'] in ['Ubuntu', 'Debian'] and not grains['oscodename'] in ['karmic'] %}
+
+pkg_purged_utils:
+  pkg.purged:
+    - name: sysadmws-utils
+
+    {%- endif %}
+
+# For all OS final clean
+rm_utils_v0_1:
+  file.absent:
+    - name: /root/sysadmws-utils.tar.gz
+
+rm_utils_v0_2:
+  file.absent:
+    - name: /opt/sysadmws-utils
+
+rm_utils_v0_2:
+  file.absent:
+    - name: /etc/cron.d/sysadmws-rsnapshot-backup
+
+  {%- endif %}
+
 {% endif %}
