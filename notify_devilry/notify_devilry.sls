@@ -1,4 +1,4 @@
-{% if pillar['notify_devilry'] is defined and pillar['notify_devilry'] is not none and pillar['notify_devilry']['config_file'] is defined and pillar['notify_devilry']['config_file'] is not none %}
+{% if pillar['notify_devilry'] is defined and pillar['notify_devilry'] is not none and pillar['notify_devilry']['enabled'] is defined and pillar['notify_devilry']['enabled'] is not none and pillar['notify_devilry']['config_file'] is defined and pillar['notify_devilry']['config_file'] is not none %}
 
   {%- if salt['file.directory_exists']('/opt/sysadmws-utils/notify_devilry') %}
 swsu_v0_notify_devilry_config_managed:
