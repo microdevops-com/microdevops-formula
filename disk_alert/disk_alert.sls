@@ -25,10 +25,10 @@ swsu_v1_disk_alert_config_managed:
 
 swsu_v1_disk_alert_cron_managed:
   cron.present:
-    - name: '/opt/sysadmws/disk_alert/disk_alert.sh >> /opt/sysadmws/disk_alert/disk_alert.log'
+    - name: '/opt/sysadmws/disk_alert/disk_alert.sh'
     - identifier: disk_alert
     - user: root
-    - minute: '*/2'
+    - minute: '*/5'
   {%- endif %}
 
 {% endif %}
