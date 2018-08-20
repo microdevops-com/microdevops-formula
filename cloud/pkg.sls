@@ -170,6 +170,8 @@ pkg_deb_packages:
       - smartmontools
       # security tools
       - fail2ban
+      #
+      - sysadmws-utils-v1
 
   {%- if grains['oscodename'] == 'jessie' %}
 jessie_bashrc:
