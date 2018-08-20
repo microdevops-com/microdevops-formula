@@ -21,6 +21,7 @@ swsu_v1_mysql_replica_checker_config_managed:
     - user: root
     - group: root
     - contents: {{ pillar['mysql_replica_checker']['config'] | yaml_encode }}
+    {%- endif %}
 
 swsu_v1_mysql_replica_checker_cron_managed:
   cron.present:
@@ -28,7 +29,6 @@ swsu_v1_mysql_replica_checker_cron_managed:
     - identifier: mysql_replica_checker
     - user: root
     - minute: '*/30'
-    {%- endif %}
   {%- endif %}
 
 {% endif %}
