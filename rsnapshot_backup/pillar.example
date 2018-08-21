@@ -7,13 +7,62 @@ rsnapshot_backup:
   sources:
     backup1.domain.com:
       - type: FS_RSYNC_SSH
+        # type: MYSQL
+        # type: POSTGRESQL
+        # type: FS_RSYNC_NATIVE
         data:
-          - UBUNTU
+          - UBUNTU # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws']
+          #- DEBIAN # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws']
+          #- CENTOS # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local']
+        # checks are optional
         checks:
           - type: .backup
         backups:
           - host: backup1.domain.com
             path: /var/backups/backup1.domain.com
+            # optional, by default connect to source hostname and 22 port
+            connect: 1.2.3.4:22
+        # optional params with default values
+        validate_hostname: True # disable remote hostname check
+        postgresql_noclean: False
+        mysql_noevents: False
+        native_txt_check: False
+        native_10h_limit: False
+        retain_hourly: N
+        retain_daily:
+        retain_weekly: 
+        retain_monthly: 
+        rsync_args: 
+        connect_user: 
+        connect_password: 
+        exec_before_rsync: 
+        checks:
+          #
+          - type: .backup
+            put_at_utc_hour: True
+          #
+          - type: s3/.backup
+            s3_bucket:
+            s3_path:
+            s3_keyid: 
+            s3_key: 
+          #
+          - type: FILE_AGE
+            min_file_size:
+            file_type: 
+            last_file_age: 
+            files_total:
+            files_mask:
+          #
+          - type: MYSQL
+            empty_db:
+              - a
+              - b
+          #
+          - type: POSTGRESQL
+            empty_db:
+              - a
+              - b
 
 # srv1.domain.com, backup1.domain.com
 rsnapshot_backup:
