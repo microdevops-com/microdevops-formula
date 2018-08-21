@@ -36,6 +36,8 @@ rsnapshot_backup_conf:
           validate_hostname: {{ host_backups_item['validate_hostname']|default(True) }}
           postgresql_noclean: {{ host_backups_item['postgresql_noclean']|default(False) }}
           mysql_noevents: {{ host_backups_item['mysql_noevents']|default(False) }}
+          native_txt_check: {{ host_backups_item['native_txt_check']|default(False) }}
+          native_10h_limit: {{ host_backups_item['native_10h_limit']|default(False) }}
           path: {{ backup['path'] }}
             {%- if host_backups_item['retain_hourly'] is defined and host_backups_item['retain_hourly'] is not none %}
           retain_hourly: {{ host_backups_item['retain_hourly'] }}
