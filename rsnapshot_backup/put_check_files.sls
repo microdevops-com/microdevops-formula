@@ -42,12 +42,12 @@
                   {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
                 {%- elif data_item == 'CENTOS' %}
                   {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
+                # Just one item data_item itself
                 {%- else %}
-                  {%- if check_item['paths'] is defined and check_item['paths'] is not none and check_item['paths'][data_item] is defined and check_item['paths'][data_item] is not none %}
-                    # Just one item - but substitute by paths array
-                    {%- set expanded_data = [check_item['paths'][data_item]] -%}
+                  # Check if check has path subst by data
+                  {%- if check_item['data'] is defined and check_item['data'] is not none and check_item['data'] == data_item %}
+                    {%- set expanded_data = [check_item['path']] -%}
                   {%- else %}
-                    # Just one item - data_item itself
                     {%- set expanded_data = [data_item] -%}
                   {%- endif %}
                 {%- endif %}
