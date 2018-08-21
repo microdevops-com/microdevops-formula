@@ -7,13 +7,10 @@ rsnapshot_backup:
   sources:
     backup1.domain.com:
       - type: FS_RSYNC_SSH
-        # type: MYSQL
-        # type: POSTGRESQL
-        # type: FS_RSYNC_NATIVE
         data:
           - UBUNTU # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws']
-          #- DEBIAN # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws']
-          #- CENTOS # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local']
+          - DEBIAN # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws']
+          - CENTOS # ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local']
         # checks are optional
         checks:
           - type: .backup
@@ -35,7 +32,7 @@ rsnapshot_backup:
         rsync_args: 
         connect_user: 
         connect_password: 
-        exec_before_rsync: 
+        exec_before_rsync: # avoid using single and double quotes, beware - it will be executed for each item in data:, so make separate FS_RSYNC_SSH to exec only once
         checks:
           #
           - type: .backup
@@ -63,8 +60,61 @@ rsnapshot_backup:
             empty_db:
               - a
               - b
+      - type: POSTGRESQL
+        data:
+          - ALL
+        checks:
+          - type: POSTGRESQL
+            empty_db:
+              - postgres
+              - template0
+              - template1
+        backups:
+          - host: backup1.domain.com
+            path: /var/backups/srv1.domain.com
+      - type: MYSQL
+        data:
+          - ALL
+        checks:
+          - type: MYSQL
+            empty_db:
+              - test
+        backups:
+          - host: backup1.domain.com
+            path: /var/backups/srv1.domain.com
+      - type: FS_RSYNC_NATIVE
+        data:
+          - /Share1/Some/Path
+          - /Share2/Other/Path
+        connect_user: root
+        connect_password: secret
+        checks:
+          - type: .backup
+            data: /Share1/Some/Path # dot backup files can have real path substituted by matching data key
+            path: C:\Some Actual\Windows Path\Some\Path
+          - type: .backup
+            data: /Share2/Other/Path
+            path: D:\Completely Another\Windows Path\Other\Path
+          - type: FILE_AGE
+            data: /Share1/Some/Path # FILE_AGE check must have matching data key
+            min_file_size: 1000000000
+            file_type: (data|executable) # regexp which will be matched agains unix command type
+            last_file_age: 3
+            files_total: 3
+            files_mask: 123.+_321\..+\.DOC # regexp for find command
+          - type: FILE_AGE
+            data: /Share2/Other/Path
+            min_file_size: 1
+            file_type: text
+            last_file_age: 1
+            files_total: 1
+            files_mask: test\.txt
+        backups:
+          - host: backup1.domain.com
+            path: /var/backups/winsrv1.domain.com
 
-# srv1.domain.com, backup1.domain.com
+# multi backup server example
+# srv1.domain.com, backup1.domain.com should see tha same pillar data
 rsnapshot_backup:
   sources:
     srv1.domain.com:
@@ -79,19 +129,3 @@ rsnapshot_backup:
             path: /var/backups/srv1.domain.com
           - host: backup1.domain.com
             path: /var/backups/srv1.domain.com
-            connect: srv1.domain.com:221
-      - type: POSTGRESQL
-        data:
-          - ALL
-        checks:
-          - type: POSTGRESQL
-            empty_db:
-              - postgres
-              - template0
-              - template1
-        backups:
-          - host: srv1.domain.com
-            path: /var/backups/srv1.domain.com
-          - host: backup1.domain.com
-            path: /var/backups/srv1.domain.com
-            connect: srv1.domain.com:221
