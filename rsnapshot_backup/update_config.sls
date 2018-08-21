@@ -33,6 +33,7 @@ rsnapshot_backup_conf:
           host: {{ host }}
           type: {{ host_backups_item['type'] }}
           source: {{ source }}
+          validate_hostname: {{ False if (backup['validate_hostname'] is defined and backup['validate_hostname'] is not none and backup['validate_hostname'] == False ) else True }}
           path: {{ backup['path'] }}
             {%- if host_backups_item['retain_hourly'] is defined and host_backups_item['retain_hourly'] is not none %}
           retain_hourly: {{ host_backups_item['retain_hourly'] }}
