@@ -54,9 +54,10 @@
                   {%- endif %}
                 {%- endif %}
 
-                # Loop over expanded list
-                {%- for expanded_data_item in expanded_data %}
-                {%- set l_loop = loop %}
+                # Loop over expanded list if expanded_data is not none
+                {%- if expanded_data is not none %}
+                  {%- for expanded_data_item in expanded_data %}
+                  {%- set l_loop = loop %}
 
 put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_loop.index }}:
   file.managed:
@@ -65,13 +66,14 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
       - 'Host: {{ grains['fqdn'] }}'
       - 'Path: {{ expanded_data_item }}'
       - 'UTC: {{ salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-                  {%- for backup_item in source_item['backups'] %}
-                  {%- set m_loop = loop %}
+                    {%- for backup_item in source_item['backups'] %}
+                    {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
-                  {%- endfor %}
+                    {%- endfor %}
 
-                {%- endfor %}
+                  {%- endfor %}
+                {%- endif %}
               {%- endfor %}
             {%- endif %}
 
