@@ -34,6 +34,8 @@ rsnapshot_backup_conf:
           type: {{ host_backups_item['type'] }}
           source: {{ source }}
           validate_hostname: {{ host_backups_item['validate_hostname']|default(True) }}
+          postgresql_noclean: {{ host_backups_item['postgresql_noclean']|default(False) }}
+          mysql_noevents: {{ host_backups_item['mysql_noevents']|default(False) }}
           path: {{ backup['path'] }}
             {%- if host_backups_item['retain_hourly'] is defined and host_backups_item['retain_hourly'] is not none %}
           retain_hourly: {{ host_backups_item['retain_hourly'] }}
@@ -47,8 +49,8 @@ rsnapshot_backup_conf:
             {%- if host_backups_item['retain_monthly'] is defined and host_backups_item['retain_monthly'] is not none %}
           retain_monthly: {{ host_backups_item['retain_monthly'] }}
             {%- endif %}
-            {%- if host_backups_item['run_args'] is defined and host_backups_item['run_args'] is not none %}
-          run_args: {{ host_backups_item['run_args'] }}
+            {%- if host_backups_item['rsync_args'] is defined and host_backups_item['rsync_args'] is not none %}
+          rsync_args: {{ host_backups_item['rsync_args'] }}
             {%- endif %}
             {%- if host_backups_item['connect_user'] is defined and host_backups_item['connect_user'] is not none %}
           connect_user: {{ host_backups_item['connect_user'] }}
