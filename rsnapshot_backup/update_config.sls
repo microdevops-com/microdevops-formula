@@ -67,6 +67,11 @@ rsnapshot_backup_conf:
           checks:
               {%- for check in host_backups_item['checks'] %}
             - type: {{ check['type'] }}
+                {%- if check['paths'] is defined and check['paths'] is not none %}
+                  {%- if check['paths'][source] is defined and check['paths'][source] is not none %}
+              path: {{ check['paths'][source] }}
+                  {%- endif %}
+                {%- endif %}
                 {%- if check['empty_db'] is defined and check['empty_db'] is not none %}
               empty_db: {{ check['empty_db'] }}
                 {%- endif %}
