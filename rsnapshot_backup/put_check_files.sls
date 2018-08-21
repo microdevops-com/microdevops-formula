@@ -14,18 +14,14 @@
         {%- for check_item in source_item['checks'] %}
         {%- set j_loop = loop %}
 
-          # Simulate loop control with check_condition var
-          {%- set check_condition = True %}
-
           # Check put_at_utc_hour
+          {%- set check_condition = True %}
           {%- if check_item['put_at_utc_hour'] is defined and check_item['put_at_utc_hour'] is not none %}
             {%- set current_utc_hour = salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('HH')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%H"') %}
             {%- if current_utc_hour|string != check_item['put_at_utc_hour']|string %}
               {%- set check_condition = False %}
             {%- endif %}
           {%- endif %}
-
-          # Check condition
           {%- if check_condition %}
 
             # Type .backup
@@ -45,8 +41,14 @@
                 # Just one item data_item itself
                 {%- else %}
                   # Check if check has path subst by data
-                  {%- if check_item['data'] is defined and check_item['data'] is not none and check_item['data'] == data_item %}
-                    {%- set expanded_data = [check_item['path']] -%}
+                  {%- if check_item['data'] is defined and check_item['data'] is not none %}
+                    # If subst only matched check
+                    {%- if check_item['data'] == data_item %}
+                      {%- set expanded_data = [check_item['path']] -%}
+                    {%- else %}
+                      {%- set expanded_data = none -%}
+                    {%- endif %}
+                  # No subst, just data_item itself
                   {%- else %}
                     {%- set expanded_data = [data_item] -%}
                   {%- endif %}
