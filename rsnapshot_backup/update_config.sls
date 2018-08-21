@@ -60,6 +60,9 @@ rsnapshot_backup_conf:
             {%- if host_backups_item['connect_password'] is defined and host_backups_item['connect_password'] is not none %}
           connect_password: {{ host_backups_item['connect_password'] }}
             {%- endif %}
+            {%- if host_backups_item['run_before_rsync'] is defined and host_backups_item['run_before_rsync'] is not none %}
+          run_before_rsync: {{ host_backups_item['run_before_rsync'] }}
+            {%- endif %}
             {%- if host_backups_item['checks'] is defined and host_backups_item['checks'] is not none %}
           checks:
               {%- for check in host_backups_item['checks'] %}
