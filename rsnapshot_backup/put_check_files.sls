@@ -14,50 +14,40 @@
         {%- for check_item in source_item['checks'] %}
         {%- set j_loop = loop %}
 
-          # Check put_at_utc_hour
-          {%- set check_condition = True %}
-          {%- if check_item['put_at_utc_hour'] is defined and check_item['put_at_utc_hour'] is not none %}
-            {%- set current_utc_hour = salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('HH')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%H"') %}
-            {%- if current_utc_hour|string != check_item['put_at_utc_hour']|string %}
-              {%- set check_condition = False %}
-            {%- endif %}
-          {%- endif %}
-          {%- if check_condition %}
+          # Type .backup
+          {%- if check_item['type'] == ".backup" %}
 
-            # Type .backup
-            {%- if check_item['type'] == ".backup" %}
+            # Loop over sources
+            {%- for data_item in source_item['data'] %}
+            {%- set k_loop = loop %}
 
-              # Loop over sources
-              {%- for data_item in source_item['data'] %}
-              {%- set k_loop = loop %}
-
-                # Expand special words in the data_item
-                {%- if data_item == 'UBUNTU' %}
-                  {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
-                {%- elif data_item == 'DEBIAN' %}
-                  {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
-                {%- elif data_item == 'CENTOS' %}
-                  {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
-                # Just one item data_item itself
-                {%- else %}
-                  # Check if check has path subst by data
-                  {%- if check_item['data'] is defined and check_item['data'] is not none %}
-                    # If subst only matched check
-                    {%- if check_item['data'] == data_item %}
-                      {%- set expanded_data = [check_item['path']] -%}
-                    {%- else %}
-                      {%- set expanded_data = none -%}
-                    {%- endif %}
-                  # No subst, just data_item itself
+              # Expand special words in the data_item
+              {%- if data_item == 'UBUNTU' %}
+                {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
+              {%- elif data_item == 'DEBIAN' %}
+                {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'] -%}
+              {%- elif data_item == 'CENTOS' %}
+                {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local'] -%}
+              # Just one item data_item itself
+              {%- else %}
+                # Check if check has path subst by data
+                {%- if check_item['data'] is defined and check_item['data'] is not none %}
+                  # If subst only matched check
+                  {%- if check_item['data'] == data_item %}
+                    {%- set expanded_data = [check_item['path']] -%}
                   {%- else %}
-                    {%- set expanded_data = [data_item] -%}
+                    {%- set expanded_data = none -%}
                   {%- endif %}
+                # No subst, just data_item itself
+                {%- else %}
+                  {%- set expanded_data = [data_item] -%}
                 {%- endif %}
+              {%- endif %}
 
-                # Loop over expanded list if expanded_data is not none
-                {%- if expanded_data is not none %}
-                  {%- for expanded_data_item in expanded_data %}
-                  {%- set l_loop = loop %}
+              # Loop over expanded list if expanded_data is not none
+              {%- if expanded_data is not none %}
+                {%- for expanded_data_item in expanded_data %}
+                {%- set l_loop = loop %}
 
 put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_loop.index }}:
   file.managed:
@@ -66,22 +56,22 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
       - 'Host: {{ grains['fqdn'] }}'
       - 'Path: {{ expanded_data_item }}'
       - 'UTC: {{ salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-                    {%- for backup_item in source_item['backups'] %}
-                    {%- set m_loop = loop %}
+                  {%- for backup_item in source_item['backups'] %}
+                  {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
-                    {%- endfor %}
-
                   {%- endfor %}
-                {%- endif %}
-              {%- endfor %}
-            {%- endif %}
 
-            # Type s3/.backup
-            # The idea is to put .backup to bucket, which somehow is synced to backup then.
-            # Loop over data - no need to be done, because .backup file path is defined by s3_ keys of the check.
-            # Even if you define several data and this check type, file would be overwritten by the last one.
-            {%- if check_item['type'] == "s3/.backup" %}
+                {%- endfor %}
+              {%- endif %}
+            {%- endfor %}
+          {%- endif %}
+
+          # Type s3/.backup
+          # The idea is to put .backup to bucket, which somehow is synced to backup then.
+          # Loop over data - no need to be done, because .backup file path is defined by s3_ keys of the check.
+          # Even if you define several data and this check type, file would be overwritten by the last one.
+          {%- if check_item['type'] == "s3/.backup" %}
 
 put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
   file.managed:
@@ -91,11 +81,11 @@ put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
       - 'Bucket: {{ check_item['s3_bucket'] }}'
       - 'Path: {{ check_item['s3_path'] }}'
       - 'UTC: {{ salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
-              {%- for backup_item in source_item['backups'] %}
-              {%- set m_loop = loop %}
+            {%- for backup_item in source_item['backups'] %}
+            {%- set m_loop = loop %}
       - 'Backup {{ m_loop.index }} Host: {{ backup_item['host'] }}'
       - 'Backup {{ m_loop.index }} Path: {{ backup_item['path'] }}'
-              {%- endfor %}
+            {%- endfor %}
 
 put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
   module.run:
@@ -105,8 +95,6 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
     - local_file: '/tmp/put_check_files/.backup'
     - keyid: '{{ check_item['s3_keyid'] }}'
     - key: '{{ check_item['s3_key'] }}'
-
-            {%- endif %}
 
           {%- endif %}
 
