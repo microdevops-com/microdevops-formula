@@ -1,3 +1,5 @@
+# vi: set ft=yaml:
+
 # backup1.domain.com - an example to backup data from two servers to central backup server
 rsnapshot_backup:
   backup_server: True

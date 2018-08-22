@@ -1,3 +1,5 @@
+# vi: set ft=yaml:
+
 # cloud
 # this should be cloud vm targeted
 resolv_domain: example.com
