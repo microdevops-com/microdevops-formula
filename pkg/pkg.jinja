@@ -23,7 +23,7 @@ pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ 
     - comment: |
         NOTICE: pkg_filter pillar applied, state skipped
 {{ ss_val|yaml(False)|replace("&#39;", "'")|indent(width=4,indentfirst=True) }}
-              {%- fi %}
+              {%- endif %}
             {%- else %}
 pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   {{ s_key }}:
