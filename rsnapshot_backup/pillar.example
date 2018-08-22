@@ -54,7 +54,7 @@ rsnapshot_backup:
         retain_daily: N # optional, override default value 7
         retain_weekly: N # optional, override default value 4
         retain_monthly: N # optional, override default value 3
-        rsync_args: --exclude=/root/junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
+        rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         connect_user: toor # optional, root by default, user for ssh connect
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump folder over ssh
@@ -77,7 +77,27 @@ rsnapshot_backup:
         retain_daily: N # optional, override default value 7
         retain_weekly: N # optional, override default value 4
         retain_monthly: N # optional, override default value 3
-        rsync_args: --exclude=/root/junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
+        rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
+        connect_user: toor # optional, root by default, user for ssh connect
+        exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
+      - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump folder over ssh
+        data:
+          - ALL # special meaning, expands to all databases available
+          - db1
+        checks: # optional, MONGODB_SSH supports only MONGODB check type
+          - type: MONGODB # check dumps for freshness by looking into the signature and check real data inside dumps
+            empty_db: # database list to exclude from checking real data in dumps
+              - test
+        backups:
+          - host: backup1.domain.com # on which server backup is performed
+            path: /var/backups/srv1.domain.com # where to store backup
+            connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
+        validate_hostname: False # optional, disable remote ssh hostname check
+        retain_hourly: N # optional, hourly rotations disabled by default
+        retain_daily: N # optional, override default value 7
+        retain_weekly: N # optional, override default value 4
+        retain_monthly: N # optional, override default value 3
+        rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         connect_user: toor # optional, root by default, user for ssh connect
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
     winsrv1.domain.com:
