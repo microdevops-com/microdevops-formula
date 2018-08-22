@@ -1,3 +1,13 @@
+{#
+You can apply specific pkg sub pillar by running:
+salt minion state.apply pkg.[pkg|before_deploy|after_deploy] pillar='{"pkg_filter": "some_name"}'
+
+It will run only:
+pkg:
+  some_name: <- this sub pillar
+
+Do not use number as some_name, filter will not match for numbers.
+#}
 {% if pillar['pkg'] is defined and pillar['pkg'] is not none %}
   {%- for pkg_key, pkg_val in pillar['pkg'].items()|sort %}
     {%- if pkg_val['when'] is defined and pkg_val['when'] is not none and PKG_WHEN is defined and PKG_WHEN is not none and pkg_val['when'] == PKG_WHEN %}
