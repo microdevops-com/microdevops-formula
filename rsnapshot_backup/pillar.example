@@ -87,7 +87,7 @@ rsnapshot_backup:
         checks: # optional, MONGODB_SSH supports only MONGODB check type
           - type: MONGODB # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
-              - test
+              - config
         backups:
           - host: backup1.domain.com # on which server backup is performed
             path: /var/backups/srv1.domain.com # where to store backup
