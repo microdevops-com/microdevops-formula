@@ -54,6 +54,9 @@ rsnapshot_backup_conf:
             {%- if host_backups_item['rsync_args'] is defined and host_backups_item['rsync_args'] is not none %}
           rsync_args: {{ host_backups_item['rsync_args'] }}
             {%- endif %}
+            {%- if host_backups_item['mongo_args'] is defined and host_backups_item['mongo_args'] is not none %}
+          mongo_args: {{ host_backups_item['mongo_args'] }}
+            {%- endif %}
             {%- if host_backups_item['connect_user'] is defined and host_backups_item['connect_user'] is not none %}
           connect_user: {{ host_backups_item['connect_user'] }}
             {%- endif %}
