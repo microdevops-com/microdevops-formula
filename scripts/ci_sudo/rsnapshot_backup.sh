@@ -33,5 +33,6 @@ stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:bac
 # 50 shades of red
 grep -q "\[0;31m" ${OUT_FILE} && GRAND_EXIT=1
 grep -q "\[31m" ${OUT_FILE} && GRAND_EXIT=1
+grep -q "\[0;1;31m" ${OUT_FILE} && GRAND_EXIT=1
 
 exit $GRAND_EXIT
