@@ -33,7 +33,7 @@ rsnapshot_backup:
         retain_daily: N # optional, override default value 7
         retain_weekly: N # optional, override default value 4
         retain_monthly: N # optional, override default value 3
-        rsync_args: --exclude=/root/junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
+        rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
         connect_user: toor # optional, root by default, user for ssh connect
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
       - type: MYSQL_SSH # dump mysql over ssh, then rsync dump folder over ssh
@@ -150,7 +150,7 @@ rsnapshot_backup:
         retain_daily: N # optional, override default value 7
         retain_weekly: N # optional, override default value 4
         retain_monthly: N # optional, override default value 3
-        rsync_args: --exclude=/root/junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
+        rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
 
 # multi backup server example
 # srv1.domain.com, backup1.domain.com should see tha same pillar data
