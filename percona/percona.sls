@@ -3,13 +3,15 @@
 percona_repo_deb:
   pkg.installed:
     - sources:
-      - percona-release: 'salt://percona/files/percona-release_0.1-4.{{ grains['oscodename'] }}_all.deb'
+      - percona-release: 'salt://percona/files/percona-release_0.1-6.{{ grains['oscodename'] }}_all.deb'
 
     {%- if (pillar['percona']['version'] is defined) and (pillar['percona']['version'] is not none) %}
 percona_client:
   pkg.installed:
-    - name: percona-server-client-{{ pillar['percona']['version'] }}
     - refresh: True
+    - pkgs:
+        - libmysqlclient-dev
+        - percona-server-client-{{ pillar['percona']['version'] }}
 
 percona_config_dir:
   file.directory:
@@ -73,6 +75,27 @@ percona_remove_limits:
       - service: percona_svc
         {%- endif %}
 
+        {%- if ((pillar['percona']['version'] == '5.7') and (pillar['percona']['version'] == 5.7)) %}
+percona_debian_conf:
+  file.managed:
+    - name: '/etc/mysql/debian.cnf'
+    - user: 'root'
+    - group: 'root'
+    - mode: '0600'
+    - contents: |
+        [client]
+        host     = localhost
+        user     = root
+        password = {{ pillar['percona']['root_password'] }}
+        socket   = /var/run/mysqld/mysqld.sock
+        [mysql_upgrade]
+        host     = localhost
+        user     = root
+        password = {{ pillar['percona']['root_password'] }}
+        socket   = /var/run/mysqld/mysqld.sock
+        basedir  = /usr
+        {%- endif %}
+
         {% if not salt['file.file_exists' ]('/root/.my.cnf') %}
 percona_create_symlink_debian_sys_maint_to_root:
   file.symlink:
@@ -80,7 +103,7 @@ percona_create_symlink_debian_sys_maint_to_root:
     - target: /etc/mysql/debian.cnf
         {% endif %}
 
-      {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) %}
+        {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) and ((pillar['percona']['version'] != '5.7') and (pillar['percona']['version'] != 5.7)) %}
 percona_disallow_root_remote_connection:
   mysql_query.run:
     - database: mysql
@@ -91,7 +114,7 @@ percona_disallow_root_remote_connection:
       - pkg: mysql_python_dep
       - service: percona_svc
 
-percona_remove_anonimus_user:
+percona_remove_anonymous_user:
   mysql_query.run:
     - database: mysql
     - query: "DELETE FROM user WHERE User='';"
@@ -119,24 +142,16 @@ percona_delete_privileges_database_test:
     - require:
       - pkg: mysql_python_dep
       - service: percona_svc
-
-percona_create_post_install_toolkit_functions:
-    mysql_query.run:
-    - database: mysql
-    - query: "CREATE FUNCTION fnv1a_64 RETURNS INTEGER SONAME 'libfnv1a_udf.so'; CREATE FUNCTION fnv_64 RETURNS INTEGER SONAME 'libfnv_udf.so'; CREATE FUNCTION murmur_hash RETURNS INTEGER SONAME 'libmurmur_udf.so'"
-    - connection_user: root
-    - connection_pass: {{ pillar['percona']['root_password'] }}
-    - require:
-      - pkg: mysql_python_dep
-      - service: percona_svc
-      {%- endif %}
+        {%- endif %}
 
         {%- if (pillar['percona']['databases'] is defined) and (pillar['percona']['databases'] is not none) %}
-          {%- for name in pillar['percona']['databases'] %}
-mysql_database_{{ name }}:
+          {%- for db in pillar['percona']['databases'] %}
+mysql_database_{{ db['name'] }}:
   mysql_database.present:
-    - name: {{ name }}
+    - name: {{ db['name'] }}
     - connection_user: root
+    - character_set: {{ db['character_set']|default('utf8mb4') }}
+    - collate: {{ db['collate']|default('utf8mb4_unicode_ci') }}
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
       - pkg: mysql_python_dep
@@ -144,13 +159,14 @@ mysql_database_{{ name }}:
           {%- endfor %}
         {%- endif %}
 
+
         {%- if (pillar['percona']['users'] is defined) and (pillar['percona']['users'] is not none) %}
           {%- for name, user in pillar['percona']['users'].items() %}
 mysql_user_{{ name }}_{{ user['host'] }}:
   mysql_user.present:
     - name: {{ name }}
-    - host: {{ user['host'] }}
-    - password: {{ user['password'] }}
+    - host: '{{ user["host"] }}'
+    - password: '{{ user["password"] }}'
     - connection_user: root
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - require:
@@ -160,9 +176,10 @@ mysql_user_{{ name }}_{{ user['host'] }}:
 mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
   mysql_grants.present:
     - grant: '{{db['grant']|join(",")}}'
-    - database: '{{ db['database'] }}.*'
+    - database: '`{{ db['database'] }}`.*'
+    - escape: False
     - user: {{ name }}
-    - host: {{ user['host'] }}
+    - host: '{{ user["host"] }}'
     - connection_user: root
     - connection_pass: {{ pillar['percona']['root_password'] }}
     - grant_option: {{ db['grant_option']|default(False) }}
@@ -171,6 +188,19 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
             {%- endfor %}
           {%- endfor %}
         {%- endif %}
+
+        {%- if ((pillar['percona']['version'] != '5.7') and (pillar['percona']['version'] != 5.7)) %}
+percona_create_post_install_toolkit_functions:
+    mysql_query.run:
+    - database: mysql
+    - query: "DROP FUNCTION IF EXISTS fnv1a_64; CREATE FUNCTION fnv1a_64 RETURNS INTEGER SONAME 'libfnv1a_udf.so'; DROP FUNCTION IF EXISTS fnv_64; CREATE FUNCTION fnv_64 RETURNS INTEGER SONAME 'libfnv_udf.so'; DROP FUNCTION IF EXISTS murmur_hash; CREATE FUNCTION murmur_hash RETURNS INTEGER SONAME 'libmurmur_udf.so'"
+    - connection_user: root
+    - connection_pass: {{ pillar['percona']['root_password'] }}
+    - require:
+      - pkg: mysql_python_dep
+      - service: percona_svc
+        {%- endif %}
+
       {%- endif %}
     {%- endif %}
   {%- endif %}

@@ -18,11 +18,20 @@
 # flush previous rules
 -F
 
-# port forwardings
+# redirect
+{{ redirect }}
+
+# port forwardings dnat
 {{ dnat }}
+
+# port forwardings snat
+{{ snat }}
 
 # nat to the internet
 {{ masquerade }}
+
+# custom table nat rules
+{{ custom_nat }}
 
 # don't delete the 'COMMIT' line or these nat table rules won't be processed
 COMMIT
@@ -35,6 +44,8 @@ COMMIT
 :ufw-not-local - [0:0]
 # End required lines
 
+# custom table filter rules
+{{ custom_filter }}
 
 # allow all on loopback
 -A ufw-before-input -i lo -j ACCEPT

@@ -1,0 +1,75 @@
+# vi: set ft=yaml:
+
+percona:
+  enabled: True
+  version: 5.7
+  root_password: 'my-super-root-pass'
+  databases:
+    - name: mywp
+  users:
+    mywp:
+      host: localhost
+      password: 'mywp-app-pass'
+      databases:
+        - database: mywp
+          grant: ['all privileges']
+
+nginx:
+  enabled: True
+  configs: 'nginx/app_hosting'
+
+php-fpm:
+  enabled: True
+  version_7_2: True
+  modules:
+    php7_2:
+      - php7.2-zip
+      - php7.2-intl
+      - php7.2-mbstring
+      - php7.2-mysql
+      - php7.2-soap
+      - php7.2-xml
+      - php7.2-bcmath
+      - php7.2-curl
+      - php7.2-gd
+
+{% set appname = 'mywp' %}
+{% set domain = 'mywp.example.com' %}
+app:
+  php-fpm_apps:
+    {{ appname }}:
+      enabled: True
+      user: '{{ appname }}'
+      group: '{{ appname }}'
+      pass: '!'
+      app_root: '/var/www/{{ appname }}'
+      shell: '/bin/false'
+      nginx:
+        vhost_config: 'app/wordpress/vhost.conf'
+        root: '/var/www/{{ appname }}/wordpress'
+        server_name: '{{ domain }}'
+        server_name_301: 'www.{{ domain }}'
+        access_log: '/var/log/nginx/{{ appname }}.access.log'
+        error_log: '/var/log/nginx/{{ appname }}.error.log'
+        ssl:
+          acme: True
+      pool:
+        pool_config: 'app/wordpress/pool.conf'
+        php_version: '7.2'
+        pm: |
+          pm = ondemand
+          pm.max_children = 50
+          pm.process_idle_timeout = 10s
+          pm.max_requests = 500
+        php_admin: |
+          php_admin_value[date.timezone] = Europe/Kiev
+          php_admin_flag[html_errors] = off
+          php_admin_value[post_max_size] = 25M
+          php_admin_value[upload_max_filesize] = 25M
+      source:
+        enabled: True
+        archive: 'https://wordpress.org/wordpress-4.9.6.tar.gz'
+        archive_hash: 'md5=f168643b20001cc46b3478facd4f539b'
+        overwrite: False
+        if_missing: '/var/www/{{ appname }}/wordpress'
+        target: '/var/www/{{ appname }}'

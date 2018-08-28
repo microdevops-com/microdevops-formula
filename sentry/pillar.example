@@ -1,0 +1,60 @@
+# vi: set ft=yaml:
+
+# sentry
+pkg:
+  certbot:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - git.latest:
+          certbot:
+            - name: https://github.com/certbot/certbot
+            - target: /opt/certbot
+            - force_reset: True
+            - force_fetch: True
+  supervisor:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - pkg_installed:
+          1:
+            - pkgs:
+                - supervisor
+
+pyenv:
+  enabled: True
+  version_2_7_14: True
+
+nginx:
+  enabled: True
+  configs: 'sentry/files'
+
+sentry:
+  enabled: True
+  pyenv_version: '2.7.14'
+  secret: 'xxx'
+  workers: '10'
+  url: 'https://sentry.example.com'
+  admin_email: 'admin@example.com'
+  admin_password: 'adminpass'
+  email:
+    user: 'sentry@example.com'
+    pass: 'gmailmailpass'
+    host: 'smtp.gmail.com'
+    port: 587
+    tls: True
+  db:
+    db_name: 'sentry'
+    user: 'sentry'
+    password: 'dbpass'
+    host: 'localhost'
+    port: '5432'
+  nginx:
+    server_name: 'sentry.example.com'
+    server_name_301: 'www.sentry.example.com'
+    access_log: '/var/log/nginx/sentry.access.log'
+    error_log: '/var/log/nginx/sentry.error.log'
+    certbot_email: 'admin@example.com'
+    allow_hosts: # sentry / location will be limited by nginx to those ip, while ~ /api/([\w_-]+/)?store will be open to everyone
+      - '1.2.3.4'
+      - '4.3.2.1'
+  plugins: # Unofficial plugins only, official come with sentry-plugins, sentry-telegram already adopted
+    - sentry-xxx

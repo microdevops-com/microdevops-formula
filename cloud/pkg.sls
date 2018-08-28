@@ -10,6 +10,12 @@ pkg_jessie_sources_list:
     - name: '/etc/apt/sources.list'
     - source: salt://cloud/files/jessie_sources_list
     - mode: 0644
+  {%- elif grains['oscodename'] == 'stretch' %}
+pkg_stretch_sources_list:
+  file.managed:
+    - name: '/etc/apt/sources.list'
+    - source: salt://cloud/files/stretch_sources_list
+    - mode: 0644
   {%- elif grains['oscodename'] == 'xenial' %}
 pkg_xenial_sources_list:
   file.managed:
@@ -36,7 +42,13 @@ pkg_deb_packages:
       - vim
       - wget
       - apt-utils
+  {%- if grains['oscodename'] == 'jessie' %}
       - python-software-properties
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - software-properties-common
+  {%- elif grains['oscodename'] == 'xenial' %}
+      - python-software-properties
+  {%- endif %}
       - at
       - doc-debian
       - ftp
@@ -50,8 +62,6 @@ pkg_deb_packages:
       - rsyslog
       - less
       - whois
-      - nfacct
-      - nfs-common
       - bc
       - wamerican
       - ucf
@@ -60,10 +70,13 @@ pkg_deb_packages:
       - man-db
       - bzip2
       - whiptail
+  {%- if grains['oscodename'] != 'precise' %}
       - kmod
+      - aptitude-common
+      - nfacct
+  {%- endif %}
       - gettext-base
       - dbus
-      - rpcbind
       - libclass-isa-perl
       - dnsutils
       - libswitch-perl
@@ -74,12 +87,17 @@ pkg_deb_packages:
       - mlocate
       - telnet
       - iptables
+  {%- if grains['oscodename'] == 'jessie' %}
       - python-reportbug
+  {%- elif grains['oscodename'] == 'xenial' %}
+      - python-reportbug
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - python3-reportbug
+  {%- endif %}
       - lsof
       - reportbug
       - vim
       - krb5-locales
-      - aptitude-common
       - ncurses-term
       - aptitude
       - apt-listchanges
@@ -93,11 +111,14 @@ pkg_deb_packages:
       - task-english
       - task-ssh-server
       - libxtables10
-      - exim4
-  {%- elif grains['oscodename'] == 'xenial' %}
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - task-english
+      - task-ssh-server
+      - libxtables12
+  {%- elif grains['os'] == 'Ubuntu' %}
       - openssh-server
-      - postfix
   {%- endif %}
+      - postfix
       - resolvconf
       - apt-transport-https
       - ca-certificates
@@ -108,7 +129,11 @@ pkg_deb_packages:
       - gawk
       - curl
       - wget
+  {%- if grains['oscodename'] == 'bionic' %}
+      - s-nail 
+  {%- else %}
       - heirloom-mailx
+  {%- endif %}
       # diag tools
       - ethtool
       - iotop
@@ -125,7 +150,6 @@ pkg_deb_packages:
       - byobu
       - mc
       - ncftp
-      - man
       - ncdu
       - ccze
       - pv
@@ -147,13 +171,19 @@ pkg_deb_packages:
       # security tools
       - fail2ban
       #
-      - sysadmws-utils
+      - sysadmws-utils-v1
 
   {%- if grains['oscodename'] == 'jessie' %}
 jessie_bashrc:
   file.managed:
     - name: '/etc/bash.bashrc'
     - source: salt://cloud/files/jessie_bashrc
+    - mode: 0644
+  {%- elif grains['oscodename'] == 'stretch' %}
+stretch_bashrc:
+  file.managed:
+    - name: '/etc/bash.bashrc'
+    - source: salt://cloud/files/stretch_bashrc
     - mode: 0644
   {%- elif grains['oscodename'] == 'xenial' %}
 xenial_bashrc:

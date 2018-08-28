@@ -1,0 +1,2 @@
+netdata:
+  central: True

@@ -43,6 +43,18 @@ pyenv_3_5_3_installed:
     - name: python-3.5.3
   {%- endif %}
 
+  {%- if (pillar['pyenv']['version_3_5_5'] is defined) and (pillar['pyenv']['version_3_5_5'] is not none) and (pillar['pyenv']['version_3_5_5']) %}
+pyenv_3_5_5_installed:
+  pyenv.installed:
+    - name: python-3.5.5
+  {%- endif %}
+
+  {%- if (pillar['pyenv']['version_3_6_5'] is defined) and (pillar['pyenv']['version_3_6_5'] is not none) and (pillar['pyenv']['version_3_6_5']) %}
+pyenv_3_6_5_installed:
+  pyenv.installed:
+    - name: python-3.6.5
+  {%- endif %}
+
 pyenv_profile_file:
   file.managed:
     - name: /etc/profile.d/pyenv.sh

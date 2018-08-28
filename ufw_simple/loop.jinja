@@ -1,0 +1,40 @@
+      {%- for item_name, item_params in pillar_context.items() %}
+        {%- if (item_params['from'] is defined) and (item_params['from'] is not none) %}
+          {%- set item_from = item_params['from'] %}
+        {%- else %}
+          {%- set item_from = {'any': 'any'} %}
+        {%- endif %}
+
+        {%- if (item_params['to'] is defined) and (item_params['to'] is not none) %}
+          {%- set item_to = item_params['to'] %}
+        {%- else %}
+          {%- set item_to = {'any': 'any'} %}
+        {%- endif %}
+
+        {%- if (item_params['proto'] is defined) and (item_params['proto'] is not none) %}
+          {%- set item_proto = 'proto ' ~ item_params['proto'] %}
+          {%- set item_to_port = 'port ' ~ item_params['to_port'] %}
+        {%- else %}
+          {%- set item_proto = ' ' %}
+          {%- set item_to_port = ' ' %}
+        {%- endif %}
+
+        {%- set i_loop = loop %}
+        {%- for i_from in item_from %}
+          {%- set j_loop = loop %}
+          {%- for i_to in item_to %}
+            {%- if item_delete == 'delete' %}
+ufw_simple_{{ item_delete }}_{{ item_action }}_rule_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.index }}:
+  cmd.run:
+    - name: {{ 'ufw ' ~ item_delete ~ ' ' ~ item_action ~ ' ' ~ item_proto ~ ' from ' ~ item_from[i_from] ~ ' to ' ~ item_to[i_to] ~ ' ' ~ item_to_port }}
+    - runas: root
+            {%- else %}
+ufw_simple_{{ item_delete }}_{{ item_action }}_rule_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.index }}:
+  cmd.run:
+    - name: {{ 'ufw ' ~ item_delete ~ ' ' ~ item_action ~ ' ' ~ item_proto ~ ' from ' ~ item_from[i_from] ~ ' to ' ~ item_to[i_to] ~ ' ' ~ item_to_port ~ ' comment \'' ~ item_name ~ ' from ' ~ i_from ~ ' to ' ~ i_to ~ '\'' }}
+    - runas: root
+            {% endif %}
+
+          {%- endfor %}
+        {%- endfor %}
+      {%- endfor %}
