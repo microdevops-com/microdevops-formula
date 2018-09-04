@@ -13,7 +13,7 @@ pkg:
           1:
             - skip_verify: True
             - pkgs:
-                - unifi-video
+                - unifi-video # This package should be installed beforehand if installed from legacy deb etc
                 - nginx
       - file.managed:
           '/etc/nginx/nginx.conf':
