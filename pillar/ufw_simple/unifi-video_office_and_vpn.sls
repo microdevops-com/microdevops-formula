@@ -1,3 +1,5 @@
+{% from '/srv/pillar/ufw_simple/vars.jinja' import vars with context %}
+
 ufw_simple:
   enabled: True
   logging: 'off'
