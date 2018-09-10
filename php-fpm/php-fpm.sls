@@ -8,7 +8,7 @@ php-fpm_repo_deb_5_6:
     - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
-    - refresh_db: true
+    - refresh: True
 
 php-fpm_5_6_installed:
   pkg.installed:
@@ -64,7 +64,7 @@ php-fpm_repo_deb_7_0:
     - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
-    - refresh_db: true
+    - refresh: True
 
 php-fpm_7_0_installed:
   pkg.installed:
@@ -120,7 +120,7 @@ php-fpm_repo_deb_7_1:
     - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
-    - refresh_db: true
+    - refresh: True
 
 php-fpm_7_1_installed:
   pkg.installed:
@@ -176,7 +176,7 @@ php-fpm_repo_deb_7_2:
     - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
-    - refresh_db: true
+    - refresh: True
 
 php-fpm_7_2_installed:
   pkg.installed:

@@ -13,13 +13,13 @@ pkg:
             - file: '/etc/apt/sources.list.d/nginx.list'
             - keyid: 'ABF5BD827BD9BF62'
             - keyserver: 'keyserver.ubuntu.com'
-            - refresh_db: true
+            - refresh: True
           2:
             - humanname: 'UBNT Repo'
             - name: 'deb [arch=amd64] http://www.ubnt.com/downloads/unifi-video/apt trusty ubiquiti'
             - file: '/etc/apt/sources.list.d/unifi-video.list'
             - key_url: 'http://www.ubnt.com/downloads/unifi-video/apt/unifi-video.gpg.key'
-            - refresh_db: true
+            - refresh: True
       - pkg.installed:
           1:
             - pkgs:

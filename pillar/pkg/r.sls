@@ -9,7 +9,7 @@ pkg:
             - file: /etc/apt/sources.list.d/rstudio.list
             - keyserver: keyserver.ubuntu.com
             - keyid: E084DAB9
-            - refresh_db: true
+            - refresh: True
       - pkg.latest:
           1:
             - pkgs:

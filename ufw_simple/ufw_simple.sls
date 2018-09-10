@@ -9,7 +9,7 @@ python_snakes_repo:
     - file: /etc/apt/sources.list.d/fkrull-deadsnakes-precise.list
     - keyserver: keyserver.ubuntu.com
     - keyid: DB82666C
-    - refresh_db: true
+    - refresh: True
 
 python_33_installed:
   pkg.latest:

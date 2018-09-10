@@ -2,6 +2,15 @@
   {%- if (pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest") or
          (pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest")
    %}
+
+    {%- if grains['oscodename'] == "precise" %}
+pkgrepo_precise_backports:
+  pkgrepo.managed:
+    - file: /etc/apt/sources.list.d/precise-backports.list
+    - name: 'deb http://de.archive.ubuntu.com/ubuntu/ precise-backports main restricted universe multiverse'
+    - refresh: True
+    {%- endif %}
+
     {%- if grains['os'] in ['Ubuntu', 'Debian'] and not grains['oscodename'] in ['karmic'] %}
 pkgrepo_sysadmws:
   pkgrepo.managed:
