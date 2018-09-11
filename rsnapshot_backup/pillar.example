@@ -28,6 +28,7 @@ rsnapshot_backup:
           - host: backup1.domain.com # on which server backup is performed
             path: /var/backups/srv1.domain.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
+            priority: -1 # optional, priority (order) of this backup in json config on the end server, -10 priority first, then -9 .. -1, then no priority, then 1 .. 10
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
         retain_daily: N # optional, override default value 7
@@ -48,6 +49,7 @@ rsnapshot_backup:
           - host: backup1.domain.com # on which server backup is performed
             path: /var/backups/srv1.domain.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
+            priority: -1 # optional, priority
         mysql_noevents: True # optional, remove --events from dump cmd
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
@@ -71,6 +73,7 @@ rsnapshot_backup:
           - host: backup1.domain.com # on which server backup is performed
             path: /var/backups/srv1.domain.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
+            priority: -1 # optional, priority
         postgresql_noclean: False # add --clean by default to pg dump
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
@@ -92,6 +95,7 @@ rsnapshot_backup:
           - host: backup1.domain.com # on which server backup is performed
             path: /var/backups/srv1.domain.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
+            priority: -1 # optional, priority
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
         retain_daily: N # optional, override default value 7
@@ -142,6 +146,7 @@ rsnapshot_backup:
           - host: backup1.domain.com
             path: /var/backups/winsrv1.domain.com
             connect: 1.2.3.4:873 # optional, native rsync connect with ip or name and port, if not used rsync connects to 873 port by default
+            priority: -1 # optional, priority
         connect_user: toor # optional, root by default, user for native rsync connect
         connect_password: secret # mandatory, plain text native rsync auth
         native_txt_check: True # optional, check for .backup text file in the root of source, useful if you want to ensure the data is present and not sync empty folder if removable disk gone for example
