@@ -1,0 +1,7 @@
+units:
+  certbot:		# Any name
+    prefix: 'certbot'	# Prefix of systemd unit
+    enabled: True	# True or False
+  nginx:
+    prefix: 'nginx'
+    enabled: True
