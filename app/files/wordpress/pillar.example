@@ -69,7 +69,7 @@ app:
       source:
         enabled: True
         archive: 'https://wordpress.org/wordpress-4.9.8.tar.gz'
-        archive_hash: 'md5=C4E7D68B5C382FBBAF547F2B2D42C198'
+        archive_hash: 'md5=c4e7d68b5c382fbbaf547f2b2d42c198'
         overwrite: False
         if_missing: '/var/www/{{ appname }}/wordpress'
         target: '/var/www/{{ appname }}'
