@@ -26,9 +26,18 @@ stdbuf -oL -eL salt --force-color -t 300 -C "I@rsnapshot_backup:*${MOD}" state.a
 stdbuf -oL -eL echo '---'
 stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
 ( stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh" || GRAND_EXIT=1 ) | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/'
-stdbuf -oL -eL echo '---'
-stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
-( stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh" || GRAND_EXIT=1 ) | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/'
+
+SKIP_BACKUP_SERVER=0
+if [ "_$2" != "_" ]; then
+	if [ "$2" = "skip_backup_server" ]; then
+		SKIP_BACKUP_SERVER=1
+	fi
+fi
+if [ ${SKIP_BACKUP_SERVER} -eq 0 ]; then
+	stdbuf -oL -eL echo '---'
+	stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
+	( stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh" || GRAND_EXIT=1 ) | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/'
+fi
 
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
 

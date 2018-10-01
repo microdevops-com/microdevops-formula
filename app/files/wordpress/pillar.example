@@ -68,8 +68,8 @@ app:
           php_admin_value[upload_max_filesize] = 25M
       source:
         enabled: True
-        archive: 'https://wordpress.org/wordpress-4.9.6.tar.gz'
-        archive_hash: 'md5=f168643b20001cc46b3478facd4f539b'
+        archive: 'https://wordpress.org/wordpress-4.9.8.tar.gz'
+        archive_hash: 'md5=c4e7d68b5c382fbbaf547f2b2d42c198'
         overwrite: False
         if_missing: '/var/www/{{ appname }}/wordpress'
         target: '/var/www/{{ appname }}'
