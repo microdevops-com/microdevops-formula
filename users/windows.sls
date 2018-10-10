@@ -29,6 +29,15 @@ windows_user_present_{{ loop.index }}:
     - groups: {{ user_params['groups'] }}
     {%- endif %}
 
+# update password is broken, pass never updates
+# https://github.com/saltstack/salt/issues/41347
+# so force pass each time
+windows_user_pass_{{ loop.index }}:
+  module.run:
+    - name: user.setpassword
+    - m_name: {{ windows_user }}
+    - password:  {{ user_params['password'] }}
+
     {%- if (user_params['password_never_expires'] is defined) and (user_params['password_never_expires'] is not none) and (user_params['password_never_expires']) %}
 windows_user_password_never_expires_{{ loop.index }}:
   module.run:
