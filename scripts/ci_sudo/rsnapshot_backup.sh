@@ -1,10 +1,22 @@
 #!/bin/bash
 GRAND_EXIT=0
+SKIP_BACKUP_SERVER=0
 
 if [ "_$1" != "_" ]; then
-	MOD=" and $1"
-	MOD_SHA=$(echo "$1" | sha1sum | awk '{print $1}')
-	OUT_FILE="/srv/scripts/ci_sudo/$(basename $0)_${MOD_SHA}.out"
+	if [ "$1" = "skip_backup_server" ]; then
+		SKIP_BACKUP_SERVER=1
+		MOD=""
+		OUT_FILE="/srv/scripts/ci_sudo/$(basename $0).out"
+	else
+		MOD=" and $1"
+		MOD_SHA=$(echo "$1" | sha1sum | awk '{print $1}')
+		OUT_FILE="/srv/scripts/ci_sudo/$(basename $0)_${MOD_SHA}.out"
+		if [ "_$2" != "_" ]; then
+			if [ "$2" = "skip_backup_server" ]; then
+				SKIP_BACKUP_SERVER=1
+			fi
+		fi
+	fi
 else
 	MOD=""
 	OUT_FILE="/srv/scripts/ci_sudo/$(basename $0).out"
@@ -27,12 +39,6 @@ stdbuf -oL -eL echo '---'
 stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
 ( stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh" || GRAND_EXIT=1 ) | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/'
 
-SKIP_BACKUP_SERVER=0
-if [ "_$2" != "_" ]; then
-	if [ "$2" = "skip_backup_server" ]; then
-		SKIP_BACKUP_SERVER=1
-	fi
-fi
 if [ ${SKIP_BACKUP_SERVER} -eq 0 ]; then
 	stdbuf -oL -eL echo '---'
 	stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
