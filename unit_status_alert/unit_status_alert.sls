@@ -15,7 +15,7 @@ unit_status_alert_create_link:
               {%- if unit_flag['enabled'] %}
 unit_status_alert_add_service_override:
   file.managed:
-    - name: /etc/systemd/system/{{ unit_flag['prefix'] }}.service.d/override.conf
+    - name: /etc/systemd/system/{{ unit_flag['prefix'] }}.service.d/unit_status_alert.conf
     - makedirs: True
     - user: root
     - group: root
@@ -26,7 +26,7 @@ unit_status_alert_add_service_override:
               {%- else %}
 unit_status_alert_remove_service_override:
   file.absent:
-    - name: /etc/systemd/system/{{ unit_flag['prefix'] }}.service.d/override.conf
+    - name: /etc/systemd/system/{{ unit_flag['prefix'] }}.service.d/unit_status_alert.conf
               {%- endif %}
             {%- endif %}
           {%- endfor %}
