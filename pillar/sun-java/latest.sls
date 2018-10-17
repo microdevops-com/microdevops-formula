@@ -8,7 +8,7 @@ java:
   archive_type: tar
   version_name: jdk{{ java_version }}
   source_url: http://download.oracle.com/otn-pub/java/jdk/8u191-b12/2787e4a523244c269598db4e85c51e0c/jre-8u191-linux-x64.tar.gz
-  source_hash: sha256=a28fd32c11d92bd85bf8774e6c512f4effa452ee018f1ea2a8bd230f498f914d
+  source_hash: sha256=813f48192558fea793af22c96b1b708694bffe36111a33d354f312c1c1ae4bf2
   jre_lib_sec: /usr/share/java/jdk{{ java_version }}/jre/lib/security
   java_real_home: /usr/share/java/jdk{{ java_version }}
   java_realcmd: /usr/share/java/jdk{{ java_version }}/bin/java
