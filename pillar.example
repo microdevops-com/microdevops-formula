@@ -99,6 +99,7 @@ windows_users:
     groups: # optional group list to add user to
       - RDP
     password_never_expires: True
+    account_disabled: False
     starting_program: '\"C:\Program Files\My Cool Program\My Cool Program.exe\" myparameter /H\"localhost\"' # double quotes should be backslashed, don't use \" after \ - it wil be a backslashed backslash
     start_in: 'C:\Program Files\My Cool Program\' # optional for starting_program, usually you dont need double quotes here
     session_params:
