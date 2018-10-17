@@ -36,7 +36,7 @@ netdata_depencies_installed:
     {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
       - zlib1g-dev
       - uuid-dev
-      - netcat
+      - netcat-openbsd
       - pkg-config
       - libuuid1
       - zlib1g
