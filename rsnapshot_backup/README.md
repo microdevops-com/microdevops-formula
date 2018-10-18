@@ -8,5 +8,6 @@ Typical usage:
 - salt minion state.apply rsnapshot_backup.put_check_files # put special file for check purposes
 - salt minion state.apply rsnapshot_backup.update_config # update json config from pillar
 - salt minion cmd.run /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh # do sync, rotations and checks
+- salt minion state.apply rsnapshot_backup.check_coverage # check backup coverage
 
 Real script for CI usage is at scripts/ci_sudo/rsnapshot_backup.sh .

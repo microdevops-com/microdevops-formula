@@ -105,6 +105,14 @@ rsnapshot_backup:
         mongo_args: --username admin --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params
         connect_user: toor # optional, root by default, user for ssh connect
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
+      - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
+        data: # list folders or db types here
+          - /test
+          - POSTGRESQL
+          - MYSQL
+          - MONGODB
+        local_backups_suppress_reason: Some reason # will suppress local backup not found error if set, reason text is just for documentation purposes
+        remote_backups_suppress_reason: Some reason # will suppress remote backup not found error if set, reason text is just for documentation purposes
     winsrv1.domain.com:
       - type: RSYNC_NATIVE
         data:
