@@ -5,8 +5,8 @@ exec > >(tee /srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 600 -C 'G@kernel:Windows' state.apply users.windows"
-stdbuf -oL -eL salt --force-color -t 600 -C 'G@kernel:Windows' state.apply users.windows
+stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 600 -C 'G@kernel:Windows' state.apply users.windows queue=True"
+stdbuf -oL -eL salt --force-color -t 600 -C 'G@kernel:Windows' state.apply users.windows queue=True
 
 grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
 
