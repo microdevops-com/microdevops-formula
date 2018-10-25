@@ -44,7 +44,7 @@ _salt_list_functions(){
           | sed "s/^.*\[//;s/[],']//g;s/ /\n/g" \
           | sort -u
     else
-        salt $(hostname) --timeout 2 --hide-timeout --log-level=quiet --out=txt -- sys.list_functions | sed -e "s/u'/'/g" \
+        salt $(hostname -f) --timeout 2 --hide-timeout --log-level=quiet --out=txt -- sys.list_functions | sed -e "s/u'/'/g" \
           | sed "s/^.*\[//;s/[],']//g;s/ /\n/g" \
           | sort -u
     fi
