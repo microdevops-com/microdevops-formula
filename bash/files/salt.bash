@@ -58,7 +58,7 @@ _salt_list_states(){
           | sed -e "s/^'//" -e "s/'.*$//" \
           | sort -u
     else
-        salt $(hostname) --timeout 2 --hide-timeout --log-level=quiet --out=txt -- state.show_state_usage \
+        salt $(hostname -f) --timeout 2 --hide-timeout --log-level=quiet --out=txt -- state.show_state_usage \
           | sed -e "s/u'/\n'/g" \
           | grep -v -e "count_used" -e "'top'" -e "'used'" -e "count_unused" -e "count_all" -e "'unused'" -e "'base'" -e "local:" -e ".*:" \
           | sed -e "s/^'//" -e "s/'.*$//" \
