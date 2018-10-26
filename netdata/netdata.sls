@@ -29,7 +29,7 @@ netdata_newer_git:
       - nss
       - curl
     {%- endif %}
-    {% if (pillar['netdata']['alt_install'] is defined) and (pillar['netdata']['alt_install'] is not none) and (pillar['netdata']['alt_install']) %}
+    {% if pillar['netdata']['alt_install'] is defined and pillar['netdata']['alt_install'] is not none and pillar['netdata']['alt_install'] %}
 netdata_depencies_installed:
   cmd.script:
     - name: install-required-packages.sh --dont-wait --non-interactive netdata-all
