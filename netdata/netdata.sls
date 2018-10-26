@@ -29,11 +29,16 @@ netdata_newer_git:
       - nss
       - curl
     {%- endif %}
-
+    {% if (pillar['netdata']['alt_install'] is defined) and (pillar['netdata']['alt_install'] is not none) and (pillar['netdata']['alt_install']) %}
+netdata_depencies_installed:
+  cmd.script:
+    - name: install-required-packages.sh --dont-wait --non-interactive netdata-all
+    - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
+    {%- else %}
 netdata_depencies_installed:
   pkg.installed:
     - pkgs:
-    {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
+      {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
       - zlib1g-dev
       - uuid-dev
       - netcat-openbsd
@@ -42,12 +47,12 @@ netdata_depencies_installed:
       - zlib1g
       - autoconf-archive
       - autogen
-      {%- if not netdata_container %}
+        {%- if not netdata_container %}
       - lm-sensors
       - libipmimonitoring-dev
       - freeipmi-tools
-      {%- endif %}
-    {%- elif grains['os'] in ['CentOS', 'RedHat'] %}
+        {%- endif %}
+      {%- elif grains['os'] in ['CentOS', 'RedHat'] %}
       - zlib-devel
       - libuuid-devel
       - libmnl-devel
@@ -55,26 +60,27 @@ netdata_depencies_installed:
       - pkgconfig
       - libuuid
       - zlib
-      {%- if not netdata_container %}
+        {%- if not netdata_container %}
       - lm_sensors
       - freeipmi-devel
       - freeipmi
+        {%- endif %}
       {%- endif %}
-    {%- endif %}
       - gcc
       - make
       - autoconf
       - automake
       - curl
-    {%- if grains['osmajorrelease']|int >= 12 and grains['os'] == 'Ubuntu' %}
+      {%- if grains['osmajorrelease']|int >= 12 and grains['os'] == 'Ubuntu' %}
       - libmnl-dev
-    {%- elif grains['os'] == 'Debian' %}
+      {%- elif grains['os'] == 'Debian' %}
       - libmnl-dev
-    {%- endif %}
-    {%- if grains['osmajorrelease']|int <= 10 and grains['os'] == 'Ubuntu' %}
+      {%- endif %}
+      {%- if grains['osmajorrelease']|int <= 10 and grains['os'] == 'Ubuntu' %}
       - git-core
-    {%- else %}
+      {%- else %}
       - git
+      {%- endif %}
     {%- endif %}
 
     {%- if grains['os'] in ['Ubuntu', 'Debian'] and not netdata_container and grains['virtual'] != "kvm" %}
