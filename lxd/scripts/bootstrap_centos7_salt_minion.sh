@@ -8,3 +8,4 @@
 echo "fqdn: $(cat /etc/salt/minion_id)" >> /etc/salt/grains
 /bin/sed -i.bak -e "s/#master: salt/master:\n  - $1/" /etc/salt/minion
 /sbin/service salt-minion restart
+/sbin/chkconfig --add salt-minion
