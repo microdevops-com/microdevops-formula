@@ -1,5 +1,15 @@
 #!/bin/bash
 
+/bin/rm -f /etc/netplan/10-lxc.yaml
+
+/sbin/ip address replace $1/$2 dev eth0
+/sbin/ip route replace default via $3
+
+echo "search $5" > /etc/resolv.conf
+for NS in $4; do echo "nameserver ${NS}" >> /etc/resolv.conf; done
+
+/usr/bin/apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install ifupdown resolvconf net-tools
+
 cat > /etc/network/interfaces <<- EOM
 auto lo
 iface lo inet loopback
