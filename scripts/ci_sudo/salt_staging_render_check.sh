@@ -48,7 +48,6 @@ for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
 	stdbuf -oL -eL echo "NOTICE: checking file /srv/${FILE}"
 	if [[ -e "/srv/${FILE}" ]]; then
 		if [[ ${FILE} == *.sls || ${FILE} == *.jinja ]]; then
-			stdbuf -oL -eL echo "ERROR: slsutil.renderer of file /srv/${FILE} failed"
 			if stdbuf -oL -eL salt-call --retcode-passthrough slsutil.renderer /srv/${FILE}; then
 				stdbuf -oL -eL echo "NOTICE: slsutil.renderer of file /srv/${FILE} succeeded"
 			else
