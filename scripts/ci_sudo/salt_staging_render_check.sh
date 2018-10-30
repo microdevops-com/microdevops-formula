@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # $1 should be $CI_COMMIT_REF_NAME
-# $2 should be $CI_COMMIT_BEFORE_SHA
+# $2 should be $CI_COMMIT_SHA
+# $3 should be $CI_COMMIT_BEFORE_SHA
 
 cd /srv || ( stdbuf -oL -eL echo "ERROR: /srv does not exist"; exit 1 )
 
@@ -43,7 +44,7 @@ stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
 ( stdbuf -oL -eL .githooks/post-merge ) || GRAND_EXIT=1
 
 # Get changed files from the last push
-for FILE in $(git diff-tree --no-commit-id --name-only -r $1 $2); do
+for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
 	stdbuf -oL -eL echo "NOTICE: checking file $FILE"
 done
 
