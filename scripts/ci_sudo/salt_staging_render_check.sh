@@ -50,10 +50,11 @@ rm -f /srv/scripts/ci_sudo/$(basename $0).out
 exec > >(tee /srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
-# Update local repo to commit
+# Update local repo
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: git -C ${WORK_DIR}/srv pull || git clone $4 ${WORK_DIR}/srv"
 ( stdbuf -oL -eL git -C ${WORK_DIR}/srv pull || stdbuf -oL -eL git clone $4 ${WORK_DIR}/srv ) || GRAND_EXIT=1
+cd ${WORK_DIR}/srv || ( stdbuf -oL -eL echo "ERROR: ${WORK_DIR}/srv does not exist"; exit 1 )
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: git fetch && git checkout -B $1 origin/$1"
 ( stdbuf -oL -eL git fetch && stdbuf -oL -eL git checkout -B $1 origin/$1 ) || GRAND_EXIT=1
