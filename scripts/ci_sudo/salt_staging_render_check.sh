@@ -59,6 +59,9 @@ stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: git fetch && git checkout -B $1 origin/$1"
 ( stdbuf -oL -eL git fetch && stdbuf -oL -eL git checkout -B $1 origin/$1 ) || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
+stdbuf -oL -eL echo "NOTICE: CMD: git submodule init"
+stdbuf -oL -eL git submodule init || GRAND_EXIT=1
+stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: git submodule update --recursive -f --checkout"
 stdbuf -oL -eL git submodule update --recursive -f --checkout || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
