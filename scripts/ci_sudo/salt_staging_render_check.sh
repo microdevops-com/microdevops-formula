@@ -67,13 +67,16 @@ stdbuf -oL -eL git submodule update --recursive -f --checkout || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
 stdbuf -oL -eL .githooks/post-merge || GRAND_EXIT=1
+stdbuf -oL -eL echo "---"
+stdbuf -oL -eL echo "NOTICE: populating repo/etc/salt for salt-call --local"
+( mkdir -p ${WORK_DIR}/etc/salt && rsync -av ${WORK_DIR}/srv/.gitlab-ci/staging-etc/ ${WORK_DIR}/etc/salt/ ) || exit 1
 
 # Get changed files from the last push and try to render some of them
 for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
 	stdbuf -oL -eL echo "NOTICE: checking file ${WORK_DIR}/srv/${FILE}"
 	if [[ -e "${WORK_DIR}/srv/${FILE}" ]]; then
 		if [[ ${FILE} == *.sls || ${FILE} == *.jinja ]]; then
-			if stdbuf -oL -eL salt-call --retcode-passthrough slsutil.renderer ${WORK_DIR}/srv/${FILE}; then
+			if stdbuf -oL -eL salt-call --local --config-dir=${WORK_DIR}/etc/salt --retcode-passthrough slsutil.renderer ${WORK_DIR}/srv/${FILE}; then
 				stdbuf -oL -eL echo "NOTICE: slsutil.renderer of file ${WORK_DIR}/srv/${FILE} succeeded"
 			else
 				GRAND_EXIT=1
