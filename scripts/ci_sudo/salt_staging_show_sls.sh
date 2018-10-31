@@ -69,7 +69,7 @@ else
 fi
 
 # Get the list of states and echo for debug
-stdbuf -oL -eL echo "NOTICE: found states:"
+stdbuf -oL -eL echo "NOTICE: found states with grep ${GREP_E}:"
 for STATE in $(salt-call --local --config-dir=${WORK_DIR}/etc/salt cp.list_states | awk '{print $2}' | grep -v "^top$" ${GREP_E}); do
 	stdbuf -oL -eL echo "${STATE}"
 done
