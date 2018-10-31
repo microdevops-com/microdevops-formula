@@ -131,20 +131,31 @@ pkg:
           1:
             - name: 'gitlab-ctl reconfigure'
             - runas: 'root'
-      - file.managed:
-          1:
-            - name: /opt/sysadmws-utils/rsnapshot_backup/rsnapshot_backup.conf
-            - contents: |
-                {{ gitlab_hostname }}		FS_RSYNC_SSH		UBUNTU					/var/backups/{{ gitlab_hostname }}
-                {{ gitlab_hostname }}		FS_RSYNC_SSH		/opt/gitlab				/var/backups/{{ gitlab_hostname }}
-                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/opt/gitlab				/var/backups/{{ gitlab_hostname }}
-                {{ gitlab_hostname }}		FS_RSYNC_SSH		/opt/acme				/var/backups/{{ gitlab_hostname }}
-                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/lib/gitlab_docker_registry		/var/backups/{{ gitlab_hostname }}
-                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/lib/gitlab_artifacts		/var/backups/{{ gitlab_hostname }}
-                {{ gitlab_hostname }}		FS_RSYNC_SSH		/var/backups/gitlab_backups		/var/backups/{{ gitlab_hostname }}
       - cron.present:
           "{% if gitlab_cron_backup_cmd is defined and gitlab_cron_backup_cmd is not none %}{{ gitlab_cron_backup_cmd }}{% else %}gitlab-rake gitlab:backup:create{% endif %}":
             - identifier: 'gitlab_backups'
             - user: root
             - minute: 10
             - hour: 5
+
+{# example for rsnapshot_backup
+rsnapshot_backup:
+  sources:
+    {{ gitlab_hostname }}:
+      - type: RSYNC_SSH
+        data:
+          - UBUNTU
+          - /opt/gitlab
+          - /var/opt/gitlab
+          - /opt/acme
+          - /var/lib/gitlab_docker_registry
+          - /var/lib/gitlab_artifacts
+          - /var/backups/gitlab_backups
+        checks:
+          - type: .backup
+        backups:
+          - host: {{ gitlab_hostname }}
+            path: /var/backups/{{ gitlab_hostname }}
+          - host: {{ backup_server }}
+            path: /var/backups/{{ gitlab_hostname }}
+#}

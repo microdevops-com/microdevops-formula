@@ -1,0 +1,92 @@
+{%
+set data_expand = {
+  'UBUNTU': ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'],
+  'DEBIAN': ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws'],
+  'CENTOS': ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local']
+}
+%}
+{%
+set db_ps = {
+  'xenial': {
+    'MYSQL': '/usr/sbin/mysqld',
+    'POSTGRESQL': 'bin/postgres -D',
+    'MONGODB': '/usr/bin/mongod'
+  }
+}
+%}
+{%
+do db_ps.update({'precise': db_ps['xenial']})
+%}
+{%
+do db_ps.update({'trusty': db_ps['xenial']})
+%}
+{%
+set data_dirs_to_find = {
+  'xenial': [
+    'find / -maxdepth 1 -type d',
+    'find /opt -maxdepth 1 -type d',
+    'find /usr -maxdepth 1 -type d',
+    'find /var -maxdepth 1 -type d',
+    'find /var/spool/cron -maxdepth 0 -type d',
+    'find /lib/ufw -maxdepth 0 -type d'
+  ]
+}
+%}
+{%
+do data_dirs_to_find.update({'precise': data_dirs_to_find['xenial']})
+%}
+{%
+do data_dirs_to_find.update({'trusty': data_dirs_to_find['xenial']})
+%}
+{#
+We list here only dirs that usually do not have to be backed up completely. For example, we check subdirs of /opt, but do not usually backup the whole /opt.
+https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard and good sense used as reference.
+#}
+{%
+set data_dirs_to_skip = {
+  'xenial': [
+    '/',
+    '/bin',
+    '/boot',
+    '/dev',
+    '/lib',
+    '/lib64',
+    '/lost+found',
+    '/media',
+    '/mnt',
+    '/opt',
+    '/opt/netdata',
+    '/opt/sysadmws-utils',
+    '/proc',
+    '/run',
+    '/sbin',
+    '/sys',
+    '/tmp',
+    '/usr',
+    '/usr/bin',
+    '/usr/games',
+    '/usr/include',
+    '/usr/lib',
+    '/usr/sbin',
+    '/usr/share',
+    '/usr/src',
+    '/var',
+    '/var/backups',
+    '/var/cache',
+    '/var/lib',
+    '/var/local',
+    '/var/lock',
+    '/var/mail',
+    '/var/opt',
+    '/var/run',
+    '/var/spool',
+    '/var/tmp'
+  ]
+}
+%}
+{%
+do data_dirs_to_skip.update({'precise': data_dirs_to_skip['xenial']})
+%}
+{%
+do data_dirs_to_skip.update({'trusty': data_dirs_to_skip['xenial']})
+%}

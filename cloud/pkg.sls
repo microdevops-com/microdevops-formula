@@ -129,7 +129,11 @@ pkg_deb_packages:
       - gawk
       - curl
       - wget
+  {%- if grains['oscodename'] == 'bionic' %}
+      - s-nail 
+  {%- else %}
       - heirloom-mailx
+  {%- endif %}
       # diag tools
       - ethtool
       - iotop
@@ -167,7 +171,7 @@ pkg_deb_packages:
       # security tools
       - fail2ban
       #
-      - sysadmws-utils
+      - sysadmws-utils-v1
 
   {%- if grains['oscodename'] == 'jessie' %}
 jessie_bashrc:

@@ -24,4 +24,7 @@ include:
 {% if (pillar['atlassian-jira'] is defined) and (pillar['atlassian-jira'] is not none) %}
   - atlassian-jira
 {% endif %}
+{% if (pillar['atlassian-confluence'] is defined) and (pillar['atlassian-confluence'] is not none) %}
+  - atlassian-confluence
+{% endif %}
   - pkg.after_deploy

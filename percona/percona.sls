@@ -1,11 +1,11 @@
-{% if (pillar['percona'] is defined) and (pillar['percona'] is not none) %}
-  {%- if (pillar['percona']['enabled'] is defined) and (pillar['percona']['enabled'] is not none) and (pillar['percona']['enabled']) %}
+{% if pillar['percona'] is defined and pillar['percona'] is not none %}
+  {%- if pillar['percona']['enabled'] is defined and pillar['percona']['enabled'] is not none and pillar['percona']['enabled'] %}
 percona_repo_deb:
   pkg.installed:
     - sources:
-      - percona-release: 'salt://percona/files/percona-release_0.1-4.{{ grains['oscodename'] }}_all.deb'
+      - percona-release: 'salt://percona/files/percona-release_0.1-6.{{ grains['oscodename'] }}_all.deb'
 
-    {%- if (pillar['percona']['version'] is defined) and (pillar['percona']['version'] is not none) %}
+    {%- if pillar['percona']['version'] is defined and pillar['percona']['version'] is not none %}
 percona_client:
   pkg.installed:
     - refresh: True
@@ -29,7 +29,7 @@ percona_debconf_utils:
   pkg.installed:
     - name: debconf-utils
 
-      {%- if (pillar['percona']['root_password'] is defined) and (pillar['percona']['root_password'] is not none) %}
+      {%- if pillar['percona']['root_password'] is defined and pillar['percona']['root_password'] is not none %}
 percona_debconf:
   debconf.set:
     - name: percona-server-server-{{ pillar['percona']['version'] }}
@@ -75,7 +75,7 @@ percona_remove_limits:
       - service: percona_svc
         {%- endif %}
 
-        {%- if ((pillar['percona']['version'] == '5.7') and (pillar['percona']['version'] == 5.7)) %}
+        {%- if pillar['percona']['version']|string == '5.7' %}
 percona_debian_conf:
   file.managed:
     - name: '/etc/mysql/debian.cnf'
@@ -103,7 +103,7 @@ percona_create_symlink_debian_sys_maint_to_root:
     - target: /etc/mysql/debian.cnf
         {% endif %}
 
-        {%- if (pillar['percona']['secure_install'] is defined) and (pillar['percona']['secure_install'] is not none) and (pillar['percona']['secure_install']) and ((pillar['percona']['version'] != '5.7') and (pillar['percona']['version'] != 5.7)) %}
+        {%- if pillar['percona']['secure_install'] is defined and pillar['percona']['secure_install'] is not none and pillar['percona']['secure_install'] and pillar['percona']['version']|string != '5.7' %}
 percona_disallow_root_remote_connection:
   mysql_query.run:
     - database: mysql
@@ -144,7 +144,7 @@ percona_delete_privileges_database_test:
       - service: percona_svc
         {%- endif %}
 
-        {%- if (pillar['percona']['databases'] is defined) and (pillar['percona']['databases'] is not none) %}
+        {%- if pillar['percona']['databases'] is defined and pillar['percona']['databases'] is not none %}
           {%- for db in pillar['percona']['databases'] %}
 mysql_database_{{ db['name'] }}:
   mysql_database.present:
@@ -160,7 +160,7 @@ mysql_database_{{ db['name'] }}:
         {%- endif %}
 
 
-        {%- if (pillar['percona']['users'] is defined) and (pillar['percona']['users'] is not none) %}
+        {%- if pillar['percona']['users'] is defined and pillar['percona']['users'] is not none %}
           {%- for name, user in pillar['percona']['users'].items() %}
 mysql_user_{{ name }}_{{ user['host'] }}:
   mysql_user.present:
@@ -189,7 +189,7 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
           {%- endfor %}
         {%- endif %}
 
-        {%- if ((pillar['percona']['version'] != '5.7') and (pillar['percona']['version'] != 5.7)) %}
+        {%- if pillar['percona']['version']|string != '5.7' %}
 percona_create_post_install_toolkit_functions:
     mysql_query.run:
     - database: mysql

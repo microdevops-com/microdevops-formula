@@ -1,59 +1,4 @@
-# cloud
-# this should be cloud vm targeted
-resolv_domain: example.com
-salt_masters:
-  salt1.example.com: 1.2.3.4
-  salt2.example.com: 4.3.2.1
-location: host.example.com
-highstated: True
-
-# this should be cloud salt master targeted
-cloud:
-  config_dir: /etc/salt # mandatory bug fix
-  providers:
-    lxc-host_example_com:
-      target: host.example.com
-      driver: lxc
-{% set vm   = 'vm.example.com' %}
-  profiles:
-    {{ vm|replace(".", "_") }}:
-      provider: lxc-host_example_com
-      lxc_profile:
-        backing: lvm
-        vgname: vg_md3
-        size: 10G
-        template: download
-        options:
-          dist: debian
-          release: jessie
-          arch: amd64
-      network_profile:
-        eth0:
-          link: br1
-          type: veth
-          flags: up
-          ipv4: '10.0.0.2/24'
-          ipv4.gateway: '10.0.0.1'
-          #ipv6: 'abcd::1234/64'
-          #ipv6.gateway: 'abcd::4321/64'
-      minion:
-        master:
-          - salt1.example.com
-          - salt2.example.com
-        id: {{ vm }}
-        grains:
-          fqdn: {{ vm }}
-      lxc_conf:
-        - lxc.utsname: {{ vm }}
-      password: coolvmpassword
-      dnsservers:
-        - 8.8.8.8
-        - 8.8.4.4
-      lxc_post_profile:
-        # 16 symbols max
-        net_veth_pair_name: vgvmbr1
-        lvm_root_resize: 100G
-        dns_add_hn_ip: 10.0.0.2
+# vi: set ft=yaml:
 
 # ufw_simple
 ufw_simple:
@@ -117,10 +62,11 @@ ufw_simple:
       to:
         hostname_3: '2.3.4.5'
         hostname_4: '5.4.3.2'
-      to_port: '8080,8090'
+      to_port: '8080,8090,6000:6100'
     rule_2: # from any to any with to port
       proto: 'tcp'
       to_port: '3306'
+      insert: 1 
     rule_3: # from list to list any traffic
       from: # any if empty
         hostname_1: '1.2.3.4'
@@ -128,13 +74,18 @@ ufw_simple:
       to: # any if empty
         hostname_3: '2.3.4.5'
         hostname_4: '5.4.3.2'
+  deny:
+    rule_1:
+      proto: 'tcp'
+      from:
+        bad_host_1: '3.4.5.6'
+      to_port: '80'
+      insert: 1 # optionally add insert NUM key
   delete:
     allow:
       rule_2: # from any to any with to port
         proto: 'tcp'
         to_port: '3306'
-
-# users/unix -> users-formula/pillar.example
 
 # users/windows
 windows_unrestricted: True # leave the powershell in the unrestricted mode
@@ -148,16 +99,12 @@ windows_users:
     groups: # optional group list to add user to
       - RDP
     password_never_expires: True
+    account_disabled: False
     starting_program: '\"C:\Program Files\My Cool Program\My Cool Program.exe\" myparameter /H\"localhost\"' # double quotes should be backslashed, don't use \" after \ - it wil be a backslashed backslash
     start_in: 'C:\Program Files\My Cool Program\' # optional for starting_program, usually you dont need double quotes here
     session_params:
       BrokenConnectionAction: "1"
       MaxDisconnectionTime: "1"
-
-# test
-test:
-  git_commit:
-    - '/srv'
 
 # pyenv
 # limited set of versions supported in the state
@@ -190,7 +137,7 @@ nginx:
   enabled: True
   configs: 'nginx/app_hosting'
 
-#proxy in lxd http(https) traffic
+# proxy in lxd http(https) traffic
 nginx:
   enabled: True
   reload: True
@@ -204,66 +151,6 @@ nginx:
       error_log: '/var/www/nginx/site_one_error.log'
       ssl:
         acme: True
-
-
-# sentry
-pkg:
-  certbot:
-    when: 'PKG_BEFORE_DEPLOY'
-    states:
-      - git.latest:
-          certbot:
-            - name: https://github.com/certbot/certbot
-            - target: /opt/certbot
-            - force_reset: True
-            - force_fetch: True
-  supervisor:
-    when: 'PKG_BEFORE_DEPLOY'
-    states:
-      - pkg_installed:
-          1:
-            - pkgs:
-                - supervisor
-
-pyenv:
-  enabled: True
-  version_2_7_14: True
-
-nginx:
-  enabled: True
-  configs: 'sentry/files'
-
-sentry:
-  enabled: True
-  pyenv_version: '2.7.14'
-  secret: 'xxx'
-  workers: '10'
-  url: 'https://sentry.example.com'
-  admin_email: 'admin@example.com'
-  admin_password: 'adminpass'
-  email:
-    user: 'sentry@example.com'
-    pass: 'gmailmailpass'
-    host: 'smtp.gmail.com'
-    port: 587
-    tls: True
-  db:
-    db_name: 'sentry'
-    user: 'sentry'
-    password: 'dbpass'
-    host: 'localhost'
-    port: '5432'
-  nginx:
-    server_name: 'sentry.example.com'
-    server_name_301: 'www.sentry.example.com'
-    access_log: '/var/log/nginx/sentry.access.log'
-    error_log: '/var/log/nginx/sentry.error.log'
-    certbot_email: 'admin@example.com'
-    allow_hosts: # sentry / location will be limited by nginx to those ip, while ~ /api/([\w_-]+/)?store will be open to everyone
-      - '1.2.3.4'
-      - '4.3.2.1'
-  plugins: # Unofficial plugins only, official come with sentry-plugins, sentry-telegram already adopted
-    - sentry-xxx
 
 # php-fpm
 php-fpm:
@@ -487,19 +374,6 @@ pkg:
           'dpkg --purge exim4 exim4-base exim4-config exim4-daemon-light':
             - runas: root
 
-# sysadmws-utils
-sysadmws-utils:
-# disk_alert
-# just plain contents of disk_alert config file (see /opt/sysadmws-utils/disk_alert/disk_alert.conf)
-  disk_alert: |
-    DISK_ALERT_USAGE_CHECK="FREE_SPACE"
-    DISK_ALERT_FREE_SPACE_CRITICAL["/"]="10000"
-    DISK_ALERT_FREE_SPACE_CRITICAL["/mnt/ext"]="4000"
-# mysql_replica_checker
-# just plain contents of mysql_replica_checker config file (see /opt/sysadmws-utils/mysql_replica_checker/mysql_replica_checker.conf)
-  mysql_replica_checker: |
-    BEHIND_MASTER_THR="2000"
-
 # softether
 # vpnserver only managed for now
 softether:
@@ -534,3 +408,5 @@ softether:
           user1:
             password: 'XXX-SET-OWN-USER-PASS-HERE-XXX'
             realname: 'Real Name'
+
+# rsnapshot_backup => rsnapshot_backup/pillar.example

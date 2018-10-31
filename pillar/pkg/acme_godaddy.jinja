@@ -1,0 +1,52 @@
+{#
+This file should be included in pillar, which sets the following:
+{% set acme_gd_key = "XXXX" %}
+{% set acme_gd_secret = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" %}
+
+And then:
+{% include 'pkg/acme_godaddy.jinja' with context %}
+#}
+
+pkg:
+  acme:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - git.latest:
+          acme:
+            - name: https://github.com/Neilpang/acme.sh.git
+            - target: /opt/acme/git
+            - force_reset: True
+            - force_fetch: True
+      - file.directory:
+          1:
+            - name: /opt/acme/home
+            - makedirs: True
+          2:
+            - name: /opt/acme/cert
+            - makedirs: True
+          3:
+            - name: /opt/acme/config
+            - makedirs: True
+      - cmd.run:
+          1:
+            - name: '/opt/acme/git/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --install'
+            - runas: root
+            - cwd: /opt/acme/git
+      - environ.setenv:
+          1:
+            - name: GD_Key
+            - value: "{{ acme_gd_key }}"
+            - update_minion: True
+          2:
+            - name: GD_Secret
+            - value: "{{ acme_gd_secret }}"
+            - update_minion: True
+      - file.managed:
+          1:
+            - name: '/opt/acme/home/acme_local.sh'
+            - mode: 0700
+            - contents: |
+                #!/bin/bash
+                export GD_Key="{{ acme_gd_key }}"
+                export GD_Secret="{{ acme_gd_secret }}"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_gd "$@"

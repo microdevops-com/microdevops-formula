@@ -1,21 +1,50 @@
-{% if (pillar['pkg'] is defined) and (pillar['pkg'] is not none) %}
+{#
+You can apply specific pkg sub pillar by running:
+salt minion state.apply pkg.[pkg|before_deploy|after_deploy] pillar='{"pkg_filter": "some_name"}'
+
+It will run only:
+pkg:
+  some_name: <- this sub pillar
+
+Do not use number as some_name, filter will not match for numbers.
+#}
+{% if pillar['pkg'] is defined and pillar['pkg'] is not none %}
   {%- for pkg_key, pkg_val in pillar['pkg'].items()|sort %}
-    {%- if (pkg_val['when'] is defined) and (pkg_val['when'] is not none) and (PKG_WHEN is defined) and (PKG_WHEN is not none) and (pkg_val['when'] == PKG_WHEN) %}
+    {%- if pkg_val['when'] is defined and pkg_val['when'] is not none and PKG_WHEN is defined and PKG_WHEN is not none and pkg_val['when'] == PKG_WHEN %}
       {%- for state in pkg_val['states'] %}
-        {% set a_loop = loop %}
+        {%- set a_loop = loop %}
         {%- for s_key, s_val in state.items() %}
-          {% set b_loop = loop %}
+          {%- set b_loop = loop %}
           {%- for ss_key, ss_val in s_val.items()|sort %}
+            {%- if pillar['pkg_filter'] is defined and pillar['pkg_filter'] is not none %}
+              {%- if pkg_key == pillar['pkg_filter'] %}
 pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   {{ s_key }}:
-            {%- if not ((ss_val['name'] is defined) and (ss_val['name'] is not none)) %}
+                {%- if not (ss_val['name'] is defined and ss_val['name'] is not none) %}
     - name: {{ ss_key }}
+                {%- endif %}
+{{ ss_val|yaml(False)|replace("&#39;", "'")|indent(width=4,indentfirst=True) }}
+              {%- else %}
+pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
+  test.configurable_test_state:
+    - name: pkg_filter_skipped_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}
+    - changes: False
+    - result: True
+    - comment: |
+        NOTICE: pkg_filter pillar applied, state skipped
+              {%- endif %}
+            {%- else %}
+pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
+  {{ s_key }}:
+                {%- if not (ss_val['name'] is defined and ss_val['name'] is not none) %}
+    - name: {{ ss_key }}
+                {%- endif %}
+{{ ss_val|yaml(False)|replace("&#39;", "'")|indent(width=4,indentfirst=True) }}
             {%- endif %}
-{{ ss_val|yaml(False)|indent(width=4,indentfirst=True) }}
 
-          {% endfor %}
-        {% endfor %}
-      {% endfor %}
+          {%- endfor %}
+        {%- endfor %}
+      {%- endfor %}
     {%- endif %}
   {%- endfor %}
 {% endif %}
