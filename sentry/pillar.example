@@ -1,0 +1,79 @@
+# vi: set ft=yaml:
+
+# sentry
+pkg:
+  supervisor:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - pkg_installed:
+          1:
+            - pkgs:
+                - supervisor
+
+pyenv:
+  enabled: True
+  version_2_7_14: True
+
+
+nginx:
+  enabled: True
+  reload: True
+  configs: 'sentry/files/nginx'
+  www_dir: '/var/www'
+  forward:
+    sentry:
+      enabled: True
+      server_name: 'sentry.example.com'
+      proxy_to: '127.0.0.1:9000'
+      ssl:
+        acme: True
+      allow_hosts: # sentry / location will be limited by nginx to those ip, while ~ /api/([\w_-]+/)?store will be open to everyone
+      - '1.2.3.4'
+      - '4.3.2.1'
+
+sentry:
+  enabled: True
+  pyenv_version: '2.7.14'
+  secret: 'xxx'
+  url: 'https://sentry.example.com'
+  admin_email: 'admin@example.com'
+  admin_password: 'adminpass'
+  config:
+    email:
+      backend: 'smtp'
+      host: 'smtp.gmail.com'
+      port: 587
+      username: 'sentry@example.com'
+      password: 'gmailmailpass'
+      tls: True
+      from: root@localhost
+      enable_replies: False
+      reply_hostname: ''
+    db:
+      engine: 'sentry.db.postgres'
+      host: 'localhost'
+      port: '5432'
+      user: 'sentry'
+      password: 'dbpass'
+      name: 'sentry'
+      autocommit: True
+    big_ints: True
+    single_organization: True
+    cache: 'sentry.cache.redis.RedisCache'
+    broker_url: 'redis://localhost:6379'
+    rate_limits: 'sentry.ratelimits.redis.RedisRateLimiter'
+    buffer: 'sentry.buffer.redis.RedisBuffer'
+    quota: 'sentry.quotas.redis.RedisQuota'
+    tsdb: 'sentry.tsdb.redis.RedisTSDB'
+    digests: 'sentry.digests.backends.redis.RedisBackend'
+    web:
+      proxy: False
+      host: '0.0.0.0'
+      port: 9000
+      workers: 10
+      protocol: 'http'
+    redis_clusters:
+      host: 127.0.0.1
+      port: 6379
+  plugins: # Unofficial plugins only, official come with sentry-plugins, sentry-telegram already adopted
+    - sentry-xxx
