@@ -3,7 +3,7 @@
 # $1 should be $CI_COMMIT_REF_NAME
 # $2 should be $CI_COMMIT_SHA
 # $3 should be $CI_COMMIT_BEFORE_SHA
-# $4 should be $CI_REPOSITORY_URL
+# $4 should be repository ssh URL 
 
 if [ "_$1" = "_" ]; then 
 	stdbuf -oL -eL echo 'ERROR: $1 ($CI_COMMIT_REF_NAME) is not set'
@@ -65,9 +65,6 @@ stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
 stdbuf -oL -eL .githooks/post-merge || GRAND_EXIT=1
 
-# Release the lock after checkout, let tests run even if repo updated in the time of testing
-rm -rf "$LOCK_DIR"
-
 # Get changed files from the last push and try to render some of them
 for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
 	stdbuf -oL -eL echo "NOTICE: checking file ${WORK_DIR}/srv/${FILE}"
@@ -87,6 +84,6 @@ for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
 	fi
 done
 
-grep -q "ERROR" ${WORK_DIR}/srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
+grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
 
 exit $GRAND_EXIT
