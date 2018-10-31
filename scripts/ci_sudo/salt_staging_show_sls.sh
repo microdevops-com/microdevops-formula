@@ -43,22 +43,14 @@ stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
 stdbuf -oL -eL .githooks/post-merge || GRAND_EXIT=1
 
-# Get changed files from the last push and try to render some of them
-for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
-	stdbuf -oL -eL echo "NOTICE: checking file /srv/${FILE}"
-	if [[ -e "/srv/${FILE}" ]]; then
-		if [[ ${FILE} == *.sls || ${FILE} == *.jinja ]]; then
-			if stdbuf -oL -eL salt-call --retcode-passthrough slsutil.renderer /srv/${FILE}; then
-				stdbuf -oL -eL echo "NOTICE: slsutil.renderer of file /srv/${FILE} succeeded"
-			else
-				GRAND_EXIT=1
-				stdbuf -oL -eL echo "ERROR: slsutil.renderer of file /srv/${FILE} failed"
-			fi
-		else
-			stdbuf -oL -eL echo "NOTICE: /srv/${FILE} is neither .sls nor .jinja"
-		fi
+#
+for STATE in $(salt-call cp.list_states | awk '{print $2}' | grep -v "^top$"); do
+	stdbuf -oL -eL echo "NOTICE: checking state ${STATE}"
+	if stdbuf -oL -eL salt-call --retcode-passthrough state.show_sls ${STATE}; then
+		stdbuf -oL -eL echo "NOTICE: state.show_sls of state ${STATE} succeeded"
 	else
-		stdbuf -oL -eL echo "NOTICE: /srv/${FILE} does not exist"
+		GRAND_EXIT=1
+		stdbuf -oL -eL echo "ERROR: state.show_sls of state ${STATE} failed"
 	fi
 done
 
