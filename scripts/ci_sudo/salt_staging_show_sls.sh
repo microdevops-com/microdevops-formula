@@ -19,7 +19,7 @@ cd ${WORK_DIR} || ( stdbuf -oL -eL echo "ERROR: ${WORK_DIR} does not exist"; exi
 # Use locking with timeout to align concurrent git checkouts in a line
 LOCK_DIR=${WORK_DIR}/.ci.lock
 LOCK_RETRIES=1
-LOCK_RETRIES_MAX=60
+LOCK_RETRIES_MAX=180
 SLEEP_TIME=5
 until mkdir "$LOCK_DIR" || (( LOCK_RETRIES == LOCK_RETRIES_MAX ))
 do
