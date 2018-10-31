@@ -90,6 +90,6 @@ for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
 	fi
 done
 
-grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
+grep -q "^ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
 
 exit $GRAND_EXIT
