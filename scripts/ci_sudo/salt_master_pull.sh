@@ -5,7 +5,7 @@ cd /srv || ( stdbuf -oL -eL echo "ERROR: /srv does not exist"; exit 1 )
 # Use locking with timeout to align concurrent git checkouts in a line
 LOCK_DIR=/srv/.ci.lock
 LOCK_RETRIES=1
-LOCK_RETRIES_MAX=60
+LOCK_RETRIES_MAX=180
 SLEEP_TIME=5
 until mkdir "$LOCK_DIR" || (( LOCK_RETRIES == LOCK_RETRIES_MAX ))
 do
@@ -27,8 +27,8 @@ exec > >(tee /srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git pull --ff-only"
-( cd /srv && stdbuf -oL -eL git pull ) || GRAND_EXIT=1
+stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git pull --ff-only && git checkout -B master origin/master"
+( cd /srv && stdbuf -oL -eL git pull --ff-only && stdbuf -oL -eL git checkout -B master origin/master) || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git submodule update --recursive -f --checkout"
 ( cd /srv && stdbuf -oL -eL git submodule update --recursive -f --checkout ) || GRAND_EXIT=1
