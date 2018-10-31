@@ -63,19 +63,19 @@ stdbuf -oL -eL echo "NOTICE: populating repo/etc/salt for salt-call --local"
 
 # Check exclude file and eval grep command
 if [[ -e /srv/scripts/ci_sudo/$(basename $0).exclude ]]; then
-	GREP_E=" | grep -v -f /srv/scripts/ci_sudo/$(basename $0).exclude"
+	GREP_E="-f /srv/scripts/ci_sudo/$(basename $0).exclude"
 else
 	GREP_E=""
 fi
 
 # Get the list of states and echo for debug
 stdbuf -oL -eL echo "NOTICE: found states with grep ${GREP_E}:"
-for STATE in $(salt-call --local --config-dir=${WORK_DIR}/etc/salt cp.list_states | awk '{print $2}' | grep -v "^top$" ${GREP_E}); do
+for STATE in $(salt-call --local --config-dir=${WORK_DIR}/etc/salt cp.list_states | awk '{print $2}' | grep -v -e "^top$" ${GREP_E}); do
 	stdbuf -oL -eL echo "${STATE}"
 done
 
 # Get the list of states and render them
-for STATE in $(salt-call --local --config-dir=${WORK_DIR}/etc/salt cp.list_states | awk '{print $2}' | grep -v "^top$" ${GREP_E}); do
+for STATE in $(salt-call --local --config-dir=${WORK_DIR}/etc/salt cp.list_states | awk '{print $2}' | grep -v -e "^top$" ${GREP_E}); do
 	stdbuf -oL -eL echo "NOTICE: checking state ${STATE}"
 	if stdbuf -oL -eL time salt-call --local --config-dir=${WORK_DIR}/etc/salt --retcode-passthrough state.show_sls ${STATE}; then
 		stdbuf -oL -eL echo "NOTICE: state.show_sls of state ${STATE} succeeded"
