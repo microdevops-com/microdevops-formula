@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # $1 should be $CI_COMMIT_REF_NAME
-# $2 should be $CI_COMMIT_SHA
-# $3 should be $CI_COMMIT_BEFORE_SHA
 
 cd /srv || ( stdbuf -oL -eL echo "ERROR: /srv does not exist"; exit 1 )
 
