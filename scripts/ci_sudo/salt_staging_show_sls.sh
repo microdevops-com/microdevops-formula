@@ -77,7 +77,7 @@ done
 # Get the list of states and render them
 for STATE in $(salt-call --local --config-dir=${WORK_DIR}/etc/salt cp.list_states | awk '{print $2}' | grep -v -e "^top$" ${GREP_E}); do
 	stdbuf -oL -eL echo "NOTICE: checking state ${STATE}"
-	if stdbuf -oL -eL time salt-call --local --config-dir=${WORK_DIR}/etc/salt --retcode-passthrough state.show_sls ${STATE}; then
+	if stdbuf -oL -eL /usr/bin/time -f "Time: %e" salt-call --local --config-dir=${WORK_DIR}/etc/salt --retcode-passthrough state.show_sls ${STATE}; then
 		stdbuf -oL -eL echo "NOTICE: state.show_sls of state ${STATE} succeeded"
 	else
 		GRAND_EXIT=1
