@@ -50,7 +50,11 @@ pkg_deb_packages:
       - at
       - doc-debian
       - ftp
+  {%- if grains['oscodename'] == 'bionic' %}
+      - bind9-host
+  {%- else %}
       - host
+  {%- endif %}
       - info
       - iputils-ping
       - nano
@@ -190,7 +194,7 @@ xenial_bashrc:
     - source: salt://cloud/files/xenial_bashrc
     - mode: 0644
   {%- endif %}
-{%- elif grains['os'] in ['CentOS', 'RedHat'] %}
+{% elif grains['os'] in ['CentOS', 'RedHat'] %}
 pkg_centos_packages:
   pkg.installed:
     - pkgs:
@@ -202,7 +206,11 @@ pkg_centos_packages:
       - traceroute
       - less
       - bc
+  {%- if grains['osmajorrelease']|int == 7 %}
+      - man-db
+  {%- else %}
       - man
+  {%- endif %}
       - bzip2
       - patch
       - mutt
@@ -211,7 +219,7 @@ pkg_centos_packages:
       - telnet
       - iptables
       - lsof
-      - vim
+      - vim-enhanced
       - time
       - openssh
       - postfix
@@ -222,7 +230,6 @@ pkg_centos_packages:
       - iotop
       - screen
       - mc
-      - ncdu
       - tree
       - git
-{%- endif %}
+{% endif %}
