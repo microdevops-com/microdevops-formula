@@ -9,6 +9,8 @@ iface eth0 inet static
         address $1
         netmask $2
         gateway $3
+        dns-nameservers $4
+        dns-search $5
 EOM
 
 [[ ! -z $6 ]] && echo "        hwaddress ether $6" >> /etc/network/interfaces
