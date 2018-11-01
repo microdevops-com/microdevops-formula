@@ -51,6 +51,10 @@ stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && .githooks/post-merge"
 ( cd /srv && stdbuf -oL -eL .githooks/post-merge ) || GRAND_EXIT=1
 
+# Run app.deploy
+stdbuf -oL -eL echo "---"
+stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 '"$2"' state.apply cloud.pkg"
+stdbuf -oL -eL salt --force-color -t 300 $2 state.apply cloud.pkg || GRAND_EXIT=1
 # Run highstate
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 '"$2"' state.highstate"

@@ -39,8 +39,6 @@ pkg_deb_packages:
   pkg.installed:
     - pkgs:
       - tasksel
-      - vim
-      - wget
       - apt-utils
   {%- if grains['oscodename'] == 'jessie' %}
       - python-software-properties
@@ -193,7 +191,38 @@ xenial_bashrc:
     - mode: 0644
   {%- endif %}
 {%- elif grains['os'] in ['CentOS', 'RedHat'] %}
-  'oops'
-{%- else %}
-  'oops'
+pkg_centos_packages:
+  pkg.installed:
+    - pkgs:
+      - at
+      - ftp
+      - bind-utils
+      - info
+      - nano
+      - traceroute
+      - less
+      - bc
+      - man
+      - bzip2
+      - patch
+      - mutt
+      - cpio
+      - mlocate
+      - telnet
+      - iptables
+      - lsof
+      - vim
+      - time
+      - openssh
+      - postfix
+      - ca-certificates
+      - gawk
+      - curl
+      - wget
+      - iotop
+      - screen
+      - mc
+      - ncdu
+      - tree
+      - git
 {%- endif %}
