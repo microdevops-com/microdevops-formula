@@ -55,6 +55,9 @@ stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: git submodule update --recursive -f --checkout"
 stdbuf -oL -eL git submodule update --recursive -f --checkout || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
+stdbuf -oL -eL echo "NOTICE: CMD: ln -sf ../../.githooks/post-merge .git/hooks/post-merge"
+stdbuf -oL -eL ln -sf ../../.githooks/post-merge .git/hooks/post-merge || GRAND_EXIT=1
+stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
 stdbuf -oL -eL .githooks/post-merge || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
