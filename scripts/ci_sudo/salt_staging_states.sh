@@ -55,6 +55,10 @@ stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && .githooks/post-merge"
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 '"$2"' state.highstate"
 stdbuf -oL -eL salt --force-color -t 300 $2 state.highstate || GRAND_EXIT=1
+# Run app.deploy
+stdbuf -oL -eL echo "---"
+stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 '"$2"' state.apply app.deploy"
+stdbuf -oL -eL salt --force-color -t 300 $2 state.apply app.deploy || GRAND_EXIT=1
 
 grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
 
