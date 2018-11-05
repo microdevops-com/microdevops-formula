@@ -261,8 +261,8 @@ app:
         repo_key_pub: |
           ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
         ssh_config: |
-          Host: bitbucket.org
-            User: git
+          Host bitbucket.org
+            User git
             Identityfile /var/www/app_2/.ssh/id_repo
       files: # you can copy app configs from salt, not to store them in repo
         src: 'app/files/example_php-fpm_app_1/files'
@@ -321,8 +321,8 @@ app:
         repo_key_pub: |
           ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
         ssh_config: |
-          Host: bitbucket.org
-            User: git
+          Host bitbucket.org
+            User git
             Identityfile /var/www/app_2/.ssh/id_repo
       files: # you can copy app configs from salt, not to store them in repo
         src: 'app/files/example_php-fpm_app_2/files'
