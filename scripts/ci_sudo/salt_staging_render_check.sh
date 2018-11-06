@@ -73,7 +73,7 @@ stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
 stdbuf -oL -eL .githooks/post-merge || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: populating repo/etc/salt for salt-call --local"
-( mkdir -p ${WORK_DIR}/etc/salt && rsync -av ${WORK_DIR}/srv/.gitlab-ci/staging-etc/ ${WORK_DIR}/etc/salt/ && sed -i -e "s#_WORK_DIR_#${WORK_DIR}#" ${WORK_DIR}/etc/salt/* ) || exit 1
+( mkdir -p ${WORK_DIR}/etc/salt && rsync -av ${WORK_DIR}/srv/.gitlab-ci/staging-etc-with-pillar/ ${WORK_DIR}/etc/salt/ && sed -i -e "s#_WORK_DIR_#${WORK_DIR}#" ${WORK_DIR}/etc/salt/* ) || exit 1
 
 # Get changed files from the last push and try to render some of them
 for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
