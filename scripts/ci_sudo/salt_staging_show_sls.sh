@@ -36,6 +36,7 @@ else
 fi
 
 GRAND_EXIT=0
+mkdir -p ${WORK_DIR}/srv/scripts/ci_sudo
 rm -f ${WORK_DIR}/srv/scripts/ci_sudo/$(basename $0).out
 exec > >(tee ${WORK_DIR}/srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
