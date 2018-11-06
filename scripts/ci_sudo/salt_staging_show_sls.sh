@@ -36,8 +36,8 @@ else
 fi
 
 GRAND_EXIT=0
-rm -f /srv/scripts/ci_sudo/$(basename $0).out
-exec > >(tee /srv/scripts/ci_sudo/$(basename $0).out)
+rm -f ${WORK_DIR}/srv/scripts/ci_sudo/$(basename $0).out
+exec > >(tee ${WORK_DIR}/srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
 # Update local repo
@@ -88,6 +88,6 @@ for STATE in $(salt-call --local --config-dir=${WORK_DIR}/etc/salt cp.list_state
 	fi
 done
 
-grep -q "^ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
+grep -q "^ERROR" ${WORK_DIR}/srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
 
 exit $GRAND_EXIT

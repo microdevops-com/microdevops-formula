@@ -1,4 +1,4 @@
-# Many pillars include /srv/pillar/ufw_simple/vars.jinja file and suppose that you have set vars array:
+# Many pillars include ufw_simple/vars.jinja file and suppose that you have set vars array:
 - ```vars['Office_And_VPN']```
 - ```vars['Delete_Office_And_VPN']```
 - ```vars['Backup_Servers']```
@@ -15,7 +15,7 @@
 # Sample file:
 
 ```
-cat /srv/pillar/ufw_simple/vars.jinja
+cat ufw_simple/vars.jinja
 {%
 set vars = {
   'Office_And_VPN': {
