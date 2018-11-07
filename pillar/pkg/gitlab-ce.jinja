@@ -54,8 +54,9 @@ pkg:
             - runas: 'root'
       - cmd.run:
           1:
-            - name: '/opt/acme/home/acme_local.sh --issue -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart"'
+            - name: 'openssl verify -CAfile /opt/acme/cert/{{ gitlab_ext_name }}/ca.cer /opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --issue -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart" || true'
             - cwd: /opt/acme/home
+            - shell: '/bin/bash'
             - runas: root
       - file.directory:
           1:

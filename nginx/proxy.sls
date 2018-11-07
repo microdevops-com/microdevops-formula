@@ -307,10 +307,11 @@ forward_app_nginx_ssl_link_2_{{ loop.index }}:
 forward_app_acme_run_{{ loop.index }}:
   cmd.run:
     - cwd: /opt/acme/home
+    - shell: '/bin/bash'
             {%- if (app_params['server_name_301'] is defined) and (app_params['server_name_301'] is not none) %}
-    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['server_name']|replace(" ", " -d ") }} -d {{ app_params['server_name_301']|replace(" ", " -d ") }}'
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ forward_app }}_ca.cer /opt/acme/cert/{{ forward_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['server_name']|replace(" ", " -d ") }} -d {{ app_params['server_name_301']|replace(" ", " -d ") }} || true'
             {%- else %}
-    - name: '/opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['server_name']|replace(" ", " -d ") }}'
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ forward_app }}_ca.cer /opt/acme/cert/{{ forward_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ forward_app }}_cert.cer --key-file /opt/acme/cert/{{ forward_app }}_key.key --ca-file /opt/acme/cert/{{ forward_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ forward_app }}_fullchain.cer --issue -d {{ app_params['server_name']|replace(" ", " -d ") }} || true'
             {%- endif %}
 
 forward_app_acme_replace_symlink_1_{{ loop.index }}:

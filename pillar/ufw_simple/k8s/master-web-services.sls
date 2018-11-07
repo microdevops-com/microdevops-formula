@@ -1,4 +1,4 @@
-{% from '/srv/pillar/ufw_simple/vars.jinja' import vars with context %}
+{% from 'ufw_simple/vars.jinja' import vars with context %}
 
 ufw_simple:
   allow:

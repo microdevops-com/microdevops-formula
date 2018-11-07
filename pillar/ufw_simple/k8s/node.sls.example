@@ -1,5 +1,5 @@
-{% from '/srv/pillar/ip/dc.jinja' import srv1_br0 with context %}
-{% from '/srv/pillar/ip/dc.jinja' import srv2_br0 with context %}
+{% from 'ip/dc.jinja' import srv1_br0 with context %}
+{% from 'ip/dc.jinja' import srv2_br0 with context %}
 
 ufw_simple:
   allow:
