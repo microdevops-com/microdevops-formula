@@ -17,6 +17,8 @@ echo "search $5" > /etc/resolv.conf
 for NS in $4; do echo "nameserver ${NS}" >> /etc/resolv.conf; done
 
 /bin/kill -9 `/bin/ps ax | /bin/grep dhclient | /bin/grep -v grep | /usr/bin/awk '{print $1}'`
+/bin/sleep 2
+/bin/kill -9 `/bin/ps ax | /bin/grep dhclient | /bin/grep -v grep | /usr/bin/awk '{print $1}'`
 /sbin/ifdown --force eth0
 /bin/sleep 2
 /sbin/ifup eth0
