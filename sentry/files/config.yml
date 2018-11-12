@@ -8,20 +8,20 @@
 ###############
 
 
-mail.backend: '{{ salt['pillar.get']('sentry:config:email.backend', 'smtp') }}'  # Use dummy if you want to disable email entirely
-mail.host: '{{ salt['pillar.get']('sentry:config:email.host', 'localhost') }}'
-mail.port: {{ salt['pillar.get']('sentry:config:email.port', '25') }}
-mail.username: '{{ salt['pillar.get']('sentry:config:email.username', '') }}'
-mail.password: '{{ salt['pillar.get']('sentry:config:email.password', '') }}'
-mail.use-tls: {{ salt['pillar.get']('sentry:config:email.tls', 'false') }}
+mail.backend: '{{ salt['pillar.get']('sentry:config:email:backend', 'smtp') }}'  # Use dummy if you want to disable email entirely
+mail.host: '{{ salt['pillar.get']('sentry:config:email:host', 'localhost') }}'
+mail.port: {{ salt['pillar.get']('sentry:config:email:port', '25') }}
+mail.username: '{{ salt['pillar.get']('sentry:config:email:username', '') }}'
+mail.password: '{{ salt['pillar.get']('sentry:config:email:password', '') }}'
+mail.use-tls: {{ salt['pillar.get']('sentry:config:email:tls', 'false') }}
 # The email address to send on behalf of
-mail.from: '{{ salt['pillar.get']('sentry:config:email.from', 'root@localhost') }}'
+mail.from: '{{ salt['pillar.get']('sentry:config:email:from', 'root@localhost') }}'
 
 # If you'd like to configure email replies, enable this.
-mail.enable-replies: {{ salt['pillar.get']('sentry:config:email.enable_replies', False) }}
+mail.enable-replies: {{ salt['pillar.get']('sentry:config:email:enable_replies', False) }}
 
 # When email-replies are enabled, this value is used in the Reply-To header
-mail.reply-hostname: '{{ salt['pillar.get']('sentry:config:email.reply_hostname', '') }}'
+mail.reply-hostname: '{{ salt['pillar.get']('sentry:config:email:reply_hostname', '') }}'
 
 
 # If you're using mailgun for inbound mail, set your API key and configure a
@@ -56,8 +56,8 @@ redis.clusters:
   default:
     hosts:
       0:
-        host: {{ salt['pillar.get']('sentry:config:redis_clusters.host', '127.0.0.1') }}
-        port: {{ salt['pillar.get']('sentry:config:redis_clusters.port', '6379') }}
+        host: {{ salt['pillar.get']('sentry:config:redis_clusters:host', '127.0.0.1') }}
+        port: {{ salt['pillar.get']('sentry:config:redis_clusters:port', '6379') }}
 
 ################
 # File storage #
