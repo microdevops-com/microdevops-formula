@@ -22,7 +22,7 @@ rsnapshot_backup:
             last_file_age: N # mandatory for this check type, files can be no more N days old
             min_file_size: N # mandatory, files can be no less than N size in bytes
             files_total: N # mandatory, there should be no less than N files of this type
-            file_type: regexp # mandatory, regexp which will be matched agains unix command 'type' output
+            file_type: regexp # mandatory, regexp which will be matched agains unix command 'file' output
             files_mask: regexp # mandatory, regexp for find command
         backups:
           - host: backup1.domain.com # on which server backup is performed
@@ -134,7 +134,7 @@ rsnapshot_backup:
             last_file_age: N # mandatory for this check type, files can be no more N days old
             min_file_size: N # mandatory, files can be no less than N size in bytes
             files_total: N # mandatory, there should be no less than N files of this type
-            file_type: regexp # mandatory, regexp which will be matched agains unix command 'type' output
+            file_type: regexp # mandatory, regexp which will be matched agains unix command 'file' output
             files_mask: # mandatory, regexp for find command
           - type: FILE_AGE # FILE_AGE also can have path modifiers per data item
             data: /Share1/Some/Path # set params for specific data item
