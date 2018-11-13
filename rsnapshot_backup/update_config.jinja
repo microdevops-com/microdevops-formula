@@ -50,7 +50,7 @@
               min_file_size: {{ check['min_file_size'] }}
           {%- endif %}
           {%- if check['file_type'] is defined and check['file_type'] is not none %}
-              file_type: {{ check['file_type'] }}
+              file_type: '{{ check['file_type'] }}'
           {%- endif %}
           {%- if check['last_file_age'] is defined and check['last_file_age'] is not none %}
               last_file_age: {{ check['last_file_age'] }}
@@ -59,7 +59,7 @@
               files_total: {{ check['files_total'] }}
           {%- endif %}
           {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
-              files_mask: {{ check['files_mask'] }}
+              files_mask: '{{ check['files_mask'] }}'
           {%- endif %}
         {%- endif %}
       {%- else %}
@@ -74,7 +74,7 @@
               min_file_size: {{ check['min_file_size'] }}
         {%- endif %}
         {%- if check['file_type'] is defined and check['file_type'] is not none %}
-              file_type: {{ check['file_type'] }}
+              file_type: '{{ check['file_type'] }}'
         {%- endif %}
         {%- if check['last_file_age'] is defined and check['last_file_age'] is not none %}
               last_file_age: {{ check['last_file_age'] }}
@@ -83,7 +83,7 @@
               files_total: {{ check['files_total'] }}
         {%- endif %}
         {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
-              files_mask: {{ check['files_mask'] }}
+              files_mask: '{{ check['files_mask'] }}'
         {%- endif %}
       {%- endif %}
     {%- endfor %}
