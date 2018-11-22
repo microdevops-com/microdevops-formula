@@ -515,18 +515,18 @@ php-fpm_apps_app_pool_config_{{ loop.index }}:
 
 php-fpm_apps_pool_log_dir_{{ loop.index }}:
   file.directory:
-    - name: '/var/log/php/{{ app_params['pool']['php_version'] }}-fpm/'
-    - user: root
-    - group: adm
-    - mode: 775
+    - name: '{{ app_params['pool']['log']['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/'
+    - user: {{ app_params['pool']['log']['dir_user']|default('root') }}
+    - group: {{ app_params['pool']['log']['dir_group']|default('adm') }}
+    - mode: {{ app_params['pool']['log']['dir_mode']|default('775') }}
     - makedirs: True
 
 php-fpm_apps_pool_log_file_{{ loop.index }}:
   file.managed:
-    - name: '/var/log/php/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log'
-    - user: {{ app_params['user'] }}
-    - group: {{ app_params['group'] }}
-    - mode: 664
+    - name: '{{ app_params['pool']['log']['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log'
+    - user: {{ app_params['pool']['log']['log_user']|default(app_params['user']) }}
+    - group: {{ app_params['pool']['log']['log_group']|default(app_params['group']) }}
+    - mode: {{ app_params['pool']['log']['log_mode']|default('664') }}
 
 php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
   file.managed:
@@ -535,15 +535,49 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
     - group: root
     - mode: 644
     - contents: |
-        /var/log/php/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log {
-          rotate 31
-          daily
+        {{ app_params['pool']['log']['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.*.log {
+          rotate {{ app_params['pool']['log']['rotate_count']|default('31') }}
+          {{ app_params['pool']['log']['rotate_when']|default('daily') }}
           missingok
-          create 664 {{ app_params['user'] }} {{ app_params['group'] }}
+          create {{ app_params['pool']['log']['log_mode']|default('664') }} {{ app_params['pool']['log']['log_user']|default(app_params['user']) }} {{ app_params['pool']['log']['log_group']|default(app_params['group']) }}
           compress
           delaycompress
-          su root adm
+          su {{ app_params['pool']['log']['dir_user']|default('root') }} {{ app_params['pool']['log']['dir_group']|default('adm') }}
+          postrotate
+            /usr/lib/php/php{{ app_params['pool']['php_version'] }}-fpm-reopenlogs
+          endscript
         }
+
+        {%- if app_params['nginx']['log'] is defined and app_params['nginx']['log'] is not none and app_params['nginx']['log']['dir'] is defined and app_params['nginx']['log']['dir'] is not none and app_params['nginx']['log']['dir'] and app_params['nginx']['log']['dir'] != '/var/log/nginx'  %}
+php-fpm_apps_nginx_logrotate_file_{{ loop.index }}:
+php-fpm_apps_nginx_log_dir_{{ loop.index }}:
+  file.directory:
+    - name: '{{ app_params['nginx']['log']['dir'] }}'
+    - user: {{ app_params['nginx']['log']['dir_user']|default('root') }}
+    - group: {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+    - mode: {{ app_params['nginx']['log']['dir_mode']|default('755') }}
+    - makedirs: True
+
+  file.managed:
+    - name: '/etc/logrotate.d/nginx-{{ phpfpm_app }}'
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: |
+        {{ app_params['nginx']['access_log'] }}
+        {{ app_params['nginx']['error_log'] }} {
+          rotate {{ app_params['nginx']['log']['rotate_count']|default('31') }}
+          {{ app_params['nginx']['log']['rotate_when']|default('daily') }}
+          missingok
+          create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default('www-data') }} {{ app_params['nginx']['log']['log_group']|default('adm') }}
+          compress
+          delaycompress
+          su {{ app_params['nginx']['log']['dir_user']|default('root') }} {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+          postrotate
+            /usr/sbin/nginx -s reopen
+          endscript
+        }
+        {%- endif %}
 
         {%- if (pillar['nginx_reload'] is defined) and (pillar['nginx_reload'] is not none) and (pillar['nginx_reload']) %}
 php-fpm_apps__nginx_reload__{{ loop.index }}:

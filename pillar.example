@@ -225,6 +225,16 @@ app:
         server_name_301: 'www.example.com www2.example.com'
         access_log: '/var/log/nginx/app_1.access.log'
         error_log: '/var/log/nginx/app_1.error.log'
+        log: # optional nginx log extended params, useful with paths other than in /var/log/nginx
+          dir: '/var/www/app_1/log/nginx' # by default nginx logs are in /var/log/nginx
+          dir_mode: '755' # default
+          log_mode: '640' # default
+          dir_user: 'root' # default
+          dir_group: 'adm' # default
+          log_user: 'app_1' # -> app:user by default
+          log_group: 'app_1' # -> app:group by default
+          rotate_count: '10' # 31 by default
+          rotate_when: 'weekly' # daily by default
         ssl: # commercial cert example
           certs_dir: 'app/files/example_php-fpm_app_1/ssl' # those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
           ssl_cert: 'ssl/app_1/app_1.crt' # in terms of nginx, e.g. as for files abobe, or you can use absolute path
@@ -234,6 +244,16 @@ app:
           certbot_email: 'admin@example.com'
       pool:
         pool_config: 'app/files/example_php-fpm_app_1/pool.conf'
+        log: # optional pool log params
+          dir: '/var/www/app_1/log/php' # by default pool logs are in /var/log/php
+          dir_mode: '775' # default
+          log_mode: '664' # default
+          dir_user: 'root' # default
+          dir_group: 'adm' # default
+          log_user: 'app_1' # -> app:user by default
+          log_group: 'app_1' # -> app:group by default
+          rotate_count: '10' # 31 by default
+          rotate_when: 'weekly' # daily by default
         php_version: '5.6'
         pm: |
           pm = ondemand
