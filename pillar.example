@@ -226,7 +226,7 @@ app:
         access_log: '/var/log/nginx/app_1.access.log'
         error_log: '/var/log/nginx/app_1.error.log'
         log: # optional nginx log extended params, useful with paths other than in /var/log/nginx
-          dir: '/var/www/app_1/log/nginx' # by default nginx logs are in /var/log/nginx
+          dir: '/var/www/app_1/log/nginx' # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
           dir_mode: '755' # default
           log_mode: '640' # default
           dir_user: 'root' # default
