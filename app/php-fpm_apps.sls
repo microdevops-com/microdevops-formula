@@ -549,7 +549,6 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
         }
 
         {%- if app_params['nginx']['log'] is defined and app_params['nginx']['log'] is not none and app_params['nginx']['log']['dir'] is defined and app_params['nginx']['log']['dir'] is not none and app_params['nginx']['log']['dir'] and app_params['nginx']['log']['dir'] != '/var/log/nginx'  %}
-php-fpm_apps_nginx_logrotate_file_{{ loop.index }}:
 php-fpm_apps_nginx_log_dir_{{ loop.index }}:
   file.directory:
     - name: '{{ app_params['nginx']['log']['dir'] }}'
@@ -558,6 +557,7 @@ php-fpm_apps_nginx_log_dir_{{ loop.index }}:
     - mode: {{ app_params['nginx']['log']['dir_mode']|default('755') }}
     - makedirs: True
 
+php-fpm_apps_nginx_logrotate_file_{{ loop.index }}:
   file.managed:
     - name: '/etc/logrotate.d/nginx-{{ phpfpm_app }}'
     - user: root
