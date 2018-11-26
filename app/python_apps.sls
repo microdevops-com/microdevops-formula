@@ -68,6 +68,14 @@ python_apps_user_homedir_userown_{{ loop.index }}:
     - group: {{ app_params['group'] }}
     - makedirs: True
 
+python_apps_nginx_root_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app_params['nginx']['root'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - mode: 755
+    - makedirs: True
+
 python_apps_user_ssh_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app_params['app_root'] ~ '/.ssh' }}

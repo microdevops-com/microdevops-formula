@@ -73,6 +73,14 @@ static_apps_user_{{ loop.index }}:
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ static_app }}
 
+static_apps_nginx_root_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app_params['nginx']['root'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - mode: 755
+    - makedirs: True
+
 static_apps_user_ssh_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app_params['app_root'] ~ '/.ssh' }}
@@ -489,7 +497,7 @@ static_apps_nginx_log_dir_{{ loop.index }}:
 
 static_apps_nginx_logrotate_file_{{ loop.index }}:
   file.managed:
-    - name: '/etc/logrotate.d/nginx-{{ phpfpm_app }}'
+    - name: '/etc/logrotate.d/nginx-{{ static_app }}'
     - user: root
     - group: root
     - mode: 644
