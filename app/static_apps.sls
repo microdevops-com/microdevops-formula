@@ -478,6 +478,37 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
         auth_basic_block: '{{ auth_basic_block }}'
         {%- endif %}
 
+        {%- if app_params['nginx']['log'] is defined and app_params['nginx']['log'] is not none and app_params['nginx']['log']['dir'] is defined and app_params['nginx']['log']['dir'] is not none and app_params['nginx']['log']['dir'] and app_params['nginx']['log']['dir'] != '/var/log/nginx'  %}
+static_apps_nginx_log_dir_{{ loop.index }}:
+  file.directory:
+    - name: '{{ app_params['nginx']['log']['dir'] }}'
+    - user: {{ app_params['nginx']['log']['dir_user']|default('root') }}
+    - group: {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+    - mode: {{ app_params['nginx']['log']['dir_mode']|default('755') }}
+    - makedirs: True
+
+static_apps_nginx_logrotate_file_{{ loop.index }}:
+  file.managed:
+    - name: '/etc/logrotate.d/nginx-{{ phpfpm_app }}'
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: |
+        {{ app_params['nginx']['access_log'] }}
+        {{ app_params['nginx']['error_log'] }} {
+          rotate {{ app_params['nginx']['log']['rotate_count']|default('31') }}
+          {{ app_params['nginx']['log']['rotate_when']|default('daily') }}
+          missingok
+          create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default('www-data') }} {{ app_params['nginx']['log']['log_group']|default('adm') }}
+          compress
+          delaycompress
+          su {{ app_params['nginx']['log']['dir_user']|default('root') }} {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+          postrotate
+            /usr/sbin/nginx -s reopen
+          endscript
+        }
+        {%- endif %}
+
         {%- if (pillar['nginx_reload'] is defined) and (pillar['nginx_reload'] is not none) and (pillar['nginx_reload']) %}
 static_apps__nginx_reload__{{ loop.index }}:
   cmd.run:
