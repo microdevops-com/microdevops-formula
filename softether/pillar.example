@@ -1,0 +1,36 @@
+# vi: set ft=yaml:
+
+# softether
+# vpnserver only managed for now
+softether:
+  # Do not use tag here, it cannot be rev parsed then
+  version: 'c23142a8ffc35088047060989fc3d76c5b4e00af'
+  vpnserver:
+    install: True
+    # Main management password, state softether.vpnserver_install sets it at the end of install, state softether.vpnserver_settings uses it to connect
+    password: 'XXX-SET-SERVER-PASS-HERE-XXX'
+    cmds:
+      - 'IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:yes /PSK:XXX-SET-OWN-PSK-PASS-HERE-XXX /DEFAULTHUB:myhub'
+      - 'OpenVpnMakeConfig "\/opt/softether/vpnserver/openvpnconfig.zip"'
+    server_key: | # optional key and cert, you need to use the same pair on all vpn servers if you want the same openvpn config to be used (/CMD ServerKeyGet, /CMD ServerCertGet)
+      -----BEGIN PRIVATE KEY-----
+      ...
+      -----END PRIVATE KEY-----
+    server_cert: |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
+    hubs:
+      DEFAULT:
+        delete: True
+      myhub:
+        password: 'XXX-SET-OWN-HUB-PASS-HERE-XXX'
+        cmds:
+          - 'SecureNatEnable'
+          - 'SetEnumDeny'
+          - 'SecureNatHostSet /MAC:none /IP:192.168.30.1 /MASK:255.255.255.0'
+          - 'DhcpSet /START:192.168.30.10 /END:192.168.30.200 /MASK:255.255.255.0 /EXPIRE:7200 /GW:none /DNS:8.8.8.8 /DNS2:1.1.1.1 /DOMAIN:mydomain.com /LOG:yes /PUSHROUTE:"10.0.0.1/255.255.255.255/192.168.30.1,10.0.0.2/255.255.255.255/192.168.30.1"'
+        users:
+          user1:
+            password: 'XXX-SET-OWN-USER-PASS-HERE-XXX'
+            realname: 'Real Name'

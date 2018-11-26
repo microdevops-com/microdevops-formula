@@ -1,0 +1,96 @@
+# vi: set ft=yaml:
+
+# app example_php-fpm_app_2
+# php 5.6 is taken from ondrej repo
+pkg:
+  certbot:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - git.latest:
+          certbot:
+            - name: https://github.com/certbot/certbot
+            - target: /opt/certbot
+            - force_reset: True
+            - force_fetch: True
+
+nginx:
+  enabled: True
+  configs: 'nginx/app_hosting'
+
+php-fpm:
+  enabled: True
+  version_5_6: True
+  modules:
+    php5_6:
+      - php5.6-mysql
+      - php5.6-curl
+      - php5.6-zip
+      - php5.6-gd
+      - php5.6-mcrypt
+      - php5.6-mbstring
+      - php5.6-xml
+      - php5.6-soap
+      - php5.6-ioncube
+
+app:
+  php-fpm_apps:
+    app_2:
+      enabled: True
+      user: 'app_2'
+      group: 'app_2'
+      pass: '!'
+      app_root: '/var/www/app_2'
+      app_auth_keys: |
+        ssh-rsa AAAA...== rsa-key-19700101
+      shell: '/bin/bash'
+      nginx:
+        auth_basic:
+          user: 'basicuser'
+          pass: 'basicpassword'
+        vhost_config: 'app/files/example_php-fpm_app_2/vhost.conf'
+        root: '/var/www/app_2/src/public'
+        server_name: 'example.com'
+        server_name_301: 'www.example.com www2.example.com'
+        access_log: '/var/log/nginx/app_2.access.log'
+        error_log: '/var/log/nginx/app_2.error.log'
+        ssl: # certbot example
+          certbot: True
+          certbot_email: 'admin@example.com'
+      pool:
+        pool_config: 'app/files/example_php-fpm_app_2/pool.conf'
+        php_version: '5.6'
+        pm: |
+          pm = ondemand
+          pm.max_children = 50
+          pm.process_idle_timeout = 10s
+          pm.max_requests = 500
+        php_admin: |
+          php_admin_flag[html_errors] = off
+          php_admin_value[post_max_size] = 25M
+          php_admin_value[upload_max_filesize] = 25M
+      source:
+        enabled: True
+        git: 'ssh://git@bitbucket.org/myorg/app_2' # either, do not use simultaneously
+        hg: 'ssh://hg@bitbucket.org/myorg/app_2' # or, do not use simultaneously
+        rev: 'develop' # Remote branch, like origin/{{ rev }}
+        target: '/var/www/app_2/src'
+        branch: 'develop' # Local branch, HG does not honor 'branch'
+        # use ssh-keygen -t ed25519, if possible since this improves readability
+        repo_key: |
+          -----BEGIN OPENSSH PRIVATE KEY-----
+          xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          ...
+          xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=
+          -----END OPENSSH PRIVATE KEY-----
+        repo_key_pub: |
+          ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        ssh_config: |
+          Host bitbucket.org
+            User git
+            Identityfile /var/www/app_2/.ssh/id_repo
+      files: # you can copy app configs from salt, not to store them in repo
+        src: 'app/files/example_php-fpm_app_2/files'
+        dst: '/var/www/app_2/src/public'
+      setup_script: # e.g. after git pull to change permissions and create missing folders
+        cwd: '/var/www/app_2/src'
+        name: 'bash /var/www/app_2/src/etc/setup.sh'
