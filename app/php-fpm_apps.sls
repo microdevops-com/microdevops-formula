@@ -387,7 +387,11 @@ php-fpm_apps_app_certbot_dir_{{ loop.index }}:
 php-fpm_apps_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
+            {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }},{{ app_params['nginx']['server_name_301']|replace(" ", ",") }}"'
+            {%- else %}
     - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
+            {%- endif %}
 
 php-fpm_apps_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
