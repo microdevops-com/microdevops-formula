@@ -510,7 +510,6 @@ static_apps_nginx_logrotate_file_{{ loop.index }}:
           create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default('www-data') }} {{ app_params['nginx']['log']['log_group']|default('adm') }}
           compress
           delaycompress
-          su {{ app_params['nginx']['log']['dir_user']|default('root') }} {{ app_params['nginx']['log']['dir_group']|default('adm') }}
           postrotate
             /usr/sbin/nginx -s reopen
           endscript

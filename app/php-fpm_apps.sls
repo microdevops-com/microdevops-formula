@@ -554,7 +554,6 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
           create {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('664') }} {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }} {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
           compress
           delaycompress
-          su {{ (app_params['pool']['log']|default(dict()))['dir_user']|default('root') }} {{ (app_params['pool']['log']|default(dict()))['dir_group']|default('adm') }}
           postrotate
             /usr/lib/php/php{{ app_params['pool']['php_version'] }}-fpm-reopenlogs
           endscript
@@ -584,7 +583,6 @@ php-fpm_apps_nginx_logrotate_file_{{ loop.index }}:
           create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default('www-data') }} {{ app_params['nginx']['log']['log_group']|default('adm') }}
           compress
           delaycompress
-          su {{ app_params['nginx']['log']['dir_user']|default('root') }} {{ app_params['nginx']['log']['dir_group']|default('adm') }}
           postrotate
             /usr/sbin/nginx -s reopen
           endscript
