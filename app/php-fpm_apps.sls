@@ -64,8 +64,6 @@ php-fpm_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
     - gid: {{ app_params['group'] }}
-    - optional_groups:
-      - adm
     - home: {{ app_params['app_root'] }}
     - createhome: True
     {% if app_params['pass'] == '!' %}
