@@ -61,6 +61,12 @@
           {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
               files_mask: '{{ check['files_mask'] }}'
           {%- endif %}
+          {%- if check['s3_bucket'] is defined and check['s3_bucket'] is not none %}
+              s3_bucket: '{{ check['s3_bucket'] }}'
+          {%- endif %}
+          {%- if check['s3_path'] is defined and check['s3_path'] is not none %}
+              s3_path: '{{ check['s3_path'] }}'
+          {%- endif %}
         {%- endif %}
       {%- else %}
             - type: {{ check['type'] }}
@@ -84,6 +90,12 @@
         {%- endif %}
         {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
               files_mask: '{{ check['files_mask'] }}'
+        {%- endif %}
+        {%- if check['s3_bucket'] is defined and check['s3_bucket'] is not none %}
+              s3_bucket: '{{ check['s3_bucket'] }}'
+        {%- endif %}
+        {%- if check['s3_path'] is defined and check['s3_path'] is not none %}
+              s3_path: '{{ check['s3_path'] }}'
         {%- endif %}
       {%- endif %}
     {%- endfor %}
