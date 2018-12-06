@@ -1,15 +1,30 @@
 {% if (pillar['app'] is defined) and (pillar['app'] is not none) %}
   {%- if (pillar['app']['python_apps'] is defined) and (pillar['app']['python_apps'] is not none) %}
+
     {%- if (pillar['certbot_staging'] is defined) and (pillar['certbot_staging'] is not none) and (pillar['certbot_staging']) %}
       {%- set certbot_staging = "--staging" %}
     {%- else %}
       {%- set certbot_staging = " " %}
     {%- endif %}
+
     {%- if (pillar['certbot_force_renewal'] is defined) and (pillar['certbot_force_renewal'] is not none) and (pillar['certbot_force_renewal']) %}
       {%- set certbot_force_renewal = "--force-renewal" %}
     {%- else %}
       {%- set certbot_force_renewal = " " %}
     {%- endif %}
+
+    {%- if (pillar['acme_staging'] is defined) and (pillar['acme_staging'] is not none) and (pillar['acme_staging']) %}
+      {%- set acme_staging = "--staging" %}
+    {%- else %}
+      {%- set acme_staging = " " %}
+    {%- endif %}
+
+    {%- if (pillar['acme_force_renewal'] is defined) and (pillar['acme_force_renewal'] is not none) and (pillar['acme_force_renewal']) %}
+      {%- set acme_force_renewal = "--force" %}
+    {%- else %}
+      {%- set acme_force_renewal = " " %}
+    {%- endif %}
+
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
     {%- else %}
@@ -457,6 +472,66 @@ python_apps_app_certbot_cron_{{ loop.index }}:
     - minute: 10
     - hour: 2
     - dayweek: 1
+          {%- endif %}
+
+        {%- elif
+               (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
+               (app_params['nginx']['ssl']['acme'] is defined) and (app_params['nginx']['ssl']['acme'] is not none) and (app_params['nginx']['ssl']['acme'])
+        %}
+python_apps_app_nginx_vhost_config_{{ loop.index }}:
+  file.managed:
+    - name: '/etc/nginx/sites-available/{{ python_app }}.conf'
+    - user: root
+    - group: root
+    - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
+    - template: jinja
+    - defaults:
+        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name_301: '{{ server_name_301 }}'
+        nginx_root: {{ app_params['nginx']['root'] }}
+        access_log: {{ app_params['nginx']['access_log'] }}
+        error_log: {{ app_params['nginx']['error_log'] }}
+        app_name: {{ python_app }}
+        app_root: {{ app_params['app_root'] }}
+        ssl_cert: '/etc/nginx/ssl/{{ python_app }}/fullchain.pem'
+        ssl_key: '/etc/nginx/ssl/{{ python_app }}/privkey.pem'
+        auth_basic_block: '{{ auth_basic_block }}'
+
+          {# at least we have snakeoil, if cert req fails #}
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ python_app ~ '/fullchain.pem') %}
+python_apps_app_nginx_ssl_link_1_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ python_app }}/fullchain.pem'
+    - target: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
+          {%- endif %}
+
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ python_app ~ '/privkey.pem') %}
+python_apps_app_nginx_ssl_link_2_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ python_app }}/privkey.pem'
+    - target: '/etc/ssl/private/ssl-cert-snakeoil.key'
+          {%- endif %}
+
+          {%- if (pillar['acme_run_ready'] is defined) and (pillar['acme_run_ready'] is not none) and (pillar['acme_run_ready']) %}
+python_apps_app_acme_run_{{ loop.index }}:
+  cmd.run:
+    - cwd: /opt/acme/home
+    - shell: '/bin/bash'
+            {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true'
+            {%- else %}
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true'
+            {%- endif %}
+
+python_apps_app_acme_replace_symlink_1_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ python_app }}_fullchain.cer && ln -s -f /opt/acme/cert/{{ python_app }}_fullchain.cer /etc/nginx/ssl/{{ python_app }}/fullchain.pem || true'
+
+python_apps_app_acme_replace_symlink_2_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ python_app }}_key.key && ln -s -f /opt/acme/cert/{{ python_app }}_key.key /etc/nginx/ssl/{{ python_app }}/privkey.pem || true'
           {%- endif %}
 
         {%- else %}
