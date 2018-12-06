@@ -33,8 +33,8 @@ stdbuf -oL -eL echo '---'
 stdbuf -oL -eL echo 'CMD: salt --force-color -t 300 -C "I@rsnapshot_backup:*'${MOD}'" state.apply --state-output=filter --state-verbose=False exclude=True, rsnapshot_backup.put_check_files queue=True'
 stdbuf -oL -eL salt --force-color -t 300 -C "I@rsnapshot_backup:*${MOD}" state.apply --state-output=filter --state-verbose=False exclude=True, rsnapshot_backup.put_check_files queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo '---'
-stdbuf -oL -eL echo 'CMD: salt --force-color -t 300 -C "I@rsnapshot_backup:*'${MOD}'" state.apply rsnapshot_backup.update_config queue=True'
-stdbuf -oL -eL salt --force-color -t 300 -C "I@rsnapshot_backup:*${MOD}" state.apply rsnapshot_backup.update_config queue=True || GRAND_EXIT=1
+stdbuf -oL -eL echo 'CMD: salt --force-color -t 300 -C "not G@os:Windows and I@rsnapshot_backup:*'${MOD}'" state.apply rsnapshot_backup.update_config queue=True'
+stdbuf -oL -eL salt --force-color -t 300 -C "not G@os:Windows and I@rsnapshot_backup:*${MOD}" state.apply rsnapshot_backup.update_config queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo '---'
 stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not G@os:Windows and not I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
 ( stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not G@os:Windows and not I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "/opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh" || GRAND_EXIT=1 ) | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/'
