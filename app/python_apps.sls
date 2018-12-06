@@ -588,6 +588,22 @@ python_apps_info_warning:
          NOTICE: After staging experiments you can force renewal with:
          NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_force_renewal": True}'
          NOTICE: This will add --force-renewal option to certbot.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE:
+         NOTICE: ACME.SH workflow:
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE: acme.sh should be configured beforehand. You need to specify pillar acme_run_ready to use it:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True}'
+         NOTICE: This will activate acme.sh execution.
+         NOTICE:
+         NOTICE: Also, not to be temp banned by LE when making test runs, you can run:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_staging": True}'
+         NOTICE: This will add --staging option to acme.sh. Certificate will be not trusted, but LE will allow much more tests.
+         NOTICE:
+         NOTICE: After staging experiments you can force renewal with:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_force_renewal": True}'
+         NOTICE: This will add --force option to acme.sh.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
          NOTICE:
          NOTICE: You can run only one app with pillar:
          NOTICE: state.apply ... pillar='{"app_only_one": "<app_name>"}'
