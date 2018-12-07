@@ -8,6 +8,10 @@ pkg:
   alerta-urlmon:
     when: 'PKG_PKG'
     states:
+      - module.run:
+          1:
+            - name: 'state.sls'
+            - mods: 'pyenv.pyenv'
       - group.present:
           1:
             - name: 'alerta-urlmon'
