@@ -235,7 +235,6 @@ python_apps_app_virtualenv_{{ loop.index }}:
     - name: {{ app_params['virtualenv']['target'] }}
     - python: /usr/local/pyenv/shims/python
     - user: {{ app_params['user'] }}
-    - cwd: {{ app_params['group'] }}
     - system_site_packages: False
     - venv_bin: {{ app_params['app_root'] ~ '/virtualenv-' ~ app_params['virtualenv']['pyenv_version'] }}
     - env_vars:
