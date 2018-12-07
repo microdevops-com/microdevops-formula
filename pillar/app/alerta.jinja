@@ -45,6 +45,14 @@ And you need postgres formula.
 #}
 
 {#
+Actually you can set telegram?api-key= and cli api-key only on the second deploy, so:
+- app.deploy
+- get api keys in the web
+- put it to pillar
+- app.deploy once again
+#}
+
+{#
 References:
 - http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
 #}
