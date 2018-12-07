@@ -1,0 +1,22 @@
+alerta-urlmon:
+  global_endpoint: https://alerta.example.com/api # required by config
+  global_api_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # required by config
+  checks:
+    group_name: # name for the group of checks, used only for pillar merging
+      - resource: www.google.com
+        url: https://www.google.com?q=foo#q=foo
+        environment: Production
+        service: # like tags
+          - Google
+          - Search
+        check_ssl: True # optional
+        status_regex: "200" # optional
+        search: 'site text' # optional
+        ssl_warning: 30 # optional, overrides default 30
+        ssl_critical: 7 # optional, overrides default 7
+        from:
+          - host: alerta.example.com
+            endpoint: https://alerta.example.com/api # optional, istead of global
+            api_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # optional, istead of global
+            warning: 5000 # optional, overrides default 5000 ms
+            critical: 10000 # optional, overrides default 10000 ms
