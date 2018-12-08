@@ -132,11 +132,11 @@ fi
 
 # high state
 echo
-echo "Going to run: salt $HN state.highstate" | ccze -A
+echo "Going to run: salt -t 600 $HN state.highstate" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $HN state.highstate
+	time salt -t 600 $HN state.highstate
 fi
 
 # fail2ban
@@ -176,11 +176,11 @@ echo
 
 # app.deploy state
 echo
-echo "Going to run: salt $HN state.apply app.deploy" | ccze -A
+echo "Going to run: salt -t 600 $HN state.apply app.deploy" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $HN state.apply app.deploy
+	time salt -t 600 $HN state.apply app.deploy
 fi
 
 # Final info
