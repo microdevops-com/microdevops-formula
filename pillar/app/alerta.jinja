@@ -152,6 +152,7 @@ pkg:
             - replace: True
             - template: jinja
             - defaults:
+                venv: '/opt/alerta/{{ appname }}/venv'
                 chdir: '/opt/alerta/{{ appname }}/uwsgi'
                 uid: '{{ appname }}'
                 gid: '{{ appname }}'
@@ -200,6 +201,8 @@ pkg:
       - cmd.run:
           1:
             - name: 'systemctl daemon-reload && systemctl restart uwsgi-{{ appname }} && systemctl enable uwsgi-{{ appname }}'
+          2:
+            - name: 'sleep 10 && service nginx reload'
 
 app:
   python_apps:
