@@ -15,6 +15,12 @@ pkg:
       - group.present:
           1:
             - name: 'alerta-urlmon'
+      - file.directory:
+          1:
+            - name: '/opt/alerta'
+            - user: 'root'
+            - group: 'root'
+            - makedirs: True
       - user.present:
           1:
             - name: 'alerta-urlmon'
