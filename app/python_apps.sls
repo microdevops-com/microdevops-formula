@@ -552,13 +552,20 @@ python_apps_app_nginx_vhost_config_{{ loop.index }}:
         auth_basic_block: '{{ auth_basic_block }}'
         {%- endif %}
 
-        {%- if (pillar['nginx_reload'] is defined) and (pillar['nginx_reload'] is not none) and (pillar['nginx_reload']) %}
-python_apps__nginx_reload__{{ loop.index }}:
+        {%- if (app_params['nginx']['link_sites-enabled'] is defined and app_params['nginx']['link_sites-enabled'] is not none and app_params['nginx']['link_sites-enabled']) %}
+app_link_sites_enabled_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/sites-enabled/{{ phpfpm_app }}.conf'
+    - target: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'
+        {%- endif %}
+
+        {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
+app_nginx_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
     - name: 'service nginx configtest && service nginx reload'
-
         {%- endif %}
+
       {%- endif %}
     {%- endfor %}
 

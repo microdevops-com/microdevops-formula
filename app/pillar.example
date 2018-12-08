@@ -13,6 +13,8 @@ app:
         ssh-rsa AAAA...== rsa-key-19700101
       shell: '/bin/bash'
       nginx:
+        link_sites-enabled: True
+        reload: False # Usually restarting nginx on each app is not recommended, but it is ok for one app server setup flow
         auth_basic: # optional basic auth
           user: 'basicuser'
           pass: 'basicpassword'
@@ -44,7 +46,9 @@ app:
           #certbot_email: 'admin@example.com'
         #ssl: # acme.sh example
           #acme: True
-      pyenv_version: '3.5.2' # python_apps only
+      virtualenv:
+        pyenv_version: '3.6.7'
+        target: '/opt/alerta/{{ appname }}/venv'
       pool: # php-fpm_apps only
         pool_config: 'app/files/example_php-fpm_app_1/pool.conf'
         log: # optional pool log params

@@ -217,6 +217,8 @@ app:
         cwd: '/opt/alerta/{{ appname }}/src'
         name: '~/venv/bin/pip install --upgrade alerta-server alerta uwsgi; ~/venv/bin/pip install --upgrade -r requirements.txt'
       nginx:
+        link_sites-enabled: True
+        reload: True
         vhost_config: 'app/alerta/vhost.conf'
         root: '/opt/alerta/{{ appname }}/html'
         server_name: '{{ domain }}'
