@@ -227,6 +227,7 @@ app:
         error_log: '/var/log/nginx/{{ appname }}.error.log'
         ssl:
           acme: True
+          acme_run_ready: True
       source:
         enabled: True
         git: 'https://github.com/alerta/alerta'

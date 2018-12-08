@@ -443,7 +443,7 @@ static_apps_app_nginx_ssl_link_2_{{ loop.index }}:
     - target: '/etc/ssl/private/ssl-cert-snakeoil.key'
           {%- endif %}
 
-          {%- if (pillar['acme_run_ready'] is defined) and (pillar['acme_run_ready'] is not none) and (pillar['acme_run_ready']) %}
+          {%- if (pillar['acme_run_ready'] is defined and pillar['acme_run_ready'] is not none and pillar['acme_run_ready']) or (app_params['nginx']['ssl']['acme_run_ready'] is defined and app_params['nginx']['ssl']['acme_run_ready'] is not none and app_params['nginx']['ssl']['acme_run_ready']) %}
 static_apps_app_acme_run_{{ loop.index }}:
   cmd.run:
     - cwd: /opt/acme/home

@@ -46,6 +46,7 @@ app:
           #certbot_email: 'admin@example.com'
         #ssl: # acme.sh example
           #acme: True
+          #acme_run_ready: True
       virtualenv:
         pyenv_version: '3.6.7'
         target: '/opt/alerta/{{ appname }}/venv'
