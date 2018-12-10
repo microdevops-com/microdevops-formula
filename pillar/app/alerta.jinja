@@ -1,14 +1,34 @@
 {#
-This file should be included in pillar, which sets the following:
+First you need to generate two ids and twoapi keys for cli and telegram, also one secret key for flask:
+
+apt-get install uuid-runtime
+uuidgen # twice
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1 # twice
+
+You will get like:
+xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+
+Then this file should be included in pillar, which sets the following:
 {% set appname = 'alerta' %}
 {% set db_pass = 'XXX-set-alerta-db-pass-here-XXX' %}
 {% set domain  = 'alerta.example.com' %}
-{% set alerta_version = 'v6.5.0' %}
+{% set version = 'v6.5.0' %}
+{% set cli_key_id = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' %}
+{% set cli_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %}
+{% set telegram_key_id = 'yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy' %}
+{% set telegram_key = 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' %}
+{% set secret_key = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' %}
 
 Optional:
 {% set add_pip_install = "git+https://github.com/alerta/alerta-contrib.git#subdirectory=plugins/telegram" %}
 
-Config file local additions, for example gitlab auth, customizations etc (required):
+Config file local additions, for example gitlab auth, customizations etc, do not forget to substitute telegram api key (required):
 {%
 set conf = "
 AUTH_REQUIRED = True
@@ -25,11 +45,13 @@ SITE_LOGO_URL = 'https://gitlab.example.com/uploads/-/system/appearance/header_l
 DATE_FORMAT_LONG_DATE = 'yyyy-MM-dd HH:mm:ss.sss'
 DEFAULT_AUDIO_FILE = '/audio/Bike Horn.mp3'
 
+API_KEY_EXPIRE_DAYS = 36500 # 100 years
+
 PLUGINS = ['blackout','telegram']
 
 TELEGRAM_TOKEN = 'xxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'
-TELEGRAM_WEBHOOK_URL = 'https://alerta.example.com/webhooks/telegram?api-key=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+TELEGRAM_WEBHOOK_URL = 'https://alerta.example.com/webhooks/telegram?api-key=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
 "
 %}
 
@@ -56,8 +78,6 @@ Actually you can set telegram?api-key= and cli api-key only on the second deploy
 References:
 - http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
 #}
-
-{% set secret_key = salt['random.get_str'](length=32) %}
 
 postgres:
   use_upstream_repo: True
@@ -124,7 +144,7 @@ pkg:
             - makedirs: True
       - cmd.run:
           1:
-            - name: 'cd /opt/alerta/{{ appname }}/webuisrc && wget -q -O - https://github.com/alerta/angular-alerta-webui/tarball/{{ alerta_version }} | tar zxf - && rm -f alerta*/app/config.json && cp -r -f alerta*/app/* /opt/alerta/{{ appname }}/html'
+            - name: 'cd /opt/alerta/{{ appname }}/webuisrc && wget -q -O - https://github.com/alerta/angular-alerta-webui/tarball/{{ version }} | tar zxf - && rm -f alerta*/app/config.json && cp -r -f alerta*/app/* /opt/alerta/{{ appname }}/html'
             - runas: '{{ appname }}'
           2:
             - name: 'sed -i /etc/nginx/sites-available/{{ appname }}.conf -e "s#__SOCKET__#/tmp/uwsgi-{{ appname }}.sock#"'
@@ -203,6 +223,10 @@ pkg:
             - name: 'systemctl daemon-reload && systemctl restart uwsgi-{{ appname }} && systemctl enable uwsgi-{{ appname }}'
           2:
             - name: 'sleep 10 && service nginx reload'
+          3: 
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', 'root', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'');" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+          4: 
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', 'root', ''{read,write}'', ''telegram'', now() + interval ''100 years'');" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
 
 app:
   python_apps:
@@ -234,6 +258,6 @@ app:
       source:
         enabled: True
         git: 'https://github.com/alerta/alerta'
-        rev: '{{ alerta_version }}'
+        rev: '{{ version }}'
         target: '/opt/alerta/{{ appname }}/src'
         branch: 'master'
