@@ -224,9 +224,9 @@ pkg:
           2:
             - name: 'sleep 10 && service nginx reload'
           3: 
-            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', 'root', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'');" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', ''root'', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'');" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
           4: 
-            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', 'root', ''{read,write}'', ''telegram'', now() + interval ''100 years'');" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', ''root'', ''{read,write}'', ''telegram'', now() + interval ''100 years'');" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
 
 app:
   python_apps:
