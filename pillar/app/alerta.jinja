@@ -235,6 +235,17 @@ pkg:
             - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', ''root'', ''{read,write}'', ''telegram'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
           5: 
             - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ urlmon_key_id }}'', ''{{ urlmon_key }}'', ''root'', ''{write:alerts}'', ''urlmon'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+      - cron.present:
+          1:
+            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping'
+            - identifier: alerta_housekeeping
+            - user: {{ appname }}
+            - minute: '*'
+          2:
+            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta heartbeats --alert --severity major'
+            - identifier: alerta_heartbeats_alert
+            - user: {{ appname }}
+            - minute: '*'
 
 app:
   python_apps:
