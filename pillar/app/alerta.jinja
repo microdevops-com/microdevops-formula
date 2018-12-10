@@ -231,7 +231,7 @@ pkg:
             - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', ''root'', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
           4: 
             - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', ''root'', ''{read,write}'', ''telegram'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
-          4: 
+          5: 
             - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ urlmon_key_id }}'', ''{{ urlmon_key }}'', ''root'', ''{write:alerts}'', ''urlmon'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
 
 app:
