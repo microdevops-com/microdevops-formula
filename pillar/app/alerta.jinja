@@ -218,6 +218,8 @@ pkg:
             - contents: |
                 [DEFAULT]
                 endpoint = https://{{ domain }}/api
+                key = {{ cli_key }}
+
       - cmd.run:
           1:
             - name: 'systemctl daemon-reload && systemctl restart uwsgi-{{ appname }} && systemctl enable uwsgi-{{ appname }}'
