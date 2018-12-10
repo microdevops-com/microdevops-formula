@@ -107,6 +107,10 @@ pkg:
 
                 [Install]
                 WantedBy=default.target
+      - module.run:
+          1:
+            - name: 'state.sls'
+            - mods: 'alerta-urlmon.alerta-urlmon'
       - cmd.run:
           1:
             - name: 'systemctl daemon-reload && systemctl restart alerta-urlmon && systemctl enable alerta-urlmon'

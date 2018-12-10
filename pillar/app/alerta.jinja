@@ -19,14 +19,12 @@ Then this file should be included in pillar, which sets the following:
 {% set db_pass = 'XXX-set-alerta-db-pass-here-XXX' %}
 {% set domain  = 'alerta.example.com' %}
 {% set version = 'v6.5.0' %}
+{% set add_pip_install = "git+https://github.com/alerta/alerta-contrib.git#subdirectory=plugins/telegram" %}
 {% set cli_key_id = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' %}
 {% set cli_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %}
 {% set telegram_key_id = 'yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy' %}
 {% set telegram_key = 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' %}
 {% set secret_key = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' %}
-
-Optional:
-{% set add_pip_install = "git+https://github.com/alerta/alerta-contrib.git#subdirectory=plugins/telegram" %}
 
 Config file local additions, for example gitlab auth, customizations etc, do not forget to substitute telegram api key (required):
 {%
