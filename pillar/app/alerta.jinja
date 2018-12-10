@@ -64,6 +64,8 @@ Also you need to copy files or make symlinks:
 salt://app/alerta -> ../../formulas/sysadmws-formula/app/files/alerta
 pillar/app/alerta.jinja -> ../../formulas/sysadmws-formula/pillar/app/alerta.jinja
 
+Do not forget to allow telegram webhooks (pillar/ufw_simple/http_https_webhooks_telegram).
+
 Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pkg/acme_*.jinja.
 And you need postgres formula.
 #}
