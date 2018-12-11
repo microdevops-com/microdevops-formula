@@ -14,6 +14,7 @@
 
 # app => app/pillar.example
 # wordpress app => app/files/wordpress/pillar.example
+# alerta app => app/files/alerta/pillar.example
 # example php-fpm app => app/files/example_php-fpm_app_1, app/files/example_php-fpm_app_2
 
 # pkg => pkg/pillar.example
