@@ -29,4 +29,5 @@ EOM
 /sbin/ifdown --force eth0
 /bin/sleep 2
 /sbin/ifup eth0
+/sbin/ifup eth1
 /bin/sleep 5
