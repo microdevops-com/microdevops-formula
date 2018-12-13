@@ -8,6 +8,6 @@ pkg:
             - mode: ensure
             - before: 'exit 0'
             - content: 'echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize'
-			- cmd.run:
+      - cmd.run:
           1:
             - name: 'echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize'
