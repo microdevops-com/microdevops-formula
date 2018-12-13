@@ -1,5 +1,5 @@
 pkg:
-  k8s_lxc_host:
+  k8s-lxd_host:
     when: 'PKG_BEFORE_DEPLOY'
     states:
       - file.line: 
