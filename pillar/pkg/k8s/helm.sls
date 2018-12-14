@@ -4,8 +4,14 @@ pkg:
     states:
       - cmd.run:
           1:
-            - name: 'curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get -o /usr/local/bin/get_helm.sh'
+            - name: 'rm -f /tmp/helm-v2.11.0-linux-amd64.tar.gz'
           2:
-            - name: 'chmod +x /usr/local/bin/get_helm.sh'
+            - name: 'curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz -o /tmp/helm-v2.11.0-linux-amd64.tar.gz'
           3:
-            - name: '/usr/local/bin/get_helm.sh'
+            - name: 'tar zxvf /tmp/helm-v2.11.0-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/helm'
+          4:
+            - name: 'tar zxvf /tmp/helm-v2.11.0-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/tiller'
+          5:
+            - name: 'chmod +x /usr/local/bin/helm'
+          6:
+            - name: 'chmod +x /usr/local/bin/tiller'
