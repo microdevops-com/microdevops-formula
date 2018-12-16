@@ -62,6 +62,16 @@ pkg:
                 cluster_domain: {{ cluster_domain }}
                 cluster_dns_server: {{ cluster_dns_server }}
                 cluster_name: {{ cluster_name }}
+          4:
+            - name: '/opt/rancher/clusters/{{ cluster_name }}/kubectl.sh'
+            - mode: 0755
+            - contents: |
+                kubectl --kubeconfig /opt/rancher/clusters/{{ cluster_name }}/kube_config_cluster.yml
+          5:
+            - name: '/opt/rancher/clusters/{{ cluster_name }}/helm.sh'
+            - mode: 0755
+            - contents: |
+                helm --kubeconfig /opt/rancher/clusters/{{ cluster_name }}/kube_config_cluster.yml --home /opt/rancher/clusters/{{ cluster_name }}/.helm
       - ssh_auth.present:
           1:
             - user: 'root'
