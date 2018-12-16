@@ -74,11 +74,6 @@ pkg:
             - contents: |
                 #!/bin/bash
                 helm --kubeconfig /opt/rancher/clusters/{{ cluster_name }}/kube_config_cluster.yml --home /opt/rancher/clusters/{{ cluster_name }}/.helm
-      - ssh_auth.present:
-          1:
-            - user: 'root'
-            - names:
-                - {{ cluster_ssh_public_key }}
 {#
 {% if grains['fqdn'] == rke_up_exec_host %}
       - cmd.run:
