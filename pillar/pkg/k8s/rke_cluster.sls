@@ -66,11 +66,13 @@ pkg:
             - name: '/opt/rancher/clusters/{{ cluster_name }}/kubectl.sh'
             - mode: 0755
             - contents: |
+                #!/bin/bash
                 kubectl --kubeconfig /opt/rancher/clusters/{{ cluster_name }}/kube_config_cluster.yml
           5:
             - name: '/opt/rancher/clusters/{{ cluster_name }}/helm.sh'
             - mode: 0755
             - contents: |
+                #!/bin/bash
                 helm --kubeconfig /opt/rancher/clusters/{{ cluster_name }}/kube_config_cluster.yml --home /opt/rancher/clusters/{{ cluster_name }}/.helm
       - ssh_auth.present:
           1:
