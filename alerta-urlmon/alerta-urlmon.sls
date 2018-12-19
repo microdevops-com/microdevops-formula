@@ -27,6 +27,7 @@ alerta-urlmon_conf:
                 {% if from['api_key'] is defined and from['api_key'] is not none %}"api_key": "{{ from['api_key'] }}",{%- endif %}
                 {% if from['warning'] is defined and from['warning'] is not none %}"warning": {{ from['warning'] }},{%- endif %}
                 {% if from['critical'] is defined and from['critical'] is not none %}"critical": {{ from['critical'] }},{%- endif %}
+                {% if from['retries'] is defined and from['retries'] is not none %}"count": {{ from['retries'] }},{%- endif %}
                 {% if check['ssl_warning'] is defined and check['ssl_warning'] is not none %}"ssl_warning": {{ check['ssl_warning'] }},{%- endif %}
                 {% if check['ssl_critical'] is defined and check['ssl_critical'] is not none %}"ssl_critical": {{ check['ssl_critical'] }},{%- endif %}
             },

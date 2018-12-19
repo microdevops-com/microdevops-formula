@@ -20,3 +20,4 @@ alerta-urlmon:
             api_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # optional, istead of global
             warning: 5000 # optional, overrides default 5000 ms
             critical: 10000 # optional, overrides default 10000 ms
+            retries: 2 # optional, overrides default 1, how many times to retry url if failed before sending alert
