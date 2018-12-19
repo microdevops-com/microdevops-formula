@@ -77,6 +77,10 @@ rabbit_service_5:
   cmd.run:
     - name: service rabbitmq-server restart
 
+rabbit_service_6:
+  cmd.run:
+    - name: 'until rabbitmqctl status | grep -q "{uptime"; do echo .; done'
+
   {%- for vhost in pillar['rabbitmq'].get('vhosts', []) %}
 rabbit_vhost_{{ loop.index }}:
     {%- if vhost['present'] is defined and vhost['present'] is not none and vhost['present'] %}
