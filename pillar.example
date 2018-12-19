@@ -26,3 +26,7 @@
 # unit_status_alert => unit_status_alert/pillar.example
 
 # sentry => sentry/pillar.example
+
+# rancher => rancher/pillar.example
+
+# rabbitmq => rabbitmq/pillar.example
