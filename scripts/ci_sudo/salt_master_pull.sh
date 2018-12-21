@@ -30,6 +30,9 @@ stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git pull --ff-only && git checkout -B master origin/master"
 ( cd /srv && stdbuf -oL -eL git pull --ff-only && stdbuf -oL -eL git checkout -B master origin/master) || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
+stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git submodule init"
+( cd /srv && stdbuf -oL -eL git submodule init ) || GRAND_EXIT=1
+stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git submodule update --recursive -f --checkout"
 ( cd /srv && stdbuf -oL -eL git submodule update --recursive -f --checkout ) || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
