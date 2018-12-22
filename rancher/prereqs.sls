@@ -104,7 +104,7 @@ rancher_cli_install_2:
 
 rancher_cli_install_3:
   cmd.run:
-    - name: 'tar zxvf /tmp/rancher-linux-amd64-v2.0.6.tar.gz --strip-components=1 -C /usr/local/bin rancher-v2.0.6/rancher'
+    - name: 'sudo tar zxvf /tmp/rancher-linux-amd64-v2.0.6.tar.gz --strip-components=2 -C /usr/local/bin ./rancher-v2.0.6/rancher'
 
 rancher_cli_install_4:
   cmd.run:
