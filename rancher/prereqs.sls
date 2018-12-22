@@ -94,6 +94,22 @@ helm_install_6:
   cmd.run:
     - name: 'chmod +x /usr/local/bin/tiller'
 
+rancher_cli_install_1:
+  cmd.run:
+    - name: 'rm -f /tmp/rancher-linux-amd64-v2.0.6.tar.gz'
+
+rancher_cli_install_2:
+  cmd.run:
+    - name: 'curl -L https://github.com/rancher/cli/releases/download/v2.0.6/rancher-linux-amd64-v2.0.6.tar.gz -o /tmp/rancher-linux-amd64-v2.0.6.tar.gz'
+
+rancher_cli_install_3:
+  cmd.run:
+    - name: 'tar zxvf /tmp/rancher-linux-amd64-v2.0.6.tar.gz --strip-components=1 -C /usr/local/bin rancher-v2.0.6/rancher'
+
+rancher_cli_install_4:
+  cmd.run:
+    - name: 'chmod +x /usr/local/bin/rancher'
+
     {%- for node in pillar['rancher']['nodes'] %}
 hosts_file_node_{{ loop.index }}:
   host.present:
