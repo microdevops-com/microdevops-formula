@@ -10,7 +10,7 @@ Sysadmin Workshop SaltStack Formula:
 - softether - install and configure Softether VPN Server.
 - ufw_simple - install and configure UFW, helps to keep firewall manageable on hundreds of server simultaneously, extends ufw with nat and raw iptables rules, but UFW is required though.
 - users - manage users on Windows servers.
-- rancher - prepare cluster for rke, rke up/remove, install rancher helm chart into cluster.
+- rancher - prepare hosts for rke kubernetes cluster, rke up/remove, install rancher helm chart into the cluster.
 - rabbitmq - setup and manage 3.7+ rabbitmq server and management plugin.
 
 Most states work only with Jessie, Stretch, Xenial and Bionic.
