@@ -107,10 +107,12 @@ rabbit_user_admin_present:
             - '.*'
             - '.*'
   {%- for vhost in pillar['rabbitmq'].get('vhosts', []) %}
+    {%- if vhost['present'] is defined and vhost['present'] is not none and vhost['present'] %}
         - '{{ vhost['name'] }}':
             - '.*'
             - '.*'
             - '.*'
+    {%- endif %}
   {%- endfor %}
 
   {%- for user in pillar['rabbitmq'].get('users', []) %}
