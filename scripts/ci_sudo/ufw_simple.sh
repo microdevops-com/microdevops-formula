@@ -5,8 +5,8 @@ exec > >(tee /srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 1200 -C 'G@os:Ubuntu or G@os:Debian' state.apply ufw_simple.ufw_simple queue=True"
-stdbuf -oL -eL salt --force-color -t 1200 -C 'G@os:Ubuntu or G@os:Debian' state.apply ufw_simple.ufw_simple queue=True || GRAND_EXIT=1
+stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 1200 -C 'G@os:Ubuntu or G@os:Debian' state.apply ufw_simple.ufw_simple queue=True --state-output=filter --state-verbose=False exclude=True,"
+stdbuf -oL -eL salt --force-color -t 1200 -C 'G@os:Ubuntu or G@os:Debian' state.apply ufw_simple.ufw_simple queue=True --state-output=filter --state-verbose=False exclude=True, || GRAND_EXIT=1
 
 grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
 
