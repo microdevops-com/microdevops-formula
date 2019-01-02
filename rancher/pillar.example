@@ -1,16 +1,16 @@
 # vi: set ft=yaml:
 #
 # usage:
-# prepare nodes, node fo nginx proxy, node for command exec
-# generate new private key for usage in this pillar
-# prepare this pillar and assign it for all hosts
-# salt rancher*.dev.example.com saltutil.refrsh_pillar
-# install binaries, cluster, yaml etc
-# salt rancher*.dev.example.com state.apply rancher.prereqs
-# rke up
-# salt rancher*.dev.example.com state.apply rancher.rke_up
-# install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
-# salt rancher*.dev.example.com state.apply rancher.install
+# - prepare nodes, node fo nginx proxy, node for command exec
+# - generate new private key for usage in this pillar
+# - prepare this pillar and assign it for all hosts
+# - salt rancher*.dev.example.com saltutil.refrsh_pillar
+# - install binaries, cluster, yaml etc
+#   salt rancher*.dev.example.com state.apply rancher.prereqs
+# - rke up
+#   salt rancher*.dev.example.com state.apply rancher.rke_up
+# - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
+#   salt rancher*.dev.example.com state.apply rancher.install
 
 rancher:
   cluster_name: dev

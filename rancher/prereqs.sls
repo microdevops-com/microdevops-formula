@@ -129,7 +129,7 @@ docker_install_2:
   pkg.installed:
     - refresh: True
     - pkgs:
-        - docker-ce: '18.06.1*'
+        - docker-ce: '17.03.2*'
         - python-docker
 
 docker_install_3:

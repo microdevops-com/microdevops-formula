@@ -90,7 +90,7 @@ ssh_agent_auth: false
 authorization:
   mode: rbac
   options: {}
-ignore_docker_version: true
+ignore_docker_version: false
 kubernetes_version: ""
 private_registries: []
 ingress:
