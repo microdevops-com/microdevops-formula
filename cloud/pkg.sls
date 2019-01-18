@@ -24,13 +24,6 @@ pkg_xenial_sources_list:
     - mode: 0644
   {%- endif %}
 
-pkgrepo_deb:
-  pkgrepo.managed:
-    - file: /etc/apt/sources.list.d/sysadmws.list
-    - name: 'deb https://repo.sysadm.ws/sysadmws-apt/ any main'
-    - keyid: 2E7DCF8C
-    - keyserver: keyserver.ubuntu.com
-
 pkg_deb_update:
   pkg.uptodate:
     - refresh: True
