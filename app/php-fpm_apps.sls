@@ -651,9 +651,6 @@ php-fpm_apps_info_warning:
          NOTICE: You can run only one app with pillar:
          NOTICE: state.apply ... pillar='{"app_only_one": "<app_name>"}'
          NOTICE:
-         NOTICE: You can link sites-enabled with pillar:
-         NOTICE: state.apply ... pillar='{"link_sites-enabled": True}'
-         NOTICE:
          NOTICE: You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
          NOTICE: state.apply ... pillar='{"nginx_reload": True}'
   {%- endif %}
