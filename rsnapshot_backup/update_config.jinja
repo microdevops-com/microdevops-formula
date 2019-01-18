@@ -50,7 +50,7 @@
               min_file_size: {{ check['min_file_size'] }}
           {%- endif %}
           {%- if check['file_type'] is defined and check['file_type'] is not none %}
-              file_type: {{ check['file_type'] }}
+              file_type: '{{ check['file_type'] }}'
           {%- endif %}
           {%- if check['last_file_age'] is defined and check['last_file_age'] is not none %}
               last_file_age: {{ check['last_file_age'] }}
@@ -59,13 +59,43 @@
               files_total: {{ check['files_total'] }}
           {%- endif %}
           {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
-              files_mask: {{ check['files_mask'] }}
+              files_mask: '{{ check['files_mask'] }}'
+          {%- endif %}
+          {%- if check['s3_bucket'] is defined and check['s3_bucket'] is not none %}
+              s3_bucket: '{{ check['s3_bucket'] }}'
+          {%- endif %}
+          {%- if check['s3_path'] is defined and check['s3_path'] is not none %}
+              s3_path: '{{ check['s3_path'] }}'
           {%- endif %}
         {%- endif %}
       {%- else %}
             - type: {{ check['type'] }}
         {%- if check['empty_db'] is defined and check['empty_db'] is not none %}
               empty_db: {{ check['empty_db'] }}
+        {%- endif %}
+        {%- if check['path'] is defined and check['path'] is not none %}
+              path: {{ check['path'] }}
+        {%- endif %}
+        {%- if check['min_file_size'] is defined and check['min_file_size'] is not none %}
+              min_file_size: {{ check['min_file_size'] }}
+        {%- endif %}
+        {%- if check['file_type'] is defined and check['file_type'] is not none %}
+              file_type: '{{ check['file_type'] }}'
+        {%- endif %}
+        {%- if check['last_file_age'] is defined and check['last_file_age'] is not none %}
+              last_file_age: {{ check['last_file_age'] }}
+        {%- endif %}
+        {%- if check['files_total'] is defined and check['files_total'] is not none %}
+              files_total: {{ check['files_total'] }}
+        {%- endif %}
+        {%- if check['files_mask'] is defined and check['files_mask'] is not none %}
+              files_mask: '{{ check['files_mask'] }}'
+        {%- endif %}
+        {%- if check['s3_bucket'] is defined and check['s3_bucket'] is not none %}
+              s3_bucket: '{{ check['s3_bucket'] }}'
+        {%- endif %}
+        {%- if check['s3_path'] is defined and check['s3_path'] is not none %}
+              s3_path: '{{ check['s3_path'] }}'
         {%- endif %}
       {%- endif %}
     {%- endfor %}

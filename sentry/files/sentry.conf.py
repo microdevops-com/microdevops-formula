@@ -136,6 +136,6 @@ SENTRY_WEB_OPTIONS = {
 
 
 SENTRY_FEATURES = {
-    'auth:register': False,
-    'projects:plugins': True,
+    'auth:register': {{ salt['pillar.get']('sentry:config:features:auth_register', 'False') }},
+    'projects:plugins': {{ salt['pillar.get']('sentry:config:features:projects_plugins', 'True') }},
 }

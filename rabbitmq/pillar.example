@@ -1,0 +1,47 @@
+# vi: set ft=yaml:
+
+rabbitmq:
+  config: # optional
+    - 'key = val' # see https://github.com/rabbitmq/rabbitmq-server/blob/v3.7.x/docs/rabbitmq.conf.example, each item is copied as is
+  admin:
+    name: root
+    password: USE_YOUR_OWN
+  management_domain: rabbit.example.com # if rabbitmq_management is enabled, get acme.sh cert for this domain and setup for rabbitmq (you cannot use 443 port because of permissions)
+  plugins: # optional
+    - rabbitmq_management
+  vhosts:
+    - name: vhost_a
+      present: True
+      absent: False
+    - name: vhost_b
+      present: True
+      absent: False
+  users:
+    - name: foo
+      password: PASS_FOR_USER
+      present: True
+      absent: False
+      tags: # optional
+        - management # management is required to access management site
+      perms: # at least one required
+        - /:
+            - '.*'
+            - '.*'
+            - '.*'
+        - vhost_a:
+            - '.*'
+            - '.*'
+            - '.*'
+        - vhost_b:
+            - '.*'
+            - '.*'
+            - '.*'
+  policies: # optional
+    - name: HA
+      present: True
+      absent: False
+      pattern: '.*'
+      definition: '{"ha-mode": "all"}'
+      priority: 0
+      vhost: vhost_a
+      apply_to: all

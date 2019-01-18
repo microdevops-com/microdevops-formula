@@ -104,9 +104,9 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	salt $MY_HN cmd.shell 'salt-key -y -a '$HN
 fi
 
-# Wait minion becomes alive
+# Waiting for the minion to be alive
 echo
-echo "Waiting for minion becomes alive" | ccze -A
+echo "Waiting for the minion to be alive" | ccze -A
 time until salt -t 5 $HN test.ping 2>&1 | grep -q True; do sleep 1; echo -n .; done
 echo
 
@@ -132,11 +132,11 @@ fi
 
 # high state
 echo
-echo "Going to run: salt $HN state.highstate" | ccze -A
+echo "Going to run: salt -t 600 $HN state.highstate" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $HN state.highstate
+	time salt -t 600 $HN state.highstate
 fi
 
 # fail2ban
@@ -168,19 +168,19 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	time salt $LXDHOST cmd.shell "lxc start $HN_DASH"
 fi
 
-# Wait minion becomes alive
+# Waiting for the minion to be alive
 echo
-echo "Waiting for minion becomes alive" | ccze -A
+echo "Waiting for the minion to be alive" | ccze -A
 time until salt -t 5 $HN test.ping 2>&1 | grep -q True; do sleep 1; echo -n .; done
 echo
 
 # app.deploy state
 echo
-echo "Going to run: salt $HN state.apply app.deploy" | ccze -A
+echo "Going to run: salt -t 600 $HN state.apply app.deploy" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $HN state.apply app.deploy
+	time salt -t 600 $HN state.apply app.deploy
 fi
 
 # Final info

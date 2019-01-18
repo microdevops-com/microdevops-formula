@@ -38,6 +38,9 @@ sentry:
   admin_email: 'admin@example.com'
   admin_password: 'adminpass'
   config:
+    features:
+      auth_register: True
+      projects_plugins: True
     email:
       backend: 'smtp'
       host: 'smtp.gmail.com'

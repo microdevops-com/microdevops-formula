@@ -1,0 +1,10 @@
+# vi: set ft=yaml:
+
+# pyenv
+# limited set of versions supported in the state
+pyenv:
+  enabled: True
+  version_2_7_13: True
+  version_2_7_14: True
+  version_3_5_2: True
+  version_3_5_3: True

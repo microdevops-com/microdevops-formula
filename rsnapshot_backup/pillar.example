@@ -22,8 +22,8 @@ rsnapshot_backup:
             last_file_age: N # mandatory for this check type, files can be no more N days old
             min_file_size: N # mandatory, files can be no less than N size in bytes
             files_total: N # mandatory, there should be no less than N files of this type
-            file_type: regexp # mandatory, regexp which will be matched agains unix command 'type' output
-            files_mask: regexp # mandatory, regexp for find command
+            file_type: 'regexp' # mandatory, regexp which will be matched agains unix command 'file' output
+            files_mask: 'regexp' # mandatory, regexp for find command
         backups:
           - host: backup1.domain.com # on which server backup is performed
             path: /var/backups/srv1.domain.com # where to store backup
@@ -134,22 +134,22 @@ rsnapshot_backup:
             last_file_age: N # mandatory for this check type, files can be no more N days old
             min_file_size: N # mandatory, files can be no less than N size in bytes
             files_total: N # mandatory, there should be no less than N files of this type
-            file_type: regexp # mandatory, regexp which will be matched agains unix command 'type' output
-            files_mask: # mandatory, regexp for find command
+            file_type: 'regexp' # mandatory, regexp which will be matched agains unix command 'file' output
+            files_mask: 'regexp' # mandatory, regexp for find command
           - type: FILE_AGE # FILE_AGE also can have path modifiers per data item
             data: /Share1/Some/Path # set params for specific data item
             last_file_age: 3
             min_file_size: 1000000000
             files_total: 3
-            file_type: (data|executable)
-            files_mask: 123.+_321\..+\.DOC
+            file_type: '(data|executable)'
+            files_mask: '123.+_321\..+\.DOC'
           - type: FILE_AGE
             data: /Share2/Other/Path
             last_file_age: 1
             min_file_size: 1
             files_total: 1
-            file_type: text
-            files_mask: test\.txt
+            file_type: 'text'
+            files_mask: 'test\.txt'
         backups:
           - host: backup1.domain.com
             path: /var/backups/winsrv1.domain.com

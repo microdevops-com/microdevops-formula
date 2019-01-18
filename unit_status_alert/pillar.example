@@ -1,3 +1,5 @@
+# vi: set ft=yaml:
+
 unit_status_alert:
   units:
     certbot:		# Any name
