@@ -52,6 +52,7 @@ app:
         target: '/opt/alerta/{{ appname }}/venv'
       pool: # php-fpm_apps only
         pool_config: 'app/files/example_php-fpm_app_1/pool.conf'
+        reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
         log: # optional pool log params
           dir: '/var/www/app_1/log/php' # by default pool logs are in /var/log/php
           dir_mode: '775' # default

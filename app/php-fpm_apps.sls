@@ -595,7 +595,7 @@ app_link_sites_enabled_{{ loop.index }}:
     - target: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'
         {%- endif %}
 
-        {%- if (pillar['php-fpm_reload'] is defined and pillar['php-fpm_reload'] is not none and pillar['php-fpm_reload']) or (app_params['php-fpm']['reload'] is defined and app_params['php-fpm']['reload'] is not none and app_params['php-fpm']['reload']) %}
+        {%- if (pillar['php-fpm_reload'] is defined and pillar['php-fpm_reload'] is not none and pillar['php-fpm_reload']) or (app_params['pool']['reload'] is defined and app_params['pool']['reload'] is not none and app_params['pool']['reload']) %}
 app_php-fpm_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
