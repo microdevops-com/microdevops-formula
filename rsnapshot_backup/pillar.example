@@ -7,9 +7,9 @@ rsnapshot_backup:
     srv1.domain.com:
       - type: RSYNC_SSH # rsync over ssh
         data:
-          - UBUNTU # special meaning, expands to list ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws']
-          - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/lib/ufw','/opt/sysadmws']
-          - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local']
+          - UBUNTU # special meaning, expands to list ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws','/lib/ufw']
+          - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws','/lib/ufw']
+          - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws']
           - /some/path
         checks: # all checks are optional, RSYNC_SSH supports these check types
           - type: .backup # check special .backup files in data roots, files are put there before backup by rsnapshot_backup.put_check_files
