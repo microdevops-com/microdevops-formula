@@ -4,7 +4,7 @@
 # - prepare nodes, node fo nginx proxy, node for command exec
 # - generate new private key for usage in this pillar
 # - prepare this pillar and assign it for all hosts
-# - salt rancher*.dev.example.com saltutil.refrsh_pillar
+# - salt rancher*.dev.example.com saltutil.refresh_pillar
 # - install binaries, cluster, yaml etc
 #   salt rancher*.dev.example.com state.apply rancher.prereqs
 # - rke up

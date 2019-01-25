@@ -48,7 +48,7 @@ nginx_reload:
   {%- endif %}
 
   # nodes and command_hosts
-  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] or grains['fqdn'] in pillar['rancher']['nodes'] %}
+  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] or 'address', grains['fqdn'] in pillar['rancher']['nodes'] %}
 kubectl_repo:
   pkgrepo.managed:
     - humanname: Kubernetes Repository
@@ -209,7 +209,7 @@ ssh_key_file_5:
   {%- endif %}
 
   # nodes only
-  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] or grains['fqdn'] in pillar['rancher']['nodes'] %}
+  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] or 'address', grains['fqdn'] in pillar['rancher']['nodes'] %}
 auth_file_from_cmd:
   ssh_auth.present:
     - user: 'root'
