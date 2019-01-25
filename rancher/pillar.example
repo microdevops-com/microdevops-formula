@@ -8,9 +8,15 @@
 # - install binaries, cluster, yaml etc
 #   salt rancher*.dev.example.com state.apply rancher.prereqs
 # - rke up
-#   salt rancher*.dev.example.com state.apply rancher.rke_up
+#   salt rancherSOME.dev.example.com state.apply rancher.rke_up
 # - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
-#   salt rancher*.dev.example.com state.apply rancher.install
+#   salt rancherSOME.dev.example.com state.apply rancher.install
+#
+# last two steps are not required to do from each command host and should be done once
+#
+# docker versions:
+# - 18.06.1 - works inside LXD container as node
+# - 17.03.2 - will not work inside LXD, works inside KVM, officially recommended
 
 rancher:
   cluster_name: dev
@@ -24,8 +30,15 @@ rancher:
   cluster_cidr: 10.42.0.0/16
   cluster_ip_range: 10.43.0.0/16
   cluster_dns_server: 10.43.0.10
-  command_host: ranchercmd1.dev.example.com
-  nginx_host: rancherweb1.dev.example.com
+  command_hosts:
+    - ranchercmd1.dev.example.com
+    - ranchercmd2.dev.example.com
+    - ranchercmd3.dev.example.com
+  nginx_hosts:
+    - rancherweb1.dev.example.com
+    - rancherweb2.dev.example.com
+    - rancherweb3.dev.example.com
+  docker-ce_version: 18.06.1
   nodes:
     - address: rancher1.dev.example.com
       port: 22

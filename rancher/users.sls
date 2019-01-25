@@ -1,6 +1,6 @@
 {% if pillar['rancher'] is defined and pillar['rancher'] is not none and pillar['rancher']['users'] is defined and pillar['rancher']['users'] is not none %}
 
-  {%- if grains['fqdn'] == pillar['rancher']['command_host'] %}
+  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] %}
     {%- for user in pillar['rancher']['users'] %}
 add_user_{{ loop.index }}:
   cmd.run:
