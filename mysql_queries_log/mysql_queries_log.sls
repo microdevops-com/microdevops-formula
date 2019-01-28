@@ -17,4 +17,12 @@ swsu_v1_mysql_queries_log_logrotate:
     - source: /opt/sysadmws/mysql_queries_log/mysql_queries_log.logrotate
   {%- endif %}
 
+{% else %}
+nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured for a minion of this type, so nothing has been done. But it is OK.
 {% endif %}

@@ -125,10 +125,10 @@ rm_utils_v0_3:
 
   {%- endif %}
 
-{%- else %}
+{% else %}
 nothing_done_info:
   test.configurable_test_state:
-    - name: nothin_done
+    - name: nothing_done
     - changes: False
     - result: True
     - comment: |
