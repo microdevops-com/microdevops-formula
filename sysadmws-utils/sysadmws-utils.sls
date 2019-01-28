@@ -123,6 +123,14 @@ rm_utils_v0_3:
   file.absent:
     - name: /etc/cron.d/sysadmws-rsnapshot-backup
 
+  {%- else %}
+nothing_done_info:
+  test.configurable_test_state:
+    - name: nothin_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured for a minion of this type, so nothing has been done. But it is OK.
   {%- endif %}
 
 {% endif %}

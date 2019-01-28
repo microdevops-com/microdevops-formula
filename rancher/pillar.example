@@ -8,9 +8,9 @@
 # - install binaries, cluster, yaml etc
 #   salt rancher*.dev.example.com state.apply rancher.prereqs
 # - rke up
-#   salt rancherSOME.dev.example.com state.apply rancher.rke_up
+#   salt ranchercmdSOME.dev.example.com state.apply rancher.rke_up
 # - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
-#   salt rancherSOME.dev.example.com state.apply rancher.install
+#   salt ranchercmdSOME.dev.example.com state.apply rancher.install
 #
 # last two steps are not required to do from each command host and should be done once
 #
