@@ -1,4 +1,4 @@
-{% if (pillar['ntp'] is defined) and (pillar['ntp'] is not none) and (pillar['ntp']['sync_type'] is defined) and (pillar['ntp']['sync_type'] is not none) and (pillar['ntp']['sync_type'] == 'ntpdate_unprivileged_cron') %}
+{% if pillar['ntp'] is defined and pillar['ntp'] is not none and pillar['ntp']['sync_type'] is defined and pillar['ntp']['sync_type'] is not none and pillar['ntp']['sync_type'] == 'ntpdate_unprivileged_cron' %}
 ntp_ntpdate_installed:
   pkg.installed:
     - pkgs:
@@ -31,4 +31,13 @@ ntp_service_running:
 
     {%- endif %}
   {%- endif %}
+
+{% else %}
+nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured by pillar, so nothing has been done. But it is OK.
 {% endif %}
