@@ -12,8 +12,7 @@ ntp_ntpdate_cron:
     - minute: '*/15'
 
 {% else %}
-  {%- if (grains['virtual_subtype'] is not defined) or (grains['virtual_subtype'] != 'LXC') %}
-    {%- if (grains['virtual'] is not defined) or (grains['virtual'] != 'LXC') %}
+  {%- if (grains['virtual_subtype'] is not defined or grains['virtual_subtype'] != 'LXC') and (grains['virtual'] is not defined or grains['virtual'] != 'LXC') %}
 
 ntp_service_installed:
   pkg.installed:
@@ -22,17 +21,14 @@ ntp_service_installed:
 
 ntp_service_running:
   service.running:
-    {% if grains['os'] in ['CentOS', 'RedHat'] %}
+    {%- if grains['os'] in ['CentOS', 'RedHat'] %}
     - name: ntpd
-    {% else %}
+    {%- else %}
     - name: ntp
-    {% endif %}
+    {%- endif %}
     - enable: True
 
-    {%- endif %}
-  {%- endif %}
-
-{% else %}
+  {%- else %}
 nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
@@ -40,4 +36,6 @@ nothing_done_info:
     - result: True
     - comment: |
         INFO: This state was not configured by pillar, so nothing has been done. But it is OK.
+  {%- endif %}
+
 {% endif %}
