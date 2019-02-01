@@ -126,7 +126,7 @@ rm_utils_v0_3:
   {%- endif %}
 
 {% else %}
-nothing_done_info:
+sysadmws-utils_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False

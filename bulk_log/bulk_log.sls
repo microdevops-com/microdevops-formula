@@ -18,7 +18,7 @@ swsu_v1_bulk_log_logrotate:
   {%- endif %}
 
 {% else %}
-nothing_done_info:
+bulk_log_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False

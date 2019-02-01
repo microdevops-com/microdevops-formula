@@ -18,7 +18,7 @@ swsu_v1_mysql_queries_log_logrotate:
   {%- endif %}
 
 {% else %}
-nothing_done_info:
+mysql_queries_log_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False

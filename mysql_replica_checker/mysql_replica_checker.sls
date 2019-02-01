@@ -32,7 +32,7 @@ swsu_v1_mysql_replica_checker_cron_managed:
   {%- endif %}
 
 {% else %}
-nothing_done_info:
+mysql_replica_checker_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False

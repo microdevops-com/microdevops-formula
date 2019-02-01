@@ -32,7 +32,7 @@ swsu_v1_disk_alert_cron_managed:
   {%- endif %}
 
 {% else %}
-nothing_done_info:
+disk_alert_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False

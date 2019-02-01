@@ -354,7 +354,7 @@ netdata_service_running:
     - enable: True
 
 {% else %}
-nothing_done_info:
+mysql_replica_checker_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False

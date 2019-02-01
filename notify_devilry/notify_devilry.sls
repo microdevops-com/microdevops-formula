@@ -45,7 +45,7 @@ swsu_v1_notify_devilry_config_managed:
 
   {%- endif %}
 {% else %}
-nothing_done_info:
+notify_devilry_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False
