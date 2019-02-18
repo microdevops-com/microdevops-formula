@@ -1,5 +1,4 @@
-{% if (pillar['netdata'] is defined) and (pillar['netdata'] is not none) %}
-  {%- if (pillar['netdata']['enabled'] is defined) and (pillar['netdata']['enabled'] is not none) and (pillar['netdata']['enabled']) %}
+{% if pillar['netdata'] is defined and pillar['netdata'] is not none and pillar['netdata']['enabled'] is defined and pillar['netdata']['enabled'] is not none and pillar['netdata']['enabled'] %}
     # Set some vars
     {%- set netdata_seconds = pillar['netdata']['seconds'] %}
     {%- set netdata_version = pillar['netdata']['version'] %}
@@ -354,5 +353,12 @@ netdata_service_running:
     - name: netdata
     - enable: True
 
-  {%- endif %}
+{% else %}
+mysql_replica_checker_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured by pillar, so nothing has been done. But it is OK.
 {% endif %}

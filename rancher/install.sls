@@ -1,6 +1,6 @@
 {% if pillar['rancher'] is defined and pillar['rancher'] is not none %}
 
-  {%- if grains['fqdn'] == pillar['rancher']['command_host'] %}
+  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] %}
 install_cmd_1:
   cmd.run:
     - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n kube-system describe serviceaccount tiller | grep -q "Name:.*tiller" || /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n kube-system create serviceaccount tiller'

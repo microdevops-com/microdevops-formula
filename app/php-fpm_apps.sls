@@ -75,14 +75,6 @@ php-fpm_apps_user_{{ loop.index }}:
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ phpfpm_app }}
 
-php-fpm_apps_nginx_root_dir_{{ loop.index }}:
-  file.directory:
-    - name: {{ app_params['nginx']['root'] }}
-    - user: {{ app_params['user'] }}
-    - group: {{ app_params['group'] }}
-    - mode: 755
-    - makedirs: True
-
 php-fpm_apps_user_ssh_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app_params['app_root'] ~ '/.ssh' }}
@@ -118,6 +110,15 @@ php-fpm_apps_app_download_arc_{{ loop.index }}:
     - if_missing: {{ app_params['source']['if_missing'] }}
           {%- endif %}
         {%- endif %}
+
+# this creates if_missing dir usually, so it should be after download_arc
+php-fpm_apps_nginx_root_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app_params['nginx']['root'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - mode: 755
+    - makedirs: True
 
         {%- if
                (app_params['source'] is defined) and (app_params['source'] is not none) and
@@ -594,6 +595,13 @@ app_link_sites_enabled_{{ loop.index }}:
     - target: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'
         {%- endif %}
 
+        {%- if (pillar['php-fpm_reload'] is defined and pillar['php-fpm_reload'] is not none and pillar['php-fpm_reload']) or (app_params['pool']['reload'] is defined and app_params['pool']['reload'] is not none and app_params['pool']['reload']) %}
+app_php-fpm_reload_{{ loop.index }}:
+  cmd.run:
+    - runas: 'root'
+    - name: 'service php{{ app_params['pool']['php_version'] }}-fpm reload'
+        {%- endif %}
+
         {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
 app_nginx_reload_{{ loop.index }}:
   cmd.run:
@@ -653,5 +661,8 @@ php-fpm_apps_info_warning:
          NOTICE:
          NOTICE: You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
          NOTICE: state.apply ... pillar='{"nginx_reload": True}'
+         NOTICE:
+         NOTICE: You can run 'service phpX.X-fpm reload' after each app deploy with pillar:
+         NOTICE: state.apply ... pillar='{"php-fpm_reload": True}'
   {%- endif %}
 {%- endif %}

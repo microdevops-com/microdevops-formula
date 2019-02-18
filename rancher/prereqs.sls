@@ -1,6 +1,6 @@
 {% if pillar['rancher'] is defined and pillar['rancher'] is not none %}
 
-  {%- if grains['fqdn'] == pillar['rancher']['nginx_host'] %}
+  {%- if grains['fqdn'] in pillar['rancher']['nginx_hosts'] %}
 nginx_deps:
   pkg.installed:
     - pkgs:
@@ -47,8 +47,8 @@ nginx_reload:
     - name: service nginx configtest && service nginx reload
   {%- endif %}
 
-  # nodes and command_host
-  {%- if grains['fqdn'] == pillar['rancher']['command_host'] or 'address', grains['fqdn'] in pillar['rancher']['nodes'] %}
+  # nodes and command_hosts
+  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] or 'address', grains['fqdn'] in pillar['rancher']['nodes'] %}
 kubectl_repo:
   pkgrepo.managed:
     - humanname: Kubernetes Repository
@@ -129,7 +129,7 @@ docker_install_2:
   pkg.installed:
     - refresh: True
     - pkgs:
-        - docker-ce: '17.03.2*'
+        - docker-ce: '{{ pillar['rancher']['docker-ce_version'] }}*'
         - python-docker
 
 docker_install_3:
@@ -138,8 +138,8 @@ docker_install_3:
           
   {%- endif %}
 
-  # command host only
-  {%- if grains['fqdn'] == pillar['rancher']['command_host'] %}
+  # command hosts only
+  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] %}
 cluster_dir_1:
   file.directory:
     - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}'
@@ -209,7 +209,7 @@ ssh_key_file_5:
   {%- endif %}
 
   # nodes only
-  {%- if grains['fqdn'] == pillar['rancher']['command_host'] or 'address', grains['fqdn'] in pillar['rancher']['nodes'] %}
+  {%- if grains['fqdn'] in pillar['rancher']['command_hosts'] or 'address', grains['fqdn'] in pillar['rancher']['nodes'] %}
 auth_file_from_cmd:
   ssh_auth.present:
     - user: 'root'
