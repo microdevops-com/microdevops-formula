@@ -394,7 +394,7 @@ python_apps_app_certbot_replace_symlink_2_{{ loop.index }}:
 
 python_apps_app_certbot_cron_{{ loop.index }}:
   cron.present:
-    - name: '/opt/certbot/certbot-auto renew --renew-hook "service nginx configtest && service nginx restart"'
+    - name: '/opt/certbot/certbot-auto renew --quiet --renew-hook "service nginx configtest && service nginx restart"'
     - identifier: 'certbot_cron'
     - user: root
     - minute: 10
@@ -465,7 +465,7 @@ python_apps_app_certbot_replace_symlink_2_{{ loop.index }}:
 
 python_apps_app_certbot_cron_{{ loop.index }}:
   cron.present:
-    - name: '/opt/certbot/certbot-auto renew --renew-hook "service nginx configtest && service nginx restart"'
+    - name: '/opt/certbot/certbot-auto renew --quiet --renew-hook "service nginx configtest && service nginx restart"'
     - identifier: 'certbot_cron'
     - user: root
     - minute: 10
