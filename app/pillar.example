@@ -36,9 +36,9 @@ app:
           rotate_when: 'weekly' # daily by default
         ssl: # commercial cert example
           certs_dir: 'app/files/example_php-fpm_app_1/ssl' # those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
-          ssl_cert: 'ssl/app_1/app_1.crt' # in terms of nginx, e.g. as for files abobe, or you can use absolute path
-          ssl_key: 'ssl/app_1/app_1.key'
-          ssl_chain: 'ssl/app_1/gd_bundle-g2-g1.crt'
+          ssl_cert: 'ssl/app_1/app_1.crt' # mandatory, in terms of nginx, e.g. as for files abobe, or you can use absolute path
+          ssl_key: 'ssl/app_1/app_1.key' # mandatory
+          ssl_chain: 'ssl/app_1/gd_bundle-g2-g1.crt' # mandatory
           certbot_for_301: True
           certbot_email: 'admin@example.com'
         #ssl: # certbot example

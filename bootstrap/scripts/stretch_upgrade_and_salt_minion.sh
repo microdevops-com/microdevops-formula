@@ -5,8 +5,8 @@ echo "$SALT_MASTER_IP $SALT_MASTER_NAME" >> /etc/hosts
 
 /usr/bin/apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install wget
 /bin/rm -f /etc/apt/sources.list.d/saltstack.list
-echo "deb http://repo.saltstack.com/apt/debian/9/amd64/latest stretch  main">> /etc/apt/sources.list.d/saltstack.list
-/usr/bin/wget -qO - https://repo.saltstack.com/apt/debian/9/amd64/latest/SALTSTACK-GPG-KEY.pub | apt-key add -
+echo "deb http://repo.saltstack.com/apt/debian/9/amd64/2018.3 stretch  main">> /etc/apt/sources.list.d/saltstack.list
+/usr/bin/wget -qO - https://repo.saltstack.com/apt/debian/9/amd64/2018.3/SALTSTACK-GPG-KEY.pub | apt-key add -
 
 /usr/bin/apt-get update
 /usr/bin/apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' upgrade
