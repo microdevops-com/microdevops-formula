@@ -1,8 +1,8 @@
 #!/bin/bash
 
 /usr/bin/apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install wget gnupg
-echo "deb http://repo.saltstack.com/apt/debian/9/amd64/latest stretch main">> /etc/apt/sources.list.d/saltstack.list
-/usr/bin/wget -qO - https://repo.saltstack.com/apt/debian/9/amd64/latest/SALTSTACK-GPG-KEY.pub | apt-key add -
+echo "deb http://repo.saltstack.com/apt/debian/9/amd64/2018.3 stretch main">> /etc/apt/sources.list.d/saltstack.list
+/usr/bin/wget -qO - https://repo.saltstack.com/apt/debian/9/amd64/2018.3/SALTSTACK-GPG-KEY.pub | apt-key add -
 
 [[ -d /home/ubuntu ]] && /usr/sbin/userdel -r "ubuntu"
 
