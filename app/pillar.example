@@ -1,0 +1,101 @@
+# vi: set ft=yaml:
+
+# app: php-fpm, python, static (static pages only, no backend)
+app:
+  php-fpm_apps|python_apps|static_apps: # fix to a type needed
+    app_1:
+      enabled: True
+      user: 'app_1'
+      group: 'app_1'
+      pass: '!'
+      app_root: '/var/www/app_1'
+      app_auth_keys: |
+        ssh-rsa AAAA...== rsa-key-19700101
+      shell: '/bin/bash'
+      nginx:
+        link_sites-enabled: True
+        reload: False # Usually restarting nginx on each app is not recommended, but it is ok for one app server setup flow
+        auth_basic: # optional basic auth
+          user: 'basicuser'
+          pass: 'basicpassword'
+        vhost_config: 'app/files/example_php-fpm_app_1/vhost.conf'
+        root: '/var/www/app_1/src/public'
+        server_name: 'example.com'
+        server_name_301: 'www.example.com www2.example.com'
+        access_log: '/var/log/nginx/app_1.access.log'
+        error_log: '/var/log/nginx/app_1.error.log'
+        log: # optional nginx log extended params, useful with paths other than in /var/log/nginx
+          dir: '/var/www/app_1/log/nginx' # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
+          dir_mode: '755' # default
+          log_mode: '640' # default
+          dir_user: 'root' # default
+          dir_group: 'adm' # default
+          log_user: 'app_1' # -> app:user by default
+          log_group: 'app_1' # -> app:group by default
+          rotate_count: '10' # 31 by default
+          rotate_when: 'weekly' # daily by default
+        ssl: # commercial cert example
+          certs_dir: 'app/files/example_php-fpm_app_1/ssl' # those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
+          ssl_cert: 'ssl/app_1/app_1.crt' # mandatory, in terms of nginx, e.g. as for files abobe, or you can use absolute path
+          ssl_key: 'ssl/app_1/app_1.key' # mandatory
+          ssl_chain: 'ssl/app_1/gd_bundle-g2-g1.crt' # mandatory
+          certbot_for_301: True
+          certbot_email: 'admin@example.com'
+        #ssl: # certbot example
+          #certbot: True
+          #certbot_email: 'admin@example.com'
+        #ssl: # acme.sh example
+          #acme: True
+          #acme_run_ready: True
+      virtualenv:
+        pyenv_version: '3.6.7'
+        target: '/opt/alerta/{{ appname }}/venv'
+      pool: # php-fpm_apps only
+        pool_config: 'app/files/example_php-fpm_app_1/pool.conf'
+        reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
+        log: # optional pool log params
+          dir: '/var/www/app_1/log/php' # by default pool logs are in /var/log/php
+          dir_mode: '775' # default
+          log_mode: '664' # default
+          dir_user: 'root' # default
+          dir_group: 'adm' # default
+          log_user: 'app_1' # -> app:user by default
+          log_group: 'app_1' # -> app:group by default
+          rotate_count: '10' # 31 by default
+          rotate_when: 'weekly' # daily by default
+        php_version: '5.6'
+        pm: |
+          pm = ondemand
+          pm.max_children = 50
+          pm.process_idle_timeout = 10s
+          pm.max_requests = 500
+        php_admin: |
+          php_admin_flag[html_errors] = off
+          php_admin_value[post_max_size] = 25M
+          php_admin_value[upload_max_filesize] = 25M
+      source:
+        enabled: True
+        git: 'ssh://git@bitbucket.org/myorg/app_1'
+        #hg: 'ssh://hg@bitbucket.org/myorg/app_1' # do not use simultaneously git and hg
+        rev: 'master' # Remote repo branch or revision or tag to clone, like origin/{{ rev }}
+        target: '/var/www/app_1/src'
+        branch: 'master' # Local clone branch, HG does not honor 'branch'
+        # use ssh-keygen -t ed25519, if possible since this improves readability
+        repo_key: |
+          -----BEGIN OPENSSH PRIVATE KEY-----
+          xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          ...
+          xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=
+          -----END OPENSSH PRIVATE KEY-----
+        repo_key_pub: |
+          ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        ssh_config: |
+          Host bitbucket.org
+            User git
+            Identityfile /var/www/app_2/.ssh/id_repo
+      files: # you can copy app configs from salt, not to store them in repo
+        src: 'app/files/example_php-fpm_app_1/files'
+        dst: '/var/www/app_1/src/public'
+      setup_script: # e.g. after git pull to change permissions and create missing folders
+        cwd: '/var/www/app_1/src'
+        name: 'bash /var/www/app_1/src/etc/setup.sh'

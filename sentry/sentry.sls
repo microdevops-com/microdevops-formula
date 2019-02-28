@@ -1,8 +1,16 @@
 {% if (pillar['sentry'] is defined) and (pillar['sentry'] is not none) %}
   {%- if (pillar['sentry']['enabled'] is defined) and (pillar['sentry']['enabled'] is not none) and (pillar['sentry']['enabled']) %}
-sentry_deps:
+sentry_packages:
   pkg.installed:
     - pkgs:
+      - python-setuptools
+      - python-memcache
+      - python-psycopg2
+      - python-imaging
+      - python-docutils
+      - python-simplejson
+      - build-essential
+      - gettext
       - libxml2-dev
       - libxslt1-dev
       - libffi-dev
@@ -73,35 +81,6 @@ sentry_www_dir:
     - mode: 755
     - makedirs: True
 
-sentry_virtualenv_python_version:
-  file.managed:
-    - name: '/opt/sentry/env/.python-version'
-    - user: 'sentry'
-    - group: 'sentry'
-    - mode: '0644'
-    - contents:
-      - {{ pillar['sentry']['pyenv_version'] }}
-
-sentry_virtualenv_pip:
-  pip.installed:
-    - name: 'virtualenv'
-    - user: 'root'
-    - cwd: '/tmp'
-    - upgrade: True
-    - bin_env: '/usr/local/pyenv/shims/pip'
-    - env_vars:
-        PYENV_VERSION: {{ pillar['sentry']['pyenv_version'] }}
-
-sentry_virtualenv_bin:
-  file.managed:
-    - name: '/opt/sentry/virtualenv-{{ pillar['sentry']['pyenv_version'] }}'
-    - user: 'sentry'
-    - group: 'sentry'
-    - source: 'salt://sentry/files/virtualenv'
-    - template: jinja
-    - defaults:
-        pyenv_version: {{ pillar['sentry']['pyenv_version'] }}
-    - mode: '0755'
 
 sentry_supervisor_conf:
   file.managed:
@@ -133,7 +112,7 @@ sentry_virtualenv:
     - venv_bin: '/opt/sentry/virtualenv-{{ pillar['sentry']['pyenv_version'] }}'
     - env_vars:
         PYENV_VERSION: {{ pillar['sentry']['pyenv_version'] }}
-    - requirements: '/opt/sentry/requirements.txt'
+    - requirements: salt://sentry/files/requirements.txt
     - pip_upgrade: True
 
 sentry_init:
@@ -151,15 +130,6 @@ sentry_config_1:
     - mode: '0644'
     - source: 'salt://sentry/files/config.yml'
     - template: jinja
-    - defaults:
-        secret: {{ pillar['sentry']['secret'] }}
-        admin_email: {{ pillar['sentry']['admin_email'] }}
-        url: {{ pillar['sentry']['url'] }}
-        email_user: {{ pillar['sentry']['email']['user'] }}
-        email_host: {{ pillar['sentry']['email']['host'] }}
-        email_port: {{ pillar['sentry']['email']['port'] }}
-        email_pass: {{ pillar['sentry']['email']['pass'] }}
-        email_tls: {{ pillar['sentry']['email']['tls'] }}
 
 {# sentry.conf.py best doc is here: https://github.com/getsentry/sentry/blob/master/src/sentry/conf/server.py #}
 sentry_config_2:
@@ -170,13 +140,6 @@ sentry_config_2:
     - mode: '0644'
     - source: 'salt://sentry/files/sentry.conf.py'
     - template: jinja
-    - defaults:
-        workers: {{ pillar['sentry']['workers'] }}
-        pg_db: {{ pillar['sentry']['db']['db_name'] }}
-        pg_user: {{ pillar['sentry']['db']['user'] }}
-        pg_pass: {{ pillar['sentry']['db']['password'] }}
-        pg_host: {{ pillar['sentry']['db']['host'] }}
-        pg_port: {{ pillar['sentry']['db']['port'] }}
 
 sentry_install_plugin:
   pip.installed:
@@ -190,6 +153,7 @@ sentry_install_plugin:
 
     {%- if (pillar['sentry']['plugins'] is defined) and (pillar['sentry']['plugins'] is not none) %}
       {%- for plugin in pillar['sentry']['plugins']|sort %}
+
 sentry_install_plugin_{{ loop.index }}:
   pip.installed:
     - name: '{{ plugin }}'
@@ -199,7 +163,6 @@ sentry_install_plugin_{{ loop.index }}:
     - bin_env: '/opt/sentry/env/bin/pip'
     - env_vars:
         PYENV_VERSION: {{ pillar['sentry']['pyenv_version'] }}
-
       {%- endfor %}
     {%- endif %}
 
@@ -218,95 +181,6 @@ sentry_supervisor_start:
   cmd.run:
     - runas: 'root'
     - name: 'supervisorctl start all'
-
-sentry_nginx_vhost_config_snake:
-  file.managed:
-    - name: '/etc/nginx/sites-available/sentry.conf'
-    - user: root
-    - group: root
-    - source: 'salt://sentry/files/vhost.conf'
-    - template: jinja
-    - defaults:
-        server_name: '{{ pillar['sentry']['nginx']['server_name'] }}'
-        server_name_301: '{{ pillar['sentry']['nginx']['server_name_301'] }}'
-        access_log: '{{ pillar['sentry']['nginx']['access_log'] }}'
-        error_log: '{{ pillar['sentry']['nginx']['error_log'] }}'
-        url: '{{ pillar['sentry']['url'] }}'
-        ssl_cert: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
-        ssl_key: '/etc/ssl/private/ssl-cert-snakeoil.key'
-    {%- if (pillar['sentry']['nginx']['allow_hosts'] is defined) and (pillar['sentry']['nginx']['allow_hosts'] is not none) %}
-        allow_hosts_block: >-2
-      {%- for host_line in pillar['sentry']['nginx']['allow_hosts'] %}
-              allow {{ host_line }};
-
-      {%- endfor %}
-              deny all;
-    {%- else %}
-        allow_hosts_block: ''
-    {%- endif %}
-
-sentry_nginx_vhost_symlink:
-  file.symlink:
-    - name: '/etc/nginx/sites-enabled/sentry.conf'
-    - target: '/etc/nginx/sites-available/sentry.conf'
-
-sentry_nginx_reload:
-  cmd.run:
-    - runas: 'root'
-    - name: 'service nginx configtest && service nginx restart'
-
-sentry_certbot_dir:
-  file.directory:
-    - name: '/opt/sentry/www/certbot/.well-known'
-    - user: 'sentry'
-    - group: 'sentry'
-    - makedirs: True
-
-    {%- set cert_dom = pillar['sentry']['nginx']['server_name'] ~ ' ' ~ pillar['sentry']['nginx']['server_name_301'] %}
-sentry_certbot_run:
-  cmd.run:
-    - runas: 'root'
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot --reinstall --allow-subset-of-names --agree-tos --cert-name sentry --email {{ pillar['sentry']['nginx']['certbot_email'] }} -w /opt/sentry/www/certbot -d "{{ cert_dom|replace(" ", ",") }}"'
-
-sentry_nginx_vhost_config:
-  file.managed:
-    - name: '/etc/nginx/sites-available/sentry.conf'
-    - user: root
-    - group: root
-    - source: 'salt://sentry/files/vhost.conf'
-    - template: jinja
-    - defaults:
-        server_name: '{{ pillar['sentry']['nginx']['server_name'] }}'
-        server_name_301: '{{ pillar['sentry']['nginx']['server_name_301'] }}'
-        access_log: '{{ pillar['sentry']['nginx']['access_log'] }}'
-        error_log: '{{ pillar['sentry']['nginx']['error_log'] }}'
-        url: '{{ pillar['sentry']['url'] }}'
-        ssl_cert: '/etc/letsencrypt/live/sentry/fullchain.pem'
-        ssl_key: '/etc/letsencrypt/live/sentry/privkey.pem'
-    {%- if (pillar['sentry']['nginx']['allow_hosts'] is defined) and (pillar['sentry']['nginx']['allow_hosts'] is not none) %}
-        allow_hosts_block: >-2
-      {%- for host_line in pillar['sentry']['nginx']['allow_hosts'] %}
-              allow {{ host_line }};
-
-      {%- endfor %}
-              deny all;
-    {%- else %}
-        allow_hosts_block: ''
-    {%- endif %}
-
-sentry_nginx_reload_2:
-  cmd.run:
-    - runas: 'root'
-    - name: 'service nginx configtest && service nginx restart'
-
-sentry_certbot_cron:
-  cron.present:
-    - name: '/opt/certbot/certbot-auto renew --renew-hook "service nginx configtest && service nginx restart"'
-    - identifier: 'certbot_cron'
-    - user: root
-    - minute: 10
-    - hour: 2
-    - dayweek: 1
 
 sentry_cleanup_cron:
   cron.present:

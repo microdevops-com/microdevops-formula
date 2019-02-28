@@ -1,0 +1,11 @@
+{% from 'ip/dc.jinja' import srv1_br0 with context %}
+{% from 'ip/dc.jinja' import srv2_br0 with context %}
+
+ufw_simple:
+  allow:
+    k8s-node:
+      proto: 'tcp'
+      from:
+        'srv1.domain.com': {{ srv1_br0['srv1.domain.com'] }}
+        'srv2.domain.com': {{ srv2_br0['srv2.domain.com'] }}
+      to_port: '10250,10255,30000:32767'

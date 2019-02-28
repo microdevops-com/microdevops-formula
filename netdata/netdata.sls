@@ -1,5 +1,4 @@
-{% if (pillar['netdata'] is defined) and (pillar['netdata'] is not none) %}
-  {%- if (pillar['netdata']['enabled'] is defined) and (pillar['netdata']['enabled'] is not none) and (pillar['netdata']['enabled']) %}
+{% if pillar['netdata'] is defined and pillar['netdata'] is not none and pillar['netdata']['enabled'] is defined and pillar['netdata']['enabled'] is not none and pillar['netdata']['enabled'] %}
     # Set some vars
     {%- set netdata_seconds = pillar['netdata']['seconds'] %}
     {%- set netdata_version = pillar['netdata']['version'] %}
@@ -15,51 +14,72 @@
     {%- set gateway = salt['cmd.shell']("/sbin/ip route | awk '/default/ { print $3 }'") %}
     {%- set netdata_fpinger_hosts = netdata_fpinger_hosts + " " + gateway %}
 
+    {%- if grains['os'] in ['CentOS', 'RedHat'] and grains['osmajorrelease']|int == 6 %}
+netdata_newer_git_repo:
+  pkg.installed:
+    - sources:
+      - wandisco-git-release: http://opensource.wandisco.com/centos/6/git/x86_64/wandisco-git-release-6-1.noarch.rpm
+
+netdata_newer_git:
+  pkg.latest:
+    - refresh: True
+    - pkgs:
+      - git
+      - nss
+      - curl
+    {%- endif %}
+    {% if pillar['netdata']['alt_install'] is defined and pillar['netdata']['alt_install'] is not none and pillar['netdata']['alt_install'] %}
+netdata_depencies_installed:
+  cmd.script:
+    - name: install-required-packages.sh --dont-wait --non-interactive netdata-all
+    - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
+    {%- else %}
 netdata_depencies_installed:
   pkg.installed:
     - pkgs:
-    {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
+      {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
       - zlib1g-dev
       - uuid-dev
-      - netcat
+      - netcat-openbsd
       - pkg-config
       - libuuid1
       - zlib1g
-      {%- if not netdata_container %}
+      - autoconf-archive
+      - autogen
+        {%- if not netdata_container %}
       - lm-sensors
       - libipmimonitoring-dev
       - freeipmi-tools
-      {%- endif %}
-    {%- elif grains['os'] in ['CentOS', 'RedHat'] %}
+        {%- endif %}
+      {%- elif grains['os'] in ['CentOS', 'RedHat'] %}
       - zlib-devel
       - libuuid-devel
       - libmnl-devel
-      - nmap-ncat
+      - nmap
       - pkgconfig
       - libuuid
       - zlib
-      {%- if not netdata_container %}
+        {%- if not netdata_container %}
       - lm_sensors
       - freeipmi-devel
       - freeipmi
+        {%- endif %}
       {%- endif %}
-    {%- endif %}
       - gcc
       - make
       - autoconf
-      - autoconf-archive
-      - autogen
       - automake
       - curl
-    {%- if grains['osmajorrelease']|int >= 12 and grains['os'] == 'Ubuntu' %}
+      {%- if grains['osmajorrelease']|int >= 12 and grains['os'] == 'Ubuntu' %}
       - libmnl-dev
-    {%- elif grains['os'] == 'Debian' %}
+      {%- elif grains['os'] == 'Debian' %}
       - libmnl-dev
-    {%- endif %}
-    {%- if grains['osmajorrelease']|int <= 10 and grains['os'] == 'Ubuntu' %}
+      {%- endif %}
+      {%- if grains['osmajorrelease']|int <= 10 and grains['os'] == 'Ubuntu' %}
       - git-core
-    {%- else %}
+      {%- else %}
       - git
+      {%- endif %}
     {%- endif %}
 
     {%- if grains['os'] in ['Ubuntu', 'Debian'] and not netdata_container and grains['virtual'] != "kvm" %}
@@ -300,6 +320,10 @@ netdata_start_script_file:
     - name: '/etc/systemd/system/netdata.service'
     - source: '/opt/netdata/git/system/netdata.service'
     - mode: 0644
+    {%- elif grains['os'] in ['CentOS', 'RedHat'] and grains['osmajorrelease']|int == 6 %}
+    - name: '/etc/init.d/netdata'
+    - source: '/opt/netdata/git/system/netdata-init-d'
+    - mode: 0755
     {%- elif grains['init'] in ['upstart','sysvinit'] %}
     - name: '/etc/init.d/netdata'
     - source: '/opt/netdata/git/system/netdata-lsb'
@@ -329,5 +353,12 @@ netdata_service_running:
     - name: netdata
     - enable: True
 
-  {%- endif %}
+{% else %}
+mysql_replica_checker_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured by pillar, so nothing has been done. But it is OK.
 {% endif %}

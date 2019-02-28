@@ -15,3 +15,8 @@ vim_custom_syntax_files:
     - group: 'root'
     - dir_mode: 755
     - file_mode: 644
+
+vim_rewrite_default_editor:
+  cmd.run:
+    - name: 'update-alternatives --set editor /usr/bin/vim.basic'
+    - runas: 'root'

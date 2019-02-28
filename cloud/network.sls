@@ -62,20 +62,28 @@ hosts_salt_{{ loop.index }}:
   {%- endfor %}
 {% endif %}
 
-{% if (grains['virtual'] == "LXC") %}
-  {%- if (grains['oscodename'] == 'jessie') %}
+{% if not ((pillar['network_bootstrapped'] is defined) and (pillar['network_bootstrapped'] is not none) and (pillar['network_bootstrapped'])) %}
+  {%- if (grains['virtual'] == "LXC") %}
+    {%- if (grains['oscodename'] == 'jessie') %}
 eth0:
   network.managed:
     - enabled: True
     - type: eth
     - proto: manual
-  {%- elif grains['oscodename'] == 'xenial' %}
+    {%- elif (grains['oscodename'] == 'stretch') %}
+eth0:
+  network.managed:
+    - enabled: True
+    - type: eth
+    - proto: manual
+    {%- elif grains['oscodename'] == 'xenial' %}
 # state above for some reason doesn't work for xenial, ugly hack below
 xenial_network_interfaces:
   file.managed:
     - name: '/etc/network/interfaces'
     - source: salt://cloud/files/xenial_network_interfaces
     - mode: 0644
+    {%- endif %}
   {%- endif %}
 {% endif %}
 

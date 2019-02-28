@@ -1,0 +1,23 @@
+# vi: set ft=yaml:
+
+# users/windows
+windows_unrestricted: True # leave the powershell in the unrestricted mode
+windows_users:
+  john:
+    fullname: John Doe
+    description: My Org
+    remove_groups: False
+    password: coolpassword
+    admin: True # add user to Administrators (local or domain)
+    groups: # optional group list to add user to
+      - RDP
+    password_never_expires: True
+    account_disabled: False
+    starting_program: '\"C:\Program Files\My Cool Program\My Cool Program.exe\" myparameter /H\"localhost\"' # double quotes should be backslashed, don't use \" after \ - it wil be a backslashed backslash
+    start_in: 'C:\Program Files\My Cool Program\' # optional for starting_program, usually you dont need double quotes here
+    session_params:
+      MaxConnectionTime: "120"
+      MaxDisconnectionTime: "1"
+      MaxIdleTime: "30"
+      BrokenConnectionAction: "1"
+      ReconnectionAction: "1"

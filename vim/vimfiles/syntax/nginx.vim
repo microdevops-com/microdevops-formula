@@ -1,40 +1,63 @@
 " Vim syntax file
 " Language: nginx.conf
+" Maintainer: Chris Aumann <me@chr4.org>
+" Last Change: Apr 15, 2017
 
 if exists("b:current_syntax")
   finish
 end
 
+let b:current_syntax = "nginx"
+
 syn match ngxVariable '\$\(\w\+\|{\w\+}\)'
 syn match ngxVariableBlock '\$\(\w\+\|{\w\+}\)' contained
 syn match ngxVariableString '\$\(\w\+\|{\w\+}\)' contained
-syn region ngxBlock start=+^+ end=+{+ skip=+\${+ contains=ngxComment,ngxDirectiveBlock,ngxVariableBlock,ngxString oneline
-syn region ngxString start=+[^:a-zA-Z>!\\@]\z(["']\)+lc=1 end=+\z1+ skip=+\\\\\|\\\z1+ contains=ngxVariableString
+syn region ngxBlock start=+^+ end=+{+ skip=+\${\|{{\|{%+ contains=ngxComment,ngxInteger,ngxIPaddr,ngxDirectiveBlock,ngxVariableBlock,ngxString,ngxThirdPartyLuaBlock oneline
+syn region ngxString start=+[^:a-zA-Z>!\\@]\z(["']\)+lc=1 end=+\z1+ skip=+\\\\\|\\\z1+ contains=ngxVariableString,ngxSSLCipherInsecure
 syn match ngxComment ' *#.*$'
+
+" These regular expressions where taken (and adapted) from
+" http://vim.1045645.n5.nabble.com/IPv6-support-for-quot-dns-quot-zonefile-syntax-highlighting-td1197292.html
+syn match ngxInteger '\W\zs\(\d[0-9.]*\|[0-9.]*\d\)\w\?\ze\W'
+syn match ngxIPaddr '\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}'
+syn match ngxIPaddr '\[\(\x\{1,4}:\)\{6}\(\x\{1,4}:\x\{1,4}\|\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}\)\]'
+syn match ngxIPaddr '\[::\(\(\x\{1,4}:\)\{,6}\x\{1,4}\|\(\x\{1,4}:\)\{,5}\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}\)\]'
+syn match ngxIPaddr '\[\(\x\{1,4}:\)\{1}:\(\(\x\{1,4}:\)\{,5}\x\{1,4}\|\(\x\{1,4}:\)\{,4}\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}\)\]'
+syn match ngxIPaddr '\[\(\x\{1,4}:\)\{2}:\(\(\x\{1,4}:\)\{,4}\x\{1,4}\|\(\x\{1,4}:\)\{,3}\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}\)\]'
+syn match ngxIPaddr '\[\(\x\{1,4}:\)\{3}:\(\(\x\{1,4}:\)\{,3}\x\{1,4}\|\(\x\{1,4}:\)\{,2}\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}\)\]'
+syn match ngxIPaddr '\[\(\x\{1,4}:\)\{4}:\(\(\x\{1,4}:\)\{,2}\x\{1,4}\|\(\x\{1,4}:\)\{,1}\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}\)\]'
+syn match ngxIPaddr '\[\(\x\{1,4}:\)\{5}:\(\(\x\{1,4}:\)\{,1}\x\{1,4}\|\([0-2]\?\d\{1,2}\.\)\{3}[0-2]\?\d\{1,2}\)\]'
+syn match ngxIPaddr '\[\(\x\{1,4}:\)\{6}:\x\{1,4}\]'
+
+" Highlight wildcard listening signs also as IPaddr
+syn match ngxIPaddr '\s\zs\[::]'
+syn match ngxIPaddr '\s\zs\*'
 
 syn keyword ngxBoolean on
 syn keyword ngxBoolean off
 
-syn keyword ngxDirectiveBlock http         contained
-syn keyword ngxDirectiveBlock mail         contained
-syn keyword ngxDirectiveBlock events       contained
-syn keyword ngxDirectiveBlock server       contained
-syn keyword ngxDirectiveBlock types        contained
-syn keyword ngxDirectiveBlock location     contained
-syn keyword ngxDirectiveBlock upstream     contained
-syn keyword ngxDirectiveBlock charset_map  contained
-syn keyword ngxDirectiveBlock limit_except contained
-syn keyword ngxDirectiveBlock if           contained
-syn keyword ngxDirectiveBlock geo          contained
-syn keyword ngxDirectiveBlock map          contained
+syn keyword ngxDirectiveBlock http          contained
+syn keyword ngxDirectiveBlock mail          contained
+syn keyword ngxDirectiveBlock events        contained
+syn keyword ngxDirectiveBlock server        contained
+syn keyword ngxDirectiveBlock match         contained
+syn keyword ngxDirectiveBlock types         contained
+syn keyword ngxDirectiveBlock location      contained
+syn keyword ngxDirectiveBlock upstream      contained
+syn keyword ngxDirectiveBlock charset_map   contained
+syn keyword ngxDirectiveBlock limit_except  contained
+syn keyword ngxDirectiveBlock if            contained
+syn keyword ngxDirectiveBlock geo           contained
+syn keyword ngxDirectiveBlock map           contained
 syn keyword ngxDirectiveBlock split_clients contained
 
 syn keyword ngxDirectiveImportant include
 syn keyword ngxDirectiveImportant root
-syn keyword ngxDirectiveImportant server
+syn keyword ngxDirectiveImportant server contained
+syn region  ngxDirectiveImportantServer matchgroup=ngxDirectiveImportant start=+^\s*\zsserver\ze\s.*;+ skip=+\\\\\|\\\;+ end=+;+he=e-1 contains=ngxUpstreamServerOptions,ngxString,ngxIPaddr,ngxBoolean,ngxInteger,ngxTemplateVar
 syn keyword ngxDirectiveImportant server_name
 syn keyword ngxDirectiveImportant listen contained
-syn region  ngxDirectiveImportantListen matchgroup=ngxDirectiveImportant start=+listen+ skip=+\\\\\|\\\;+ end=+;+he=e-1 contains=ngxListenOptions,ngxString
+syn region  ngxDirectiveImportantListen matchgroup=ngxDirectiveImportant start=+listen+ skip=+\\\\\|\\\;+ end=+;+he=e-1 contains=ngxListenOptions,ngxString,ngxIPaddr,ngxBoolean,ngxInteger,ngxTemplateVar
 syn keyword ngxDirectiveImportant internal
 syn keyword ngxDirectiveImportant proxy_pass
 syn keyword ngxDirectiveImportant memcached_pass
@@ -42,6 +65,20 @@ syn keyword ngxDirectiveImportant fastcgi_pass
 syn keyword ngxDirectiveImportant scgi_pass
 syn keyword ngxDirectiveImportant uwsgi_pass
 syn keyword ngxDirectiveImportant try_files
+syn keyword ngxDirectiveImportant error_page
+syn keyword ngxDirectiveImportant post_action
+
+syn keyword ngxUpstreamServerOptions weight         contained
+syn keyword ngxUpstreamServerOptions max_conns      contained
+syn keyword ngxUpstreamServerOptions max_fails      contained
+syn keyword ngxUpstreamServerOptions fail_timeout   contained
+syn keyword ngxUpstreamServerOptions backup         contained
+syn keyword ngxUpstreamServerOptions down           contained
+syn keyword ngxUpstreamServerOptions resolve        contained
+syn keyword ngxUpstreamServerOptions route          contained
+syn keyword ngxUpstreamServerOptions service        contained
+syn keyword ngxUpstreamServerOptions default_server contained
+syn keyword ngxUpstreamServerOptions slow_start     contained
 
 syn keyword ngxListenOptions default_server contained
 syn keyword ngxListenOptions ssl            contained
@@ -65,9 +102,6 @@ syn keyword ngxDirectiveControl break
 syn keyword ngxDirectiveControl return
 syn keyword ngxDirectiveControl rewrite
 syn keyword ngxDirectiveControl set
-
-syn keyword ngxDirectiveError error_page
-syn keyword ngxDirectiveError post_action
 
 syn keyword ngxDirectiveDeprecated connections
 syn keyword ngxDirectiveDeprecated imap
@@ -200,7 +234,9 @@ syn keyword ngxDirective geoip_proxy_recursive
 syn keyword ngxDirective google_perftools_profiles
 syn keyword ngxDirective gunzip
 syn keyword ngxDirective gunzip_buffers
-syn keyword ngxDirective gzip
+syn keyword ngxDirective gzip nextgroup=ngxGzipOn,ngxGzipOff skipwhite
+syn keyword ngxGzipOn on contained
+syn keyword ngxGzipOff off contained
 syn keyword ngxDirective gzip_buffers
 syn keyword ngxDirective gzip_comp_level
 syn keyword ngxDirective gzip_disable
@@ -281,7 +317,6 @@ syn keyword ngxDirective log_not_found
 syn keyword ngxDirective log_subrequest
 syn keyword ngxDirective map_hash_bucket_size
 syn keyword ngxDirective map_hash_max_size
-syn keyword ngxDirective match
 syn keyword ngxDirective master_process
 syn keyword ngxDirective max_ranges
 syn keyword ngxDirective memcached_bind
@@ -368,7 +403,8 @@ syn keyword ngxDirective proxy_intercept_errors
 syn keyword ngxDirective proxy_limit_rate
 syn keyword ngxDirective proxy_max_temp_file_size
 syn keyword ngxDirective proxy_method
-syn keyword ngxDirective proxy_next_upstream
+syn keyword ngxDirective proxy_next_upstream contained
+syn region  ngxDirectiveProxyNextUpstream matchgroup=ngxDirective start=+^\s*\zsproxy_next_upstream\ze\s.*;+ skip=+\\\\\|\\\;+ end=+;+he=e-1 contains=ngxProxyNextUpstreamOptions,ngxString,ngxTemplateVar
 syn keyword ngxDirective proxy_next_upstream_timeout
 syn keyword ngxDirective proxy_next_upstream_tries
 syn keyword ngxDirective proxy_no_cache
@@ -512,13 +548,29 @@ syn keyword ngxDirective ssl_ecdh_curve
 syn keyword ngxDirective ssl_engine
 syn keyword ngxDirective ssl_handshake_timeout
 syn keyword ngxDirective ssl_password_file
-syn keyword ngxDirective ssl_prefer_server_ciphers
+syn keyword ngxDirective ssl_prefer_server_ciphers nextgroup=ngxSSLPreferServerCiphersOff,ngxSSLPreferServerCiphersOn skipwhite
+syn keyword ngxSSLPreferServerCiphersOn on contained
+syn keyword ngxSSLPreferServerCiphersOff off contained
 syn keyword ngxDirective ssl_preread
-syn keyword ngxDirective ssl_protocols nextgroup=ngxSSLProtocol skipwhite
-syn keyword ngxSSLProtocol SSLv2 SSLv3 TLSv1 TLSv1.1 TLSv1.2 contained nextgroup=ngxSSLProtocol skipwhite
+syn keyword ngxDirective ssl_protocols nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+syn match ngxSSLProtocol 'TLSv1' contained nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+syn match ngxSSLProtocol 'TLSv1\.1' contained nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+syn match ngxSSLProtocol 'TLSv1\.2' contained nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+syn match ngxSSLProtocol 'TLSv1\.3' contained nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+
+" Do not enable highlighting of insecure protocols if sslecure is loaded
+if !exists('g:loaded_sslsecure')
+  syn keyword ngxSSLProtocolDeprecated SSLv2 SSLv3 contained nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+else
+  syn match ngxSSLProtocol 'SSLv2' contained nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+  syn match ngxSSLProtocol 'SSLv3' contained nextgroup=ngxSSLProtocol,ngxSSLProtocolDeprecated skipwhite
+endif
+
 syn keyword ngxDirective ssl_session_cache
 syn keyword ngxDirective ssl_session_ticket_key
-syn keyword ngxDirective ssl_session_tickets
+syn keyword ngxDirective ssl_session_tickets nextgroup=ngxSSLSessionTicketsOn,ngxSSLSessionTicketsOff skipwhite
+syn keyword ngxSSLSessionTicketsOn on contained
+syn keyword ngxSSLSessionTicketsOff off contained
 syn keyword ngxDirective ssl_session_timeout
 syn keyword ngxDirective ssl_stapling
 syn keyword ngxDirective ssl_stapling_file
@@ -532,8 +584,9 @@ syn keyword ngxDirective state
 syn keyword ngxDirective status
 syn keyword ngxDirective status_format
 syn keyword ngxDirective status_zone
-syn keyword ngxDirective sticky
-syn keyword ngxDirective sticky_cookie_insert
+syn keyword ngxDirective sticky contained
+syn keyword ngxDirective sticky_cookie_insert contained
+syn region  ngxDirectiveSticky matchgroup=ngxDirective start=+^\s*\zssticky\ze\s.*;+ skip=+\\\\\|\\\;+ end=+;+he=e-1 contains=ngxCookieOptions,ngxString,ngxBoolean,ngxInteger,ngxTemplateVar
 syn keyword ngxDirective stub_status
 syn keyword ngxDirective sub_filter
 syn keyword ngxDirective sub_filter_last_modified
@@ -638,6 +691,77 @@ syn keyword ngxDirective xslt_string_param
 syn keyword ngxDirective xslt_stylesheet
 syn keyword ngxDirective xslt_types
 syn keyword ngxDirective zone
+
+" Do not enable highlighting of insecure ciphers if sslecure is loaded
+if !exists('g:loaded_sslsecure')
+  " Mark insecure SSL Ciphers (Note: List might not not complete)
+  " Reference: https://www.openssl.org/docs/man1.0.2/apps/ciphers.html
+  syn match ngxSSLCipherInsecure '[^!]\zsSSLv3'
+  syn match ngxSSLCipherInsecure '[^!]\zsSSLv2'
+  syn match ngxSSLCipherInsecure '[^!]\zsHIGH'
+  syn match ngxSSLCipherInsecure '[^!]\zsMEDIUM'
+  syn match ngxSSLCipherInsecure '[^!]\zsLOW'
+  syn match ngxSSLCipherInsecure '[^!]\zsDEFAULT'
+  syn match ngxSSLCipherInsecure '[^!]\zsCOMPLEMENTOFDEFAULT'
+  syn match ngxSSLCipherInsecure '[^!]\zsALL'
+  syn match ngxSSLCipherInsecure '[^!]\zsCOMPLEMENTOFALL'
+
+  " SHA ciphers are only used in HMAC with all known OpenSSL/ LibreSSL cipher suites and MAC
+  " usage is still considered safe
+  " syn match ngxSSLCipherInsecure '[^!]\zsSHA\ze\D'      " Match SHA1 without matching SHA256+
+  " syn match ngxSSLCipherInsecure '[^!]\zsSHA1'
+  syn match ngxSSLCipherInsecure '[^!]\zsMD5'
+  syn match ngxSSLCipherInsecure '[^!]\zsRC2'
+  syn match ngxSSLCipherInsecure '[^!]\zsRC4'
+  syn match ngxSSLCipherInsecure '[^!]\zs3DES'
+  syn match ngxSSLCipherInsecure '[^!3]\zsDES'
+  syn match ngxSSLCipherInsecure '[^!]\zsaDSS'
+  syn match ngxSSLCipherInsecure '[^!a]\zsDSS'
+  syn match ngxSSLCipherInsecure '[^!]\zsPSK'
+  syn match ngxSSLCipherInsecure '[^!]\zsIDEA'
+  syn match ngxSSLCipherInsecure '[^!]\zsSEED'
+  syn match ngxSSLCipherInsecure '[^!]\zsEXP\w*'        " Match all EXPORT ciphers
+  syn match ngxSSLCipherInsecure '[^!]\zsaGOST\w*'      " Match all GOST ciphers
+  syn match ngxSSLCipherInsecure '[^!]\zskGOST\w*'
+  syn match ngxSSLCipherInsecure '[^!ak]\zsGOST\w*'
+  syn match ngxSSLCipherInsecure '[^!]\zs[kae]\?FZA'    " Not implemented
+  syn match ngxSSLCipherInsecure '[^!]\zsECB'
+  syn match ngxSSLCipherInsecure '[^!]\zs[aes]NULL'
+
+  " Anonymous cipher suites should never be used
+  syn match ngxSSLCipherInsecure '[^!ECa]\zsDH\ze[^E]'  " Try to match DH without DHE, EDH, EECDH, etc.
+  syn match ngxSSLCipherInsecure '[^!EA]\zsECDH\ze[^E]' " Do not match EECDH, ECDHE
+  syn match ngxSSLCipherInsecure '[^!]\zsADH'
+  syn match ngxSSLCipherInsecure '[^!]\zskDHE'
+  syn match ngxSSLCipherInsecure '[^!]\zskEDH'
+  syn match ngxSSLCipherInsecure '[^!]\zskECDHE'
+  syn match ngxSSLCipherInsecure '[^!]\zskEECDH'
+  syn match ngxSSLCipherInsecure '[^!E]\zsAECDH'
+endif
+
+syn keyword ngxProxyNextUpstreamOptions error          contained
+syn keyword ngxProxyNextUpstreamOptions timeout        contained
+syn keyword ngxProxyNextUpstreamOptions invalid_header contained
+syn keyword ngxProxyNextUpstreamOptions http_500       contained
+syn keyword ngxProxyNextUpstreamOptions http_502       contained
+syn keyword ngxProxyNextUpstreamOptions http_503       contained
+syn keyword ngxProxyNextUpstreamOptions http_504       contained
+syn keyword ngxProxyNextUpstreamOptions http_403       contained
+syn keyword ngxProxyNextUpstreamOptions http_404       contained
+syn keyword ngxProxyNextUpstreamOptions http_429       contained
+syn keyword ngxProxyNextUpstreamOptions non_idempotent contained
+syn keyword ngxProxyNextUpstreamOptions off            contained
+
+syn keyword ngxStickyOptions cookie contained
+syn region  ngxStickyOptionsCookie matchgroup=ngxStickyOptions start=+^\s*\zssticky\s\s*cookie\ze\s.*;+ skip=+\\\\\|\\\;+ end=+;+he=e-1 contains=ngxCookieOptions,ngxString,ngxBoolean,ngxInteger,ngxTemplateVar
+syn keyword ngxStickyOptions route  contained
+syn keyword ngxStickyOptions learn  contained
+
+syn keyword ngxCookieOptions expires  contained
+syn keyword ngxCookieOptions domain   contained
+syn keyword ngxCookieOptions httponly contained
+syn keyword ngxCookieOptions secure   contained
+syn keyword ngxCookieOptions path     contained
 
 " 3rd party module list:
 " https://www.nginx.com/resources/wiki/modules/
@@ -1095,40 +1219,27 @@ syn keyword ngxDirectiveThirdParty lua_regex_match_limit
 syn keyword ngxDirectiveThirdParty lua_package_path
 syn keyword ngxDirectiveThirdParty lua_package_cpath
 syn keyword ngxDirectiveThirdParty init_by_lua
-syn keyword ngxDirectiveThirdParty init_by_lua_block
 syn keyword ngxDirectiveThirdParty init_by_lua_file
 syn keyword ngxDirectiveThirdParty init_worker_by_lua
-syn keyword ngxDirectiveThirdParty init_worker_by_lua_block
 syn keyword ngxDirectiveThirdParty init_worker_by_lua_file
 syn keyword ngxDirectiveThirdParty set_by_lua
-syn keyword ngxDirectiveThirdParty set_by_lua_block
 syn keyword ngxDirectiveThirdParty set_by_lua_file
 syn keyword ngxDirectiveThirdParty content_by_lua
-syn keyword ngxDirectiveThirdParty content_by_lua_block
 syn keyword ngxDirectiveThirdParty content_by_lua_file
 syn keyword ngxDirectiveThirdParty rewrite_by_lua
-syn keyword ngxDirectiveThirdParty rewrite_by_lua_block
 syn keyword ngxDirectiveThirdParty rewrite_by_lua_file
 syn keyword ngxDirectiveThirdParty access_by_lua
-syn keyword ngxDirectiveThirdParty access_by_lua_block
 syn keyword ngxDirectiveThirdParty access_by_lua_file
 syn keyword ngxDirectiveThirdParty header_filter_by_lua
-syn keyword ngxDirectiveThirdParty header_filter_by_lua_block
 syn keyword ngxDirectiveThirdParty header_filter_by_lua_file
 syn keyword ngxDirectiveThirdParty body_filter_by_lua
-syn keyword ngxDirectiveThirdParty body_filter_by_lua_block
 syn keyword ngxDirectiveThirdParty body_filter_by_lua_file
 syn keyword ngxDirectiveThirdParty log_by_lua
-syn keyword ngxDirectiveThirdParty log_by_lua_block
 syn keyword ngxDirectiveThirdParty log_by_lua_file
-syn keyword ngxDirectiveThirdParty balancer_by_lua_block
 syn keyword ngxDirectiveThirdParty balancer_by_lua_file
 syn keyword ngxDirectiveThirdParty lua_need_request_body
-syn keyword ngxDirectiveThirdParty ssl_certificate_by_lua_block
 syn keyword ngxDirectiveThirdParty ssl_certificate_by_lua_file
-syn keyword ngxDirectiveThirdParty ssl_session_fetch_by_lua_block
 syn keyword ngxDirectiveThirdParty ssl_session_fetch_by_lua_file
-syn keyword ngxDirectiveThirdParty ssl_session_store_by_lua_block
 syn keyword ngxDirectiveThirdParty ssl_session_store_by_lua_file
 syn keyword ngxDirectiveThirdParty lua_shared_dict
 syn keyword ngxDirectiveThirdParty lua_socket_connect_timeout
@@ -2114,27 +2225,81 @@ syn keyword ngxDirectiveThirdParty xss_input_types
 " ZIP Module <https://www.nginx.com/resources/wiki/modules/zip/>
 " ZIP archiver for nginx
 
+" Contained LUA blocks for embedded syntax highlighting
+syn keyword ngxThirdPartyLuaBlock balancer_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock init_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock init_worker_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock set_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock content_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock rewrite_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock access_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock header_filter_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock body_filter_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock log_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock ssl_certificate_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock ssl_session_fetch_by_lua_block contained
+syn keyword ngxThirdPartyLuaBlock ssl_session_store_by_lua_block contained
 
-" highlight
 
+" Nested syntax in ERB templating statements
+" Subtype needs to be set to '', otherwise recursive errors occur when opening *.nginx files
+let b:eruby_subtype = ''
+unlet b:current_syntax
+syn include @ERB syntax/eruby.vim
+syn region ngxTemplate start=+<%[^\=]+ end=+%>+ oneline contains=@ERB
+syn region ngxTemplateVar start=+<%=+ end=+%>+ oneline
+let b:current_syntax = "nginx"
+
+" Nested syntax in Jinja templating statements
+" This dependend on https://github.com/lepture/vim-jinja
+unlet b:current_syntax
+try
+  syn include @JINJA syntax/jinja.vim
+  syn region ngxTemplate start=+{%+ end=+%}+ oneline contains=@JINJA
+  syn region ngxTemplateVar start=+{{+ end=+}}+ oneline
+catch
+endtry
+let b:current_syntax = "nginx"
+
+" Enable nested LUA syntax highlighting
+unlet b:current_syntax
+syn include @LUA syntax/lua.vim
+syn region ngxLua start=+^\s*\w\+_by_lua_block\s*{+ end=+}+me=s-1 contains=ngxBlock,@LUA
+let b:current_syntax = "nginx"
+
+
+" Highlight
 hi link ngxComment Comment
 hi link ngxVariable Identifier
 hi link ngxVariableBlock Identifier
 hi link ngxVariableString PreProc
 hi link ngxBlock Normal
 hi link ngxString String
-
+hi link ngxIPaddr Delimiter
 hi link ngxBoolean Boolean
+hi link ngxInteger Number
 hi link ngxDirectiveBlock Statement
 hi link ngxDirectiveImportant Type
 hi link ngxDirectiveControl Keyword
-hi link ngxDirectiveError Constant
 hi link ngxDirectiveDeprecated Error
-hi link ngxDirective Identifier
-hi link ngxDirectiveThirdParty Special
-
-hi link ngxListenOptions Keyword
+hi link ngxDirective Function
+hi link ngxDirectiveThirdParty Function
+hi link ngxListenOptions PreProc
+hi link ngxUpstreamServerOptions PreProc
+hi link ngxProxyNextUpstreamOptions PreProc
 hi link ngxMailProtocol Keyword
-hi link ngxSSLProtocol Keyword
+hi link ngxSSLProtocol PreProc
+hi link ngxSSLProtocolDeprecated Error
+hi link ngxStickyOptions ngxDirective
+hi link ngxCookieOptions PreProc
+hi link ngxTemplateVar Identifier
 
-let b:current_syntax = "nginx"
+hi link ngxSSLSessionTicketsOff ngxBoolean
+hi link ngxSSLSessionTicketsOn Error
+hi link ngxSSLPreferServerCiphersOn ngxBoolean
+hi link ngxSSLPreferServerCiphersOff Error
+hi link ngxGzipOff ngxBoolean
+hi link ngxGzipOn Error
+hi link ngxSSLCipherInsecure Error
+
+hi link ngxThirdPartyLuaBlock Function

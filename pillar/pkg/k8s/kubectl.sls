@@ -1,0 +1,15 @@
+pkg:
+  k8s-kubectl:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - pkgrepo.managed:
+          1:
+            - humanname: Kubernetes Repository
+            - name: deb http://apt.kubernetes.io/ kubernetes-{{ grains['oscodename'] }} main
+            - file: /etc/apt/sources.list.d/kubernetes.list
+            - key_url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      - pkg.installed:
+          1:
+            - refresh: True
+            - pkgs:
+              - kubectl

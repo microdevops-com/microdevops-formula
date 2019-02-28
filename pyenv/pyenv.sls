@@ -31,6 +31,12 @@ pyenv_2_7_14_installed:
     - name: python-2.7.14
   {%- endif %}
 
+  {%- if (pillar['pyenv']['version_2_7_15'] is defined) and (pillar['pyenv']['version_2_7_15'] is not none) and (pillar['pyenv']['version_2_7_15']) %}
+pyenv_2_7_15_installed:
+  pyenv.installed:
+    - name: python-2.7.15
+  {%- endif %}
+
   {%- if (pillar['pyenv']['version_3_5_2'] is defined) and (pillar['pyenv']['version_3_5_2'] is not none) and (pillar['pyenv']['version_3_5_2']) %}
 pyenv_3_5_2_installed:
   pyenv.installed:
@@ -41,6 +47,36 @@ pyenv_3_5_2_installed:
 pyenv_3_5_3_installed:
   pyenv.installed:
     - name: python-3.5.3
+  {%- endif %}
+
+  {%- if (pillar['pyenv']['version_3_5_5'] is defined) and (pillar['pyenv']['version_3_5_5'] is not none) and (pillar['pyenv']['version_3_5_5']) %}
+pyenv_3_5_5_installed:
+  pyenv.installed:
+    - name: python-3.5.5
+  {%- endif %}
+
+  {%- if (pillar['pyenv']['version_3_5_6'] is defined) and (pillar['pyenv']['version_3_5_6'] is not none) and (pillar['pyenv']['version_3_5_6']) %}
+pyenv_3_5_6_installed:
+  pyenv.installed:
+    - name: python-3.5.6
+  {%- endif %}
+
+  {%- if (pillar['pyenv']['version_3_6_5'] is defined) and (pillar['pyenv']['version_3_6_5'] is not none) and (pillar['pyenv']['version_3_6_5']) %}
+pyenv_3_6_5_installed:
+  pyenv.installed:
+    - name: python-3.6.5
+  {%- endif %}
+
+  {%- if (pillar['pyenv']['version_3_6_7'] is defined) and (pillar['pyenv']['version_3_6_7'] is not none) and (pillar['pyenv']['version_3_6_7']) %}
+pyenv_3_6_7_installed:
+  pyenv.installed:
+    - name: python-3.6.7
+  {%- endif %}
+
+  {%- if (pillar['pyenv']['version_3_7_1'] is defined) and (pillar['pyenv']['version_3_7_1'] is not none) and (pillar['pyenv']['version_3_7_1']) %}
+pyenv_3_7_1_installed:
+  pyenv.installed:
+    - name: python-3.7.1
   {%- endif %}
 
 pyenv_profile_file:

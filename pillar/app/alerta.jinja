@@ -1,0 +1,282 @@
+{#
+First you need to generate two ids and twoapi keys for cli, urlmon and telegram, also one secret key for flask:
+
+apt-get install uuid-runtime
+uuidgen # 3 times
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1 # 3 times
+
+You will get like:
+xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+Then this file should be included in pillar, which sets the following:
+{% set appname = 'alerta' %}
+{% set db_pass = 'XXX-set-alerta-db-pass-here-XXX' %}
+{% set domain  = 'alerta.example.com' %}
+{% set version = 'v6.5.0' %}
+{% set add_pip_install = "git+https://github.com/alerta/alerta-contrib.git#subdirectory=plugins/telegram" %}
+{% set cli_key_id = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' %}
+{% set cli_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %}
+{% set telegram_key_id = 'yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy' %}
+{% set telegram_key = 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' %}
+{% set urlmon_key_id = 'zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz' %}
+{% set urlmon_key = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' %}
+{% set secret_key = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' %}
+
+Config file local additions, for example gitlab auth, customizations etc, do not forget to substitute telegram api key (required):
+{%
+set conf = "
+AUTH_REQUIRED = True
+ADMIN_USERS = ['root']
+SIGNUP_ENABLED = False
+AUTH_PROVIDER = 'gitlab'
+GITLAB_URL = 'https://gitlab.example.com'
+ALLOWED_GITLAB_GROUPS = ['group1/subgroup2']
+OAUTH2_CLIENT_ID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+OAUTH2_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+CUSTOMER_VIEWS = True
+
+SITE_LOGO_URL = 'https://gitlab.example.com/uploads/-/system/appearance/header_logo/1/company.png'
+DATE_FORMAT_LONG_DATE = 'yyyy-MM-dd HH:mm:ss.sss'
+DEFAULT_AUDIO_FILE = '/audio/Bike Horn.mp3'
+
+API_KEY_EXPIRE_DAYS = 36500 # 100 years
+
+PLUGINS = ['blackout','telegram']
+
+TELEGRAM_TOKEN = 'xxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'
+TELEGRAM_WEBHOOK_URL = 'https://alerta.example.com/webhooks/telegram?api-key=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
+"
+%}
+
+And then:
+{% include 'app/alerta.jinja' with context %}
+
+Also you need to copy files or make symlinks:
+salt://app/alerta -> ../../formulas/sysadmws-formula/app/files/alerta
+pillar/app/alerta.jinja -> ../../formulas/sysadmws-formula/pillar/app/alerta.jinja
+
+Do not forget to allow telegram webhooks (pillar/ufw_simple/http_https_webhooks_telegram).
+
+Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pkg/acme_*.jinja.
+And you need postgres formula.
+#}
+
+{#
+Actually you can set telegram?api-key= and cli api-key only on the second deploy, so:
+- app.deploy
+- get api keys in the web
+- put it to pillar
+- app.deploy once again
+#}
+
+{#
+References:
+- http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
+#}
+
+postgres:
+  use_upstream_repo: True
+  version: '11'
+  pkgs_extra:
+    - postgresql-plpython-11
+  postgresconf: |-
+    listen_addresses = '*'
+  pg_hba.conf: salt://postgres/templates/pg_hba.conf.j2
+  acls:
+    - ['local', 'all', '{{ appname }}']
+    - ['host', 'all', '{{ appname }}', '0/0']
+  users:
+    {{ appname }}:
+      ensure: present
+      password: '{{ db_pass }}'
+      createdb: False
+      createroles: False
+      createuser: False
+      inherit: True
+      replication: False
+  databases:
+    {{ appname }}:
+      owner: '{{ appname }}'
+      template: 'template0'
+      lc_ctype: 'en_US.UTF-8'
+      lc_collate: 'en_US.UTF-8'
+  extensions:
+    uuid-ossp:
+      maintenance_db: {{ appname }}
+
+nginx:
+  enabled: True
+  configs: 'nginx/app_hosting'
+
+pyenv:
+  enabled: True
+  version_3_6_7: True
+
+pkg:
+  {{ appname }}_after:
+    when: 'PKG_AFTER_DEPLOY'
+    states:
+      - file.directory:
+          1:
+            - name: '/etc/uwsgi/sites'
+            - user: 'root'
+            - group: 'root'
+            - makedirs: True
+          2:
+            - name: '/opt/alerta/{{ appname }}/html'
+            - user: '{{ appname }}'
+            - group: '{{ appname }}'
+            - makedirs: True
+          3:
+            - name: '/opt/alerta/{{ appname }}/webuisrc'
+            - user: '{{ appname }}'
+            - group: '{{ appname }}'
+            - makedirs: True
+          4:
+            - name: '/opt/alerta/{{ appname }}/uwsgi'
+            - user: '{{ appname }}'
+            - group: '{{ appname }}'
+            - makedirs: True
+      - cmd.run:
+          1:
+            - name: 'cd /opt/alerta/{{ appname }}/webuisrc && wget -q -O - https://github.com/alerta/angular-alerta-webui/tarball/{{ version }} | tar zxf - && rm -f alerta*/app/config.json && cp -r -f alerta*/app/* /opt/alerta/{{ appname }}/html'
+            - runas: '{{ appname }}'
+          2:
+            - name: 'sed -i /etc/nginx/sites-available/{{ appname }}.conf -e "s#__SOCKET__#/tmp/uwsgi-{{ appname }}.sock#"'
+            - runas: 'root'
+{% if add_pip_install is defined and add_pip_install is not none %}
+          3:
+            - name: '~/venv/bin/pip install --upgrade {{ add_pip_install }}'
+            - cwd: '/opt/alerta/{{ appname }}/src'
+            - runas: '{{ appname }}'
+{% endif %}
+      - file.managed:
+          1:
+            - name: '/opt/alerta/{{ appname }}/uwsgi/uwsgi.py'
+            - user: '{{ appname }}'
+            - group: '{{ appname }}'
+            - mode: '0644'
+            - contents: |
+                from alerta import app
+          2:
+            - name: '/etc/uwsgi/sites/{{ appname }}.ini'
+            - user: 'root'
+            - group: 'root'
+            - mode: '0644'
+            - source: 'salt://app/alerta/uwsgi.ini'
+            - replace: True
+            - template: jinja
+            - defaults:
+                venv: '/opt/alerta/{{ appname }}/venv'
+                chdir: '/opt/alerta/{{ appname }}/uwsgi'
+                uid: '{{ appname }}'
+                gid: '{{ appname }}'
+                socket: '/tmp/uwsgi-{{ appname }}.sock'
+                alertad_conf: '/opt/alerta/{{ appname }}/alertad.conf'
+          3:
+            - name: '/etc/systemd/system/uwsgi-{{ appname }}.service'
+            - user: 'root'
+            - group: 'root'
+            - source: 'salt://app/alerta/uwsgi.service'
+            - replace: True
+            - template: jinja
+            - defaults:
+                app: '{{ appname }}'
+                bin_dir: '/opt/alerta/{{ appname }}/venv/bin'
+                ini: '/etc/uwsgi/sites/{{ appname }}.ini'
+          4:
+            - name: '/opt/alerta/{{ appname }}/html/config.json'
+            - user: '{{ appname }}'
+            - group: '{{ appname }}'
+            - mode: '0644'
+            - contents: |
+                {"endpoint": "/api"}
+          5:
+            - name: '/opt/alerta/{{ appname }}/alertad.conf'
+            - user: '{{ appname }}'
+            - group: '{{ appname }}'
+            - source: 'salt://app/alerta/alertad.conf'
+            - replace: True
+            - template: jinja
+            - defaults:
+                secret_key: '{{ secret_key }}'
+                app: '{{ appname }}'
+                log_file: '/opt/alerta/{{ appname }}/alertad.log'
+                db_pass: {{ db_pass }}
+                conf: |
+                  {{ conf|indent(width=18,indentfirst=False) }}
+          6:
+            - name: '/opt/alerta/{{ appname }}/.alerta.conf'
+            - user: '{{ appname }}'
+            - group: '{{ appname }}'
+            - mode: '0644'
+            - contents: |
+                [DEFAULT]
+                endpoint = https://{{ domain }}/api
+                key = {{ cli_key }}
+
+      - cmd.run:
+          1:
+            - name: 'systemctl daemon-reload && systemctl restart uwsgi-{{ appname }} && systemctl enable uwsgi-{{ appname }}'
+          2:
+            - name: 'sleep 10 && service nginx reload'
+          3: 
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', ''root'', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+          4: 
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', ''root'', ''{read,write}'', ''telegram'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+          5: 
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ urlmon_key_id }}'', ''{{ urlmon_key }}'', ''root'', ''{write:alerts}'', ''urlmon'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+      - cron.present:
+          1:
+            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping'
+            - identifier: alerta_housekeeping
+            - user: {{ appname }}
+            - minute: '*'
+          2:
+            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta heartbeats --alert --severity major'
+            - identifier: alerta_heartbeats_alert
+            - user: {{ appname }}
+            - minute: '*'
+
+app:
+  python_apps:
+    {{ appname }}:
+      enabled: True
+      user: '{{ appname }}'
+      group: '{{ appname }}'
+      pass: '!'
+      app_root: '/opt/alerta/{{ appname }}'
+      shell: '/bin/bash'
+      virtualenv:
+        pyenv_version: '3.6.7'
+        target: '/opt/alerta/{{ appname }}/venv'
+      setup_script:
+        cwd: '/opt/alerta/{{ appname }}/src'
+        name: '~/venv/bin/pip install --upgrade alerta-server alerta uwsgi; ~/venv/bin/pip install --upgrade -r requirements.txt'
+      nginx:
+        link_sites-enabled: True
+        reload: True
+        vhost_config: 'app/alerta/vhost.conf'
+        root: '/opt/alerta/{{ appname }}/html'
+        server_name: '{{ domain }}'
+        server_name_301: 'www.{{ domain }}'
+        access_log: '/var/log/nginx/{{ appname }}.access.log'
+        error_log: '/var/log/nginx/{{ appname }}.error.log'
+        ssl:
+          acme: True
+          acme_run_ready: True
+      source:
+        enabled: True
+        git: 'https://github.com/alerta/alerta'
+        rev: '{{ version }}'
+        target: '/opt/alerta/{{ appname }}/src'
+        branch: 'master'

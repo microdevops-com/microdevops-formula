@@ -1,0 +1,44 @@
+# vi: set ft=yaml:
+
+# pkg
+pkg:
+  some_package_group_name: # just to group and copy-paste
+    when: 'PKG_PKG' # pkg.pkg will apply that group, when: 'PKG_BEFORE_DEPLOY' - pkg.before_deploy applies, when: 'PKG_AFTER_DEPLOY' - pkg.after_deploy applies
+    states:
+      - file.managed: # any state name
+          '/etc/package1/main.conf': # state will be executed for each key of this level, - name: param is taken from the key if ommited
+      - source: 'salt://pkg/package/main.conf' # you can use any params of the state
+          '/etc/package1/secondary.conf':
+            - contents: |
+                xxx
+                yyy
+                zzz
+      - file.directory: # just another example
+          '/var/www/.well-known/':
+            - makedirs: True
+      - cmd_run:
+          1: # keys are sorted before execution
+            - name: 'compile /etc/package1/main.conf'
+            - runas: 'root'
+          2:
+            - name: 'service package restart'
+            - runas: 'root'
+  postfix: # change exim to postfix for debian example
+    when: 'PKG_PKG'
+    states:
+      - pkg_installed:
+          1:
+            - pkgs:
+                - postfix
+                - bsd-mailx
+                - heirloom-mailx
+      - pkg_purged:
+          1:
+            - pkgs:
+                - exim4
+                - exim4-base
+                - exim4-config
+                - exim4-daemon-light
+      - cmd_run:
+          'dpkg --purge exim4 exim4-base exim4-config exim4-daemon-light':
+            - runas: root

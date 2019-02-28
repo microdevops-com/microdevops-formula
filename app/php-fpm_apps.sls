@@ -1,10 +1,30 @@
 {% if (pillar['app'] is defined) and (pillar['app'] is not none) %}
   {%- if (pillar['app']['php-fpm_apps'] is defined) and (pillar['app']['php-fpm_apps'] is not none) %}
+
     {%- if (pillar['certbot_staging'] is defined) and (pillar['certbot_staging'] is not none) and (pillar['certbot_staging']) %}
       {%- set certbot_staging = "--staging" %}
     {%- else %}
       {%- set certbot_staging = " " %}
     {%- endif %}
+
+    {%- if (pillar['certbot_force_renewal'] is defined) and (pillar['certbot_force_renewal'] is not none) and (pillar['certbot_force_renewal']) %}
+      {%- set certbot_force_renewal = "--force-renewal" %}
+    {%- else %}
+      {%- set certbot_force_renewal = " " %}
+    {%- endif %}
+
+    {%- if (pillar['acme_staging'] is defined) and (pillar['acme_staging'] is not none) and (pillar['acme_staging']) %}
+      {%- set acme_staging = "--staging" %}
+    {%- else %}
+      {%- set acme_staging = " " %}
+    {%- endif %}
+
+    {%- if (pillar['acme_force_renewal'] is defined) and (pillar['acme_force_renewal'] is not none) and (pillar['acme_force_renewal']) %}
+      {%- set acme_force_renewal = "--force" %}
+    {%- else %}
+      {%- set acme_force_renewal = " " %}
+    {%- endif %}
+
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
     {%- else %}
@@ -44,11 +64,14 @@ php-fpm_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
     - gid: {{ app_params['group'] }}
-    - optional_groups:
-      - adm
     - home: {{ app_params['app_root'] }}
     - createhome: True
-    - password: '!'
+    {% if app_params['pass'] == '!' %}
+    - password: '{{ app_params['pass'] }}'
+    {% else %}
+    - password: '{{ app_params['pass'] }}'
+    - hash_password: True
+    {% endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ phpfpm_app }}
 
@@ -71,59 +94,94 @@ php-fpm_apps_user_ssh_auth_keys_{{ loop.index }}:
         {%- endif %}
 
         {%- if
-               (app_params['git_source'] is defined) and (app_params['git_source'] is not none) and
-               (app_params['git_source']['enabled'] is defined) and (app_params['git_source']['enabled'] is not none) and (app_params['git_source']['enabled']) and
-               (app_params['git_source']['git'] is defined) and (app_params['git_source']['git'] is not none) and
-               (app_params['git_source']['rev'] is defined) and (app_params['git_source']['rev'] is not none) and
-               (app_params['git_source']['target'] is defined) and (app_params['git_source']['target'] is not none) and
-               (app_params['git_source']['branch'] is defined) and (app_params['git_source']['branch'] is not none)
+               (app_params['source'] is defined) and (app_params['source'] is not none) and
+               (app_params['source']['enabled'] is defined) and (app_params['source']['enabled'] is not none) and (app_params['source']['enabled']) and
+               (app_params['source']['archive'] is defined) and (app_params['source']['archive'] is not none)
         %}
+php-fpm_apps_app_download_arc_{{ loop.index }}:
+  archive.extracted:
+    - name: {{ app_params['source']['target'] }}
+    - source: {{ app_params['source']['archive'] }}
+    - source_hash: {{ app_params['source']['archive_hash'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - overwrite: {{ app_params['source']['overwrite'] }}
+          {%- if (app_params['source']['if_missing'] is defined) and (app_params['source']['if_missing'] is not none) %}
+    - if_missing: {{ app_params['source']['if_missing'] }}
+          {%- endif %}
+        {%- endif %}
+
+# this creates if_missing dir usually, so it should be after download_arc
+php-fpm_apps_nginx_root_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app_params['nginx']['root'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - mode: 755
+    - makedirs: True
+
+        {%- if
+               (app_params['source'] is defined) and (app_params['source'] is not none) and
+               (app_params['source']['enabled'] is defined) and (app_params['source']['enabled'] is not none) and (app_params['source']['enabled']) and
+               (
+                 ((app_params['source']['git'] is defined) and (app_params['source']['git'] is not none)) or
+                 ((app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none))
+               ) and
+               (app_params['source']['rev'] is defined) and (app_params['source']['rev'] is not none) and
+               (app_params['source']['target'] is defined) and (app_params['source']['target'] is not none)
+        %}
+
           {%- if
-                 (app_params['git_source']['key'] is defined) and (app_params['git_source']['key'] is not none) and
-                 (app_params['git_source']['key_pub'] is defined) and (app_params['git_source']['key_pub'] is not none)
+                 (app_params['source']['repo_key'] is defined) and (app_params['source']['repo_key'] is not none) and
+                 (app_params['source']['repo_key_pub'] is defined) and (app_params['source']['repo_key_pub'] is not none)
           %}
 php-fpm_apps_user_ssh_id_{{ loop.index }}:
   file.managed:
-    - name: {{ app_params['app_root'] ~ '/.ssh/id_git' }}
+    - name: {{ app_params['app_root'] ~ '/.ssh/id_repo' }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - mode: '0600'
-    - source: 'salt://{{ app_params['git_source']['key'] }}'
+    - contents: {{ app_params['source']['repo_key'] | yaml_encode }}
 
 php-fpm_apps_user_ssh_id_pub_{{ loop.index }}:
   file.managed:
-    - name: {{ app_params['app_root'] ~ '/.ssh/id_git.pub' }}
+    - name: {{ app_params['app_root'] ~ '/.ssh/id_repo.pub' }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
     - mode: '0600'
-    - source: 'salt://{{ app_params['git_source']['key_pub'] }}'
+    - contents: {{ app_params['source']['repo_key_pub'] | yaml_encode }}
 
 php-fpm_apps_user_ssh_config_{{ loop.index }}:
   file.managed:
     - name: {{ app_params['app_root'] ~ '/.ssh/config' }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
-    - source: 'salt://app/files/ssh_config'
-    - template: jinja
-    - defaults:
-        identity_file: {{ app_params['app_root'] ~ '/.ssh/id_git' }}
     - mode: '0600'
+    - contents: {{ app_params['source']['ssh_config'] | yaml_encode }}
           {%- endif %}
 
-php-fpm_apps_app_git_checkout_{{ loop.index }}:
+php-fpm_apps_app_checkout_{{ loop.index }}:
+          {%- if (app_params['source']['git'] is defined) and (app_params['source']['git'] is not none) %}
   git.latest:
-    - name: {{ app_params['git_source']['git'] }}
-    - rev: {{ app_params['git_source']['rev'] }}
-    - target: {{ app_params['git_source']['target'] }}
-    - branch: {{ app_params['git_source']['branch'] }}
+    - name: {{ app_params['source']['git'] }}
+    - rev: {{ app_params['source']['rev'] }}
+    - target: {{ app_params['source']['target'] }}
+    - branch: {{ app_params['source']['branch'] }}
     - force_reset: True
     - force_fetch: True
     - user: {{ app_params['user'] }}
+          {%- elif (app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none)  %}
+  hg.latest:
+    - name: {{ app_params['source']['hg'] }}
+    - rev: {{ app_params['source']['rev'] }}
+    - target: {{ app_params['source']['target'] }}
+    - user: {{ app_params['user'] }}
+          {%- endif %}
           {%- if
-                 (app_params['git_source']['key'] is defined) and (app_params['git_source']['key'] is not none) and
-                 (app_params['git_source']['key_pub'] is defined) and (app_params['git_source']['key_pub'] is not none)
+                 (app_params['source']['repo_key'] is defined) and (app_params['source']['repo_key'] is not none) and
+                 (app_params['source']['repo_key_pub'] is defined) and (app_params['source']['repo_key_pub'] is not none)
           %}
-    - identity: {{ app_params['app_root'] ~ '/.ssh/id_git' }}
+    - identity: {{ app_params['app_root'] ~ '/.ssh/id_repo' }}
           {%- endif %}
         {%- endif %}
 
@@ -256,7 +314,7 @@ php-fpm_apps_app_certbot_dir_{{ loop.index }}:
 php-fpm_apps_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
 
 php-fpm_apps_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -270,7 +328,7 @@ php-fpm_apps_app_certbot_replace_symlink_2_{{ loop.index }}:
 
 php-fpm_apps_app_certbot_cron_{{ loop.index }}:
   cron.present:
-    - name: '/opt/certbot/certbot-auto renew --renew-hook "service nginx configtest && service nginx restart"'
+    - name: '/opt/certbot/certbot-auto renew --quiet --renew-hook "service nginx configtest && service nginx restart"'
     - identifier: 'certbot_cron'
     - user: root
     - minute: 10
@@ -328,7 +386,11 @@ php-fpm_apps_app_certbot_dir_{{ loop.index }}:
 php-fpm_apps_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
+            {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }},{{ app_params['nginx']['server_name_301']|replace(" ", ",") }}"'
+            {%- else %}
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ phpfpm_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
+            {%- endif %}
 
 php-fpm_apps_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -342,12 +404,77 @@ php-fpm_apps_app_certbot_replace_symlink_2_{{ loop.index }}:
 
 php-fpm_apps_app_certbot_cron_{{ loop.index }}:
   cron.present:
-    - name: '/opt/certbot/certbot-auto renew --renew-hook "service nginx configtest && service nginx restart"'
+    - name: '/opt/certbot/certbot-auto renew --quiet --renew-hook "service nginx configtest && service nginx restart"'
     - identifier: 'certbot_cron'
     - user: root
     - minute: 10
     - hour: 2
     - dayweek: 1
+          {%- endif %}
+
+        {%- elif
+               (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
+               (app_params['nginx']['ssl']['acme'] is defined) and (app_params['nginx']['ssl']['acme'] is not none) and (app_params['nginx']['ssl']['acme'])
+        %}
+php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
+  file.managed:
+    - name: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'
+    - user: root
+    - group: root
+    - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
+    - template: jinja
+    - defaults:
+        server_name: {{ app_params['nginx']['server_name'] }}
+          {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+        server_name_301: '{{ app_params['nginx']['server_name_301'] }}'
+          {%- else %}
+        server_name_301: '{{ phpfpm_app }}.example.com'
+          {%- endif %}
+        nginx_root: {{ app_params['nginx']['root'] }}
+        access_log: {{ app_params['nginx']['access_log'] }}
+        error_log: {{ app_params['nginx']['error_log'] }}
+        php_version: {{ app_params['pool']['php_version'] }}
+        app_name: {{ phpfpm_app }}
+        app_root: {{ app_params['app_root'] }}
+        ssl_cert: '/etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem'
+        ssl_key: '/etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem'
+        auth_basic_block: '{{ auth_basic_block }}'
+
+          {# at least we have snakeoil, if cert req fails #}
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ phpfpm_app ~ '/fullchain.pem') %}
+php-fpm_apps_app_nginx_ssl_link_1_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem'
+    - target: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
+          {%- endif %}
+
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ phpfpm_app ~ '/privkey.pem') %}
+php-fpm_apps_app_nginx_ssl_link_2_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem'
+    - target: '/etc/ssl/private/ssl-cert-snakeoil.key'
+          {%- endif %}
+
+          {%- if (pillar['acme_run_ready'] is defined and pillar['acme_run_ready'] is not none and pillar['acme_run_ready']) or (app_params['nginx']['ssl']['acme_run_ready'] is defined and app_params['nginx']['ssl']['acme_run_ready'] is not none and app_params['nginx']['ssl']['acme_run_ready']) %}
+php-fpm_apps_app_acme_run_{{ loop.index }}:
+  cmd.run:
+    - cwd: /opt/acme/home
+    - shell: '/bin/bash'
+            {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true'
+            {%- else %}
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true'
+            {%- endif %}
+
+php-fpm_apps_app_acme_replace_symlink_1_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer && ln -s -f /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer /etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem || true'
+
+php-fpm_apps_app_acme_replace_symlink_2_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ phpfpm_app }}_key.key && ln -s -f /opt/acme/cert/{{ phpfpm_app }}_key.key /etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem || true'
           {%- endif %}
 
         {%- else %}
@@ -377,6 +504,8 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
           {%- set etc_php = '/etc/php/7.0/' %}
         {%- elif (app_params['pool']['php_version'] == '7.1' ) %}
           {%- set etc_php = '/etc/php/7.1/' %}
+        {%- elif (app_params['pool']['php_version'] == '7.2' ) %}
+          {%- set etc_php = '/etc/php/7.2/' %}
         {%- elif (app_params['pool']['php_version'] == '5.5' ) %}
           {%- set etc_php = '/etc/php5/' %}
         {%- endif %}
@@ -397,18 +526,18 @@ php-fpm_apps_app_pool_config_{{ loop.index }}:
 
 php-fpm_apps_pool_log_dir_{{ loop.index }}:
   file.directory:
-    - name: '/var/log/php/{{ app_params['pool']['php_version'] }}-fpm/'
-    - user: root
-    - group: adm
-    - mode: 775
+    - name: '{{ (app_params['pool']['log']|default(dict()))['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/'
+    - user: {{ (app_params['pool']['log']|default(dict()))['dir_user']|default('root') }}
+    - group: {{ (app_params['pool']['log']|default(dict()))['dir_group']|default('adm') }}
+    - mode: {{ (app_params['pool']['log']|default(dict()))['dir_mode']|default('775') }}
     - makedirs: True
 
 php-fpm_apps_pool_log_file_{{ loop.index }}:
   file.managed:
-    - name: '/var/log/php/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log'
-    - user: {{ app_params['user'] }}
-    - group: {{ app_params['group'] }}
-    - mode: 664
+    - name: '{{ (app_params['pool']['log']|default(dict()))['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log'
+    - user: {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }}
+    - group: {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
+    - mode: {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('664') }}
 
 php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
   file.managed:
@@ -417,23 +546,69 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
     - group: root
     - mode: 644
     - contents: |
-        /var/log/php/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log {
-          rotate 31
-          daily
+        {{ (app_params['pool']['log']|default(dict()))['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.*.log {
+          rotate {{ (app_params['pool']['log']|default(dict()))['rotate_count']|default('31') }}
+          {{ (app_params['pool']['log']|default(dict()))['rotate_when']|default('daily') }}
           missingok
-          create 664 {{ app_params['user'] }} {{ app_params['group'] }}
+          create {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('664') }} {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }} {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
           compress
           delaycompress
-          su root adm
+          postrotate
+            /usr/lib/php/php{{ app_params['pool']['php_version'] }}-fpm-reopenlogs
+          endscript
         }
 
-        {%- if (pillar['nginx_reload'] is defined) and (pillar['nginx_reload'] is not none) and (pillar['nginx_reload']) %}
-php-fpm_apps__nginx_reload__{{ loop.index }}:
+        {%- if app_params['nginx']['log'] is defined and app_params['nginx']['log'] is not none and app_params['nginx']['log']['dir'] is defined and app_params['nginx']['log']['dir'] is not none and app_params['nginx']['log']['dir'] and app_params['nginx']['log']['dir'] != '/var/log/nginx'  %}
+php-fpm_apps_nginx_log_dir_{{ loop.index }}:
+  file.directory:
+    - name: '{{ app_params['nginx']['log']['dir'] }}'
+    - user: {{ app_params['nginx']['log']['dir_user']|default('root') }}
+    - group: {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+    - mode: {{ app_params['nginx']['log']['dir_mode']|default('755') }}
+    - makedirs: True
+
+php-fpm_apps_nginx_logrotate_file_{{ loop.index }}:
+  file.managed:
+    - name: '/etc/logrotate.d/nginx-{{ phpfpm_app }}'
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: |
+        {{ app_params['nginx']['access_log'] }}
+        {{ app_params['nginx']['error_log'] }} {
+          rotate {{ app_params['nginx']['log']['rotate_count']|default('31') }}
+          {{ app_params['nginx']['log']['rotate_when']|default('daily') }}
+          missingok
+          create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default('www-data') }} {{ app_params['nginx']['log']['log_group']|default('adm') }}
+          compress
+          delaycompress
+          postrotate
+            /usr/sbin/nginx -s reopen
+          endscript
+        }
+        {%- endif %}
+
+        {%- if (app_params['nginx']['link_sites-enabled'] is defined and app_params['nginx']['link_sites-enabled'] is not none and app_params['nginx']['link_sites-enabled']) %}
+app_link_sites_enabled_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/sites-enabled/{{ phpfpm_app }}.conf'
+    - target: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'
+        {%- endif %}
+
+        {%- if (pillar['php-fpm_reload'] is defined and pillar['php-fpm_reload'] is not none and pillar['php-fpm_reload']) or (app_params['pool']['reload'] is defined and app_params['pool']['reload'] is not none and app_params['pool']['reload']) %}
+app_php-fpm_reload_{{ loop.index }}:
+  cmd.run:
+    - runas: 'root'
+    - name: 'service php{{ app_params['pool']['php_version'] }}-fpm reload'
+        {%- endif %}
+
+        {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
+app_nginx_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
     - name: 'service nginx configtest && service nginx reload'
-
         {%- endif %}
+
       {%- endif %}
     {%- endfor %}
 
@@ -445,18 +620,49 @@ php-fpm_apps_info_warning:
     - comment: |
         WARNING: State configures nginx virtual hosts, BUT it doesn't reload or restart nginx, php-fpm.
         WARNING: It is done so not to break running production sites on the host.
-        WARNING: You should state.apply this state first, then check configs, reload or restart nginx, pfp-fpm manually.
-        WARNING: After that there will be /.well-known/ location ready to serve certbot request.
-        WARNING: For the second time you can run:
-        WARNING: state.apply ... pillar='{"certbot_run_ready": True}'
-        WARNING: This will activate certbot execution and active its certs in nginx.
-        WARNING: After that you can check and reload again.
-        WARNING: Also, not to be temp banned by LE when making test runs, you can run:
-        WARNING: state.apply ... pillar='{"certbot_run_ready": True, "certbot_staging": True}'
-        WARNING: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
-        NOTICE:  You can run only one app with pillar:
-        NOTICE:  state.apply ... pillar='{"app_only_one": "<app_name>"}'
-        NOTICE:  You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
-        NOTICE:  state.apply ... pillar='{"nginx_reload": True}'
+         NOTICE:
+         NOTICE: CERTBOT workflow:
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE: You should state.apply this state first, then check configs, reload or restart nginx, pfp-fpm manually.
+         NOTICE: After that there will be /.well-known/ location ready to serve certbot request.
+         NOTICE:
+         NOTICE: For the second time you can run:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True}'
+         NOTICE: This will activate certbot execution and active its certs in nginx.
+         NOTICE:
+         NOTICE: After that you can check and reload again.
+         NOTICE:
+         NOTICE: Also, not to be temp banned by LE when making test runs, you can run:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_staging": True}'
+         NOTICE: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
+         NOTICE:
+         NOTICE: After staging experiments you can force renewal with:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_force_renewal": True}'
+         NOTICE: This will add --force-renewal option to certbot.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE:
+         NOTICE: ACME.SH workflow:
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE: acme.sh should be configured beforehand. You need to specify pillar acme_run_ready to use it:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True}'
+         NOTICE: This will activate acme.sh execution.
+         NOTICE:
+         NOTICE: Also, not to be temp banned by LE when making test runs, you can run:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_staging": True}'
+         NOTICE: This will add --staging option to acme.sh. Certificate will be not trusted, but LE will allow much more tests.
+         NOTICE:
+         NOTICE: After staging experiments you can force renewal with:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_force_renewal": True}'
+         NOTICE: This will add --force option to acme.sh.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE:
+         NOTICE: You can run only one app with pillar:
+         NOTICE: state.apply ... pillar='{"app_only_one": "<app_name>"}'
+         NOTICE:
+         NOTICE: You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
+         NOTICE: state.apply ... pillar='{"nginx_reload": True}'
+         NOTICE:
+         NOTICE: You can run 'service phpX.X-fpm reload' after each app deploy with pillar:
+         NOTICE: state.apply ... pillar='{"php-fpm_reload": True}'
   {%- endif %}
 {%- endif %}

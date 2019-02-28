@@ -10,6 +10,12 @@ pkg_jessie_sources_list:
     - name: '/etc/apt/sources.list'
     - source: salt://cloud/files/jessie_sources_list
     - mode: 0644
+  {%- elif grains['oscodename'] == 'stretch' %}
+pkg_stretch_sources_list:
+  file.managed:
+    - name: '/etc/apt/sources.list'
+    - source: salt://cloud/files/stretch_sources_list
+    - mode: 0644
   {%- elif grains['oscodename'] == 'xenial' %}
 pkg_xenial_sources_list:
   file.managed:
@@ -17,13 +23,6 @@ pkg_xenial_sources_list:
     - source: salt://cloud/files/xenial_sources_list
     - mode: 0644
   {%- endif %}
-
-pkgrepo_deb:
-  pkgrepo.managed:
-    - file: /etc/apt/sources.list.d/sysadmws.list
-    - name: 'deb https://repo.sysadm.ws/sysadmws-apt/ any main'
-    - keyid: 2E7DCF8C
-    - keyserver: keyserver.ubuntu.com
 
 pkg_deb_update:
   pkg.uptodate:
@@ -33,14 +32,22 @@ pkg_deb_packages:
   pkg.installed:
     - pkgs:
       - tasksel
-      - vim
-      - wget
       - apt-utils
+  {%- if grains['oscodename'] == 'jessie' %}
       - python-software-properties
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - software-properties-common
+  {%- elif grains['oscodename'] == 'xenial' %}
+      - python-software-properties
+  {%- endif %}
       - at
       - doc-debian
       - ftp
+  {%- if grains['oscodename'] == 'bionic' %}
+      - bind9-host
+  {%- else %}
       - host
+  {%- endif %}
       - info
       - iputils-ping
       - nano
@@ -50,7 +57,6 @@ pkg_deb_packages:
       - rsyslog
       - less
       - whois
-      - nfacct
       - bc
       - wamerican
       - ucf
@@ -59,7 +65,11 @@ pkg_deb_packages:
       - man-db
       - bzip2
       - whiptail
+  {%- if grains['oscodename'] != 'precise' %}
       - kmod
+      - aptitude-common
+      - nfacct
+  {%- endif %}
       - gettext-base
       - dbus
       - libclass-isa-perl
@@ -72,12 +82,17 @@ pkg_deb_packages:
       - mlocate
       - telnet
       - iptables
+  {%- if grains['oscodename'] == 'jessie' %}
       - python-reportbug
+  {%- elif grains['oscodename'] == 'xenial' %}
+      - python-reportbug
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - python3-reportbug
+  {%- endif %}
       - lsof
       - reportbug
       - vim
       - krb5-locales
-      - aptitude-common
       - ncurses-term
       - aptitude
       - apt-listchanges
@@ -91,6 +106,10 @@ pkg_deb_packages:
       - task-english
       - task-ssh-server
       - libxtables10
+  {%- elif grains['oscodename'] == 'stretch' %}
+      - task-english
+      - task-ssh-server
+      - libxtables12
   {%- elif grains['os'] == 'Ubuntu' %}
       - openssh-server
   {%- endif %}
@@ -105,7 +124,11 @@ pkg_deb_packages:
       - gawk
       - curl
       - wget
+  {%- if grains['oscodename'] == 'bionic' %}
+      - s-nail 
+  {%- else %}
       - heirloom-mailx
+  {%- endif %}
       # diag tools
       - ethtool
       - iotop
@@ -122,7 +145,6 @@ pkg_deb_packages:
       - byobu
       - mc
       - ncftp
-      - man
       - ncdu
       - ccze
       - pv
@@ -143,14 +165,18 @@ pkg_deb_packages:
       - smartmontools
       # security tools
       - fail2ban
-      #
-      - sysadmws-utils
 
   {%- if grains['oscodename'] == 'jessie' %}
 jessie_bashrc:
   file.managed:
     - name: '/etc/bash.bashrc'
     - source: salt://cloud/files/jessie_bashrc
+    - mode: 0644
+  {%- elif grains['oscodename'] == 'stretch' %}
+stretch_bashrc:
+  file.managed:
+    - name: '/etc/bash.bashrc'
+    - source: salt://cloud/files/stretch_bashrc
     - mode: 0644
   {%- elif grains['oscodename'] == 'xenial' %}
 xenial_bashrc:
@@ -159,8 +185,42 @@ xenial_bashrc:
     - source: salt://cloud/files/xenial_bashrc
     - mode: 0644
   {%- endif %}
-{%- elif grains['os'] in ['CentOS', 'RedHat'] %}
-  'oops'
-{%- else %}
-  'oops'
-{%- endif %}
+{% elif grains['os'] in ['CentOS', 'RedHat'] %}
+pkg_centos_packages:
+  pkg.installed:
+    - pkgs:
+      - at
+      - ftp
+      - bind-utils
+      - info
+      - nano
+      - traceroute
+      - less
+      - bc
+  {%- if grains['osmajorrelease']|int == 7 %}
+      - man-db
+  {%- else %}
+      - man
+  {%- endif %}
+      - bzip2
+      - patch
+      - mutt
+      - cpio
+      - mlocate
+      - telnet
+      - iptables
+      - lsof
+      - vim-enhanced
+      - time
+      - openssh
+      - postfix
+      - ca-certificates
+      - gawk
+      - curl
+      - wget
+      - iotop
+      - screen
+      - mc
+      - tree
+      - git
+{% endif %}

@@ -1,0 +1,56 @@
+{#
+Only trusty supported by UBNT for legacy 3.1.5 (Gen 1 Cameras):
+https://community.ubnt.com/t5/UniFi-Video-Blog/UniFi-Video-3-1-5-Release/ba-p/1538024
+#}
+pkg:
+  unifi-video:
+    when: 'PKG_AFTER_DEPLOY'
+    states:
+      - pkgrepo.managed:
+          1:
+            - humanname: 'NginX Official Repo'
+            - name: 'deb http://nginx.org/packages/mainline/{{ grains['os']|lower }}/ {{ grains['oscodename'] }} nginx'
+            - file: '/etc/apt/sources.list.d/nginx.list'
+            - keyid: 'ABF5BD827BD9BF62'
+            - keyserver: 'keyserver.ubuntu.com'
+            - refresh: True
+          2:
+            - humanname: 'UBNT Repo'
+            - name: 'deb [arch=amd64] http://www.ubnt.com/downloads/unifi-video/apt trusty ubiquiti'
+            - file: '/etc/apt/sources.list.d/unifi-video.list'
+            - key_url: 'http://www.ubnt.com/downloads/unifi-video/apt/unifi-video.gpg.key'
+            - refresh: True
+      - pkg.installed:
+          1:
+            - pkgs:
+                - unifi-video
+                - nginx
+      - file.managed:
+          '/etc/nginx/nginx.conf':
+            - source: 'salt://pkg/files/unifi-video/nginx.conf'
+            - template: jinja
+            - defaults:
+                server_name: '{{ unifi_server_name }}'
+      - cmd.run:
+          1:
+            - name: 'ln -f -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/fullchain.pem'
+          2:
+            - name: 'ln -f -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/privkey.pem'
+          3:
+            - name: 'service nginx restart'
+          4:
+            - cwd: '/opt/acme/home'
+            - shell: '/bin/bash'
+            - name: 'openssl verify -CAfile /opt/acme/cert/uv_ca.cer /opt/acme/cert/uv_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/uv_cert.cer --key-file /opt/acme/cert/uv_key.key --ca-file /opt/acme/cert/uv_ca.cer --fullchain-file /opt/acme/cert/uv_fullchain.cer --issue -d {{ unifi_server_name }} || true'
+          5:
+            - name: 'test -f /opt/acme/cert/uv_fullchain.cer && ln -s -f /opt/acme/cert/uv_fullchain.cer /etc/nginx/fullchain.pem || true'
+          6:
+            - name: 'test -f /opt/acme/cert/uv_key.key && ln -s -f /opt/acme/cert/uv_key.key /etc/nginx/privkey.pem || true'
+          7:
+            - name: 'service nginx configtest && service nginx restart'
+      - cron.present:
+          'service nginx configtest && service nginx restart':
+            - identifier: 'nginx_cron'
+            - user: 'root'
+            - minute: 10
+            - hour: 2

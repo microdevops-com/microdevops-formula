@@ -1,0 +1,162 @@
+{#
+To clean up previous install:
+  - apt-get purge gitlab-ce
+  - rm -rf /etc/gitlab /opt/gitlab /var/opt/gitlab /run/gitlab /var/log/gitlab
+  - reboot
+
+This file should be included in pillar, which sets the following:
+{% set gitlab_ext_name = "gitlab.example.com" %}
+{% set gitlab_hostname = "gitlab1.example.com" %}
+{% set gitlab_google_app_id = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com" %}
+{% set gitlab_google_app_secret = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% set gitlab_gmail_user = "user@example.com" %}
+{% set gitlab_gmail_password = "xxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% set gitlab_gmail_email_with_key = "user+%{key}@example.com" %}
+{% set gitlab_postgresql_md5_auth_cidr_addresses = "1.2.3.4/32" %}
+{% set gitlab_postgresql_sql_user_password = "securesqlpassword" %}
+
+Optionally you can override cron backup command, e.g. to skip Docker registry:
+{% set gitlab_cron_backup_cmd = "find /var/backups/gitlab_backups -name '*_gitlab_backup.tar' -delete; gitlab-rake gitlab:backup:create SKIP=registry" %}
+
+And then:
+{% include 'pkg/gitlab-ce.jinja' with context %}
+
+Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pkg/acme_*.jinja.
+
+Tip:
+Here are the steps needed to connect google auth:
+https://docs.gitlab.com/ee/integration/google.html
+#}
+
+pkg:
+  gitlab-ce:
+    when: 'PKG_AFTER_DEPLOY'
+    states:
+      - pkgrepo.managed:
+          1:
+            - humanname: Gitlab CE Repository
+            - name: deb https://packages.gitlab.com/gitlab/gitlab-ce/{{ grains['os']|lower }}/ {{ grains['oscodename'] }} main
+            - file: /etc/apt/sources.list.d/gitlab-ce.list
+            - key_url: https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+      - environ.setenv:
+          1:
+            - name: EXTERNAL_URL
+            - value: "http://{{ gitlab_ext_name }}"
+            - update_minion: True
+      - pkg.latest:
+          1:
+            - refresh: True
+            - pkgs:
+              - gitlab-ce
+      - cmd.run:
+          1:
+            - name: 'test ! -f /etc/gitlab/gitlab.rb.orig && cp /etc/gitlab/gitlab.rb /etc/gitlab/gitlab.rb.orig || true'
+            - runas: 'root'
+      - cmd.run:
+          1:
+            - name: 'openssl verify -CAfile /opt/acme/cert/{{ gitlab_ext_name }}/ca.cer /opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --issue -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart" || true'
+            - cwd: /opt/acme/home
+            - shell: '/bin/bash'
+            - runas: root
+      - file.directory:
+          1:
+            - name: /var/lib/gitlab_docker_registry
+            - makedirs: True
+          2:
+            - name: /var/lib/gitlab_artifacts
+            - makedirs: True
+          3:
+            - name: /var/backups/gitlab_backups
+            - makedirs: True
+      - file.managed:
+          1:
+            - name: /etc/gitlab/gitlab.rb
+            - contents: |
+                external_url 'https://{{ gitlab_ext_name }}'
+                nginx['redirect_http_to_https'] = true
+                nginx['ssl_certificate'] = "/opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer"
+                nginx['ssl_certificate_key'] = "/opt/acme/cert/{{ gitlab_ext_name }}/{{ gitlab_ext_name }}.key"
+                postgresql['listen_address'] = '*'
+                postgresql['port'] = 5432
+                postgresql['md5_auth_cidr_addresses'] = %w({{ gitlab_postgresql_md5_auth_cidr_addresses }})
+                postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24 ::1/128)
+                postgresql['sql_user'] = "gitlab"
+                postgresql['sql_user_password'] = Digest::MD5.hexdigest "{{ gitlab_postgresql_sql_user_password }}" << postgresql['sql_user']
+                gitlab_rails['db_host'] = '/var/opt/gitlab/postgresql/'
+                gitlab_rails['omniauth_enabled'] = true
+                gitlab_rails['omniauth_allow_single_sign_on'] = ['google_oauth2']
+                gitlab_rails['omniauth_block_auto_created_users'] = true
+                gitlab_rails['omniauth_providers'] = [
+                  { 
+                    "name" => "google_oauth2",
+                    "app_id" => "{{ gitlab_google_app_id }}",
+                    "app_secret" => "{{ gitlab_google_app_secret }}",
+                    "args" => { "access_type" => "offline", "approval_prompt" => '' }
+                  }
+                ]
+                gitlab_rails['smtp_enable'] = true
+                gitlab_rails['smtp_address'] = "smtp.gmail.com"
+                gitlab_rails['smtp_port'] = 587
+                gitlab_rails['smtp_user_name'] = "{{ gitlab_gmail_user }}"
+                gitlab_rails['smtp_password'] = "{{ gitlab_gmail_password }}"
+                gitlab_rails['smtp_domain'] = "smtp.gmail.com"
+                gitlab_rails['smtp_authentication'] = "login"
+                gitlab_rails['smtp_enable_starttls_auto'] = true
+                gitlab_rails['smtp_tls'] = false
+                gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
+                gitlab_rails['incoming_email_enabled'] = true
+                gitlab_rails['incoming_email_address'] = "{{ gitlab_gmail_email_with_key }}"
+                gitlab_rails['incoming_email_email'] = "{{ gitlab_gmail_user }}"
+                gitlab_rails['incoming_email_password'] = "{{ gitlab_gmail_password }}"
+                gitlab_rails['incoming_email_host'] = "imap.gmail.com"
+                gitlab_rails['incoming_email_port'] = 993
+                gitlab_rails['incoming_email_ssl'] = true
+                gitlab_rails['incoming_email_start_tls'] = false
+                gitlab_rails['incoming_email_mailbox_name'] = "inbox"
+                gitlab_rails['incoming_email_idle_timeout'] = 60
+                registry['enable'] = true
+                registry_external_url 'https://{{ gitlab_ext_name }}:5001'
+                registry['registry_http_addr'] = "localhost:5000"
+                registry_nginx['ssl_certificate'] = "/opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer"
+                registry_nginx['ssl_certificate_key'] = "/opt/acme/cert/{{ gitlab_ext_name }}/{{ gitlab_ext_name }}.key"
+                gitlab_rails['registry_path'] = "/var/lib/gitlab_docker_registry"
+                gitlab_rails['artifacts_enabled'] = true
+                gitlab_rails['artifacts_path'] = "/var/lib/gitlab_artifacts"
+                gitlab_rails['backup_path'] = '/var/backups/gitlab_backups'
+      - environ.setenv:
+          1:
+            - name: EXTERNAL_URL
+            - value: "https://{{ gitlab_ext_name }}"
+            - update_minion: True
+      - cmd.run:
+          1:
+            - name: 'gitlab-ctl reconfigure'
+            - runas: 'root'
+      - cron.present:
+          "{% if gitlab_cron_backup_cmd is defined and gitlab_cron_backup_cmd is not none %}{{ gitlab_cron_backup_cmd }}{% else %}gitlab-rake gitlab:backup:create{% endif %}":
+            - identifier: 'gitlab_backups'
+            - user: root
+            - minute: 10
+            - hour: 5
+
+{# example for rsnapshot_backup
+rsnapshot_backup:
+  sources:
+    {{ gitlab_hostname }}:
+      - type: RSYNC_SSH
+        data:
+          - UBUNTU
+          - /opt/gitlab
+          - /var/opt/gitlab
+          - /opt/acme
+          - /var/lib/gitlab_docker_registry
+          - /var/lib/gitlab_artifacts
+          - /var/backups/gitlab_backups
+        checks:
+          - type: .backup
+        backups:
+          - host: {{ gitlab_hostname }}
+            path: /var/backups/{{ gitlab_hostname }}
+          - host: {{ backup_server }}
+            path: /var/backups/{{ gitlab_hostname }}
+#}

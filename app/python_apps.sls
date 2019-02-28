@@ -1,10 +1,30 @@
 {% if (pillar['app'] is defined) and (pillar['app'] is not none) %}
   {%- if (pillar['app']['python_apps'] is defined) and (pillar['app']['python_apps'] is not none) %}
+
     {%- if (pillar['certbot_staging'] is defined) and (pillar['certbot_staging'] is not none) and (pillar['certbot_staging']) %}
       {%- set certbot_staging = "--staging" %}
     {%- else %}
       {%- set certbot_staging = " " %}
     {%- endif %}
+
+    {%- if (pillar['certbot_force_renewal'] is defined) and (pillar['certbot_force_renewal'] is not none) and (pillar['certbot_force_renewal']) %}
+      {%- set certbot_force_renewal = "--force-renewal" %}
+    {%- else %}
+      {%- set certbot_force_renewal = " " %}
+    {%- endif %}
+
+    {%- if (pillar['acme_staging'] is defined) and (pillar['acme_staging'] is not none) and (pillar['acme_staging']) %}
+      {%- set acme_staging = "--staging" %}
+    {%- else %}
+      {%- set acme_staging = " " %}
+    {%- endif %}
+
+    {%- if (pillar['acme_force_renewal'] is defined) and (pillar['acme_force_renewal'] is not none) and (pillar['acme_force_renewal']) %}
+      {%- set acme_force_renewal = "--force" %}
+    {%- else %}
+      {%- set acme_force_renewal = " " %}
+    {%- endif %}
+
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
     {%- else %}
@@ -43,11 +63,14 @@ python_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
     - gid: {{ app_params['group'] }}
-    - optional_groups:
-      - adm
     - home: {{ app_params['app_root'] }}
     - createhome: True
-    - password: '!'
+    {% if app_params['pass'] == '!' %}
+    - password: '{{ app_params['pass'] }}'
+    {% else %}
+    - password: '{{ app_params['pass'] }}'
+    - hash_password: True
+    {% endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ python_app }}
 
@@ -56,6 +79,14 @@ python_apps_user_homedir_userown_{{ loop.index }}:
     - name: {{ app_params['app_root'] }}
     - user: {{ app_params['user'] }}
     - group: {{ app_params['group'] }}
+    - makedirs: True
+
+python_apps_nginx_root_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app_params['nginx']['root'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - mode: 755
     - makedirs: True
 
 python_apps_user_ssh_dir_{{ loop.index }}:
@@ -204,7 +235,6 @@ python_apps_app_virtualenv_{{ loop.index }}:
     - name: {{ app_params['virtualenv']['target'] }}
     - python: /usr/local/pyenv/shims/python
     - user: {{ app_params['user'] }}
-    - cwd: {{ app_params['group'] }}
     - system_site_packages: False
     - venv_bin: {{ app_params['app_root'] ~ '/virtualenv-' ~ app_params['virtualenv']['pyenv_version'] }}
     - env_vars:
@@ -350,7 +380,7 @@ python_apps_app_certbot_dir_{{ loop.index }}:
 python_apps_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ python_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ python_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ server_name_301|replace(" ", ",") }}"'
 
 python_apps_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -364,7 +394,7 @@ python_apps_app_certbot_replace_symlink_2_{{ loop.index }}:
 
 python_apps_app_certbot_cron_{{ loop.index }}:
   cron.present:
-    - name: '/opt/certbot/certbot-auto renew --renew-hook "service nginx configtest && service nginx restart"'
+    - name: '/opt/certbot/certbot-auto renew --quiet --renew-hook "service nginx configtest && service nginx restart"'
     - identifier: 'certbot_cron'
     - user: root
     - minute: 10
@@ -421,7 +451,7 @@ python_apps_app_certbot_dir_{{ loop.index }}:
 python_apps_app_certbot_run_{{ loop.index }}:
   cmd.run:
     - cwd: /root
-    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ python_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
+    - name: '/opt/certbot/certbot-auto -n certonly --webroot {{ certbot_staging }} {{ certbot_force_renewal }} --reinstall --allow-subset-of-names --agree-tos --cert-name {{ python_app }} --email {{ app_params['nginx']['ssl']['certbot_email'] }} -w {{ app_params['app_root'] }}/certbot -d "{{ app_params['nginx']['server_name']|replace(" ", ",") }}"'
 
 python_apps_app_certbot_replace_symlink_1_{{ loop.index }}:
   cmd.run:
@@ -435,12 +465,72 @@ python_apps_app_certbot_replace_symlink_2_{{ loop.index }}:
 
 python_apps_app_certbot_cron_{{ loop.index }}:
   cron.present:
-    - name: '/opt/certbot/certbot-auto renew --renew-hook "service nginx configtest && service nginx restart"'
+    - name: '/opt/certbot/certbot-auto renew --quiet --renew-hook "service nginx configtest && service nginx restart"'
     - identifier: 'certbot_cron'
     - user: root
     - minute: 10
     - hour: 2
     - dayweek: 1
+          {%- endif %}
+
+        {%- elif
+               (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
+               (app_params['nginx']['ssl']['acme'] is defined) and (app_params['nginx']['ssl']['acme'] is not none) and (app_params['nginx']['ssl']['acme'])
+        %}
+python_apps_app_nginx_vhost_config_{{ loop.index }}:
+  file.managed:
+    - name: '/etc/nginx/sites-available/{{ python_app }}.conf'
+    - user: root
+    - group: root
+    - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
+    - template: jinja
+    - defaults:
+        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name_301: '{{ server_name_301 }}'
+        nginx_root: {{ app_params['nginx']['root'] }}
+        access_log: {{ app_params['nginx']['access_log'] }}
+        error_log: {{ app_params['nginx']['error_log'] }}
+        app_name: {{ python_app }}
+        app_root: {{ app_params['app_root'] }}
+        ssl_cert: '/etc/nginx/ssl/{{ python_app }}/fullchain.pem'
+        ssl_key: '/etc/nginx/ssl/{{ python_app }}/privkey.pem'
+        auth_basic_block: '{{ auth_basic_block }}'
+
+          {# at least we have snakeoil, if cert req fails #}
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ python_app ~ '/fullchain.pem') %}
+python_apps_app_nginx_ssl_link_1_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ python_app }}/fullchain.pem'
+    - target: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
+          {%- endif %}
+
+          {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ python_app ~ '/privkey.pem') %}
+python_apps_app_nginx_ssl_link_2_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/ssl/{{ python_app }}/privkey.pem'
+    - target: '/etc/ssl/private/ssl-cert-snakeoil.key'
+          {%- endif %}
+
+          {%- if (pillar['acme_run_ready'] is defined and pillar['acme_run_ready'] is not none and pillar['acme_run_ready']) or (app_params['nginx']['ssl']['acme_run_ready'] is defined and app_params['nginx']['ssl']['acme_run_ready'] is not none and app_params['nginx']['ssl']['acme_run_ready']) %}
+python_apps_app_acme_run_{{ loop.index }}:
+  cmd.run:
+    - cwd: /opt/acme/home
+    - shell: '/bin/bash'
+            {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true'
+            {%- else %}
+    - name: 'openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true'
+            {%- endif %}
+
+python_apps_app_acme_replace_symlink_1_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ python_app }}_fullchain.cer && ln -s -f /opt/acme/cert/{{ python_app }}_fullchain.cer /etc/nginx/ssl/{{ python_app }}/fullchain.pem || true'
+
+python_apps_app_acme_replace_symlink_2_{{ loop.index }}:
+  cmd.run:
+    - cwd: /root
+    - name: 'test -f /opt/acme/cert/{{ python_app }}_key.key && ln -s -f /opt/acme/cert/{{ python_app }}_key.key /etc/nginx/ssl/{{ python_app }}/privkey.pem || true'
           {%- endif %}
 
         {%- else %}
@@ -462,13 +552,20 @@ python_apps_app_nginx_vhost_config_{{ loop.index }}:
         auth_basic_block: '{{ auth_basic_block }}'
         {%- endif %}
 
-        {%- if (pillar['nginx_reload'] is defined) and (pillar['nginx_reload'] is not none) and (pillar['nginx_reload']) %}
-python_apps__nginx_reload__{{ loop.index }}:
+        {%- if (app_params['nginx']['link_sites-enabled'] is defined and app_params['nginx']['link_sites-enabled'] is not none and app_params['nginx']['link_sites-enabled']) %}
+app_link_sites_enabled_{{ loop.index }}:
+  file.symlink:
+    - name: '/etc/nginx/sites-enabled/{{ python_app }}.conf'
+    - target: '/etc/nginx/sites-available/{{ python_app }}.conf'
+        {%- endif %}
+
+        {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
+app_nginx_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
     - name: 'service nginx configtest && service nginx reload'
-
         {%- endif %}
+
       {%- endif %}
     {%- endfor %}
 
@@ -480,18 +577,44 @@ python_apps_info_warning:
     - comment: |
         WARNING: State configures nginx virtual hosts, BUT it doesn't reload or restart nginx, apps.
         WARNING: It is done so not to break running production sites on the host.
-        WARNING: You should state.apply this state first, then check configs, reload or restart nginx, pfp-fpm manually.
-        WARNING: After that there will be /.well-known/ location ready to serve certbot request.
-        WARNING: For the second time you can run:
-        WARNING: state.apply ... pillar='{"certbot_run_ready": True}'
-        WARNING: This will activate certbot execution and active its certs in nginx.
-        WARNING: After that you can check and reload again.
-        WARNING: Also, not to be temp banned by LE when making test runs, you can run:
-        WARNING: state.apply ... pillar='{"certbot_run_ready": True, "certbot_staging": True}'
-        WARNING: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
-        NOTICE:  You can run only one app with pillar:
-        NOTICE:  state.apply ... pillar='{"app_only_one": "<app_name>"}'
-        NOTICE:  You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
-        NOTICE:  state.apply ... pillar='{"nginx_reload": True}'
+         NOTICE:
+         NOTICE: You should state.apply this state first, then check configs, reload or restart nginx, pfp-fpm manually.
+         NOTICE: After that there will be /.well-known/ location ready to serve certbot request.
+         NOTICE:
+         NOTICE: For the second time you can run:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True}'
+         NOTICE: This will activate certbot execution and active its certs in nginx.
+         NOTICE:
+         NOTICE: After that you can check and reload again.
+         NOTICE:
+         NOTICE: Also, not to be temp banned by LE when making test runs, you can run:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_staging": True}'
+         NOTICE: This will add --staging option to certbot. Certificate will be not trusted, but LE will allow much more tests.
+         NOTICE:
+         NOTICE: After staging experiments you can force renewal with:
+         NOTICE: state.apply ... pillar='{"certbot_run_ready": True, "certbot_force_renewal": True}'
+         NOTICE: This will add --force-renewal option to certbot.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE:
+         NOTICE: ACME.SH workflow:
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE: acme.sh should be configured beforehand. You need to specify pillar acme_run_ready to use it:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True}'
+         NOTICE: This will activate acme.sh execution.
+         NOTICE:
+         NOTICE: Also, not to be temp banned by LE when making test runs, you can run:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_staging": True}'
+         NOTICE: This will add --staging option to acme.sh. Certificate will be not trusted, but LE will allow much more tests.
+         NOTICE:
+         NOTICE: After staging experiments you can force renewal with:
+         NOTICE: state.apply ... pillar='{"acme_run_ready": True, "acme_force_renewal": True}'
+         NOTICE: This will add --force option to acme.sh.
+         NOTICE: --------------------------------------------------------------------------------------------------------------
+         NOTICE:
+         NOTICE: You can run only one app with pillar:
+         NOTICE: state.apply ... pillar='{"app_only_one": "<app_name>"}'
+         NOTICE:
+         NOTICE: You can run 'service nginx configtest && service nginx reload' after each app deploy with pillar:
+         NOTICE: state.apply ... pillar='{"nginx_reload": True}'
   {%- endif %}
 {%- endif %}

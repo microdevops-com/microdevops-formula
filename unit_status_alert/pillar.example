@@ -1,0 +1,10 @@
+# vi: set ft=yaml:
+
+unit_status_alert:
+  units:
+    certbot:		# Any name
+      prefix: 'certbot'	# Prefix of systemd unit name
+      enabled: True	# True or False
+    nginx:
+      prefix: 'nginx'
+      enabled: True
