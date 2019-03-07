@@ -47,7 +47,7 @@ app:
         auth_basic:
           user: 'basicuser'
           pass: 'basicpassword'
-        vhost_config: 'app/files/example_php-fpm_app_2/vhost.conf'
+        vhost_config: 'files/app/example_php-fpm_app_2/vhost.conf'
         root: '/var/www/app_2/src/public'
         server_name: 'example.com'
         server_name_301: 'www.example.com www2.example.com'
@@ -57,7 +57,7 @@ app:
           certbot: True
           certbot_email: 'admin@example.com'
       pool:
-        pool_config: 'app/files/example_php-fpm_app_2/pool.conf'
+        pool_config: 'files/app/example_php-fpm_app_2/pool.conf'
         php_version: '5.6'
         pm: |
           pm = ondemand
@@ -89,7 +89,7 @@ app:
             User git
             Identityfile /var/www/app_2/.ssh/id_repo
       files: # you can copy app configs from salt, not to store them in repo
-        src: 'app/files/example_php-fpm_app_2/files'
+        src: 'files/app/example_php-fpm_app_2/files'
         dst: '/var/www/app_2/src/public'
       setup_script: # e.g. after git pull to change permissions and create missing folders
         cwd: '/var/www/app_2/src'
