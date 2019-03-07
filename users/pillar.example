@@ -16,8 +16,10 @@ windows_users:
     starting_program: '\"C:\Program Files\My Cool Program\My Cool Program.exe\" myparameter /H\"localhost\"' # double quotes should be backslashed, don't use \" after \ - it wil be a backslashed backslash
     start_in: 'C:\Program Files\My Cool Program\' # optional for starting_program, usually you dont need double quotes here
     session_params:
-      MaxConnectionTime: "120"
-      MaxDisconnectionTime: "1"
-      MaxIdleTime: "30"
-      BrokenConnectionAction: "1"
-      ReconnectionAction: "1"
+      MaxConnectionTime: "120"     ### "Active session limit" (minutes); "0" = Never (default).
+      MaxDisconnectionTime: "1"    ### "End a disconnected session" (minutes); "0" = Never (default);
+      MaxIdleTime: "30"            ### "Idle session limit" (minutes); "0" = Never (default).
+      BrokenConnectionAction: "1"  ### "When a session limit is reached or connection is broken":
+                                   #   "1" = End session; "0" = Disconnect from session (default).
+      ReconnectionAction: "1"      ### "Allow reconnection":
+                                   #   "1" = From originating client only; "0" = From any client (default).
