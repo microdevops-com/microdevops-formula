@@ -18,7 +18,7 @@ app:
         auth_basic: # optional basic auth
           user: 'basicuser'
           pass: 'basicpassword'
-        vhost_config: 'app/files/example_php-fpm_app_1/vhost.conf'
+        vhost_config: 'files/app/example_php-fpm_app_1/vhost.conf'
         root: '/var/www/app_1/src/public'
         server_name: 'example.com'
         server_name_301: 'www.example.com www2.example.com'
@@ -35,7 +35,7 @@ app:
           rotate_count: '10' # 31 by default
           rotate_when: 'weekly' # daily by default
         ssl: # commercial cert example
-          certs_dir: 'app/files/example_php-fpm_app_1/ssl' # those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
+          certs_dir: 'files/app/example_php-fpm_app_1/ssl' # those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
           ssl_cert: 'ssl/app_1/app_1.crt' # mandatory, in terms of nginx, e.g. as for files abobe, or you can use absolute path
           ssl_key: 'ssl/app_1/app_1.key' # mandatory
           ssl_chain: 'ssl/app_1/gd_bundle-g2-g1.crt' # mandatory
@@ -51,7 +51,7 @@ app:
         pyenv_version: '3.6.7'
         target: '/opt/alerta/{{ appname }}/venv'
       pool: # php-fpm_apps only
-        pool_config: 'app/files/example_php-fpm_app_1/pool.conf'
+        pool_config: 'files/app/example_php-fpm_app_1/pool.conf'
         reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
         log: # optional pool log params
           dir: '/var/www/app_1/log/php' # by default pool logs are in /var/log/php
@@ -65,10 +65,11 @@ app:
           rotate_when: 'weekly' # daily by default
         php_version: '5.6'
         pm: |
-          pm = ondemand
+          pm = dynamic
           pm.max_children = 50
-          pm.process_idle_timeout = 10s
-          pm.max_requests = 500
+          pm.start_servers = 20
+          pm.min_spare_servers = 10
+          pm.max_spare_servers = 40
         php_admin: |
           php_admin_flag[html_errors] = off
           php_admin_value[post_max_size] = 25M
@@ -94,7 +95,7 @@ app:
             User git
             Identityfile /var/www/app_2/.ssh/id_repo
       files: # you can copy app configs from salt, not to store them in repo
-        src: 'app/files/example_php-fpm_app_1/files'
+        src: 'files/app/example_php-fpm_app_1/files'
         dst: '/var/www/app_1/src/public'
       setup_script: # e.g. after git pull to change permissions and create missing folders
         cwd: '/var/www/app_1/src'
