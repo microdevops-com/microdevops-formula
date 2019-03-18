@@ -48,11 +48,7 @@ install_cmd_10:
 
 install_cmd_11:
   cron.present:
-    - name: |
-        /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system create secret tls tls-rancher-ingress \
-          --cert=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer \
-          --key=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_key.key \
-          -o yaml --dry-run | /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system replace --force -f -
+    - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system create secret tls tls-rancher-ingress --cert=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer --key=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_key.key -o yaml --dry-run | /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system replace --force -f -'
     - identifier: rancher_update_cert
     - user: root
     - minute: '30 7 * * 0'
