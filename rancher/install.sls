@@ -40,9 +40,22 @@ install_cmd_9:
 
 install_cmd_10:
   cmd.run:
-    - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system describe secret tls-rancher-ingress | grep -q "Name:.*tls-rancher-ingress" || /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system create secret tls tls-rancher-ingress --cert=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer --key=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_key.key'
+    - name: |
+        /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system create secret tls tls-rancher-ingress \
+          --cert=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer \
+          --key=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_key.key \
+          -o yaml --dry-run | /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system replace --force -f -
 
 install_cmd_11:
+  cron.present:
+    - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system create secret tls tls-rancher-ingress --cert=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer --key=/opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_key.key -o yaml --dry-run | /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system replace --force -f -'
+    - identifier: rancher_update_cert
+    - user: root
+    - minute: 30
+    - hour: 7
+    - dayweek: 3
+
+install_cmd_12:
   cmd.run:
     - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system rollout status deploy/rancher | grep -q "deployment.*rancher.*successfully rolled out" || /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/helm.sh install rancher-stable/rancher --name rancher --namespace cattle-system --set hostname={{ pillar['rancher']['cluster_domain'] }} --set ingress.tls.source=secret'
   {%- endif %}
