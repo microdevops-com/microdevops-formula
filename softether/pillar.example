@@ -34,3 +34,5 @@ softether:
           user1:
             password: 'XXX-SET-OWN-USER-PASS-HERE-XXX'
             realname: 'Real Name'
+          user2:
+            delete: True
