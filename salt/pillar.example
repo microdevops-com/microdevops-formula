@@ -1,0 +1,10 @@
+salt:
+  master:
+    version: 2019.2
+    config:
+      interface: 0.0.0.0
+      worker_threads: 60
+      file_roots:
+        base:
+          - /srv/salt
+          - /srv/files
