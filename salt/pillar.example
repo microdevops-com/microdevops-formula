@@ -8,3 +8,4 @@ salt:
         base:
           - /srv/salt
           - /srv/files
+    repo: git@gitlab.example.com:salt-master.git # optionally git clone repo if /srv/.git does not exist

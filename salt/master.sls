@@ -29,4 +29,11 @@ salt_master_config:
 salt_master_service:
   cmd.run:
     - name: service salt-master restart
+
+  {%- if pillar['salt']['master']['repo'] is defined and pillar['salt']['master']['repo'] is not none %}
+salt_master_deploy_repo:
+  cmd.run:
+    - name: [ -d /srv/.git ] || ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git clone {{ pillar['salt']['master']['repo'] }} && git checkout -B master origin/master && git submodule init && git submodule update --recursive -f --checkout )
+
+  {%- endif %}
 {% endif %}
