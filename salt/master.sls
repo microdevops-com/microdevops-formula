@@ -34,7 +34,7 @@ salt_master_service:
 salt_master_deploy_repo:
   cmd.run:
     - name: |
-        [ -d /srv/.git ] || ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git clone {{ pillar['salt']['master']['repo'] }} && git checkout -B master origin/master && git submodule init && git submodule update --recursive -f --checkout )
+        [ -d /srv/.git ] || ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git clone {{ pillar['salt']['master']['repo'] }} . && git checkout -B master origin/master && git submodule init && git submodule update --recursive -f --checkout )
 
   {%- endif %}
 {% endif %}
