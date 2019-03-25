@@ -26,6 +26,11 @@ salt_master_config:
     - formatter: yaml
     - dataset: {{ pillar['salt']['master']['config'] }}
 
+salt_master_deploy_keys:
+  ssh_auth.present:
+    - user: root
+    - names: {{ pillar['salt']['master']['deploy_keys'] }}
+
 salt_master_service:
   cmd.run:
     - name: service salt-master restart
