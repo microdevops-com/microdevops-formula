@@ -26,6 +26,24 @@ salt_master_config:
     - formatter: yaml
     - dataset: {{ pillar['salt']['master']['config'] }}
 
+  {%- if pillar['salt']['master']['key'] is defined and pillar['salt']['master']['key'] is not none %}
+salt_master_key_1:
+  file.managed:
+    - name: /etc/salt/pki/master/master.pem
+    - user: root
+    - group: root
+    - mode: 400
+    - contents: {{ pillar['salt']['master']['key']['pem'] | yaml_encode }}
+
+salt_master_key_2:
+  file.managed:
+    - name: /etc/salt/pki/master/master.pub
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: {{ pillar['salt']['master']['key']['pub'] | yaml_encode }}
+  {%- endif %}
+
 salt_master_service:
   cmd.run:
     - name: service salt-master restart
@@ -35,6 +53,6 @@ salt_master_deploy_repo:
   cmd.run:
     - name: |
         [ -d /srv/.git ] || ( cd /srv && git init . && git remote add origin {{ pillar['salt']['master']['repo'] }} && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull origin master && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update --recursive -f --checkout && git branch --set-upstream-to=origin/master master )
-
   {%- endif %}
+
 {% endif %}

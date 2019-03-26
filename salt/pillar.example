@@ -9,3 +9,12 @@ salt:
           - /srv/salt
           - /srv/files
     repo: git@gitlab.example.com:salt-master.git # optionally git clone repo if /srv/.git does not exist
+    key: # optionally manage master key (/etc/salt/pki/master/master.pem, /etc/salt/pki/master/master.pub)
+      pem: |
+        -----BEGIN RSA PRIVATE KEY-----
+        ...
+        -----END RSA PRIVATE KEY-----
+      pub: |
+        -----BEGIN PUBLIC KEY-----
+        ...
+        -----END PUBLIC KEY-----
