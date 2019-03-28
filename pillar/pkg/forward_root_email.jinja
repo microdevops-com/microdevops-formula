@@ -1,3 +1,11 @@
+{#
+This file should be included in pillar, which sets the following:
+{% set root_email = "email@example.com" %}
+
+And then:
+{% include 'pkg/forward_root_email.jinja' with context %}
+#}
+
 pkg:
   forward_root_email:
     when: PKG_BEFORE_DEPLOY
