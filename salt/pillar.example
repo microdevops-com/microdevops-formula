@@ -18,3 +18,17 @@ salt:
         -----BEGIN PUBLIC KEY-----
         ...
         -----END PUBLIC KEY-----
+
+  minion:
+    version: 2019.2
+    hosts:
+      - name: salt1.example.com
+        ip: 1.2.3.4
+      - name: salt2.example.com
+        ip: 4.3.2.1
+    config:
+      master:
+        - salt1.example.com
+        - salt2.example.com
+      grains:
+        fqdn: {{ grains['fqdn'] }}

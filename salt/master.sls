@@ -2,10 +2,10 @@
 salt_master_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-    - name: deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/2019.2 xenial main
     - name: deb http://repo.saltstack.com/apt/ubuntu/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['master']['version'] }} {{ grains['oscodename'] }} main
     - file: /etc/apt/sources.list.d/saltstack.list
     - key_url: https://repo.saltstack.com/apt/ubuntu/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['master']['version'] }}/SALTSTACK-GPG-KEY.pub
+    - clean_file: True
 
 salt_master_pkg:
   pkg.latest:
