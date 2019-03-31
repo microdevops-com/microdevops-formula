@@ -41,7 +41,8 @@ salt_minion_config_restart:
     - onchanges:
         - file: 'C:\salt\conf\minion'
 
-  {%- elif grains['os'] in ['Ubuntu', 'Debian'] %}
+  {%- elif grains['os'] in ['Ubuntu', 'Debian', 'Centos'] %}
+    {%- elif grains['os'] in ['Ubuntu', 'Debian'] %}
 
 salt_minion_repo:
   pkgrepo.managed:
@@ -52,7 +53,7 @@ salt_minion_repo:
     - clean_file: True
     - refresh: True
 
-    {%- if pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string %}
+      {%- if pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string %}
 salt_minion_update_restart:
   cmd.run:
     - name: |
@@ -60,6 +61,8 @@ salt_minion_update_restart:
         exec 1>&- # close stdout
         exec 2>&- # close stderr
         nohup /bin/sh -c 'apt-get update; apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install salt-minion={{ pillar['salt']['minion']['version']|string }}* && salt-call --local service.restart salt-minion' &
+      {%- endif %}
+
     {%- endif %}
 
 salt_minion_config:
