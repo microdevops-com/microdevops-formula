@@ -31,11 +31,11 @@ salt_minion_grains_file_rm:
     - name: 'C:\salt\conf\grains'
     {%- endif %}
 
-    {%- if pillar['salt']['minion']['minion_id_file_rm'] is defined and pillar['salt']['minion']['minion_id_file_rm'] is not none and pillar['salt']['minion']['minion_id_file_rm'] %}
-salt_minion_id_file_rm:
-  file.absent:
+salt_minion_id:
+  file.managed:
     - name: 'C:\salt\conf\minion_id'
-    {%- endif %}
+    - contents: |
+        {{ grains['fqdn'] }}
 
 salt_minion_config:
   file.serialize:
@@ -85,11 +85,11 @@ salt_minion_grains_file_rm:
     - name: /etc/salt/grains
     {%- endif %}
 
-    {%- if pillar['salt']['minion']['minion_id_file_rm'] is defined and pillar['salt']['minion']['minion_id_file_rm'] is not none and pillar['salt']['minion']['minion_id_file_rm'] %}
-salt_minion_id_file_rm:
-  file.absent:
+salt_minion_id:
+  file.managed:
     - name: /etc/salt/minion_id
-    {%- endif %}
+    - contents: |
+        {{ grains['fqdn'] }}
 
 salt_minion_config:
   file.serialize:
