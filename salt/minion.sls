@@ -42,7 +42,7 @@ salt_minion_config_restart:
         - file: 'C:\salt\conf\minion'
 
   {%- elif grains['os'] in ['Ubuntu', 'Debian', 'CentOS'] %}
-    {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
+    {%- if grains['os'] in ['Ubuntu', 'Debian'] and grains['oscodename'] in ['bionic', 'xenial', 'trusty', 'jessie', 'stretch'] %}
 
 salt_minion_repo:
   pkgrepo.managed:
