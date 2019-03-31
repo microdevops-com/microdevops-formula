@@ -25,6 +25,18 @@ minion_install_silent_cmd:
     - name: 'START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar['salt']['minion']['config']['master']|join(',') }} /minion-name={{ grains['fqdn'] }} /start-minion=1'
     {%- endif %}
 
+    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] is not none and pillar['salt']['minion']['grains_file_rm'] %}
+salt_minion_grains_file_rm:
+  file.absent:
+    - name: 'C:\salt\conf\grains'
+    {%- endif %}
+
+    {%- if pillar['salt']['minion']['minion_id_file_rm'] is defined and pillar['salt']['minion']['minion_id_file_rm'] is not none and pillar['salt']['minion']['minion_id_file_rm'] %}
+salt_minion_id_file_rm:
+  file.absent:
+    - name: 'C:\salt\conf\minion_id'
+    {%- endif %}
+
 salt_minion_config:
   file.serialize:
     - name: 'C:\salt\conf\minion'
@@ -40,6 +52,8 @@ salt_minion_config_restart:
     - m_name: salt-minion
     - onchanges:
         - file: 'C:\salt\conf\minion'
+        - file: 'C:\salt\conf\grains'
+        - file: 'C:\salt\conf\minion_id'
 
   {%- elif grains['os'] in ['Ubuntu', 'Debian', 'CentOS'] %}
     {%- if grains['os'] in ['Ubuntu', 'Debian'] and grains['oscodename'] in ['bionic', 'xenial', 'trusty', 'jessie', 'stretch'] %}
@@ -65,6 +79,18 @@ salt_minion_update_restart:
 
     {%- endif %}
 
+    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] is not none and pillar['salt']['minion']['grains_file_rm'] %}
+salt_minion_grains_file_rm:
+  file.absent:
+    - name: /etc/salt/grains
+    {%- endif %}
+
+    {%- if pillar['salt']['minion']['minion_id_file_rm'] is defined and pillar['salt']['minion']['minion_id_file_rm'] is not none and pillar['salt']['minion']['minion_id_file_rm'] %}
+salt_minion_id_file_rm:
+  file.absent:
+    - name: /etc/salt/minion_id
+    {%- endif %}
+
 salt_minion_config:
   file.serialize:
     - name: /etc/salt/minion
@@ -86,6 +112,8 @@ salt_minion_config_restart:
         nohup /bin/sh -c 'salt-call --local service.restart salt-minion' &
     - onchanges:
         - file: /etc/salt/minion
+        - file: /etc/salt/grains
+        - file: /etc/salt/minion_id
 
   {%- endif %}
 

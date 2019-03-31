@@ -32,3 +32,5 @@ salt:
         - salt2.example.com
       grains:
         fqdn: {{ grains['fqdn'] }}
+    grains_file_rm: True # optionally remove grains file, if grains are managed inside main config
+    minion_id_file_rm: True # optionally remove minion_id, if id is managed inside main config
