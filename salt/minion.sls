@@ -41,7 +41,7 @@ salt_minion_config_restart:
     - onchanges:
         - file: 'C:\salt\conf\minion'
 
-  {%- elif grains['os'] in ['Ubuntu', 'Debian', 'Centos'] %}
+  {%- elif grains['os'] in ['Ubuntu', 'Debian', 'CentOS'] %}
     {%- if grains['os'] in ['Ubuntu', 'Debian'] %}
 
 salt_minion_repo:
