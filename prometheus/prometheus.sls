@@ -22,6 +22,25 @@ nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
+      - apache2-utils
+
+  {%- for domain in pillar['prometheus']['domains'] %}
+    {%- a_loop = loop %}
+    {%- for instance in domain['instances'] %}
+      {%- b_loop = loop %}
+      {%- if instance['auth'] is defined and instance['auth'] is not none %}
+        {%- for user_name, user_pass in instance['auth'] %}
+nginx_htaccess_user_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
+  webutil.user_exists:
+    - name: '{{ user_name }}'
+    - password: '{{ user_pass }}'
+    - htpasswd_file: /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd
+    - force: True
+    - runas: root
+        {%- endfor %}
+      {%- endif %}
+    {%- endfor %}
+  {%- endfor %}
 
 nginx_files_1:
   file.managed:
@@ -49,6 +68,10 @@ nginx_files_1:
                 ssl_certificate_key /opt/acme/cert/prometheus_{{ domain['name'] }}_key.key;
     {%- for instance in domain['instances'] %}
                 location /{{ instance['name'] }}/ {
+      {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+      {%- endif %}
                     proxy_pass http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/;
                 }
     {%- endfor %}
