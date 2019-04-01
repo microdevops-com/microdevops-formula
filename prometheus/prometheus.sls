@@ -77,6 +77,15 @@ nginx_files_1:
       {%- endif %}
                     proxy_pass http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/;
                 }
+      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+                location /{{ instance['name'] }}/pushgateway/ {
+        {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+        {%- endif %}
+                    proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/{{ instance['name'] }}/pushgateway/;
+                }
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
             }
@@ -110,6 +119,14 @@ prometheus_dir_{{ loop.index }}_{{ i_loop.index }}:
     - mode: 755
     - makedirs: True
 
+      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+prometheus_pushgateway_dir_{{ loop.index }}_{{ i_loop.index }}:
+  file.directory:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-pushgateway
+    - mode: 755
+    - makedirs: True
+      {%- endif %}
+
 prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
   file.serialize:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
@@ -136,6 +153,22 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
     - watch:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
     - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/
+
+      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: pushgateway-{{ domain['name'] }}-{{ instance['name'] }}
+    - user: root
+    - image: {{ instance['pushgateway']['image'] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - publish:
+        - {{ instance['pushgateway']['port'] }}:9091/tcp
+    - binds:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-pushgateway:/pushgateway-data:rw
+    - command: --persistence.file=/pushgateway-data/persistence_file --web.route-prefix=/{{ instance['name'] }}/pushgateway --web.telemetry-path=/{{ instance['name'] }}/pushgateway/metrics
+      {%- endif %}
+
     {%- endfor %}
   {%- endfor %}
 
