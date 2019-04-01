@@ -25,9 +25,9 @@ nginx_install:
       - apache2-utils
 
   {%- for domain in pillar['prometheus']['domains'] %}
-    {%- a_loop = loop %}
+    {%- set a_loop = loop %}
     {%- for instance in domain['instances'] %}
-      {%- b_loop = loop %}
+      {%- set b_loop = loop %}
       {%- if instance['auth'] is defined and instance['auth'] is not none %}
         {%- for user_name, user_pass in instance['auth'] %}
 nginx_htaccess_user_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
