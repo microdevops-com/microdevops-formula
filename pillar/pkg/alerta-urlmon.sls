@@ -42,6 +42,7 @@ pkg:
             - rev: 'master'
             - target: '/opt/alerta/urlmon/src'
             - branch: 'master'
+            - force_reset: True
       - file.directory:
           1:
             - name: '/opt/alerta/urlmon/venv'
