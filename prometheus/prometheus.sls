@@ -29,7 +29,7 @@ nginx_install:
     {%- for instance in domain['instances'] %}
       {%- set b_loop = loop %}
       {%- if instance['auth'] is defined and instance['auth'] is not none %}
-        {%- for user_name, user_pass in instance['auth'] %}
+        {%- for user_name, user_pass in instance['auth'].items() %}
 nginx_htaccess_user_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   webutil.user_exists:
     - name: '{{ user_name }}'
