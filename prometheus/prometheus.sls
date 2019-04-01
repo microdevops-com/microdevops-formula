@@ -29,14 +29,17 @@ nginx_install:
     {%- for instance in domain['instances'] %}
       {%- set b_loop = loop %}
       {%- if instance['auth'] is defined and instance['auth'] is not none %}
-        {%- for user_name, user_pass in instance['auth'].items() %}
-nginx_htaccess_user_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
+        {%- for user in instance['auth'] %}
+          {%- set c_loop = loop %}
+          {%- for user_name, user_pass in user.items() %}
+nginx_htaccess_user_{{ a_loop.index }}_{{ b_loop.index }}_{{ c_loop.index }}_{{ loop.index }}:
   webutil.user_exists:
     - name: '{{ user_name }}'
     - password: '{{ user_pass }}'
     - htpasswd_file: /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd
     - force: True
     - runas: root
+          {%- endfor %}
         {%- endfor %}
       {%- endif %}
     {%- endfor %}
