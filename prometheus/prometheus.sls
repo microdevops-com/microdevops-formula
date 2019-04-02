@@ -12,7 +12,14 @@ docker_install_2:
     - reload_modules: True
     - pkgs:
         - docker-ce: '{{ pillar['prometheus']['docker-ce_version'] }}*'
-        - python-docker
+        - python-pip
+        # xenial has 1.9 package, it is not sufficiant for docker networks, so we need installing pip manually
+        #- python-docker
+                
+docker_pip_install:
+  pip.installed:
+    - name: docker-py >= 1.10
+    - reload_modules: True
 
 docker_install_3:
   service.running:
@@ -143,6 +150,10 @@ prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
     - merge_if_exists: False
     - formatter: yaml
     - dataset: {{ instance['config'] }}
+    
+docker_network_{{ loop.index }}_{{ i_loop.index }}:
+  docker_network.present:
+    - name: prometheus-{{ domain['name'] }}-{{ instance['name'] }}
 
 prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
@@ -151,6 +162,8 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
     - image: {{ instance['image'] }}
     - detach: True
     - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
         - {{ instance['port'] }}:9090/tcp
     - binds:
@@ -167,6 +180,8 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
     - image: {{ instance['pushgateway']['image'] }}
     - detach: True
     - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
         - {{ instance['pushgateway']['port'] }}:9091/tcp
     - binds:
