@@ -1,7 +1,7 @@
 prometheus:
   docker-ce_version: 18.06.1
   domains:
-    - name: prometheus.example.com # for nginx proxy and its ssl
+    - name: prometheus.example.com # for nginx proxy and its ssl on https://prometheus.example.com/prod
       instances:
         - name: prod
           port: 9090 # docker published port, nginx will forward /name to it
@@ -19,6 +19,10 @@ prometheus:
                 static_configs:
                   - targets: ['localhost:9090'] # inside prometheus image the port is always 9090
                 metrics_path: /prod/metrics # metrics path depends on instance name
+          pushgateway: # optionally make https://prometheus.example.com/prod/pushgateway
+            enabled: True
+            port: 9092
+            image: prom/pushgateway
         - name: dev
           port: 9091
           image: prom/prometheus
@@ -35,3 +39,7 @@ prometheus:
                 static_configs:
                   - targets: ['localhost:9090']
                 metrics_path: /dev/metrics
+          pushgateway:
+            enabled: True
+            port: 9093
+            image: prom/pushgateway

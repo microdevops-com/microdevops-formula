@@ -83,7 +83,12 @@ nginx_files_1:
                     auth_basic "Prometheus";
                     auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
         {%- endif %}
-                    proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/{{ instance['name'] }}/pushgateway/;
+                    # web route has bugs in 0.7.0, using nginx sub_filter for now as workaround, has to be removed later
+                    sub_filter_once off;
+                    sub_filter 'src="/static/' 'src="/{{ instance['name'] }}/pushgateway/static/';
+                    sub_filter 'href="/static/' 'href="/{{ instance['name'] }}/pushgateway/static/';
+                    #proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/{{ instance['name'] }}/pushgateway/;
+                    proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/;
                 }
       {%- endif %}
     {%- endfor %}
@@ -166,7 +171,9 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
         - {{ instance['pushgateway']['port'] }}:9091/tcp
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-pushgateway:/pushgateway-data:rw
-    - command: --persistence.file=/pushgateway-data/persistence_file --web.route-prefix=/{{ instance['name'] }}/pushgateway --web.telemetry-path=/{{ instance['name'] }}/pushgateway/metrics
+    # web route has bugs in 0.7.0, using nginx sub_filter for now as workaround, has to be removed later
+    #- command: --persistence.file=/pushgateway-data/persistence_file --web.route-prefix=/{{ instance['name'] }}/pushgateway --web.telemetry-path=/{{ instance['name'] }}/pushgateway/metrics
+    - command: --persistence.file=/pushgateway-data/persistence_file
       {%- endif %}
 
     {%- endfor %}
