@@ -165,7 +165,7 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
 
 prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
   cron.present:
-    - name: /usr/bin/curl -XPOST http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/api/v1/admin/tsdb/snapshot
+    - name: /bin/rm -rf /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/snapshots/* && /usr/bin/curl -XPOST http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/api/v1/admin/tsdb/snapshot
     - identifier: prometheus_snapshot_{{ domain['name'] }}_{{ instance['name'] }}
     - user: root
     - minute: 20
