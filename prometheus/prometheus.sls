@@ -13,6 +13,7 @@ docker_install_2:
     - pkgs:
         - docker-ce: '{{ pillar['prometheus']['docker-ce_version'] }}*'
         - python-pip
+        - curl
         # xenial has 1.9 package, it is not sufficiant for docker networks, so we need installing pip manually
         #- python-docker
                 
@@ -160,7 +161,7 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}:/prometheus-data:rw
     - watch:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
-    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/
+    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
 
       {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
 prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
