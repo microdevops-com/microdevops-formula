@@ -2,9 +2,9 @@
 docker_install_1:
   pkgrepo.managed:
     - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
+    - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains['os']|lower }} {{ grains['oscodename'] }} stable
     - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/ubuntu/gpg
+    - key_url: https://download.docker.com/linux/{{ grains['os']|lower }}/gpg
 
 docker_install_2:
   pkg.installed:
@@ -103,16 +103,6 @@ nginx_files_1:
             }
         }
 
-  {%- for domain in pillar['prometheus']['domains'] %}
-nginx_domain_index_{{ loop.index }}:
-  file.managed:
-    - name: /opt/prometheus/{{ domain['name'] }}/index.html
-    - contents: |
-    {%- for instance in domain['instances'] %}
-        <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
-    {%- endfor %}
-  {%- endfor %}
-
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
@@ -191,6 +181,16 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
     - command: --persistence.file=/pushgateway-data/persistence_file
       {%- endif %}
 
+    {%- endfor %}
+  {%- endfor %}
+
+  {%- for domain in pillar['prometheus']['domains'] %}
+nginx_domain_index_{{ loop.index }}:
+  file.managed:
+    - name: /opt/prometheus/{{ domain['name'] }}/index.html
+    - contents: |
+    {%- for instance in domain['instances'] %}
+        <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
     {%- endfor %}
   {%- endfor %}
 
