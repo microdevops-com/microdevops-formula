@@ -163,6 +163,14 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
     - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
 
+prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
+  cron.present:
+    - name: /usr/bin/curl -XPOST http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/api/v1/admin/tsdb/snapshot
+    - identifier: prometheus_snapshot_{{ domain['name'] }}_{{ instance['name'] }}
+    - user: root
+    - minute: 20
+    - hour: 6
+
       {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
 prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
