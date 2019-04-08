@@ -6,12 +6,12 @@ iface lo inet loopback
 
 auto eth0
 iface eth0 inet static
-        address $1
-        netmask $2
-        gateway $3
+  address $1
+  netmask $2
+  gateway $3
 EOM
 
-[[ ! -z $6 ]] && echo "        hwaddress ether $6" >> /etc/network/interfaces
+[[ ! -z $6 ]] && echo "  hwaddress ether $6" >> /etc/network/interfaces
 
 echo "search $5" > /etc/resolv.conf
 for NS in $4; do echo "nameserver ${NS}" >> /etc/resolv.conf; done
