@@ -8,6 +8,7 @@ This file should be included in pillar, which sets the following:
 {% set gitlab_runner_executor = "docker" %}
 {% set gitlab_runner_tags = "dind,runner1.example.com" %}
 {% set gitlab_runner_concurrency = "50" %}
+{% set gitlab_runner_add_to_docker_group = True %}
 {% set gitlab_runner_projects = [
   'myorg/dev/myproject',
 ] %}
@@ -33,11 +34,13 @@ pkg:
               - gitlab-runner
               - jq
               - curl
+{% if gitlab_runner_add_to_docker_group is defined and gitlab_runner_add_to_docker_group is not none and gitlab_runner_add_to_docker_group %}
       - user.present:
           1:
             - name: gitlab-runner
             - groups:
                 - docker
+{% endif %}
       - cmd.run:
           1:
             - name: |
