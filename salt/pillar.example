@@ -1,0 +1,35 @@
+salt:
+  master:
+    version: 2019.2
+    config:
+      interface: 0.0.0.0
+      worker_threads: 60
+      file_roots:
+        base:
+          - /srv/salt
+          - /srv/files
+    repo: git@gitlab.example.com:salt-master.git # optionally git clone repo if /srv/.git does not exist
+    key: # optionally manage master key (/etc/salt/pki/master/master.pem, /etc/salt/pki/master/master.pub)
+      pem: |
+        -----BEGIN RSA PRIVATE KEY-----
+        ...
+        -----END RSA PRIVATE KEY-----
+      pub: |
+        -----BEGIN PUBLIC KEY-----
+        ...
+        -----END PUBLIC KEY-----
+
+  minion:
+    version: 2019.2
+    hosts:
+      - name: salt1.example.com
+        ip: 1.2.3.4
+      - name: salt2.example.com
+        ip: 4.3.2.1
+    config:
+      master:
+        - salt1.example.com
+        - salt2.example.com
+      grains:
+        fqdn: {{ grains['fqdn'] }}
+    grains_file_rm: True # optionally remove grains file, if grains are managed inside main config

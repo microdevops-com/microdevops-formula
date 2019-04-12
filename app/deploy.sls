@@ -8,6 +8,7 @@ include:
   {%- endif %}
 {% endif %}
   - percona.percona
+  - rabbitmq.rabbitmq
   - pyenv.pyenv
   - sentry.sentry
   - php-fpm.php-fpm

@@ -6,14 +6,14 @@ iface lo inet loopback
 
 auto eth0
 iface eth0 inet static
-        address $1
-        netmask $2
-        gateway $3
-        dns-nameservers $4
-        dns-search $5
+  address $1
+  netmask $2
+  gateway $3
+  dns-nameservers $4
+  dns-search $5
 EOM
 
-[[ ! -z $8 ]] && echo "        hwaddress ether $8" >> /etc/network/interfaces
+[[ ! -z $8 ]] && echo "  hwaddress ether $8" >> /etc/network/interfaces
 
 cat >> /etc/network/interfaces <<- EOM
 auto eth1

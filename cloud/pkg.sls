@@ -22,6 +22,12 @@ pkg_xenial_sources_list:
     - name: '/etc/apt/sources.list'
     - source: salt://cloud/files/xenial_sources_list
     - mode: 0644
+  {%- elif grains['oscodename'] == 'bionic' %}
+pkg_bionic_sources_list:
+  file.managed:
+    - name: '/etc/apt/sources.list'
+    - source: salt://cloud/files/bionic_sources_list
+    - mode: 0644
   {%- endif %}
 
 pkg_deb_update:
@@ -184,7 +190,14 @@ xenial_bashrc:
     - name: '/etc/bash.bashrc'
     - source: salt://cloud/files/xenial_bashrc
     - mode: 0644
+  {%- elif grains['oscodename'] == 'bionic' %}
+bionic_bashrc:
+  file.managed:
+    - name: '/etc/bash.bashrc'
+    - source: salt://cloud/files/bionic_bashrc
+    - mode: 0644
   {%- endif %}
+
 {% elif grains['os'] in ['CentOS', 'RedHat'] %}
 pkg_centos_packages:
   pkg.installed:
