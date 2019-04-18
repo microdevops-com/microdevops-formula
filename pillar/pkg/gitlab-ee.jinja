@@ -133,7 +133,7 @@ pkg:
             - name: 'gitlab-ctl reconfigure'
             - runas: 'root'
       - cron.present:
-	  "{% if gitlab_cron_backup_cmd is defined and gitlab_cron_backup_cmd is not none %}{{ gitlab_cron_backup_cmd }}{% else %}gitlab-rake gitlab:backup:create > /dev/null 2>&1{% endif %}":
+          "{% if gitlab_cron_backup_cmd is defined and gitlab_cron_backup_cmd is not none %}{{ gitlab_cron_backup_cmd }}{% else %}gitlab-rake gitlab:backup:create > /dev/null 2>&1{% endif %}":
             - identifier: 'gitlab_backups'
             - user: root
             - minute: 10
