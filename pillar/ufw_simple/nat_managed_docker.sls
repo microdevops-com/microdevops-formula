@@ -5,5 +5,5 @@ ufw_simple:
     enabled: True
     masquerade:
       'masquerade from docker networks':
-        source: '172.0.0.0/8'
+        source: '172.16.0.0/12'
         out: 'br0'
