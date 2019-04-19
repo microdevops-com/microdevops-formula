@@ -1,4 +1,15 @@
 {% if pillar['prometheus'] is defined and pillar['prometheus'] is not none %}
+docker_install_00:
+  file.directory:
+    - name: /etc/docker
+    - mode: 700
+
+docker_install_01:
+  file.managed:
+    - name: /etc/docker/daemon.json
+    - contents: |
+        {"iptables": false}
+
 docker_install_1:
   pkgrepo.managed:
     - humanname: Docker CE Repository
@@ -25,6 +36,12 @@ docker_pip_install:
 docker_install_3:
   service.running:
     - name: docker
+
+docker_install_4:
+  cmd.run:
+    - name: 'systemctl restart docker'
+    - onchanges:
+        - file: /etc/docker/daemon.json
 
 nginx_install:
   pkg.installed:
@@ -92,10 +109,10 @@ nginx_files_1:
                     auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
         {%- endif %}
                     # web route has bugs in 0.7.0, using nginx sub_filter for now as workaround, has to be removed later
+                    #proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/{{ instance['name'] }}/pushgateway/;
                     sub_filter_once off;
                     sub_filter 'src="/static/' 'src="/{{ instance['name'] }}/pushgateway/static/';
                     sub_filter 'href="/static/' 'href="/{{ instance['name'] }}/pushgateway/static/';
-                    #proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/{{ instance['name'] }}/pushgateway/;
                     proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/;
                 }
       {%- endif %}
@@ -156,7 +173,7 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
     - networks:
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
-        - {{ instance['port'] }}:9090/tcp
+        - 127.0.0.1:{{ instance['port'] }}:9090/tcp
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}:/prometheus-data:rw
     - watch:
@@ -182,7 +199,7 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
     - networks:
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
-        - {{ instance['pushgateway']['port'] }}:9091/tcp
+        - 127.0.0.1:{{ instance['pushgateway']['port'] }}:9091/tcp
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-pushgateway:/pushgateway-data:rw
     # web route has bugs in 0.7.0, using nginx sub_filter for now as workaround, has to be removed later
