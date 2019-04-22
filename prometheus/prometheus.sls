@@ -116,6 +116,18 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/;
                 }
       {%- endif %}
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+                location /{{ instance['name'] }}/statsd-exporter/ {
+        {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+        {%- endif %}
+                    # web route is not even planned for statsd-exporter, using nginx sub_filter
+                    sub_filter_once off;
+                    sub_filter 'href="/metrics' 'href="/{{ instance['name'] }}/statsd-exporter/metrics';
+                    proxy_pass http://localhost:{{ instance['statsd-exporter']['port'] }}/;
+                }
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
             }
@@ -145,6 +157,26 @@ prometheus_pushgateway_dir_{{ loop.index }}_{{ i_loop.index }}:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-pushgateway
     - mode: 755
     - makedirs: True
+      {%- endif %}
+
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+prometheus_statsd-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
+  file.directory:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter
+    - mode: 755
+    - makedirs: True
+
+prometheus_statsd-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
+  file.serialize:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter/statsd_mapping.yml
+    - user: root
+    - group: root
+    - mode: 644
+    - show_changes: True
+    - create: True
+    - merge_if_exists: False
+    - formatter: yaml
+    - dataset: {{ instance['statsd-exporter']['mapping-config'] }}
       {%- endif %}
 
 prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
@@ -207,6 +239,25 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
     - command: --persistence.file=/pushgateway-data/persistence_file
       {%- endif %}
 
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+prometheus_statsd-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: statsd-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - user: root
+    - image: {{ instance['statsd-exporter']['image'] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - publish:
+        - 127.0.0.1:{{ instance['statsd-exporter']['port'] }}:9102/tcp
+        - 0.0.0.0:{{ instance['statsd-exporter']['statsd_tcp_port'] }}:9125/tcp
+        - 0.0.0.0:{{ instance['statsd-exporter']['statsd_udp_port'] }}:9125/udp
+    - binds:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter:/statsd-exporter-data:rw
+    - command: --statsd.mapping-config=/statsd-exporter-data/statsd_mapping.yml
+      {%- endif %}
+
     {%- endfor %}
   {%- endfor %}
 
@@ -217,6 +268,12 @@ nginx_domain_index_{{ loop.index }}:
     - contents: |
     {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
+      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+        <a href="{{ instance['name'] }}/pushgateway/">{{ instance['name'] }}/pushgateway</a><br>
+      {%- endif %}
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+        <a href="{{ instance['name'] }}/statsd-exporter/">{{ instance['name'] }}/statsd-exporter</a><br>
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 
