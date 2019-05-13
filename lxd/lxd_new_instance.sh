@@ -159,6 +159,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	time salt $LXDHOST cmd.shell "lxc start $HN_DASH"
 fi
 
+# Waiting for the minion to be alive
+echo
+echo "Waiting for the minion to be alive" | ccze -A
+time until salt -t 5 $HN test.ping 2>&1 | grep -q True; do sleep 1; echo -n .; done
+echo
+
 # fail2ban
 echo
 echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'" | ccze -A
@@ -167,12 +173,6 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'
 fi
-
-# Waiting for the minion to be alive
-echo
-echo "Waiting for the minion to be alive" | ccze -A
-time until salt -t 5 $HN test.ping 2>&1 | grep -q True; do sleep 1; echo -n .; done
-echo
 
 # app.deploy state
 echo
