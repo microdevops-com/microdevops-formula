@@ -23,6 +23,7 @@ docker_install_2:
     - reload_modules: True
     - pkgs: 
         - docker-ce: '{{ pillar['onlyoffice']['docker-ce_version'] }}*'
+        - python-pip
         - python3-pip
 
 docker_install_3:
@@ -106,5 +107,6 @@ onlyoffice_running_container:
     - restart_policy: always
     - publish:
         - {{ pillar['onlyoffice']['port'] }}:80/tcp
+    - client_timeout: 120
 
 {% endif %}
