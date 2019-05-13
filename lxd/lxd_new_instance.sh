@@ -139,15 +139,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	time salt -t 600 $HN state.highstate
 fi
 
-# fail2ban
-echo
-echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local'" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local'
-fi
-
 # Stop container
 echo
 echo "We need to stop the container for the final steps" | ccze -A
@@ -166,6 +157,15 @@ read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	time salt $LXDHOST cmd.shell "lxc start $HN_DASH"
+fi
+
+# fail2ban
+echo
+echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'" | ccze -A
+read -p "Are we OK with that? " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+	salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'
 fi
 
 # Waiting for the minion to be alive

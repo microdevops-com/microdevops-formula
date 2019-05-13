@@ -1,0 +1,47 @@
+grafana:
+  docker-ce_version: 18.06.1
+  domains:
+    - name: grafana.example.com
+      instances:
+        - name: prod
+          port: 3000
+          image: grafana/grafana
+          admin_password: xxx
+          install_plugins: grafana-clock-panel,grafana-simple-json-datasource
+          config: |
+            instance_name = grafana.example.com-prod
+            [server]
+            root_url = https://grafana.example.com/prod
+            [database]
+            url = postgres://grafana-prod:xxx@grafana1.example.com:5432/grafana-prod
+            [auth.gitlab]
+            enabled = true
+            allow_sign_up = true
+            client_id = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            client_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            scopes = api
+            auth_url = https://gitlab.example.com/oauth/authorize
+            token_url = https://gitlab.example.com/oauth/token
+            api_url = https://gitlab.example.com/api/v4
+            allowed_groups = grafana
+        - name: dev
+          port: 3001
+          image: grafana/grafana
+          admin_password: xxx
+          install_plugins: grafana-clock-panel,grafana-simple-json-datasource
+          config: |
+            instance_name = grafana.example.com-dev
+            [server]
+            root_url = https://grafana.example.com/dev
+            [database]
+            url = postgres://grafana-dev:xxx@grafana1.example.com:5432/grafana-dev
+            [auth.gitlab]
+            enabled = true
+            allow_sign_up = true
+            client_id = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            client_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            scopes = api
+            auth_url = https://gitlab.example.com/oauth/authorize
+            token_url = https://gitlab.example.com/oauth/token
+            api_url = https://gitlab.example.com/api/v4
+            allowed_groups = grafana

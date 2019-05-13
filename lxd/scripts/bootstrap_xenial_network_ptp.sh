@@ -6,12 +6,12 @@ iface lo inet loopback
 
 auto eth0
 iface eth0 inet static
-    address $1
-    netmask 255.255.255.255
-    pointopoint $2
-    gateway $2
-    dns-nameservers $3
-    dns-search $4
+  address $1
+  netmask 255.255.255.255
+  pointopoint $2
+  gateway $2
+  dns-nameservers $3
+  dns-search $4
 EOM
 
 /bin/kill -9 `/bin/ps ax | /bin/grep dhclient | /bin/grep -v grep | /usr/bin/awk '{print $1}'`

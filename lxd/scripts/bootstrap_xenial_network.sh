@@ -6,14 +6,14 @@ iface lo inet loopback
 
 auto eth0
 iface eth0 inet static
-        address $1
-        netmask $2
-        gateway $3
-        dns-nameservers $4
-        dns-search $5
+  address $1
+  netmask $2
+  gateway $3
+  dns-nameservers $4
+  dns-search $5
 EOM
 
-[[ ! -z $6 ]] && echo "        hwaddress ether $6" >> /etc/network/interfaces
+[[ ! -z $6 ]] && echo "  hwaddress ether $6" >> /etc/network/interfaces
 
 /bin/kill -9 `/bin/ps ax | /bin/grep dhclient | /bin/grep -v grep | /usr/bin/awk '{print $1}'`
 /bin/sleep 2
