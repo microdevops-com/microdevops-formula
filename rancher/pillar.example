@@ -14,6 +14,12 @@
 #   salt ranchercmdSOME.dev.example.com state.apply rancher.rke_up
 # - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
 #   salt ranchercmdSOME.dev.example.com state.apply rancher.install
+# - open rancher web admin
+# - give password and url
+# - wait for provisioning
+# - take bearer_token from admin - API & Keys - add key and put it below
+# - apply users
+#   salt ranchercmdSOME.dev.example.com state.apply rancher.users
 #
 # last two steps are not required to do from each command host and should be done once
 #
