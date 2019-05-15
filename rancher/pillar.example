@@ -55,3 +55,10 @@ rancher:
       internal_address: 10.0.10.4
       user: root
       role: ['controlplane', 'worker', 'etcd']
+  bearer_token: token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # add after install (taken from web admin), used to manage users via api
+  users:
+    - username: user
+      password: password
+      name: Some User
+      description: Some Description
+      must_change_password: False
