@@ -1,6 +1,9 @@
 # vi: set ft=yaml:
 #
 # usage:
+# - add
+#   echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize
+#   to /etc/rc.local on host machine if running inside LXD
 # - prepare nodes, node fo nginx proxy, node for command exec
 # - generate new private key for usage in this pillar
 # - prepare this pillar and assign it for all hosts
