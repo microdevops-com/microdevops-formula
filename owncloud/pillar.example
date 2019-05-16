@@ -1,0 +1,13 @@
+owncloud:
+  docker-ce_version: 5:18.09.6
+  port: 81 # docker published port, nginx will forward location / to it
+  redis_image: 'webhippie/redis:latest'
+  mysql_image: 'webhippie/mariadb:latest'
+  files_image: 'owncloud/server:10.0'
+  mysql_root_password: examle_password
+  mysql_owncloud_password: examle_password
+  admin_username: admin
+  admin_password: examle_password
+  bind_directory: '/opt/owncloud'
+  domain: owncloud.example.com # for nginx proxy and its ssl on https://owncloud.example.com/
+  certbot_email:  examle@example.com
