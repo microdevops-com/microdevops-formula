@@ -59,7 +59,7 @@ certbot_install_2:
 
 certificates_install:
   cmd.run:
-    - name: 'certbot --nginx certonly --allow-subset-of-names --agree-tos --email {{ pillar['onlyoffice']['email'] }} -d {{ pillar['onlyoffice']['domain'] }}'
+    - name: 'certbot --nginx certonly --keep-until-expiring --allow-subset-of-names --agree-tos --email {{ pillar['onlyoffice']['email'] }} -d {{ pillar['onlyoffice']['domain'] }}'
 
 nginx_files_1:
   file.managed:
