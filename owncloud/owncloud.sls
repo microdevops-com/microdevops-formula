@@ -83,6 +83,8 @@ nginx_files_1:
                 ssl_certificate     /etc/letsencrypt/live/{{ pillar['owncloud']['domain'] }}/fullchain.pem;
                 ssl_certificate_key /etc/letsencrypt/live/{{ pillar['owncloud']['domain'] }}/privkey.pem;
 
+                client_max_body_size 513m;
+    
                 location / {
                     proxy_pass http://localhost:{{ pillar['owncloud']['port'] }}/;
                     include    proxy_params;
