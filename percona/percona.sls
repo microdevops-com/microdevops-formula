@@ -65,7 +65,7 @@ percona_remove_limits:
         [Service]
         LimitNOFILE=infinity
         LimitMEMLOCK=infinity
-	OOMScoreAdjust=-500
+        OOMScoreAdjust=-500
     - require_in:
       - pkg: percona_server
   module.run:
