@@ -6,7 +6,6 @@ bootstrap_salt_minion_bionic:
       - SALT_MASTER_NAME: '{{ pillar["salt_master_name"] }}'
       - SALT_MASTER_IP: '{{ pillar["salt_master_ip"] }}'
       - SALT_VERSION: '{{ pillar["salt_version"] }}'
-
 {% endif %}
 
 {%- if grains['oscodename'] == 'xenial' %}
