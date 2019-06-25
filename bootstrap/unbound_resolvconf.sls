@@ -4,6 +4,19 @@ bootstrap_unbound_install:
       - unbound
       - resolvconf
 
+bootstrap_stop_resolved:
+  service.dead:
+    - name: systemd-resolved
+
+bootstrap_disable_resolved:
+  service.disabled:
+    - name: systemd-resolved
+
+bootstrap_mask_resolved:
+  service.masked:
+    - name: systemd-resolved
+    - runtime: False
+
 bootstrap_unbound_stop:
   service.dead:
     - name: unbound
