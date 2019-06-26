@@ -37,18 +37,18 @@ nginx:
 
 php-fpm:
   enabled: True
-  version_5_6: True
+  version_7_0: True
   modules:
-    php5_6:
-      - php5.6-mysql
-      - php5.6-curl
-      - php5.6-zip
-      - php5.6-gd
-      - php5.6-mcrypt
-      - php5.6-mbstring
-      - php5.6-xml
-      - php5.6-soap
-      - php5.6-json
+    php7.0:
+      - php7.0-mysql
+      - php7.0-curl
+      - php7.0-zip
+      - php7.0-gd
+      - php7.0-mcrypt
+      - php7.0-mbstring
+      - php7.0-xml
+      - php7.0-soap
+      - php7.0-json
 
 pkg:
   php_maxlifetime:
@@ -56,7 +56,7 @@ pkg:
     states:
       - file.replace:
           1:
-            - name: '/etc/php/5.6/fpm/php.ini'
+            - name: '/etc/php/7.0/fpm/php.ini'
             - pattern: '^session.gc_maxlifetime = 1440$'
             - repl: 'session.gc_maxlifetime = 86400'
 
@@ -80,7 +80,7 @@ app:
           acme: True
       pool:
         pool_config: 'app/{{ appname }}/pool.conf'
-        php_version: '5.6'
+        php_version: '7.0'
         pm: |
           pm = ondemand
           pm.max_children = 50
