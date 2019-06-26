@@ -139,15 +139,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	time salt -t 600 $HN state.highstate
 fi
 
-# fail2ban
-echo
-echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'
-fi
-
 # Stop container
 echo
 echo "We need to stop the container for the final steps" | ccze -A
@@ -173,6 +164,15 @@ echo
 echo "Waiting for the minion to be alive" | ccze -A
 time until salt -t 5 $HN test.ping 2>&1 | grep -q True; do sleep 1; echo -n .; done
 echo
+
+# fail2ban
+echo
+echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'" | ccze -A
+read -p "Are we OK with that? " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+	salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'
+fi
 
 # app.deploy state
 echo

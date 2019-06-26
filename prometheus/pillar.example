@@ -23,10 +23,21 @@ prometheus:
                 honor_labels: true
                 static_configs:
                   - targets: ['pushgateway-prometheus.example.com-prod:9091'] # internal docker name (pushgateway-domain-instance), port is always 9091 internally
+              - job_name: statsd-exporter
+                static_configs:
+                  - targets: ['statsd-exporter-prometheus..example.com-prod:9102'] # internal docker name (statsd-exporter-domain-instance), port is always 9102 internally
           pushgateway: # optionally make https://prometheus.example.com/prod/pushgateway
             enabled: True
             port: 9092
             image: prom/pushgateway
+          statsd-exporter:
+            enabled: True
+            port: 9094
+            image: prom/statsd-exporter
+            statsd_udp_port: 8125
+            statsd_tcp_port: 8125
+            mapping-config:
+              mappings: []
         - name: dev
           port: 9091
           image: prom/prometheus
@@ -47,7 +58,18 @@ prometheus:
                 honor_labels: true
                 static_configs:
                   - targets: ['pushgateway-prometheus.example.com-dev:9091'] # internal docker name (pushgateway-domain-instance), port is always 9091 internally
+              - job_name: statsd-exporter
+                static_configs:
+                  - targets: ['statsd-exporter-prometheus..example.com-dev:9102'] # internal docker name (statsd-exporter-domain-instance), port is always 9102 internally
           pushgateway:
             enabled: True
             port: 9093
             image: prom/pushgateway
+          statsd-exporter:
+            enabled: True
+            port: 9095
+            image: prom/statsd-exporter
+            statsd_udp_port: 8126
+            statsd_tcp_port: 8126
+            mapping-config:
+              mappings: []

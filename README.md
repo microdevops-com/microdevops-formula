@@ -12,5 +12,7 @@ Sysadmin Workshop SaltStack Formula:
 - users - manage users on Windows servers.
 - rancher - prepare hosts for rke kubernetes cluster, rke up/remove, install rancher helm chart into the cluster.
 - rabbitmq - setup and manage 3.7+ rabbitmq server and management plugin.
+- prometheus - setup prometheus, pushgateway, statsd-exporter in Docker
+- grafana - setup grafana in Docker
 
 Most states work only with Jessie, Stretch, Xenial and Bionic.

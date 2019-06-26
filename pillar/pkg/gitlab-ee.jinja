@@ -123,6 +123,7 @@ pkg:
                 gitlab_rails['artifacts_enabled'] = true
                 gitlab_rails['artifacts_path'] = "/var/lib/gitlab_artifacts"
                 gitlab_rails['backup_path'] = '/var/backups/gitlab_backups'
+                unicorn['worker_timeout'] = 600
       - environ.setenv:
           1:
             - name: EXTERNAL_URL
@@ -133,7 +134,7 @@ pkg:
             - name: 'gitlab-ctl reconfigure'
             - runas: 'root'
       - cron.present:
-	  "{% if gitlab_cron_backup_cmd is defined and gitlab_cron_backup_cmd is not none %}{{ gitlab_cron_backup_cmd }}{% else %}gitlab-rake gitlab:backup:create > /dev/null 2>&1{% endif %}":
+          "{% if gitlab_cron_backup_cmd is defined and gitlab_cron_backup_cmd is not none %}{{ gitlab_cron_backup_cmd }}{% else %}gitlab-rake gitlab:backup:create > /dev/null 2>&1{% endif %}":
             - identifier: 'gitlab_backups'
             - user: root
             - minute: 10

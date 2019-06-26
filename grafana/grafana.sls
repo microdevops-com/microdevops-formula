@@ -1,11 +1,22 @@
 {% if pillar['grafana'] is defined and pillar['grafana'] is not none %}
+docker_install_00:
+  file.directory:
+    - name: /etc/docker
+    - mode: 700
+
+docker_install_01:
+  file.managed:
+    - name: /etc/docker/daemon.json
+    - contents: |
+        {"iptables": false}
+
 docker_install_1:
   pkgrepo.managed:
     - humanname: Docker CE Repository
     - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains['os']|lower }} {{ grains['oscodename'] }} stable
     - file: /etc/apt/sources.list.d/docker-ce.list
     - key_url: https://download.docker.com/linux/{{ grains['os']|lower }}/gpg
-    
+
 docker_install_2:
   pkg.installed:
     - refresh: True
@@ -20,11 +31,17 @@ docker_pip_install:
   pip.installed:
     - name: docker-py >= 1.10
     - reload_modules: True
-        
+
 docker_install_3:
   service.running:
     - name: docker
-        
+
+docker_install_4:
+  cmd.run:
+    - name: 'systemctl restart docker'
+    - onchanges:
+        - file: /etc/docker/daemon.json
+
 nginx_install:
   pkg.installed:
     - pkgs:
@@ -36,7 +53,7 @@ nginx_files_1:
     - contents: |
         worker_processes 4;
         worker_rlimit_nofile 40000;
-        
+
         events {
             worker_connections 8192;
         }
@@ -103,7 +120,7 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-        - {{ instance['port'] }}:3000/tcp
+        - 127.0.0.1:{{ instance['port'] }}:3000/tcp
     - binds:
         - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc:/etc/grafana:rw
         - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data:/var/lib/grafana:rw

@@ -1,4 +1,15 @@
 {% if pillar['prometheus'] is defined and pillar['prometheus'] is not none %}
+docker_install_00:
+  file.directory:
+    - name: /etc/docker
+    - mode: 700
+
+docker_install_01:
+  file.managed:
+    - name: /etc/docker/daemon.json
+    - contents: |
+        {"iptables": false}
+
 docker_install_1:
   pkgrepo.managed:
     - humanname: Docker CE Repository
@@ -25,6 +36,12 @@ docker_pip_install:
 docker_install_3:
   service.running:
     - name: docker
+
+docker_install_4:
+  cmd.run:
+    - name: 'systemctl restart docker'
+    - onchanges:
+        - file: /etc/docker/daemon.json
 
 nginx_install:
   pkg.installed:
@@ -92,11 +109,23 @@ nginx_files_1:
                     auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
         {%- endif %}
                     # web route has bugs in 0.7.0, using nginx sub_filter for now as workaround, has to be removed later
+                    #proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/{{ instance['name'] }}/pushgateway/;
                     sub_filter_once off;
                     sub_filter 'src="/static/' 'src="/{{ instance['name'] }}/pushgateway/static/';
                     sub_filter 'href="/static/' 'href="/{{ instance['name'] }}/pushgateway/static/';
-                    #proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/{{ instance['name'] }}/pushgateway/;
                     proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/;
+                }
+      {%- endif %}
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+                location /{{ instance['name'] }}/statsd-exporter/ {
+        {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+        {%- endif %}
+                    # web route is not even planned for statsd-exporter, using nginx sub_filter
+                    sub_filter_once off;
+                    sub_filter 'href="/metrics' 'href="/{{ instance['name'] }}/statsd-exporter/metrics';
+                    proxy_pass http://localhost:{{ instance['statsd-exporter']['port'] }}/;
                 }
       {%- endif %}
     {%- endfor %}
@@ -130,6 +159,26 @@ prometheus_pushgateway_dir_{{ loop.index }}_{{ i_loop.index }}:
     - makedirs: True
       {%- endif %}
 
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+prometheus_statsd-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
+  file.directory:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter
+    - mode: 755
+    - makedirs: True
+
+prometheus_statsd-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
+  file.serialize:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter/statsd_mapping.yml
+    - user: root
+    - group: root
+    - mode: 644
+    - show_changes: True
+    - create: True
+    - merge_if_exists: False
+    - formatter: yaml
+    - dataset: {{ instance['statsd-exporter']['mapping-config'] }}
+      {%- endif %}
+
 prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
   file.serialize:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
@@ -156,7 +205,7 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
     - networks:
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
-        - {{ instance['port'] }}:9090/tcp
+        - 127.0.0.1:{{ instance['port'] }}:9090/tcp
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}:/prometheus-data:rw
     - watch:
@@ -182,12 +231,31 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
     - networks:
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
-        - {{ instance['pushgateway']['port'] }}:9091/tcp
+        - 127.0.0.1:{{ instance['pushgateway']['port'] }}:9091/tcp
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-pushgateway:/pushgateway-data:rw
     # web route has bugs in 0.7.0, using nginx sub_filter for now as workaround, has to be removed later
     #- command: --persistence.file=/pushgateway-data/persistence_file --web.route-prefix=/{{ instance['name'] }}/pushgateway --web.telemetry-path=/{{ instance['name'] }}/pushgateway/metrics
     - command: --persistence.file=/pushgateway-data/persistence_file
+      {%- endif %}
+
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+prometheus_statsd-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: statsd-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - user: root
+    - image: {{ instance['statsd-exporter']['image'] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - publish:
+        - 127.0.0.1:{{ instance['statsd-exporter']['port'] }}:9102/tcp
+        - 0.0.0.0:{{ instance['statsd-exporter']['statsd_tcp_port'] }}:9125/tcp
+        - 0.0.0.0:{{ instance['statsd-exporter']['statsd_udp_port'] }}:9125/udp
+    - binds:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter:/statsd-exporter-data:rw
+    - command: --statsd.mapping-config=/statsd-exporter-data/statsd_mapping.yml
       {%- endif %}
 
     {%- endfor %}
@@ -200,6 +268,12 @@ nginx_domain_index_{{ loop.index }}:
     - contents: |
     {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
+      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+        <a href="{{ instance['name'] }}/pushgateway/">{{ instance['name'] }}/pushgateway</a><br>
+      {%- endif %}
+      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+        <a href="{{ instance['name'] }}/statsd-exporter/">{{ instance['name'] }}/statsd-exporter</a><br>
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 

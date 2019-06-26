@@ -1,6 +1,9 @@
 # vi: set ft=yaml:
 #
 # usage:
+# - add
+#   echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize
+#   to /etc/rc.local on host machine if running inside LXD
 # - prepare nodes, node fo nginx proxy, node for command exec
 # - generate new private key for usage in this pillar
 # - prepare this pillar and assign it for all hosts
@@ -11,6 +14,12 @@
 #   salt ranchercmdSOME.dev.example.com state.apply rancher.rke_up
 # - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
 #   salt ranchercmdSOME.dev.example.com state.apply rancher.install
+# - open rancher web admin
+# - give password and url
+# - wait for provisioning
+# - take bearer_token from admin - API & Keys - add key and put it below
+# - apply users
+#   salt ranchercmdSOME.dev.example.com state.apply rancher.users
 #
 # last two steps are not required to do from each command host and should be done once
 #
@@ -55,3 +64,10 @@ rancher:
       internal_address: 10.0.10.4
       user: root
       role: ['controlplane', 'worker', 'etcd']
+  bearer_token: token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # add after install (taken from web admin), used to manage users via api
+  users:
+    - username: user
+      password: password
+      name: Some User
+      description: Some Description
+      must_change_password: False
