@@ -88,6 +88,7 @@ postgres:
   version: '11'
   pkgs_extra:
     - postgresql-plpython-11
+    - postgresql-server-dev-11
   postgresconf: |-
     listen_addresses = '*'
   pg_hba.conf: salt://postgres/templates/pg_hba.conf.j2
