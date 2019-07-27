@@ -16,7 +16,7 @@ rabbit_repo:
     - file: /etc/apt/sources.list.d/rabbitmq.list
     - key_url: https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc
 
-rabbot_pkg:
+rabbit_pkg:
   pkg.latest:
     - pkgs:
         - rabbitmq-server
