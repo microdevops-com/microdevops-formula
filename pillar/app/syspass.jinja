@@ -97,5 +97,5 @@ app:
         target: '/var/www/{{ appname }}/sysPass'
         branch: 'master'
       setup_script:
-        cwd: '/var/www/{{ appname }}/sysPass'
+        cwd: '/var/www/{{ appname }}/sysPass/app/'
         name: 'chmod 750 config'
