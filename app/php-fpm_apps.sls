@@ -506,6 +506,8 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
           {%- set etc_php = '/etc/php/7.1/' %}
         {%- elif (app_params['pool']['php_version'] == '7.2' ) %}
           {%- set etc_php = '/etc/php/7.2/' %}
+        {%- elif (app_params['pool']['php_version'] == '7.3' ) %}
+          {%- set etc_php = '/etc/php/7.3/' %}
         {%- elif (app_params['pool']['php_version'] == '5.5' ) %}
           {%- set etc_php = '/etc/php5/' %}
         {%- endif %}
