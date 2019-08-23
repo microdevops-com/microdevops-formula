@@ -1,0 +1,32 @@
+redmine:
+  docker-ce_version: 18.06.1
+  
+  name: redmine1
+  domain: redmine1.client.domain.com
+  aliases:
+    - redmine.client.domain.com
+
+  image: redmine:latest
+  environment:
+    #tz: Europe/Kiev
+    #redmine_db_postgres: 127.0.0.1
+    redmine_db_mysql: 127.0.0.1
+    redmine_db_port: 3306
+    redmine_db_database: redmine
+    redmine_db_username: redmine
+    redmine_db_password: pass
+    #redmine_db_encoding: utf8mb4
+    #redmine_no_db_migrate: ''
+    #redmine_plugins_migrate: true
+    #redmine_secret_key_base: key
+  configuration: |
+    production:
+      email_delivery:
+        delivery_method: :smtp
+        smtp_settings:
+          address: 172.17.0.1
+          port: 25
+          domain: client.domain.com
+          authentication: :none
+          openssl_verify_mode: none
+
