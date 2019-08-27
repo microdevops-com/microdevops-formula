@@ -149,13 +149,15 @@ create_acme_local:
 
 
 {# ### START nginx setup & config section #}
+
+{# additional servernames #}
 {%- if pillar['redmine']['aliases'] is defined and pillar['redmine']['aliases'] is not none %}
   {%- set aliases = pillar['redmine']['aliases'] %}
 {%- else %}
   {%- set aliases = "" %}
 {%- endif %}
 
-{# add --force, --staging for renewal on condition #}
+{# add --force or --staging (or both) for renewal on condition #}
 {%- if pillar['acme_force_renewal'] is defined and pillar['acme_force_renewal'] is not none %}
   {%- set acme_force_renewal = "--force" %}
 {%- else %}
@@ -166,6 +168,18 @@ create_acme_local:
   {%- set acme_staging = "--staging" %}
 {%- else %}
   {%- set acme_staging = " " %}
+{%- endif %}
+
+{# additional nginx configuration #}
+{%- set nginx_to_block_server = "" %}
+{%- set nginx_to_location_slash = "" %}
+
+{%- if pillar['redmine']['nginx_to_block_server'] is defined and pillar['redmine']['nginx_to_block_server'] is not none %}
+  {%- set nginx_to_block_server = pillar['redmine']['nginx_to_block_server'] %}
+{%- endif %}
+
+{%- if pillar['redmine']['nginx_to_location_slash'] is defined and pillar['redmine']['nginx_to_location_slash'] is not none %}
+  {%- set nginx_to_location_slash = pillar['redmine']['nginx_to_location_slash'] %}
 {%- endif %}
 
 nginx_install:
@@ -282,11 +296,14 @@ nginx_main_config_managed_2:
                 location /.well-known/acme-challenge/ {
                     root  /opt/redmine/{{ pillar['redmine']['domain'] }}/;
                 }
+                {{ nginx_to_block_server | indent(20) }}
+
                 index index.html;
                 ssl_certificate /opt/acme/cert/redmine_{{ pillar['redmine']['domain'] }}_fullchain.cer;
                 ssl_certificate_key /opt/acme/cert/redmine_{{ pillar['redmine']['domain'] }}_key.key;
                 location / {
                     proxy_pass http://localhost:3000/;
+                    {{ nginx_to_location_slash | indent(20) }}
                 }
             }
         }

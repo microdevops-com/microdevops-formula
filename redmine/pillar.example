@@ -3,8 +3,8 @@ redmine:
   
   name: redmine1
   domain: redmine1.client.domain.com
-  aliases:
-    - redmine.client.domain.com
+  #aliases:
+  #  - redmine.client.domain.com
 
   image: redmine:latest
   environment:
@@ -29,4 +29,8 @@ redmine:
           domain: client.domain.com
           authentication: :none
           openssl_verify_mode: none
-
+  #nginx_to_block_server: |
+  #  location { };
+  #nginx_to_location_slash: |
+  #  include /etc/nginx/whitelist;
+  #  deny all;
