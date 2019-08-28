@@ -64,7 +64,11 @@ php-fpm_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
     - gid: {{ app_params['group'] }}
+    {%- if app_params['user_home'] is defined and app_params['user_home'] is not none %}
+    - home: {{ app_params['user_home'] }}
+    {%- else %}
     - home: {{ app_params['app_root'] }}
+    {%- endif %}
     - createhome: True
     {%- if app_params['pass'] == '!' %}
     - password: '{{ app_params['pass'] }}'
