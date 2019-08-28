@@ -8,6 +8,7 @@ app:
       user: 'app_1'
       group: 'app_1'
       pass: '!'
+      #enforce_password: False # optional, do not change pass if it was changed by user
       app_root: '/var/www/app_1'
       app_auth_keys: |
         ssh-rsa AAAA...== rsa-key-19700101

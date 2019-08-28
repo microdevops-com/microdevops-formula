@@ -66,12 +66,15 @@ php-fpm_apps_user_{{ loop.index }}:
     - gid: {{ app_params['group'] }}
     - home: {{ app_params['app_root'] }}
     - createhome: True
-    {% if app_params['pass'] == '!' %}
+    {%- if app_params['pass'] == '!' %}
     - password: '{{ app_params['pass'] }}'
-    {% else %}
+    {%- else %}
     - password: '{{ app_params['pass'] }}'
     - hash_password: True
-    {% endif %}
+    {%- endif %}
+    {%- if app_params['enforce_password'] is defined and app_params['enforce_password'] is not none and app_params['enforce_password'] == False %}
+    - enforce_password: False
+    {%- endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ phpfpm_app }}
 
