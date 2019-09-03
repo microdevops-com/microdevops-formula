@@ -1,0 +1,15 @@
+mongodb:
+  admin:
+    authdb: admin
+    user: admin
+    password: xxxxxxxxxxxxxxxxx
+    host: localhost
+    port: 27017
+  databases:
+    - name: newDb
+      users:
+        - name: newUser
+          password: xxxxxxxxxxxxxxxxx
+          roles:
+            - readWrite
+            - dbOwner
