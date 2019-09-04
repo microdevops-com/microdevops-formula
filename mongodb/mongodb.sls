@@ -41,28 +41,28 @@ install_7:
 
 mongouser_admin:
   mongodb_user.present:
-  - name:     {{ pillar['mongodb']['admin']['user'] }}
-  - passwd:   {{ pillar['mongodb']['admin']['password'] }}
+  - name: {{ pillar['mongodb']['admin']['user'] }}
+  - passwd: {{ pillar['mongodb']['admin']['password'] }}
   {%- set auth_status = salt['cmd.shell']("cat /etc/mongod.conf | grep 'authorization:' | awk {'print $2'}") %}
   {%- if auth_status == '"enabled"' %}
-  - user:     {{ pillar['mongodb']['admin']['user'] }}
+  - user: {{ pillar['mongodb']['admin']['user'] }}
   - password: {{ pillar['mongodb']['admin']['password'] }}
   {%- else %}
-  - user:     ''
+  - user: ''
   - password: ''
   {%- endif %}
-  - host:     {{ pillar['mongodb']['admin']['host'] }}
-  - port:     {{ pillar['mongodb']['admin']['port'] }}
-  - roles:    {{ pillar['mongodb']['admin']['roles'] }}
-  - database: admin
-  - authdb:   admin
+  - host: {{ pillar['mongodb']['admin']['host'] }}
+  - port: {{ pillar['mongodb']['admin']['port'] }}
+  - roles: {{ pillar['mongodb']['admin']['roles'] }}
+  - database: {{ pillar['mongodb']['admin']['authdb'] }}
+  - authdb: {{ pillar['mongodb']['admin']['authdb'] }}
 
 auth_enable_1:
   file.append:
     - name: '/etc/mongod.conf'
     - text: |
         security:
-            authorization: "enabled"
+          authorization: "enabled"
 
 auth_enable_2:
   service.running:
