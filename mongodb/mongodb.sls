@@ -48,9 +48,9 @@ mongouser_admin:
       {%- endif %}
   - host:     {{ pillar['mongodb']['admin']['host'] }}
   - port:     {{ pillar['mongodb']['admin']['port'] }}
-  - authdb:   {{ pillar['mongodb']['admin']['authdb'] }}
   - roles:    {{ pillar['mongodb']['admin']['roles'] }}
-  - database: {{ pillar['mongodb']['admin']['database'] }}
+  - database: admin
+  - authdb:   admin
 auth_enable_1:
   file.append:
     - name: '/etc/mongod.conf'
