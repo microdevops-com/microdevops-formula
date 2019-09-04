@@ -1,5 +1,52 @@
 {% if (pillar['php-fpm'] is defined) and (pillar['php-fpm'] is not none) %}
   {%- if (pillar['php-fpm']['enabled'] is defined) and (pillar['php-fpm']['enabled'] is not none) and (pillar['php-fpm']['enabled']) %}
+    {%- if (pillar['php-fpm']['version_5_5'] is defined) and (pillar['php-fpm']['version_5_5'] is not none) and (pillar['php-fpm']['version_5_5']) %}
+php-fpm_5_5_installed:
+  pkg.installed:
+    - pkgs:
+      - php5-cli
+      - php5-fpm
+
+      {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
+        {%- if (pillar['php-fpm']['modules']['php5_5'] is defined) and (pillar['php-fpm']['modules']['php5_5'] is not none) %}
+php-fpm_5_5_modules_installed:
+  pkg.installed:
+    - pkgs:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php5_5'] %}
+            {%- if (pkg_name != 'php5-ioncube') %}
+      - {{ pkg_name }}
+            {%- endif %}
+          {%- endfor %}
+
+          {%- for pkg_name in pillar['php-fpm']['modules']['php5_5'] %}
+            {%- if (pkg_name == 'php5-ioncube') %}
+php-fpm_5_5_modules_ioncube_1:
+  file.managed:
+    - name: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_5.5.so'
+
+php-fpm_5_5_modules_ioncube_2:
+  file.managed:
+    - name: '/etc/php5/mods-available/ioncube.ini'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
+    - template: jinja
+    - defaults:
+        path: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+
+php-fpm_5_5_modules_ioncube_3:
+  file.symlink:
+    - name: '/etc/php5/fpm/conf.d/00-ioncube.ini'
+    - target: '/etc/php5/mods-available/ioncube.ini'
+            {%- endif %}
+          {%- endfor %}
+        {%- endif %}
+      {%- endif %}
+    {%- endif %}
+
     {%- if (pillar['php-fpm']['version_5_6'] is defined) and (pillar['php-fpm']['version_5_6'] is not none) and (pillar['php-fpm']['version_5_6']) %}
 php-fpm_repo_deb_5_6:
   pkgrepo.managed:
@@ -50,12 +97,12 @@ php-fpm_5_6_modules_ioncube_3:
   file.symlink:
     - name: '/etc/php/5.6/fpm/conf.d/00-ioncube.ini'
     - target: '/etc/php/5.6/mods-available/ioncube.ini'
-
             {%- endif %}
           {%- endfor %}
         {%- endif %}
       {%- endif %}
     {%- endif %}
+
     {%- if (pillar['php-fpm']['version_7_0'] is defined) and (pillar['php-fpm']['version_7_0'] is not none) and (pillar['php-fpm']['version_7_0']) %}
 php-fpm_repo_deb_7_0:
   pkgrepo.managed:
@@ -224,47 +271,57 @@ php-fpm_7_2_modules_ioncube_3:
         {%- endif %}
       {%- endif %}
     {%- endif %}
-    {%- if (pillar['php-fpm']['version_5_5'] is defined) and (pillar['php-fpm']['version_5_5'] is not none) and (pillar['php-fpm']['version_5_5']) %}
-php-fpm_5_5_installed:
+
+    {%- if (pillar['php-fpm']['version_7_3'] is defined) and (pillar['php-fpm']['version_7_3'] is not none) and (pillar['php-fpm']['version_7_3']) %}
+php-fpm_repo_deb_7_3:
+  pkgrepo.managed:
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: E5267A6C
+    - refresh: True
+
+php-fpm_7_3_installed:
   pkg.installed:
     - pkgs:
-      - php5-cli
-      - php5-fpm
+      - php7.3-cli
+      - php7.3-fpm
 
       {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
-        {%- if (pillar['php-fpm']['modules']['php5_5'] is defined) and (pillar['php-fpm']['modules']['php5_5'] is not none) %}
-php-fpm_5_5_modules_installed:
+        {%- if (pillar['php-fpm']['modules']['php7_3'] is defined) and (pillar['php-fpm']['modules']['php7_3'] is not none) %}
+php-fpm_7_3_modules_installed:
   pkg.installed:
     - pkgs:
-          {%- for pkg_name in pillar['php-fpm']['modules']['php5_5'] %}
-            {%- if (pkg_name != 'php5-ioncube') %}
+          {%- for pkg_name in pillar['php-fpm']['modules']['php7_3'] %}
+            {%- if (pkg_name != 'php7.3-ioncube') %}
       - {{ pkg_name }}
             {%- endif %}
           {%- endfor %}
 
-          {%- for pkg_name in pillar['php-fpm']['modules']['php5_5'] %}
-            {%- if (pkg_name == 'php5-ioncube') %}
-php-fpm_5_5_modules_ioncube_1:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php7_3'] %}
+            {%- if (pkg_name == 'php7.3-ioncube') %}
+php-fpm_7_3_modules_ioncube_1:
   file.managed:
-    - name: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+    - name: '/usr/lib/php/20180731/ioncube_loader_lin_7.3.so'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_5.5.so'
+    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.3.so'
 
-php-fpm_5_5_modules_ioncube_2:
+php-fpm_7_3_modules_ioncube_2:
   file.managed:
-    - name: '/etc/php5/mods-available/ioncube.ini'
+    - name: '/etc/php/7.3/mods-available/ioncube.ini'
     - user: root
     - group: root
     - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
     - template: jinja
     - defaults:
-        path: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+        path: '/usr/lib/php/20180731/ioncube_loader_lin_7.3.so'
 
-php-fpm_5_6_modules_ioncube_3:
+php-fpm_7_3_modules_ioncube_3:
   file.symlink:
-    - name: '/etc/php5/fpm/conf.d/00-ioncube.ini'
-    - target: '/etc/php5/mods-available/ioncube.ini'
+    - name: '/etc/php/7.3/fpm/conf.d/00-ioncube.ini'
+    - target: '/etc/php/7.3/mods-available/ioncube.ini'
 
             {%- endif %}
           {%- endfor %}

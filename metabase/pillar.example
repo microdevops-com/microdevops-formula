@@ -1,0 +1,27 @@
+metabase:
+  docker-ce_version: 18.06.1
+  domains:
+    - name: metabase.example.com
+      instances:
+        - name: prod
+          port: 3000
+          image: metabase/metabase
+          java_timezone: UTC
+          db:
+            type: postgres
+            host: metabase1.example.com
+            port: 5432
+            dbname: metabase-prod
+            user: metabase-prod
+            pass: xxxxxxxxxxxxx
+        - name: dev
+          port: 3001
+          image: metabase/metabase
+          java_timezone: UTC
+          db:
+            type: postgres
+            host: metabase1.example.com
+            port: 5432
+            dbname: metabase-dev
+            user: metabase-dev
+            pass: xxxxxxxxxxxx

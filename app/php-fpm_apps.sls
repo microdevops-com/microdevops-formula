@@ -64,14 +64,21 @@ php-fpm_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
     - gid: {{ app_params['group'] }}
+    {%- if app_params['user_home'] is defined and app_params['user_home'] is not none %}
+    - home: {{ app_params['user_home'] }}
+    {%- else %}
     - home: {{ app_params['app_root'] }}
+    {%- endif %}
     - createhome: True
-    {% if app_params['pass'] == '!' %}
+    {%- if app_params['pass'] == '!' %}
     - password: '{{ app_params['pass'] }}'
-    {% else %}
+    {%- else %}
     - password: '{{ app_params['pass'] }}'
     - hash_password: True
-    {% endif %}
+    {%- endif %}
+    {%- if app_params['enforce_password'] is defined and app_params['enforce_password'] is not none and app_params['enforce_password'] == False %}
+    - enforce_password: False
+    {%- endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ phpfpm_app }}
 
@@ -506,6 +513,8 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
           {%- set etc_php = '/etc/php/7.1/' %}
         {%- elif (app_params['pool']['php_version'] == '7.2' ) %}
           {%- set etc_php = '/etc/php/7.2/' %}
+        {%- elif (app_params['pool']['php_version'] == '7.3' ) %}
+          {%- set etc_php = '/etc/php/7.3/' %}
         {%- elif (app_params['pool']['php_version'] == '5.5' ) %}
           {%- set etc_php = '/etc/php5/' %}
         {%- endif %}

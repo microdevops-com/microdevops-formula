@@ -8,7 +8,9 @@ app:
       user: 'app_1'
       group: 'app_1'
       pass: '!'
+      #enforce_password: False # optional, do not change pass if it was changed by user
       app_root: '/var/www/app_1'
+      #user_home: /var/www/user # optionla, e.g. to host several apps under one user
       app_auth_keys: |
         ssh-rsa AAAA...== rsa-key-19700101
       shell: '/bin/bash'

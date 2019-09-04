@@ -97,7 +97,7 @@ nginx_files_1:
     {%- for instance in domain['instances'] %}
                 location /{{ instance['name'] }}/ {
       {%- if instance['auth'] is defined and instance['auth'] is not none %}
-                    auth_basic "Prometheus";
+                    auth_basic "Prometheus {{ instance['name'] }}";
                     auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
       {%- endif %}
                     proxy_pass http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/;
@@ -105,7 +105,7 @@ nginx_files_1:
       {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
                 location /{{ instance['name'] }}/pushgateway/ {
         {%- if instance['auth'] is defined and instance['auth'] is not none %}
-                    auth_basic "Prometheus";
+                    auth_basic "Prometheus {{ instance['name'] }}";
                     auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
         {%- endif %}
                     # web route has bugs in 0.7.0, using nginx sub_filter for now as workaround, has to be removed later
@@ -119,7 +119,7 @@ nginx_files_1:
       {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
                 location /{{ instance['name'] }}/statsd-exporter/ {
         {%- if instance['auth'] is defined and instance['auth'] is not none %}
-                    auth_basic "Prometheus";
+                    auth_basic "Prometheus {{ instance['name'] }}";
                     auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
         {%- endif %}
                     # web route is not even planned for statsd-exporter, using nginx sub_filter
