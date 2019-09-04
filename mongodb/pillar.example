@@ -1,11 +1,22 @@
 mongodb:
+  enabled: True
+  version: 4.0
   admin:
-    authdb: admin
     user: admin
     password: xxxxxxxxxxxxxxxxx
     host: localhost
     port: 27017
+    roles:
+      - dbOwner
+      - userAdmin
+      - userAdminAnyDatabase
   databases:
+    - name: admin
+      users:
+        - name: root
+          password: YYYYYYYYYYYY
+          roles:
+            - root
     - name: newDb
       users:
         - name: newUser
