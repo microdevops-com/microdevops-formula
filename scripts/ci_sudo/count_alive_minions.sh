@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "_$1" = "_" ]; then
-	echo ERROR: needed args missing: use count_alive_minions MINION_NAME
+	echo ERROR: needed args missing: use count_alive_minions.sh MINION_NAME
 	exit 1
 fi
 

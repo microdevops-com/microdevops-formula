@@ -2,7 +2,7 @@
 GRAND_EXIT=0
 
 if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" ]; then
-	echo ERROR: needed args missing: use salt_cmd TIMEOUT TARGET CMD
+	echo ERROR: needed args missing: use salt_cmd.sh TIMEOUT TARGET CMD
 	exit 1
 fi
 
