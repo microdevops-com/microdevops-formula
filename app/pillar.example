@@ -102,3 +102,21 @@ app:
       setup_script: # e.g. after git pull to change permissions and create missing folders
         cwd: '/var/www/app_1/src'
         name: 'bash /var/www/app_1/src/etc/setup.sh'
+
+app:
+  docker:
+    docker-ce_version: 18.06.1
+    networks:
+      - myapp
+    apps:
+      - name: myapp
+        image: php:7.3-fpm
+        home: /var/www/myapp
+        publish:
+          - 127.0.0.1:9000:9000/tcp
+        environment:
+          - TEST_ENV_1: test_env_1
+        binds:
+          - /var/www/myapp/static:/static:rw
+        networks:
+          - myapp
