@@ -54,7 +54,7 @@ docker_network_{{ loop.index }}:
   {%- for app in pillar['app']['docker']['apps'] %}
 docker_app_dir_{{ loop.index }}:
   file.directory:
-    - name: {{ app['home'] }} }}
+    - name: {{ app['home'] }}
     - mode: 755
     - makedirs: True
 
