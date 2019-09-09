@@ -10,7 +10,9 @@ include:
   - percona.percona
   - rabbitmq.rabbitmq
   - pyenv.pyenv
+{% if pillar['sentry'] is defined and pillar['sentry'] is not none %}
   - sentry.sentry
+{% endif %}
   - php-fpm.php-fpm
   - nginx.nginx
   - app.php-fpm_apps
