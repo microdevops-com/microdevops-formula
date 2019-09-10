@@ -51,7 +51,7 @@ docker_network_{{ loop.index }}:
     - name: {{ net }}
   {%- endfor %}
 
-  {%- for app in pillar['app']['docker']['apps'] %}
+  {%- for app_name, app in pillar['app']['docker']['apps'].items() %}
 docker_app_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app['home'] }}
@@ -69,9 +69,13 @@ docker_app_bind_dir_{{ i_loop.index }}_{{ loop.index }}:
 
 docker_app_container_{{ loop.index }}:
   docker_container.running:
-    - name: app-{{ app['name'] }}
+    - name: app-{{ app_name }}
     - user: root
+    {%- if pillar['image_override'] is defined and pillar['image_override'] is not none and pillar['image_override'][app_name] is defined and pillar['image_override'][app_name] is not none %}
+    - image: {{ pillar['image_override'][app_name] }}
+    {%- else %}
     - image: {{ app['image'] }}
+    {%- endif %}
     - detach: True
     - restart_policy: unless-stopped
     - publish: {{ app['publish'] }}
