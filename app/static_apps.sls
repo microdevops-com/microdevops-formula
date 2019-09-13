@@ -278,6 +278,11 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
         ssl_cert_301: '/etc/nginx/ssl/{{ static_app }}/301_fullchain.pem'
         ssl_key_301: '/etc/nginx/ssl/{{ static_app }}/301_privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
 
           {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ static_app ~ '/301_fullchain.pem') %}
 static_apps_app_nginx_ssl_link_1_{{ loop.index }}:
@@ -353,6 +358,11 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
         ssl_cert: '/etc/nginx/ssl/{{ static_app }}/fullchain.pem'
         ssl_key: '/etc/nginx/ssl/{{ static_app }}/privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
 
           {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ static_app ~ '/fullchain.pem') %}
 static_apps_app_nginx_ssl_link_1_{{ loop.index }}:
@@ -427,6 +437,11 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
         ssl_cert: '/etc/nginx/ssl/{{ static_app }}/fullchain.pem'
         ssl_key: '/etc/nginx/ssl/{{ static_app }}/privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
 
           {# at least we have snakeoil, if cert req fails #}
           {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ static_app ~ '/fullchain.pem') %}
@@ -482,6 +497,11 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
         app_name: {{ static_app }}
         app_root: {{ app_params['app_root'] }}
         auth_basic_block: '{{ auth_basic_block }}'
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
         {%- endif %}
 
         {%- if app_params['nginx']['log'] is defined and app_params['nginx']['log'] is not none and app_params['nginx']['log']['dir'] is defined and app_params['nginx']['log']['dir'] is not none and app_params['nginx']['log']['dir'] and app_params['nginx']['log']['dir'] != '/var/log/nginx'  %}
