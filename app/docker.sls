@@ -52,35 +52,37 @@ docker_network_{{ loop.index }}:
   {%- endfor %}
 
   {%- for app_name, app in pillar['app']['docker']['apps'].items() %}
+    {%- if not (pillar['app']['docker']['deploy_only'] is defined and pillar['app']['docker']['deploy_only'] is not none) or app_name in pillar['app']['docker']['deploy_only'] %}
 docker_app_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app['home'] }}
     - mode: 755
     - makedirs: True
 
-    {%- set i_loop = loop %}
-    {%- for bind in app['binds'] %}
+      {%- set i_loop = loop %}
+      {%- for bind in app['binds'] %}
 docker_app_bind_dir_{{ i_loop.index }}_{{ loop.index }}:
   file.directory:
     - name: {{ bind.split(':')[0] }}
     - mode: 755
     - makedirs: True
-    {%- endfor %}
+      {%- endfor %}
 
 docker_app_container_{{ loop.index }}:
   docker_container.running:
     - name: app-{{ app_name }}
     - user: root
-    {%- if pillar['image_override'] is defined and pillar['image_override'] is not none and pillar['image_override'][app_name] is defined and pillar['image_override'][app_name] is not none %}
+      {%- if pillar['image_override'] is defined and pillar['image_override'] is not none and pillar['image_override'][app_name] is defined and pillar['image_override'][app_name] is not none %}
     - image: {{ pillar['image_override'][app_name] }}
-    {%- else %}
+      {%- else %}
     - image: {{ app['image'] }}
-    {%- endif %}
+      {%- endif %}
     - detach: True
     - restart_policy: unless-stopped
     - publish: {{ app['publish'] }}
     - environment: {{ app['environment'] }}
     - binds: {{ app['binds'] }}
     - networks: {{ app['networks'] }}
+    {%- endif %}
   {%- endfor %}
 {% endif %}
