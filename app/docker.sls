@@ -48,7 +48,9 @@ docker_install_4:
   {%- for net in pillar['app']['docker']['networks'] %}
 docker_network_{{ loop.index }}:
   docker_network.present:
-    - name: {{ net }}
+    - name: {{ net['name'] }}
+    - subnet: {{ net['subnet'] }}
+    - gateway: {{ net['gateway'] }}
   {%- endfor %}
 
   {%- for app_name, app in pillar['app']['docker']['apps'].items() %}
