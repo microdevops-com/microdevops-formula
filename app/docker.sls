@@ -40,7 +40,7 @@ docker_install_3:
 
 docker_install_4:
   cmd.run:
-    - name: 'systemctl restart docker'
+    - name: systemctl restart docker
     - onchanges:
         - file: /etc/docker/daemon.json
         - pkg: apparmor
@@ -74,17 +74,19 @@ docker_app_container_{{ loop.index }}:
   docker_container.running:
     - name: app-{{ app_name }}
     - user: root
-      {%- if pillar['image_override'] is defined and pillar['image_override'] is not none and pillar['image_override'][app_name] is defined and pillar['image_override'][app_name] is not none %}
-    - image: {{ pillar['image_override'][app_name] }}
-      {%- else %}
     - image: {{ app['image'] }}
-      {%- endif %}
     - detach: True
     - restart_policy: unless-stopped
     - publish: {{ app['publish'] }}
     - environment: {{ app['environment'] }}
     - binds: {{ app['binds'] }}
     - networks: {{ app['networks'] }}
+
+      {%- if app['exec_after_deploy'] is defined and app['exec_after_deploy'] is not none %}
+docker_app_container_exec_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec app-{{ app_name }} {{ app['exec_after_deploy'] }}
+      {%- endif %}
     {%- endif %}
   {%- endfor %}
 {% endif %}
