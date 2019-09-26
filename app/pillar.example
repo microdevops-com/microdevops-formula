@@ -107,16 +107,32 @@ app:
   docker:
     docker-ce_version: 18.06.1
     networks:
-      - myapp
+      - name: proto
+        subnet: 172.18.0.0/24
+        gateway: 172.18.0.1
     apps:
-      - name: myapp
+      proto:
         image: php:7.3-fpm
-        home: /var/www/myapp
+        home: /var/www/proto
         publish:
-          - 127.0.0.1:9000:9000/tcp
+          - 0.0.0.0:9000:9000/tcp
         environment:
-          - TEST_ENV_1: test_env_1
+          - APP_ENV: dev
+          - APP_DEBUG: 1
+          - MYSQL_DB: proto
+          - MYSQL_HOST: mysql.example.com
+          - MYSQL_PASS: xxxxxxxxxxxxxxxx
+          - MYSQL_PORT: 3306
+          - MYSQL_USER: proto
         binds:
-          - /var/www/myapp/static:/static:rw
+          - /var/www/proto/app/data:/app/data:rw
         networks:
-          - myapp
+          - proto
+      proto-redis:
+        image: redis:latest
+        home: /var/www/proto-redis
+        publish: []
+        environment: []
+        binds: []
+        networks:
+          - proto
