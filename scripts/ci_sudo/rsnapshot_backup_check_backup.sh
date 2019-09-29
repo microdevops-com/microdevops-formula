@@ -18,12 +18,12 @@ exec 2>&1
 
 if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
 	stdbuf -oL -eL echo ---
-	stdbuf -oL -eL            echo CMD: ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${TARGET} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh check_backup 2'"
-	( set -o pipefail && stdbuf -oL -eL ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${TARGET} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh check_backup 2'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
+	stdbuf -oL -eL            echo CMD: ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${TARGET} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'"
+	( set -o pipefail && stdbuf -oL -eL ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${TARGET} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 elif [ "${RSNAPSHOT_BACKUP_TYPE}" = "SALT" ]; then
 	stdbuf -oL -eL echo ---
-	stdbuf -oL -eL            echo CMD: salt --force-color -t ${SALT_TIMEOUT} ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh check_backup 2'" 
-	( set -o pipefail && stdbuf -oL -eL salt --force-color -t ${SALT_TIMEOUT} ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh check_backup 2'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
+	stdbuf -oL -eL            echo CMD: salt --force-color -t ${SALT_TIMEOUT} ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" 
+	( set -o pipefail && stdbuf -oL -eL salt --force-color -t ${SALT_TIMEOUT} ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
