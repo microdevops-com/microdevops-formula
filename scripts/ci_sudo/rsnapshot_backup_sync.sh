@@ -8,7 +8,7 @@ fi
 
 SALT_TIMEOUT=$1
 TARGET=$2
-RSNAPSHOT_BACKUP_TYPE=$2
+RSNAPSHOT_BACKUP_TYPE=$3
 	
 OUT_FILE="/srv/scripts/ci_sudo/$(basename $0)_${TARGET}.out"
 
