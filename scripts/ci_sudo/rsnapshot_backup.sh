@@ -37,12 +37,12 @@ stdbuf -oL -eL echo 'CMD: salt --force-color -t 300 -C "not G@os:Windows and I@r
 stdbuf -oL -eL salt --force-color -t 300 -C "not G@os:Windows and I@rsnapshot_backup:*${MOD}" state.apply rsnapshot_backup.update_config queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo '---'
 stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not G@os:Windows and not I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "bash -c exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
-( stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not G@os:Windows and not I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh'" || GRAND_EXIT=1 ) | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/'
+( set -o pipefail && stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:* and not G@os:Windows and not I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 
 if [ ${SKIP_BACKUP_SERVER} -eq 0 ]; then
 	stdbuf -oL -eL echo '---'
 	stdbuf -oL -eL echo 'CMD: salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True'${MOD}'" cmd.run "bash -c exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh"'
-	( stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh'" || GRAND_EXIT=1 ) | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/'
+	( set -o pipefail && stdbuf -oL -eL salt --force-color -t 43200 -C "I@rsnapshot_backup:backup_server:True${MOD}" cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup_sync_monthly_weekly_daily_check_backup.sh'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 fi
 
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1

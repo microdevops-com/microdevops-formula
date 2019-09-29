@@ -23,8 +23,7 @@ grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
 
 # Check out file for red color with shades 
 grep -q "\[0;31m" ${OUT_FILE} && GRAND_EXIT=1
-# Exclude prompts that have red color
-cat ${OUT_FILE} | grep -v -e "byobu_prompt_status" | grep -q "\[31m" && GRAND_EXIT=1
+grep -q "\[31m" ${OUT_FILE} && GRAND_EXIT=1
 grep -q "\[0;1;31m" ${OUT_FILE} && GRAND_EXIT=1
 
 exit $GRAND_EXIT
