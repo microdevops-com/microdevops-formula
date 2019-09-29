@@ -2,7 +2,7 @@
 GRAND_EXIT=0
 
 if [ "_$1" = "_" ]; then
-	echo ERROR: needed args missing: use rsnapshot_backup_update_config.sh TARGET CMD
+	echo ERROR: needed args missing: use rsnapshot_backup_update_config.sh TARGET
 	exit 1
 fi
 
