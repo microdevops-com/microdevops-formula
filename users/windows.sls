@@ -94,4 +94,12 @@ windows_execution_policy_restrict:
   cmd.run:
     - name: powershell.exe Set-ExecutionPolicy -Force Restricted
   {%- endif %}
+{% else %}
+windows_users_nothing_to_do:
+  test.configurable_test_state:
+    - name: windows_users_nothing_to_do_info
+    - changes: False
+    - result: True
+    - comment: |
+         NOTICE: Pillar windows_users not defined, doing nothing.
 {% endif %}
