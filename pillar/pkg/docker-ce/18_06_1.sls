@@ -10,7 +10,7 @@ pkg:
           1:
             - name: /etc/docker/daemon.json
             - contents: |
-                {"iptables": false}
+                { "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
       - pkgrepo.managed:
           1:
             - humanname: Docker CE Repository
