@@ -2,10 +2,6 @@
     # Set some vars
     {%- set netdata_seconds = pillar['netdata']['seconds'] %}
     {%- set netdata_version = pillar['netdata']['version'] %}
-    {%- set netdata_registry = pillar['netdata']['registry'] %}
-    {%- set netdata_api_key = pillar['netdata']['api_key'] %}
-    {%- set netdata_central_server = pillar['netdata']['central_server'] %}
-    {%- set netdata_central = pillar['netdata'].get('central', False) %}
     {%- set netdata_container = pillar['netdata'].get('container', False) %}
     {%- set netdata_mini = pillar['netdata'].get('mini', False) %}
     {%- set netdata_fpinger = pillar['netdata'].get('fpinger', False) %}
@@ -151,19 +147,13 @@ netdata_install_run:
 netdata_config_health_alarm:
   file.managed:
     - name: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
-    {%- if netdata_central %}
-    - source: 'salt://netdata/files/health_alarm_notify.conf_central'
-    {%- else %}
     - source: 'salt://netdata/files/health_alarm_notify.conf_host'
-    {%- endif %}
     - mode: 0644
 
 netdata_config_netdata:
   file.managed:
     - name: '/opt/netdata/etc/netdata/netdata.conf'
-    {%- if netdata_central %}
-    - source: 'salt://netdata/files/netdata.conf_central'
-    {%- elif netdata_mini %}
+    {%- if netdata_mini %}
     - source: 'salt://netdata/files/netdata.conf_mini'
     {%- else %}
     - source: 'salt://netdata/files/netdata.conf_host'
@@ -173,7 +163,6 @@ netdata_config_netdata:
     - defaults:
         host_name: {{ hostname_under }}
         history_seconds: {{ netdata_seconds }}
-        registry_server: {{ netdata_registry }}
     {%- if netdata_container %}
         container_block: |
           [plugins]
@@ -190,21 +179,6 @@ netdata_config_pythond:
     - source: 'salt://netdata/files/python.d.conf_container'
     - mode: 0644
     {%- endif %}
-
-netdata_config_stream_central:
-  file.managed:
-    - name: '/opt/netdata/etc/netdata/stream.conf'
-    {%- if netdata_central %}
-    - source: 'salt://netdata/files/stream.conf_central'
-    {%- else %}
-    - source: 'salt://netdata/files/stream.conf_host'
-    {%- endif %}
-    - mode: 0644
-    - template: jinja
-    - defaults:
-        api_key: {{ netdata_api_key }}
-        default_history: {{ netdata_seconds }}
-        central_server: {{ netdata_central_server }}
 
     # Check postgres and configure agent if exists
     {%- if (grains['roles'] is defined) and ('postgresql' in grains['roles']) %}
@@ -336,7 +310,6 @@ netdata_service_running:
   service.running:
     - watch:
       - file: '/opt/netdata/etc/netdata/netdata.conf'
-      - file: '/opt/netdata/etc/netdata/stream.conf'
     {%- if netdata_fpinger %}
       - file: '/opt/netdata/etc/netdata/fping.conf'
     {%- endif %}

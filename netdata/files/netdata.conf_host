@@ -6,7 +6,6 @@
 	enabled = yes
 [registry]
 	enabled = no
-	registry to announce = {{ registry_server }}
 [health]
 	# For now we send health alarms not from the central netdata server, but from each host (central host doesn't supprt alarm customizations)
 	enabled = yes
