@@ -7,4 +7,4 @@ fi
 
 MINION_NAME=$1
 
-salt-run manage.alived --out=json | jq '.[]|select(. == "'${MINION_NAME}'")' | wc -l
+salt-run manage.up --out=json | jq '.[]|select(. == "'${MINION_NAME}'")' | wc -l
