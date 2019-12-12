@@ -76,6 +76,10 @@ docker_app_docker_login_{{ loop.index }}:
     - name: docker login -u "{{ app['docker_registry_login']['username'] }}" -p "{{ app['docker_registry_login']['password'] }}" "{{ app['docker_registry_login']['registry'] }}"
       {%- endif %}
 
+docker_app_docker_pull_{{ loop.index }}:
+  cmd.run:
+    - name: docker pull {{ app['image'] }}
+
 docker_app_container_{{ loop.index }}:
   docker_container.running:
     - name: app-{{ app_name }}
