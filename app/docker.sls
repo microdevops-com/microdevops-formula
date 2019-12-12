@@ -70,6 +70,12 @@ docker_app_bind_dir_{{ i_loop.index }}_{{ loop.index }}:
     - makedirs: True
       {%- endfor %}
 
+      {%- if app['docker_registry_login'] is defined and app['docker_registry_login'] is not none %}
+docker_app_docker_login_{{ loop.index }}:
+  cmd.run:
+    - name: docker login -u "{{ app['docker_registry_login']['username'] }}" -p "{{ app['docker_registry_login']['password'] }}" "{{ app['docker_registry_login']['registry'] }}"
+      {%- endif %}
+
 docker_app_container_{{ loop.index }}:
   docker_container.running:
     - name: app-{{ app_name }}

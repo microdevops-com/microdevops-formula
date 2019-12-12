@@ -113,6 +113,11 @@ app:
     apps:
       proto:
         image: php:7.3-fpm
+        docker_registry_login:
+          username: salt
+          password: xxxxxxxxxxxxxxxxxxxx
+          registry: gitlab.example.com:5001
+        exec_after_deploy: /app/after_deploy.sh
         home: /var/www/proto
         publish:
           - 0.0.0.0:9000:9000/tcp
