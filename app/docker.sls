@@ -97,6 +97,35 @@ docker_app_container_exec_{{ loop.index }}:
   cmd.run:
     - name: docker exec app-{{ app_name }} {{ app['exec_after_deploy'] }}
       {%- endif %}
+
+      {%- if app['cron'] is defined and app['cron'] is not none %}
+        {%- set i_loop = loop %}
+        {%- for cron in app['cron'] %}
+docker_app_container_cron_{{ i_loop.index }}_{{ loop.index }}:
+  cron.present:
+    - name: docker exec app-{{ app_name }} {{ cron['cmd'] }}
+    - identifier: docker-app-{{ app_name }}-{{ loop.index }}
+    - user: root
+          {%- if cron['minute'] is defined and cron['minute'] is not none %}
+    - minute: '{{ cron['minute'] }}'
+          {%- endif %}
+          {%- if cron['hour'] is defined and cron['hour'] is not none %}
+    - hour: '{{ cron['hour'] }}'
+          {%- endif %}
+          {%- if cron['daymonth'] is defined and cron['daymonth'] is not none %}
+    - daymonth: '{{ cron['daymonth'] }}'
+          {%- endif %}
+          {%- if cron['month'] is defined and cron['month'] is not none %}
+    - month: '{{ cron['month'] }}'
+          {%- endif %}
+          {%- if cron['dayweek'] is defined and cron['dayweek'] is not none %}
+    - dayweek: '{{ cron['dayweek'] }}'
+          {%- endif %}
+          {%- if cron['special'] is defined and cron['special'] is not none %}
+    - special: '{{ cron['special'] }}'
+          {%- endif %}
+        {%- endfor %}
+      {%- endif %}
     {%- endif %}
   {%- endfor %}
 {% endif %}

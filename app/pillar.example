@@ -133,6 +133,14 @@ app:
           - /var/www/proto/app/data:/app/data:rw
         networks:
           - proto
+        cron: # optional, docker exec ... cmd by cron from docker host
+          - cmd: /app/some/command.sh
+            minute: '...' # optional
+            hour: '...' # optional 
+            daymonth: '...' # optional 
+            month: '...' # optional 
+            dayweek: '...' # optional 
+            special: '...' # optional 
       proto-redis:
         image: redis:latest
         home: /var/www/proto-redis
