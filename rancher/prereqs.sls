@@ -64,7 +64,7 @@ kubectl_pkg:
 
 rke_install_1:
   cmd.run:
-    - name: 'curl -L https://github.com/rancher/rke/releases/download/v0.1.13/rke_linux-amd64 -o /usr/local/bin/rke'
+    - name: 'curl -L https://github.com/rancher/rke/releases/download/v1.0.0/rke_linux-amd64 -o /usr/local/bin/rke'
 
 rke_install_2:
   cmd.run:
