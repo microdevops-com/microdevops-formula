@@ -1,5 +1,10 @@
 # vi: set ft=yaml:
 
+# Salt has a bug for RabbitMQ 3.8+ user management, quick ugly fix:
+# edit /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py:
+# change cmd = ('rabbit_auth_backend_internal:check_user_login'
+# to     cmd = ('rabbit_auth_backend_internal:user_login_authentication'
+
 rabbitmq:
   config: # optional
     - 'key = val' # see https://github.com/rabbitmq/rabbitmq-server/blob/v3.7.x/docs/rabbitmq.conf.example, each item is copied as is

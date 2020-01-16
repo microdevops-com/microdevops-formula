@@ -79,7 +79,7 @@ rabbit_service_5:
 
 rabbit_service_6:
   cmd.run:
-    - name: 'until rabbitmqctl status | grep -q "{uptime"; do echo .; done'
+    - name: 'until rabbitmqctl status | grep -q "Uptime"; do echo .; done'
 
   {%- for vhost in pillar['rabbitmq'].get('vhosts', []) %}
 rabbit_vhost_{{ loop.index }}:
