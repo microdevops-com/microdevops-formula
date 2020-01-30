@@ -127,6 +127,12 @@ docker_install_2:
 docker_install_3:
   service.running:
     - name: docker
+
+# fix for k8s in lxd
+docker_install_4:
+  file.symlink:
+    - name: '/dev/kmsg'
+    - target: '/dev/console'
           
   {%- endif %}
 
@@ -175,7 +181,10 @@ ssh_key_file_3:
             docker_socket: /var/run/docker.sock
             ssh_key: ""
             ssh_key_path: /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/.ssh/id_rsa
+						ssh_cert: ""
+						ssh_cert_path: ""
             labels: {}
+						taints: []
     {%- endfor %}
         cluster_ip_range: {{ pillar['rancher']['cluster_ip_range'] }}
         cluster_cidr: {{ pillar['rancher']['cluster_cidr']  }}
