@@ -181,10 +181,10 @@ ssh_key_file_3:
             docker_socket: /var/run/docker.sock
             ssh_key: ""
             ssh_key_path: /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/.ssh/id_rsa
-						ssh_cert: ""
-						ssh_cert_path: ""
+            ssh_cert: ""
+            ssh_cert_path: ""
             labels: {}
-						taints: []
+            taints: []
     {%- endfor %}
         cluster_ip_range: {{ pillar['rancher']['cluster_ip_range'] }}
         cluster_cidr: {{ pillar['rancher']['cluster_cidr']  }}
