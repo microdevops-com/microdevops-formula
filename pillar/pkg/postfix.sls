@@ -7,7 +7,12 @@ pkg:
             - pkgs:
                 - postfix
                 - bsd-mailx
+            {%- if grains['oscodename'] == 'bionic' %}
+                - s-nail
+            {%- else %}
                 - heirloom-mailx
+            {%- endif %}
+
       - pkg.purged:
           1:
             - pkgs:
