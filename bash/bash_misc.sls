@@ -84,7 +84,7 @@ byobu_prompt_skel_bashrc:
         [ ${_byobu_sourced}_ = 1_ ] && export TERM=screen-256color-bce
         [ -r /usr/share/byobu/profiles/bashrc ] && . /usr/share/byobu/profiles/bashrc  #byobu-prompt#
 
-bash_skel_root_bashrc:
+bash_skel_system_root_bashrc:
   file.managed:
     - name: /root/.bashrc
     - source: /etc/skel/.bashrc
