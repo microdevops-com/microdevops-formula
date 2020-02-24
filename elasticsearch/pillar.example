@@ -1,0 +1,90 @@
+{#
+- Make sure vm.max_map_count=262144 on docker server
+- Set node_ips, node_http_ports, node_transport_ports for ufw_simple purposes
+- Docker uses internal IPs, so we need to specify external published ips
+- Apply salt elasticsearch*.example.com state.apply ufw_simple.ufw_simple
+- Apply salt elasticsearch*.example.com state.apply elasticsearch.elasticsearch
+#}
+
+{% from 'ufw_simple/vars.jinja' import vars with context %}
+
+{%
+set node_ips = {
+  'elasticsearch1.example.com': '10.0.10.2',
+  'elasticsearch2.example.com': '10.0.10.3',
+  'elasticsearch3.example.com': '10.0.10.4',
+}
+%}
+{%
+set node_http_ports = [
+  '9200',
+  '10200',
+]
+%}
+{%
+set node_transport_ports = [
+  '9300',
+  '10300',
+]
+%}
+
+# Use as is
+ufw_simple:
+  enabled: True
+  logging: 'off'
+  allow:
+    http_a:
+      proto: 'tcp'
+      from:
+        {{ vars['All_Servers'] }}
+      to_port: '{% for ip in node_http_ports %}{{ ip }}{% if not loop.last %},{% endif %}{% endfor %}'
+    http_b:
+      proto: 'tcp'
+      from:
+        {{ vars['Office_And_VPN'] }}
+      to_port: '{% for ip in node_http_ports %}{{ ip }}{% if not loop.last %},{% endif %}{% endfor %}'
+    transport_a:
+      proto: 'tcp'
+      from:
+        {{ node_ips }}
+      to_port: '{% for ip in node_transport_ports %}{{ ip }}{% if not loop.last %},{% endif %}{% endfor %}'
+
+elasticsearch:
+  docker-ce_version: 18.06.1
+  nodes:
+    master:
+      - elasticsearch1.example.com
+      - elasticsearch2.example.com
+      - elasticsearch3.example.com
+    data:
+      - elasticsearch2.example.com
+      - elasticsearch3.example.com
+    ingest:
+      - elasticsearch1.example.com
+    # Use as is
+    ips:
+      {% for key, val in node_ips.items() %}{{ key }}: {{ val }}
+      {% endfor %}
+  domains:
+    - name: elasticsearch.example.com
+      clusters:
+        - name: prod
+          ports:
+            http: 9200
+            transport: 9300
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+          config: |
+            # additional common settings if needed
+          auth:
+            - developer1: password1
+            - developer2: password2
+        - name: dev
+          ports:
+            http: 10200
+            transport: 10300
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+          config: |
+            # additional common settings if needed
+          auth:
+            - developer1: password3
+            - developer2: password4
