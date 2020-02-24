@@ -16,6 +16,7 @@ set db_ps = {
 %}
 {% do db_ps.update({'precise': db_ps['xenial']}) %}
 {% do db_ps.update({'trusty': db_ps['xenial']}) %}
+{% do db_ps.update({'stretch': db_ps['xenial']}) %}
 {% do db_ps.update({'bionic': db_ps['xenial']}) %}
 {%
 set data_dirs_to_find = {
@@ -31,6 +32,7 @@ set data_dirs_to_find = {
 %}
 {% do data_dirs_to_find.update({'precise': data_dirs_to_find['xenial']}) %}
 {% do data_dirs_to_find.update({'trusty': data_dirs_to_find['xenial']}) %}
+{% do data_dirs_to_find.update({'stretch': data_dirs_to_find['xenial']}) %}
 {% do data_dirs_to_find.update({'bionic': data_dirs_to_find['xenial']}) %}
 {#
 We list here only dirs that usually do not have to be backed up completely. For example, we check subdirs of /opt, but do not usually backup the whole /opt.
@@ -80,4 +82,5 @@ set data_dirs_to_skip = {
 %}
 {% do data_dirs_to_skip.update({'precise': data_dirs_to_skip['xenial']}) %}
 {% do data_dirs_to_skip.update({'trusty': data_dirs_to_skip['xenial']}) %}
+{% do data_dirs_to_skip.update({'stretch': data_dirs_to_skip['xenial']}) %}
 {% do data_dirs_to_skip.update({'bionic': data_dirs_to_skip['xenial']}) %}
