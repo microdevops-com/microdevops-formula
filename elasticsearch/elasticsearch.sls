@@ -63,14 +63,14 @@ nginx_install:
       - nginx
       - apache2-utils
 
-		{%- for domain in pillar['elasticsearch']['domains'] %}
-			{%- set a_loop = loop %}
-			{%- for cluster in domain['clusters'] %}
-				{%- set b_loop = loop %}
-				{%- if cluster['auth'] is defined and cluster['auth'] is not none %}
-					{%- for user in cluster['auth'] %}
-						{%- set c_loop = loop %}
-						{%- for user_name, user_pass in user.items() %}
+    {%- for domain in pillar['elasticsearch']['domains'] %}
+      {%- set a_loop = loop %}
+      {%- for cluster in domain['clusters'] %}
+        {%- set b_loop = loop %}
+        {%- if cluster['auth'] is defined and cluster['auth'] is not none %}
+          {%- for user in cluster['auth'] %}
+            {%- set c_loop = loop %}
+            {%- for user_name, user_pass in user.items() %}
 nginx_htaccess_user_{{ a_loop.index }}_{{ b_loop.index }}_{{ c_loop.index }}_{{ loop.index }}:
   webutil.user_exists:
     - name: '{{ user_name }}'
@@ -78,11 +78,11 @@ nginx_htaccess_user_{{ a_loop.index }}_{{ b_loop.index }}_{{ c_loop.index }}_{{ 
     - htpasswd_file: /etc/nginx/{{ domain['name'] }}-{{ cluster['name'] }}.htpasswd
     - force: True
     - runas: root
-						{%- endfor %}
-					{%- endfor %}
-				{%- endif %}
-			{%- endfor %}
-		{%- endfor %}
+            {%- endfor %}
+          {%- endfor %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endfor %}
 
 nginx_files_1:
   file.managed:
