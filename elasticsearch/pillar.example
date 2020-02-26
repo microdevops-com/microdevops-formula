@@ -1,6 +1,6 @@
 {#
 - Make sure vm.max_map_count=262144 on docker server
-- Set node_ips, node_http_ports, node_transport_ports for ufw_simple purposes
+- Set node_ips, node_transport_ports for ufw_simple purposes
 - Docker uses internal IPs, so we need to specify external published ips
 - Apply salt elasticsearch*.example.com state.apply ufw_simple.ufw_simple
 - Apply salt elasticsearch*.example.com state.apply elasticsearch.elasticsearch
@@ -16,12 +16,6 @@ set node_ips = {
 }
 %}
 {%
-set node_http_ports = [
-  '9200',
-  '10200',
-]
-%}
-{%
 set node_transport_ports = [
   '9300',
   '10300',
@@ -33,16 +27,6 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    http_a:
-      proto: 'tcp'
-      from:
-        {{ vars['All_Servers'] }}
-      to_port: '{% for ip in node_http_ports %}{{ ip }}{% if not loop.last %},{% endif %}{% endfor %}'
-    http_b:
-      proto: 'tcp'
-      from:
-        {{ vars['Office_And_VPN'] }}
-      to_port: '{% for ip in node_http_ports %}{{ ip }}{% if not loop.last %},{% endif %}{% endfor %}'
     transport_a:
       proto: 'tcp'
       from:
