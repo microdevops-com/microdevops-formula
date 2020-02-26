@@ -328,6 +328,63 @@ php-fpm_7_3_modules_ioncube_3:
         {%- endif %}
       {%- endif %}
     {%- endif %}
+    
+    {%- if (pillar['php-fpm']['version_7_4'] is defined) and (pillar['php-fpm']['version_7_4'] is not none) and (pillar['php-fpm']['version_7_4']) %}
+php-fpm_repo_deb_7_4:
+  pkgrepo.managed:
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: E5267A6C
+    - refresh: True
+
+php-fpm_7_4_installed:
+  pkg.installed:
+    - pkgs:
+      - php7.4-cli
+      - php7.4-fpm
+
+      {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
+        {%- if (pillar['php-fpm']['modules']['php7_4'] is defined) and (pillar['php-fpm']['modules']['php7_4'] is not none) %}
+php-fpm_7_4_modules_installed:
+  pkg.installed:
+    - pkgs:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php7_4'] %}
+            {%- if (pkg_name != 'php7.4-ioncube') %}
+      - {{ pkg_name }}
+            {%- endif %}
+          {%- endfor %}
+
+          {%- for pkg_name in pillar['php-fpm']['modules']['php7_4'] %}
+            {%- if (pkg_name == 'php7.4-ioncube') %}
+php-fpm_7_4_modules_ioncube_1:
+  file.managed:
+    - name: '/usr/lib/php/20180731/ioncube_loader_lin_7.4.so'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.4.so'
+
+php-fpm_7_4_modules_ioncube_2:
+  file.managed:
+    - name: '/etc/php/7.4/mods-available/ioncube.ini'
+    - user: root
+    - group: root
+    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
+    - template: jinja
+    - defaults:
+        path: '/usr/lib/php/20180731/ioncube_loader_lin_7.4.so'
+
+php-fpm_7_4_modules_ioncube_3:
+  file.symlink:
+    - name: '/etc/php/7.4/fpm/conf.d/00-ioncube.ini'
+    - target: '/etc/php/7.4/mods-available/ioncube.ini'
+
+            {%- endif %}
+          {%- endfor %}
+        {%- endif %}
+      {%- endif %}
+    {%- endif %}
 
     {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
       {%- for k, v in pillar['php-fpm']['tz'].iteritems() %}
