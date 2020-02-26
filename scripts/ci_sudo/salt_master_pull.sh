@@ -33,8 +33,8 @@ stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git submodule init"
 ( cd /srv && stdbuf -oL -eL git submodule init ) || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git submodule update --recursive -f --checkout"
-( cd /srv && stdbuf -oL -eL git submodule update --recursive -f --checkout ) || GRAND_EXIT=1
+stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && git submodule update -f --recursive --checkout --remote"
+( cd /srv && stdbuf -oL -eL git submodule update -f --recursive --checkout --remote) || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: cd /srv && ln -sf ../../.githooks/post-merge .git/hooks/post-merge"
 ( cd /srv && stdbuf -oL -eL ln -sf ../../.githooks/post-merge .git/hooks/post-merge ) || GRAND_EXIT=1
