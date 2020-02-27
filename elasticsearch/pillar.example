@@ -61,8 +61,11 @@ elasticsearch:
           config: |
             # additional common settings if needed
           auth:
+            # users
             - developer1: password1
             - developer2: password2
+            # services
+            - kibana: password
         - name: dev
           ports:
             http: 10200
@@ -71,5 +74,8 @@ elasticsearch:
           config: |
             # additional common settings if needed
           auth:
+            # users
             - developer1: password3
             - developer2: password4
+            # services
+            - kibana: password
