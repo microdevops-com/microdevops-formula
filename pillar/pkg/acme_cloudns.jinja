@@ -49,4 +49,4 @@ pkg:
                 #!/bin/bash
                 export CLOUDNS_AUTH_ID="{{ acme_auth_id }}"
                 export CLOUDNS_AUTH_PASSWORD="{{ acme_auth_password }}"
-                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cloudns "$@"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cloudns --dnssleep 120 "$@"
