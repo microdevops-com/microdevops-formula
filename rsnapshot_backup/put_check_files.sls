@@ -102,4 +102,12 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
       {%- endif %}
     {%- endfor %}
   {%- endif %}
+{% else %}
+put_check_files_nothing_to_do:
+  test.configurable_test_state:
+    - name: put_check_files_nothing_to_do_info
+    - changes: False
+    - result: True
+    - comment: |
+         NOTICE: Pillar rsnapshot_backup not defined, doing nothing.
 {% endif %}

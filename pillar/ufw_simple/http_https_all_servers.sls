@@ -4,15 +4,15 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    http_https_Office_And_VPN_1:
+    http_https_All_Servers_1:
       proto: 'tcp'
       from:
-        {{ vars['Office_And_VPN'] }}
+        {{ vars['All_Servers'] }}
       to_port: '80,443'
   delete:
     allow:
-      http_https_Office_And_VPN_1:
+      http_https_All_Servers_1:
         proto: 'tcp'
         from:
-          {{ vars['Delete_Office_And_VPN'] }}
+          {{ vars['Delete_All_Servers'] }}
         to_port: '80,443'

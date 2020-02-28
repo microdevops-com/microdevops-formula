@@ -16,7 +16,7 @@ rabbit_repo:
     - file: /etc/apt/sources.list.d/rabbitmq.list
     - key_url: https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc
 
-rabbot_pkg:
+rabbit_pkg:
   pkg.latest:
     - pkgs:
         - rabbitmq-server
@@ -79,7 +79,7 @@ rabbit_service_5:
 
 rabbit_service_6:
   cmd.run:
-    - name: 'until rabbitmqctl status | grep -q "{uptime"; do echo .; done'
+    - name: 'until rabbitmqctl status | grep -q "Uptime"; do echo .; done'
 
   {%- for vhost in pillar['rabbitmq'].get('vhosts', []) %}
 rabbit_vhost_{{ loop.index }}:

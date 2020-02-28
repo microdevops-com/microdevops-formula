@@ -4,15 +4,15 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    http_https_Office_And_VPN_1:
+    ssh_salt_servers:
       proto: 'tcp'
       from:
-        {{ vars['Office_And_VPN'] }}
-      to_port: '80,443'
+        {{ vars['Salt_Servers'] }}
+      to_port: '22'
   delete:
     allow:
-      http_https_Office_And_VPN_1:
+      ssh_salt_servers:
         proto: 'tcp'
         from:
-          {{ vars['Delete_Office_And_VPN'] }}
-        to_port: '80,443'
+          {{ vars['Delete_Salt_Servers'] }}
+        to_port: '22'

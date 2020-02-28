@@ -64,7 +64,7 @@ kubectl_pkg:
 
 rke_install_1:
   cmd.run:
-    - name: 'curl -L https://github.com/rancher/rke/releases/download/v0.1.13/rke_linux-amd64 -o /usr/local/bin/rke'
+    - name: 'curl -L https://github.com/rancher/rke/releases/download/v1.0.4/rke_linux-amd64 -o /usr/local/bin/rke'
 
 rke_install_2:
   cmd.run:
@@ -72,39 +72,31 @@ rke_install_2:
 
 helm_install_1:
   cmd.run:
-    - name: 'rm -f /tmp/helm-v2.11.0-linux-amd64.tar.gz'
+    - name: 'rm -f /tmp/helm-v3.0.2-linux-amd64.tar.gz'
 
 helm_install_2:
   cmd.run:
-    - name: 'curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz -o /tmp/helm-v2.11.0-linux-amd64.tar.gz'
+    - name: 'curl -L https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz -o /tmp/helm-v3.0.2-linux-amd64.tar.gz'
 
 helm_install_3:
   cmd.run:
-    - name: 'tar zxvf /tmp/helm-v2.11.0-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/helm'
-
-helm_install_4:
-  cmd.run:
-    - name: 'tar zxvf /tmp/helm-v2.11.0-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/tiller'
+    - name: 'tar zxvf /tmp/helm-v3.0.2-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/helm'
 
 helm_install_5:
   cmd.run:
     - name: 'chmod +x /usr/local/bin/helm'
 
-helm_install_6:
-  cmd.run:
-    - name: 'chmod +x /usr/local/bin/tiller'
-
 rancher_cli_install_1:
   cmd.run:
-    - name: 'rm -f /tmp/rancher-linux-amd64-v2.0.6.tar.gz'
+    - name: 'rm -f /tmp/rancher-linux-amd64-v2.3.2.tar.gz'
 
 rancher_cli_install_2:
   cmd.run:
-    - name: 'curl -L https://github.com/rancher/cli/releases/download/v2.0.6/rancher-linux-amd64-v2.0.6.tar.gz -o /tmp/rancher-linux-amd64-v2.0.6.tar.gz'
+    - name: 'curl -L https://github.com/rancher/cli/releases/download/v2.3.2/rancher-linux-amd64-v2.3.2.tar.gz -o /tmp/rancher-linux-amd64-v2.3.2.tar.gz'
 
 rancher_cli_install_3:
   cmd.run:
-    - name: 'sudo tar zxvf /tmp/rancher-linux-amd64-v2.0.6.tar.gz --strip-components=2 -C /usr/local/bin ./rancher-v2.0.6/rancher'
+    - name: 'sudo tar zxvf /tmp/rancher-linux-amd64-v2.3.2.tar.gz --strip-components=2 -C /usr/local/bin ./rancher-v2.3.2/rancher'
 
 rancher_cli_install_4:
   cmd.run:
@@ -135,6 +127,12 @@ docker_install_2:
 docker_install_3:
   service.running:
     - name: docker
+
+# fix for k8s in lxd
+docker_install_4:
+  file.symlink:
+    - name: '/dev/kmsg'
+    - target: '/dev/console'
           
   {%- endif %}
 
@@ -183,7 +181,10 @@ ssh_key_file_3:
             docker_socket: /var/run/docker.sock
             ssh_key: ""
             ssh_key_path: /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/.ssh/id_rsa
+            ssh_cert: ""
+            ssh_cert_path: ""
             labels: {}
+            taints: []
     {%- endfor %}
         cluster_ip_range: {{ pillar['rancher']['cluster_ip_range'] }}
         cluster_cidr: {{ pillar['rancher']['cluster_cidr']  }}
@@ -205,7 +206,7 @@ ssh_key_file_5:
     - mode: 0755
     - contents: |
         #!/bin/bash
-        helm --kubeconfig /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kube_config_cluster.yml --home /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/.helm "$@"
+        helm --kubeconfig /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kube_config_cluster.yml "$@"
   {%- endif %}
 
   # nodes only

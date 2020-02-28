@@ -4,6 +4,6 @@ ufw_simple:
   nat:
     enabled: True
     masquerade:
-      'masquerade from docker networks to eth0':
+      'masquerade from docker networks to eth1':
         source: '172.16.0.0/12'
-        out: 'eth0'
+        out: 'eth1'
