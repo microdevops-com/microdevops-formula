@@ -49,4 +49,4 @@ pkg:
                 #!/bin/bash
                 export CF_Key="{{ acme_cf_key }}"
                 export CF_Email="{{ acme_cf_email }}"
-                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cf "$@"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cf --dnssleep 120 "$@"
