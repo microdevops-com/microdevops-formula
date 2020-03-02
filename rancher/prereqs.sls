@@ -222,7 +222,9 @@ docker_mount_1:
     - name: '/etc/rc.local'
     - mode: ensure
     - before: '^exit\ 0$'
-    - content: 'mount --make-shared /'
+    - content: |
+        mount --make-shared /
+        ln -s /dev/console /dev/kmsg
 
 docker_mount_2:
   cmd.run:
