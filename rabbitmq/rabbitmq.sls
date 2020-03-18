@@ -1,8 +1,16 @@
 {% if pillar['rabbitmq'] is defined and pillar['rabbitmq'] is not none %}
+
+  {%- if (grains['oscodename'] == 'xenial') %}
 erlang_repo_pkg:
   pkg.installed:
     - sources:
         - erlang-solutions: 'salt://pkg/files/erlang-solutions_1.0_all.deb'
+  {%- elif grains['oscodename'] == 'bionic' %}
+erlang_repo_pkg_for_bionic:
+  pkg.installed:
+    - sources:
+        - erlang-solutions: 'https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb'
+  {%- endif %}
 
 erlang_pkg:
   pkg.latest:
