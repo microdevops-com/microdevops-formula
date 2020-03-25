@@ -210,7 +210,12 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}:/prometheus-data:rw
     - watch:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
-    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
+      {% if instance['retention_time'] is defined and instance['retention_time'] is not none %}
+        {% set retention_time_arg = '--storage.tsdb.retention.time=' + instance['retention_time'] %}
+      {% else %}
+        {% set retention_time_arg = '' %}
+      {% endif %}
+    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data {{ retention_time_arg }} --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
 
 prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
   cron.present:
