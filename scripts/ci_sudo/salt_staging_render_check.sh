@@ -54,7 +54,7 @@ exec 2>&1
 # Update local repo
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: git -C ${WORK_DIR}/srv pull || ( mkdir -p ${WORK_DIR}/srv && cd ${WORK_DIR}/srv && git init . && git remote add origin $4 )"
-( stdbuf -oL -eL git -C ${WORK_DIR}/srv pull || ( stdbuf -oL -eL mkdir -p ${WORK_DIR}/srv && stdbuf -oL -eL cd ${WORK_DIR}/srv && stdbuf -oL -eL git init . && stdbuf -oL -eL git remote add origin $4 ) ) || GRAND_EXIT=1
+( stdbuf -oL -eL git -C ${WORK_DIR}/srv pull || ( stdbuf -oL -eL mkdir -p ${WORK_DIR}/srv && cd ${WORK_DIR}/srv && stdbuf -oL -eL git init . && stdbuf -oL -eL git remote add origin $4 ) ) || GRAND_EXIT=1
 cd ${WORK_DIR}/srv || ( stdbuf -oL -eL echo "ERROR: ${WORK_DIR}/srv does not exist"; exit 1 )
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: CMD: git fetch && git checkout -B $1 origin/$1"
