@@ -108,6 +108,10 @@ owncload_bind_directory_create:
     - mode: 700
     - makedirs: True
 
+docker_container_image_owncloud_redis:
+  cmd.run:
+    - name: docker pull {{ pillar['owncloud']['redis_image'] }}
+
 docker_container_run_owncloud_redis:
   docker_container.running:
     - name: redis
@@ -119,6 +123,10 @@ docker_container_run_owncloud_redis:
     - image: {{ pillar['owncloud']['redis_image'] }}
     - detach: True
     - restart_policy: always
+
+docker_container_image_owncloud_mysql:
+  cmd.run:
+    - name: docker pull {{ pillar['owncloud']['mysql_image'] }}
 
 docker_container_run_owncloud_mysql:
   docker_container.running:
@@ -135,6 +143,10 @@ docker_container_run_owncloud_mysql:
     - image: {{ pillar['owncloud']['mysql_image'] }}
     - detach: True
     - restart_policy: always
+
+docker_container_image_owncloud_files:
+  cmd.run:
+    - name: docker pull {{ pillar['owncloud']['files_image'] }}
 
 docker_container_run_owncloud_files:
   docker_container.running:

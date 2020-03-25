@@ -98,6 +98,10 @@ metabase_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
     - mode: 755
     - makedirs: True
 
+metabase_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['image'] }}
+
 metabase_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: metabase-{{ domain['name'] }}-{{ instance['name'] }}

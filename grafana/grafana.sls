@@ -112,6 +112,10 @@ grafana_config_{{ loop.index }}_{{ i_loop.index }}:
     - mode: 644
     - contents: {{ instance['config'] | yaml_encode }}
 
+grafana_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['image'] }}
+
 grafana_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: grafana-{{ domain['name'] }}-{{ instance['name'] }}
