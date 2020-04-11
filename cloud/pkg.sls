@@ -130,7 +130,7 @@ pkg_deb_packages:
       - gawk
       - curl
       - wget
-  {%- if grains['oscodename'] == 'bionic' %}
+  {%- if grains['oscodename'] in ['bionic', 'buster'] %}
       - s-nail 
   {%- else %}
       - heirloom-mailx
@@ -159,7 +159,11 @@ pkg_deb_packages:
       - bc
       - aptitude
       - rsnapshot
+  {%- if grains['oscodename'] == 'buster' %}
+      - s4cmd
+  {%- else %}
       - s3cmd
+  {%- endif %}
       # build tools
       - build-essential
       - git
