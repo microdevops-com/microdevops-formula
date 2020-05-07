@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 # $1 should be $CI_COMMIT_REF_NAME
 # $2 should be $CI_COMMIT_SHA
@@ -53,23 +54,17 @@ exec 2>&1
 
 # Update local repo
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git -C ${WORK_DIR}/srv pull || ( mkdir -p ${WORK_DIR}/srv && cd ${WORK_DIR}/srv && git init . && git remote add origin $4 )"
 ( stdbuf -oL -eL git -C ${WORK_DIR}/srv pull || ( stdbuf -oL -eL mkdir -p ${WORK_DIR}/srv && cd ${WORK_DIR}/srv && stdbuf -oL -eL git init . && stdbuf -oL -eL git remote add origin $4 ) ) || GRAND_EXIT=1
 cd ${WORK_DIR}/srv || ( stdbuf -oL -eL echo "ERROR: ${WORK_DIR}/srv does not exist"; exit 1 )
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git fetch && git checkout -B $1 origin/$1"
 ( stdbuf -oL -eL git fetch && stdbuf -oL -eL git checkout -B $1 origin/$1 ) || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git submodule init"
 stdbuf -oL -eL git submodule init || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git submodule update --recursive -f --checkout"
 stdbuf -oL -eL git submodule update --recursive -f --checkout || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: ln -sf ../../.githooks/post-merge .git/hooks/post-merge"
 stdbuf -oL -eL ln -sf ../../.githooks/post-merge .git/hooks/post-merge || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
 stdbuf -oL -eL .githooks/post-merge || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
 stdbuf -oL -eL echo "NOTICE: populating repo/etc/salt for salt-call --local"

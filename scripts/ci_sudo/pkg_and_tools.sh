@@ -1,26 +1,22 @@
 #!/bin/bash
+set -x
+
 GRAND_EXIT=0
 rm -f /srv/scripts/ci_sudo/$(basename $0).out
 exec > >(tee /srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 -C 'G@kernel:Linux' state.apply pkg.pkg queue=True"
 stdbuf -oL -eL salt --force-color -t 300 -C 'G@kernel:Linux' state.apply pkg.pkg queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 -C 'G@kernel:Linux' state.apply netdata.netdata queue=True"
 stdbuf -oL -eL salt --force-color -t 300 -C 'G@kernel:Linux' state.apply netdata.netdata queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 -C 'G@os:Ubuntu or G@os:Debian' state.apply bash.bash_completions queue=True"
 stdbuf -oL -eL salt --force-color -t 300 -C 'G@os:Ubuntu or G@os:Debian' state.apply bash.bash_completions queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 -C 'G@os:Ubuntu or G@os:Debian' state.apply bash.bash_misc queue=True"
 stdbuf -oL -eL salt --force-color -t 300 -C 'G@os:Ubuntu or G@os:Debian' state.apply bash.bash_misc queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 -C 'G@kernel:Linux' state.apply vim.vim queue=True"
 stdbuf -oL -eL salt --force-color -t 300 -C 'G@kernel:Linux' state.apply vim.vim queue=True || GRAND_EXIT=1
 stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: salt --force-color -t 300 -C 'G@kernel:Linux' state.apply ntp.ntp queue=True"
 stdbuf -oL -eL salt --force-color -t 300 -C 'G@kernel:Linux' state.apply ntp.ntp queue=True || GRAND_EXIT=1
 
 grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
