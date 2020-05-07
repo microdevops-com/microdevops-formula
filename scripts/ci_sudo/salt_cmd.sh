@@ -8,10 +8,6 @@ fi
 
 SALT_TIMEOUT=$1
 SALT_TARGET=$2
-# Check port in SALT_TARGET
-if echo ${SALT_TARGET} | grep -q :; then
-	SALT_TARGET=$(echo ${SALT_TARGET} | awk -F: '{print $1}')
-fi
 SALT_CMD_BASE64=$3
 SALT_CMD=$(echo ${SALT_CMD_BASE64} | base64 -d)
 	
