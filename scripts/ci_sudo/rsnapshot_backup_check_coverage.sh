@@ -1,6 +1,4 @@
 #!/bin/bash
-set -x
-
 GRAND_EXIT=0
 
 if [ "_$1" = "_" ]; then
@@ -16,8 +14,7 @@ rm -f ${OUT_FILE}
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
-stdbuf -oL -eL echo ---
-stdbuf -oL -eL  bash -c "salt --force-color -t 300 ${SALT_TARGET} state.apply rsnapshot_backup.check_coverage queue=True" || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL  bash -c "salt --force-color -t 300 ${SALT_TARGET} state.apply rsnapshot_backup.check_coverage queue=True" ) || GRAND_EXIT=1
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1

@@ -14,7 +14,6 @@ rm -f ${OUT_FILE}
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
-stdbuf -oL -eL echo ---
 ( set -x ; stdbuf -oL -eL bash -c "salt --force-color -t 300 ${SALT_TARGET} saltutil.refresh_pillar" ) || GRAND_EXIT=1
 
 # Check out file for errors

@@ -1,13 +1,10 @@
 #!/bin/bash
-set -x
-
 GRAND_EXIT=0
 rm -f /srv/scripts/ci_sudo/$(basename $0).out
 exec > >(tee /srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
-stdbuf -oL -eL echo "---"
-stdbuf -oL -eL salt --force-color -t 600 -C 'G@kernel:Windows' state.apply users.windows queue=True || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL salt --force-color -t 600 -C 'G@kernel:Windows' state.apply users.windows queue=True ) || GRAND_EXIT=1
 
 grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
 
