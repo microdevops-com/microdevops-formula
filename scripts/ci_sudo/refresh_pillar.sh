@@ -1,6 +1,4 @@
 #!/bin/bash
-set -x
-
 GRAND_EXIT=0
 
 if [ "_$1" = "_" ]; then
@@ -17,7 +15,7 @@ exec > >(tee ${OUT_FILE})
 exec 2>&1
 
 stdbuf -oL -eL echo ---
-stdbuf -oL -eL  bash -c "salt --force-color -t 300 ${SALT_TARGET} saltutil.refresh_pillar" || GRAND_EXIT=1
+stdbuf -oL -eL  ( set -x; bash -c "salt --force-color -t 300 ${SALT_TARGET} saltutil.refresh_pillar" ) || GRAND_EXIT=1
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
