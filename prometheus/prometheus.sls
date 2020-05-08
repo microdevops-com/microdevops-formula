@@ -195,6 +195,10 @@ docker_network_{{ loop.index }}_{{ i_loop.index }}:
   docker_network.present:
     - name: prometheus-{{ domain['name'] }}-{{ instance['name'] }}
 
+prometheus_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['image'] }}
+
 prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: prometheus-{{ domain['name'] }}-{{ instance['name'] }}
@@ -210,7 +214,12 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}:/prometheus-data:rw
     - watch:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
-    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
+      {% if instance['retention_time'] is defined and instance['retention_time'] is not none %}
+        {% set retention_time_arg = '--storage.tsdb.retention.time=' + instance['retention_time'] %}
+      {% else %}
+        {% set retention_time_arg = '' %}
+      {% endif %}
+    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data {{ retention_time_arg }} --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
 
 prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
   cron.present:
@@ -221,6 +230,10 @@ prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
     - hour: 6
 
       {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+prometheus_pushgateway_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['pushgateway']['image'] }}
+
 prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: pushgateway-{{ domain['name'] }}-{{ instance['name'] }}
@@ -240,6 +253,10 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
       {%- endif %}
 
       {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+prometheus_statsd-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['statsd-exporter']['image'] }}
+
 prometheus_statsd-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: statsd-exporter-{{ domain['name'] }}-{{ instance['name'] }}

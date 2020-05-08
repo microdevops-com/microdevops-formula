@@ -4,15 +4,15 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    pve:
+    lxd_office_and_vpn:
       proto: 'tcp'
       from:
         {{ vars['Office_And_VPN'] }}
-      to_port: '8006'
+      to_port: '8443'
   delete:
     allow:
-      pve:
+      lxd_office_and_vpn:
         proto: 'tcp'
         from:
           {{ vars['Delete_Office_And_VPN'] }}
-        to_port: '8006'
+        to_port: '8443'

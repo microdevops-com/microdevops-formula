@@ -152,6 +152,10 @@ kibana_config_{{ loop.index }}_{{ i_loop.index }}:
         logging.verbose: true
         {{ instance['config'] }}
 
+kibana_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['image'] }}
+
 kibana_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: kibana-{{ domain['name'] }}-{{ instance['name'] }}

@@ -2,7 +2,7 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    http:
+    http_https_cloudflare:
       proto: 'tcp'
       from:
         cloudflare_01: '103.21.244.0/22'

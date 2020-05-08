@@ -98,6 +98,10 @@ nginx_reload:
   cmd.run:
     - name: systemctl reload nginx.service
 
+onlyoffice_image:
+  cmd.run:
+    - name: docker pull {{ pillar['onlyoffice']['image'] }}
+
 onlyoffice_running_container:
   docker_container.running:
     - name: onlyoffice_documentserver

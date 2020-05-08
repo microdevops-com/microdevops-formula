@@ -208,6 +208,10 @@ elasticsearch_config_{{ loop.index }}_{{ i_loop.index }}:
         transport.port: {{ cluster['ports']['transport'] }}
         {{ cluster['config'] }}
 
+elasticsearch_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ cluster['image'] }}
+
 elasticsearch_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: elasticsearch-{{ domain['name'] }}-{{ cluster['name'] }}

@@ -14,9 +14,7 @@ rm -f ${OUT_FILE}
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
-stdbuf -oL -eL echo ---
-stdbuf -oL -eL echo CMD: salt --force-color -t 300 ${SALT_TARGET} state.apply rsnapshot_backup.update_config queue=True
-stdbuf -oL -eL  bash -c "salt --force-color -t 300 ${SALT_TARGET} state.apply rsnapshot_backup.update_config queue=True" || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL  bash -c "salt --force-color -t 300 ${SALT_TARGET} state.apply rsnapshot_backup.update_config queue=True" ) || GRAND_EXIT=1
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1

@@ -63,6 +63,10 @@ redmine_configuration_file:
     - makedirs: True
     - contents: {{ pillar['redmine']['configuration'] | yaml_encode }}
 
+redmine_image:
+  cmd.run:
+    - name: docker pull {{ pillar['redmine']['image'] }}
+
 redmine_container:
   docker_container.running:
     - name: {{ pillar['redmine']['name'] }}

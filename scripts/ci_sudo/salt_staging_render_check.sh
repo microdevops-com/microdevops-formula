@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # $1 should be $CI_COMMIT_REF_NAME
 # $2 should be $CI_COMMIT_SHA
 # $3 should be $CI_COMMIT_BEFORE_SHA
@@ -52,28 +51,15 @@ exec > >(tee ${WORK_DIR}/srv/scripts/ci_sudo/$(basename $0).out)
 exec 2>&1
 
 # Update local repo
-stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git -C ${WORK_DIR}/srv pull || git clone $4 ${WORK_DIR}/srv"
-( stdbuf -oL -eL git -C ${WORK_DIR}/srv pull || stdbuf -oL -eL git clone $4 ${WORK_DIR}/srv ) || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL git -C ${WORK_DIR}/srv pull || ( set -x ; stdbuf -oL -eL mkdir -p ${WORK_DIR}/srv && cd ${WORK_DIR}/srv && stdbuf -oL -eL git init . && stdbuf -oL -eL git remote add origin $4 ) ) || GRAND_EXIT=1
 cd ${WORK_DIR}/srv || ( stdbuf -oL -eL echo "ERROR: ${WORK_DIR}/srv does not exist"; exit 1 )
-stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git fetch && git checkout -B $1 origin/$1"
-( stdbuf -oL -eL git fetch && stdbuf -oL -eL git checkout -B $1 origin/$1 ) || GRAND_EXIT=1
-stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git submodule init"
-stdbuf -oL -eL git submodule init || GRAND_EXIT=1
-stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: git submodule update --recursive -f --checkout"
-stdbuf -oL -eL git submodule update --recursive -f --checkout || GRAND_EXIT=1
-stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: ln -sf ../../.githooks/post-merge .git/hooks/post-merge"
-stdbuf -oL -eL ln -sf ../../.githooks/post-merge .git/hooks/post-merge || GRAND_EXIT=1
-stdbuf -oL -eL echo "---"
-stdbuf -oL -eL echo "NOTICE: CMD: .githooks/post-merge"
-stdbuf -oL -eL .githooks/post-merge || GRAND_EXIT=1
-stdbuf -oL -eL echo "---"
+( set -x ; stdbuf -oL -eL git fetch && stdbuf -oL -eL git checkout -B $1 origin/$1 ) || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL git submodule init ) || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL git submodule update --recursive -f --checkout ) || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL ln -sf ../../.githooks/post-merge .git/hooks/post-merge ) || GRAND_EXIT=1
+( set -x ; stdbuf -oL -eL .githooks/post-merge ) || GRAND_EXIT=1
 stdbuf -oL -eL echo "NOTICE: populating repo/etc/salt for salt-call --local"
-( mkdir -p ${WORK_DIR}/etc/salt && rsync -av ${WORK_DIR}/srv/.gitlab-ci/staging-etc-with-pillar/ ${WORK_DIR}/etc/salt/ && sed -i -e "s#_WORK_DIR_#${WORK_DIR}#" ${WORK_DIR}/etc/salt/* ) || exit 1
+( set -x ; mkdir -p ${WORK_DIR}/etc/salt && rsync -av ${WORK_DIR}/srv/.gitlab-ci/staging-etc-with-pillar/ ${WORK_DIR}/etc/salt/ && sed -i -e "s#_WORK_DIR_#${WORK_DIR}#" ${WORK_DIR}/etc/salt/* ) || exit 1
 
 # Get changed files from the last push and try to render some of them
 for FILE in $(git diff-tree --no-commit-id --name-only -r $2 $3); do
