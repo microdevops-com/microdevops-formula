@@ -178,10 +178,11 @@ softether_vpnserver_start_script_file:
         {%- endif %}
       {%- endif %}
     {%- endif %}
+
 # Update the Manager Password
 softether_vpnserver_manager_password:
   cmd.run:
-    - name: 'vpncmd localhost:443 {{ vpncmd_connect_pass }} /SERVER /CMD ServerPasswordSet "{{ pillar['softether']['vpnserver']['password'] }}"'
+    - name: 'sleep 2; vpncmd localhost:443 {{ vpncmd_connect_pass }} /SERVER /CMD ServerPasswordSet "{{ pillar['softether']['vpnserver']['password'] }}"'
 
   {%- endif %}
 {% endif %}
