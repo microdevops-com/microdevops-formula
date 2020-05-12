@@ -14,7 +14,7 @@ softether:
     cmds:
       - 'IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:yes /PSK:XXX-SET-OWN-PSK-PASS-HERE-XXX /DEFAULTHUB:myhub'
       - 'OpenVpnMakeConfig "\/opt/softether/vpnserver/openvpnconfig.zip"'
-    server_key: | # optional key and cert, you need to use the same pair on all vpn servers if you want the same openvpn config to be used (/CMD ServerKeyGet, /CMD ServerCertGet)
+    server_key: | # optional key and cert, https://www.softether.org/4-docs/1-manual/3._SoftEther_VPN_Server_Manual/3.3_VPN_Server_Administration (/CMD ServerCertSet, /CMD ServerKeyGet, /CMD ServerCertGet)
       -----BEGIN PRIVATE KEY-----
       ...
       -----END PRIVATE KEY-----
