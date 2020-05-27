@@ -17,7 +17,7 @@ salt_master_hosts_{{ loop.index }}:
     {%- if 
            pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string
            or
-           (pillar['salt']['minion']['release'] is defined and pillar['salt']['minion']['release'] is not none and pillar['salt']['minion']['release'] != grains['saltversioninfo'][2]|string)
+           (pillar['salt']['minion']['release'] is defined and pillar['salt']['minion']['release'] is not none and pillar['salt']['minion']['release'] != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string + '.' + grains['saltversioninfo'][2]|string)
     %}
 minion_installer_exe:
   file.managed:
