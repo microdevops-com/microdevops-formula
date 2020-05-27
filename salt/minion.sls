@@ -14,7 +14,11 @@ salt_master_hosts_{{ loop.index }}:
       {%- set minion_exe = 'Salt-Minion-2019.2.5-Py3-AMD64-Setup.exe' -%}
     {%- endif %}
 
-    {%- if pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string %}
+    {%- if 
+           pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string
+           or
+           (pillar['salt']['minion']['release'] is defined and pillar['salt']['minion']['release'] is not none and pillar['salt']['minion']['release'] != grains['saltversioninfo'][2]|string)
+    %}
 minion_installer_exe:
   file.managed:
     - name: 'C:\Windows\{{ minion_exe }}'
