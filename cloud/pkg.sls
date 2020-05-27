@@ -49,7 +49,7 @@ pkg_deb_packages:
       - at
       - doc-debian
       - ftp
-  {%- if grains['oscodename'] == 'bionic' %}
+  {%- if grains['oscodename'] in ['bionic', 'buster'] %}
       - bind9-host
   {%- else %}
       - host
@@ -167,7 +167,9 @@ pkg_deb_packages:
       # build tools
       - build-essential
       - git
+  {%- if grains['oscodename'] != 'buster' %}
       - checkinstall
+  {%- endif %}
       # test tools
       - memtester
       - bonnie++
