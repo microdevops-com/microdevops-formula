@@ -111,12 +111,26 @@ rsnapshot_backup:
         exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
         data: # list folders or db types here
+          - UBUNTU
           - /test
           - POSTGRESQL
           - MYSQL
           - MONGODB
         local_backups_suppress_reason: Some reason # will suppress local backup not found error if set, reason text is just for documentation purposes
         remote_backups_suppress_reason: Some reason # will suppress remote backup not found error if set, reason text is just for documentation purposes
+      - type: SUPPRESS_COVERAGE
+        data:
+          - /test1 # suppress local backups for /test1
+        local_backups_suppress_reason: Some reason
+      - type: SUPPRESS_COVERAGE
+        data:
+          - /test2 # suppress remote backups for /test2
+        remote_backups_suppress_reason: Some reason
+      - type: SUPPRESS_COVERAGE
+        data:
+          - /test3 # suppress local and remote backups for /test3
+        local_backups_suppress_reason: Some reason
+        remote_backups_suppress_reason: Some reason
     winsrv1.domain.com:
       - type: RSYNC_NATIVE
         data:
