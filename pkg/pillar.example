@@ -2,7 +2,7 @@
 
 # pkg
 pkg:
-  some_package_group_name: # just to group and copy-paste
+  some_package_group_name: # name of group of states, WARNING: should be unique or dict join will overwrite needed values
     when: 'PKG_PKG' # pkg.pkg will apply that group, when: 'PKG_BEFORE_DEPLOY' - pkg.before_deploy applies, when: 'PKG_AFTER_DEPLOY' - pkg.after_deploy applies
     states:
       - file.managed: # any state name
