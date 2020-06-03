@@ -1,5 +1,11 @@
 # vi: set ft=yaml:
 
+#You can apply specific pkg sub pillar by running:
+#salt minion state.apply pkg.[pkg|before_deploy|after_deploy] pillar='{"pkg_filter": "some_name"}'
+#It will run only:
+#pkg:
+#  *some_name*: <- this key (substring match)
+
 # pkg
 pkg:
   some_package_group_name: # name of group of states, WARNING: should be unique or dict join will overwrite needed values

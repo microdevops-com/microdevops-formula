@@ -17,7 +17,7 @@ Do not use number as some_name, filter will not match for numbers.
           {%- set b_loop = loop %}
           {%- for ss_key, ss_val in s_val.items()|sort %}
             {%- if pillar['pkg_filter'] is defined and pillar['pkg_filter'] is not none %}
-              {%- if pkg_key == pillar['pkg_filter'] %}
+              {%- if pillar['pkg_filter'] in pkg_key %}
 pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   {{ s_key }}:
                 {%- if not (ss_val['name'] is defined and ss_val['name'] is not none) %}
