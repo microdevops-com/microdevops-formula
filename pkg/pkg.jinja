@@ -47,4 +47,12 @@ pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ 
       {%- endfor %}
     {%- endif %}
   {%- endfor %}
+{% else %}
+pkg_nothing_to_do:
+  test.configurable_test_state:
+    - name: pkg_nothing_to_do_info
+    - changes: False
+    - result: True
+    - comment: |
+         NOTICE: Pillar pkg not defined, doing nothing.
 {% endif %}
