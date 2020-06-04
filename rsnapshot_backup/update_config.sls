@@ -1,4 +1,13 @@
-{% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
+{% if grains['os'] == "Windows" %}
+update_config_nothing_to_do:
+  test.configurable_test_state:
+    - name: update_config_nothing_to_do_info
+    - changes: False
+    - result: True
+    - comment: |
+         NOTICE: update_config is not for Windows, doing nothing.
+
+{% elif pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
 
 # We don't know yet if there will be backups for this host as backup host, but start creating dir and config.
 # This is done to make things simplier and not to accumulate pillars in separate dict.
