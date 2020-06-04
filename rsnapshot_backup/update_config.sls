@@ -1,11 +1,11 @@
 {% if grains['os'] == "Windows" %}
-update_config_nothing_to_do:
+update_config_fail:
   test.configurable_test_state:
-    - name: update_config_nothing_to_do_info
+    - name: update_config_fail
     - changes: False
-    - result: True
+    - result: False
     - comment: |
-         NOTICE: update_config is not for Windows, doing nothing.
+         NOTICE: update_config is not for Windows, probably you run rsnapshot_backup pipeline for Windows server - it is wrong.
 
 {% elif pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
 
