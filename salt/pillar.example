@@ -21,6 +21,7 @@ salt:
 
   minion:
     version: 2019.2
+    release: 2019.2.5 # optional specific release of version to install (only for windows now)
     hosts:
       - name: salt1.example.com
         ip: 1.2.3.4

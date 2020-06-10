@@ -20,6 +20,7 @@ app:
         auth_basic: # optional basic auth
           user: 'basicuser'
           pass: 'basicpassword'
+          #omit_options: True # optionally disable auth for OPTIONS request method
         vhost_config: 'app/example_php-fpm_app_1/vhost.conf'
         root: '/var/www/app_1/src/public'
         server_name: 'example.com'
@@ -102,3 +103,50 @@ app:
       setup_script: # e.g. after git pull to change permissions and create missing folders
         cwd: '/var/www/app_1/src'
         name: 'bash /var/www/app_1/src/etc/setup.sh'
+
+app:
+  docker:
+    docker-ce_version: 18.06.1
+    networks:
+      - name: proto
+        subnet: 172.18.0.0/24
+        gateway: 172.18.0.1
+    apps:
+      proto:
+        image: php:7.3-fpm
+        docker_registry_login:
+          username: salt
+          password: xxxxxxxxxxxxxxxxxxxx
+          registry: gitlab.example.com:5001
+        exec_after_deploy: /app/after_deploy.sh
+        home: /var/www/proto
+        publish:
+          - 0.0.0.0:9000:9000/tcp
+        environment:
+          - APP_ENV: dev
+          - APP_DEBUG: 1
+          - MYSQL_DB: proto
+          - MYSQL_HOST: mysql.example.com
+          - MYSQL_PASS: xxxxxxxxxxxxxxxx
+          - MYSQL_PORT: 3306
+          - MYSQL_USER: proto
+        binds:
+          - /var/www/proto/app/data:/app/data:rw
+        networks:
+          - proto
+        cron: # optional, docker exec ... cmd by cron from docker host
+          - cmd: /app/some/command.sh
+            minute: '...' # optional
+            hour: '...' # optional 
+            daymonth: '...' # optional 
+            month: '...' # optional 
+            dayweek: '...' # optional 
+            special: '...' # optional 
+      proto-redis:
+        image: redis:latest
+        home: /var/www/proto-redis
+        publish: []
+        environment: []
+        binds: []
+        networks:
+          - proto

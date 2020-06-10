@@ -4,14 +4,14 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    salt:
+    pve:
       proto: 'tcp'
       from:
         {{ vars['Office_And_VPN'] }}
       to_port: '8006'
   delete:
     allow:
-      salt:
+      pve:
         proto: 'tcp'
         from:
           {{ vars['Delete_Office_And_VPN'] }}

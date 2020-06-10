@@ -49,4 +49,4 @@ pkg:
                 #!/bin/bash
                 export GD_Key="{{ acme_gd_key }}"
                 export GD_Secret="{{ acme_gd_secret }}"
-                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_gd "$@"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_gd --dnssleep 120 "$@"

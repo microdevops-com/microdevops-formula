@@ -1,7 +1,5 @@
 {% if pillar['sysadmws-utils'] is defined and pillar['sysadmws-utils'] is not none %}
-  {%- if (pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest") or
-         (pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest")
-   %}
+  {%- if pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest" %}
 
     {%- if grains['oscodename'] == "precise" %}
 pkgrepo_precise_backports:
@@ -23,9 +21,6 @@ pkg_latest_utils:
   pkg.latest:
     - refresh: True
     - pkgs:
-      {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest" %}
-        - sysadmws-utils
-      {%- endif %}
       {%- if pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest" %}
         - sysadmws-utils-v1
       {%- endif %}
@@ -47,31 +42,6 @@ install_utils_deps_karmic:
         - python2.6
         - python-jinja2
         - python-yaml
-      {%- endif %}
-
-      {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "latest" %}
-install_utils_tgz_v0_1:
-  cmd.run:
-    - name: 'rm -f /root/sysadmws-utils.tar.gz'
-    - runas: 'root'
-
-install_utils_tgz_v0_2:
-  cmd.run:
-    - name: 'cd /root && wget --no-check-certificate https://repo.sysadm.ws/tgz/sysadmws-utils.tar.gz'
-    - runas: 'root'
-
-install_utils_tgz_v0_3:
-  cmd.run:
-    - name: 'tar zxf /root/sysadmws-utils.tar.gz -C /'
-    - runas: 'root'
-
-        {%- if grains['osfinger'] in ['CentOS-6'] %}
-install_utils_tgz_v0_4:
-  cmd.run:
-    - name: 'sed -i "1s_.*_#!/usr/bin/python3.4_" /opt/sysadmws-utils/notify_devilry/notify_devilry.py'
-    - runas: 'root'
-        {%- endif %}
-
       {%- endif %}
 
       {%- if pillar['sysadmws-utils']['v1'] is defined and pillar['sysadmws-utils']['v1'] is not none and pillar['sysadmws-utils']['v1']|lower == "latest" %}
@@ -99,30 +69,6 @@ install_utils_tgz_v1_4:
 
       {%- endif %}
     {%- endif %}
-  {%- endif %}
-
-  {%- if pillar['sysadmws-utils']['v0'] is defined and pillar['sysadmws-utils']['v0'] is not none and pillar['sysadmws-utils']['v0']|lower == "purged" %}
-    {%- if grains['os'] in ['Ubuntu', 'Debian'] and not grains['oscodename'] in ['karmic'] %}
-
-pkg_purged_utils:
-  pkg.purged:
-    - name: sysadmws-utils
-
-    {%- endif %}
-
-# For all OS final clean
-rm_utils_v0_1:
-  file.absent:
-    - name: /root/sysadmws-utils.tar.gz
-
-rm_utils_v0_2:
-  file.absent:
-    - name: /opt/sysadmws-utils
-
-rm_utils_v0_3:
-  file.absent:
-    - name: /etc/cron.d/sysadmws-rsnapshot-backup
-
   {%- endif %}
 
 {% else %}

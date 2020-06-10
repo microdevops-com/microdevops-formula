@@ -1,0 +1,28 @@
+{#
+- Acme.sh pkg is required.
+- Kibana will ask for auth proxied to elasticsearch.
+#}
+
+kibana:
+  docker-ce_version: 18.06.1
+  domains:
+    - name: kibana.example.com
+      instances:
+        - name: prod
+          port: 5601
+          elasticsearch:
+            url: https://elasticsearch.example.com/prod/
+            username: kibana
+            password: password
+          image: docker.elastic.co/kibana/kibana:7.6.0
+          config: |
+            # additional common settings
+        - name: dev
+          port: 5602
+          elasticsearch:
+            url: https://elasticsearch.example.com/dev/
+            username: kibana
+            password: password
+          image: docker.elastic.co/kibana/kibana:7.6.0
+          config: |
+            # additional common settings

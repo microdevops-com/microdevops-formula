@@ -238,7 +238,11 @@ php-fpm_apps_app_htaccess_user_{{ loop.index }}:
     - force: True
     - runas: {{ app_params['user'] }}
 
-          {%- set auth_basic_block = 'auth_basic "Restricted Content"; auth_basic_user_file ' ~ app_params['app_root'] ~ '/.htpasswd;' %}
+          {%- if app_params['nginx']['auth_basic']['omit_options'] is defined and app_params['nginx']['auth_basic']['omit_options'] is not none and app_params['nginx']['auth_basic']['omit_options'] %}
+            {%- set auth_basic_block = 'set $toggle "Restricted Content"; if ($request_method = OPTIONS) { set $toggle off; } auth_basic $toggle; auth_basic_user_file ' ~ app_params['app_root'] ~ '/.htpasswd;' %}
+          {%- else %}
+            {%- set auth_basic_block = 'auth_basic "Restricted Content"; auth_basic_user_file ' ~ app_params['app_root'] ~ '/.htpasswd;' %}
+          {%- endif %}
         {%- else %}
           {%- set auth_basic_block = ' ' %}
         {%- endif %}

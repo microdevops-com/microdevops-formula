@@ -2,7 +2,7 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    http:
+    http_https_webhooks_telegram:
       proto: 'tcp'
       from:
         webhooks_telegram_01: '149.154.167.197'

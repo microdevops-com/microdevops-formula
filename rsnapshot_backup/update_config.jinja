@@ -25,6 +25,9 @@
   {%- if host_backups_item['rsync_args'] is defined and host_backups_item['rsync_args'] is not none %}
           rsync_args: {{ host_backups_item['rsync_args'] }}
   {%- endif %}
+  {%- if host_backups_item['mysqldump_args'] is defined and host_backups_item['mysqldump_args'] is not none %}
+          mysqldump_args: {{ host_backups_item['mysqldump_args'] }}
+  {%- endif %}
   {%- if host_backups_item['mongo_args'] is defined and host_backups_item['mongo_args'] is not none %}
           mongo_args: {{ host_backups_item['mongo_args'] }}
   {%- endif %}
@@ -36,6 +39,9 @@
   {%- endif %}
   {%- if host_backups_item['exec_before_rsync'] is defined and host_backups_item['exec_before_rsync'] is not none %}
           exec_before_rsync: {{ host_backups_item['exec_before_rsync'] }}
+  {%- endif %}
+  {%- if host_backups_item['exec_after_rsync'] is defined and host_backups_item['exec_after_rsync'] is not none %}
+          exec_after_rsync: {{ host_backups_item['exec_after_rsync'] }}
   {%- endif %}
   {%- if host_backups_item['checks'] is defined and host_backups_item['checks'] is not none %}
           checks:
