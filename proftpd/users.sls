@@ -1,7 +1,7 @@
-{%- if (pillar['proftpd'] is defined) and (pillar['proftpd'] is not none) %}
-  {%- if (pillar['proftpd']['users'] is defined) and (pillar['proftpd']['users'] is not none) %}
+{% if pillar['proftpd'] is defined and pillar['proftpd'] is not none %}
+  {%- if pillar['proftpd']['users'] is defined and pillar['proftpd']['users'] is not none %}
     {%- for proftpd_user in pillar['proftpd']['users'] %}
-      {%- if (pillar['proftpd']['users'][proftpd_user]['delete'] is defined) and (pillar['proftpd']['users'][proftpd_user]['delete'] is not none) and (pillar['proftpd']['users'][proftpd_user]['delete']) %}
+      {%- if pillar['proftpd']['users'][proftpd_user]['delete'] is defined and pillar['proftpd']['users'][proftpd_user]['delete'] is not none and pillar['proftpd']['users'][proftpd_user]['delete'] %}
 proftpd_delete_user_{{ loop.index }}:
   cmd.run:
     - name: 'grep {{ proftpd_user }} /etc/proftpd/ftpd.users && ftpasswd --passwd --file=/etc/proftpd/ftpd.users --name={{ proftpd_user }} --delete-user || echo "user not exist"'
