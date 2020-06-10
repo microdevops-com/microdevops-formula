@@ -1,0 +1,17 @@
+{% set appname = 'projectX' %}
+proftpd:
+  users:
+    test3:
+      password: 'passwwordsZZ'
+      homedir: '/var/www/{{ appname }}/src'
+      makedir: False
+      user: {{ appname }}
+      group: {{ appname }}
+    test2:
+      password: 'passwwordsXX'
+      homedir: '/var/www/{{ appname }}/src/123/456'
+      makedir: True
+      user: {{ appname }}
+      group: {{ appname }}
+    test3:
+      delete: True
