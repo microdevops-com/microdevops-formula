@@ -1,0 +1,15 @@
+cmd_check_alert:
+  enabled: True
+  cmd_checks:
+    TEST FAIL ON TIMEOUT:
+      cmd: sleep 1 && echo "ASDF asdf" && exit 130
+      timeout: 1       # time in seconds
+    TEST FAIL ON EXIT CODE:
+      cmd: echo "ASDF asdf" && exit 130
+    TEST SUCCESS:
+      cmd: echo hi
+
+  config:
+    default_timeout: 10 # time in seconds
+    cron:
+      minute: '*/10'    # minute part of cron task
