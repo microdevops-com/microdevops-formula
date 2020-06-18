@@ -14,6 +14,7 @@ erlang_repo_pkg_for_bionic:
 
 erlang_pkg:
   pkg.latest:
+    - refresh: True
     - pkgs:
         - erlang-nox
 
@@ -26,6 +27,7 @@ rabbit_repo:
 
 rabbit_pkg:
   pkg.latest:
+    - refresh: True
     - pkgs:
         - rabbitmq-server
     - reload_modules: True
