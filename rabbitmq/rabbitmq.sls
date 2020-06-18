@@ -17,6 +17,7 @@ erlang_pkg:
     - refresh: True
     - pkgs:
         - erlang-nox
+        - erlang-base
 
 rabbit_repo:
   pkgrepo.managed:
