@@ -4,6 +4,13 @@
 # edit /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py:
 # change cmd = ('rabbit_auth_backend_internal:check_user_login'
 # to     cmd = ('rabbit_auth_backend_internal:user_login_authentication'
+#
+# Also short hostname must be resolved to the same host, otherwise it will fail to start.
+# rabbitmq1 -> other server
+# rabbitmq1.xxx.domain.com -> this server
+# = fail
+# You shoud add record to /etc/hosts:
+# 127.0.1.1   rabbitmq1
 
 rabbitmq:
   config: # optional
@@ -12,6 +19,7 @@ rabbitmq:
     name: root
     password: USE_YOUR_OWN
   management_domain: rabbit.example.com # if rabbitmq_management is enabled, get acme.sh cert for this domain and setup for rabbitmq (you cannot use 443 port because of permissions)
+  management_port: 15672
   plugins: # optional
     - rabbitmq_management
   vhosts:

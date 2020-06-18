@@ -68,10 +68,10 @@ rabbit_config_1:
     - contents: |
         # This file is managed by Salt, changes will be overwritten
   {% if 'rabbitmq_management' in pillar['rabbitmq'].get('plugins', []) and pillar['rabbitmq']['management_domain'] is defined and pillar['rabbitmq']['management_domain'] is not none %}
-        management.listener.ssl = true
-        management.listener.ssl_opts.cacertfile = /opt/acme/cert/rabbitmq_ca.cer
-        management.listener.ssl_opts.certfile = /opt/acme/cert/rabbitmq_cert.cer
-        management.listener.ssl_opts.keyfile = /opt/acme/cert/rabbitmq_key.key
+        management.ssl.port = {{ pillar['rabbitmq']['management_port'] }}
+        management.ssl.cacertfile = /opt/acme/cert/rabbitmq_ca.cer
+        management.ssl.certfile = /opt/acme/cert/rabbitmq_cert.cer
+        management.ssl.keyfile = /opt/acme/cert/rabbitmq_key.key
   {% endif %}
   {%- for config_line in pillar['rabbitmq'].get('config', []) %}
         {{ config_line }}
