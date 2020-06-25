@@ -10,7 +10,7 @@ lxd_launch_{{ loop.index }}:
       {%- if 'allow_stop_start' in pillar['lxd'] and pillar['lxd']['allow_stop_start'] %}
 lxd_stop_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc stop {{ container_name }}'
+    - name: 'sleep 2; lxc stop {{ container_name }}'
       {%- endif %}
 
       {%- if 'devices' in container_val %}
