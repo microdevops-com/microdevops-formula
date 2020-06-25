@@ -147,6 +147,7 @@ echo
 
 # fail2ban
 echo
+echo "Going to setup fail2ban" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
