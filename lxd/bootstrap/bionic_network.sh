@@ -5,6 +5,10 @@
 /sbin/ip address replace $1/$2 dev eth0
 /sbin/ip route replace default via $3
 
+/bin/systemctl disable --now systemd-networkd.socket systemd-networkd systemd-networkd-wait-online systemd-resolved
+/bin/systemctl mask          systemd-networkd.socket systemd-networkd systemd-networkd-wait-online systemd-resolved
+
+sleep 2
 echo "search $5" > /etc/resolv.conf
 for NS in $4; do echo "nameserver ${NS}" >> /etc/resolv.conf; done
 
@@ -35,6 +39,4 @@ EOM
 /bin/systemctl unmask networking
 /bin/systemctl enable networking
 /bin/systemctl restart networking
-/bin/systemctl disable --now systemd-networkd.socket systemd-networkd systemd-networkd-wait-online systemd-resolved
-/bin/systemctl mask          systemd-networkd.socket systemd-networkd systemd-networkd-wait-online systemd-resolved
 /usr/bin/apt-get -qy purge nplan netplan.io snapd
