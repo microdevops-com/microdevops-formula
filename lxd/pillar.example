@@ -1,0 +1,56 @@
+lxd:
+  password: randompassword
+  #images: # optional, additional images to predownload on server, xenial and bionic are preloaded by default
+  #  ubuntu/focal/amd64: images:ubuntu/focal/amd64
+  profiles:
+    br0:
+      devices:
+        eth0:
+          type: nic
+          nictype: bridged
+          parent: br0
+    br1:
+      devices:
+        eth1:
+          type: nic
+          nictype: bridged
+          parent: br1
+    #test: # profile config example
+    #  config:
+    #    some.key: some_value
+  containers:
+    container1.example.com: # actual lxd names are dots to dashes converted
+      image: ubuntu/xenial/amd64
+      devices:
+        root:
+          type: disk
+          path: /
+          pool: vg_md3
+          size: 10GB
+      #config: # optional config values to apply https://lxd.readthedocs.io/en/latest/instances/
+      #  limits.cpu: 1
+      #  limits.memory: 1024MB
+      #  limits.memory.swap: False
+      profiles: # profile list will be applied on each state run
+        - br1
+        - autostart
+        - docker
+      bootstrap: # bootstrap parameters are script specific
+        - xenial_network.sh:
+          - 10.0.10.2
+          - 255.255.255.0
+          - 10.0.10.1
+          - 8.8.8.8 1.1.1.1
+          - example.com
+        - xenial_hostname_and_hosts.sh:
+          - __CONTAINER_NAME__ # special parameter __CONTAINER_NAME__ is replaced with container name with dots
+          - 1.2.3.4
+          - salt1.example.com
+        - xenial_salt_minion.sh:
+          - salt1.example.com
+          - 3000
+
+# set only specific containers
+... state.apply lxd.containers pillar='{lxd: {only: {"container1.example.com"}}}'
+# and allow stop and start for changes to apply
+... state.apply lxd.containers pillar='{lxd: {only: {"container1.example.com"}, allow_stop_start: True}}'
