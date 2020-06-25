@@ -32,3 +32,9 @@ EOM
 /bin/sleep 2
 /sbin/ifup eth0
 /bin/sleep 5
+/bin/systemctl unmask networking
+/bin/systemctl enable networking
+/bin/systemctl restart networking
+/bin/systemctl disable --now systemd-networkd.socket systemd-networkd systemd-networkd-wait-online systemd-resolved
+/bin/systemctl mask          systemd-networkd.socket systemd-networkd systemd-networkd-wait-online systemd-resolved
+/usr/bin/apt-get -qy purge nplan netplan.io snapd
