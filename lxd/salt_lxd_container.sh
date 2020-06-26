@@ -86,6 +86,7 @@ read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $MY_HN cmd.shell 'salt-key -y -a '$HN )
+	sleep 5
 fi
 
 # Waiting for the minion to be alive
@@ -111,6 +112,7 @@ read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt $HN state.apply cloud.pkg )
+	sleep 5
 fi
 
 # high state
@@ -120,6 +122,7 @@ read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt -t 600 $HN state.highstate )
+	sleep 5
 fi
 
 # Stop container
@@ -129,6 +132,7 @@ read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt $LXDHOST cmd.shell "lxc stop $HN_DASH" )
+	sleep 10
 fi
 
 # Start container
@@ -153,6 +157,7 @@ read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf' )
+	sleep 5
 fi
 
 # app.deploy state
