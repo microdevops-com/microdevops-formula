@@ -28,7 +28,7 @@ echo "- LXD container info in /srv/pillar/lxd/some_lxd_host.sls" | ccze -A
 # Refresh pillar salt master
 echo
 echo "Going to refresh pillars on $MY_HN to reread pillar files" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $MY_HN saltutil.refresh_pillar )
@@ -38,7 +38,7 @@ fi
 # Update firewall
 echo
 echo "Going to refresh firewall on $MY_HN to reread the file /srv/pillar/ufw_simple/vars.jinja." | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $MY_HN state.apply ufw_simple.ufw_simple )
@@ -47,7 +47,7 @@ fi
 # Remove minion key
 echo
 echo "Removing the minion acceptance (otherwise profile fails) on $MY_HN." | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $MY_HN cmd.shell 'salt-key -y -d '$HN )
@@ -56,7 +56,7 @@ fi
 # Refresh pillar LXD host
 echo
 echo "Going to refresh pillars on $LXDHOST to reread LXD pillar files" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ;  salt $LXDHOST saltutil.refresh_pillar )
@@ -66,7 +66,7 @@ fi
 # lxd.init
 echo
 echo "Going to launch container $HN on host $LXDHOST" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt $LXDHOST state.apply lxd.containers pillar='{lxd: {only: {"'$HN'"}, allow_stop_start: True}}' )
@@ -82,7 +82,7 @@ echo
 # Accept minion key
 echo
 echo "Accepting minion key on $MY_HN." | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $MY_HN cmd.shell 'salt-key -y -a '$HN )
@@ -98,7 +98,7 @@ echo
 # Refresh pillar minion in case of script rerun
 echo
 echo "Going to refresh pillars on $HN in case of this script rerun and pillar change" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $HN saltutil.refresh_pillar )
@@ -108,7 +108,7 @@ fi
 # pkg state
 echo
 echo "Going to apply cloud.pkg" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt $HN state.apply cloud.pkg )
@@ -118,7 +118,7 @@ fi
 # high state
 echo
 echo "Going to apply highstate" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt -t 600 $HN state.highstate )
@@ -128,7 +128,7 @@ fi
 # Stop container
 echo
 echo "We need to stop the container for the final steps" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt $LXDHOST cmd.shell "lxc stop $HN_DASH" )
@@ -138,7 +138,7 @@ fi
 # Start container
 echo
 echo "Alsmost done, lets start the container" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt $LXDHOST cmd.shell "lxc start $HN_DASH" )
@@ -153,7 +153,7 @@ echo
 # fail2ban
 echo
 echo "Going to setup fail2ban" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf' )
@@ -163,7 +163,7 @@ fi
 # app.deploy state
 echo
 echo "Going to apply app.deploy" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt -t 600 $HN state.apply app.deploy )
