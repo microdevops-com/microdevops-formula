@@ -65,7 +65,7 @@ fi
 
 # lxd.init
 echo
-echo "Going to launch container" | ccze -A
+echo "Going to launch container $HN on host $LXDHOST" | ccze -A
 read -p "Are we OK with that? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
