@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Get variables
 MY_HN=`hostname -f`
