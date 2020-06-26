@@ -76,6 +76,7 @@ fi
 echo
 echo "Waiting for minion key" | ccze -A
 time until salt-key -L 2>&1 | grep -q $HN; do sleep 1; echo -n .; done
+sleep 5
 echo
 
 # Accept minion key
