@@ -37,7 +37,7 @@ install_cmd_6:
 
 install_cmd_7:
   cmd.run:
-    - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system rollout status deploy/rancher | grep -q "deployment.*rancher.*successfully rolled out" || /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/helm.sh install rancher-stable/rancher --namespace cattle-system --set hostname={{ pillar['rancher']['cluster_domain'] }} --set ingress.tls.source=secret'
+    - name: '/opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/kubectl.sh -n cattle-system rollout status deploy/rancher | grep -q "deployment.*rancher.*successfully rolled out" || /opt/rancher/clusters/{{ pillar['rancher']['cluster_name'] }}/helm.sh install rancher rancher-stable/rancher --namespace cattle-system --set hostname={{ pillar['rancher']['cluster_domain'] }} --set ingress.tls.source=secret'
   {%- endif %}
 
 {% endif %}
