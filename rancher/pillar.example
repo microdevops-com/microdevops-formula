@@ -24,7 +24,7 @@
 # last two steps are not required to do from each command host and should be done once
 #
 # docker versions:
-# - 18.06.1 - works inside LXD container as node
+# - 18.06.3 - works inside LXD container as node
 # - 17.03.2 - will not work inside LXD, works inside KVM, officially recommended
 
 rancher:
@@ -47,7 +47,7 @@ rancher:
     - rancherweb1.dev.example.com
     - rancherweb2.dev.example.com
     - rancherweb3.dev.example.com
-  docker-ce_version: 18.06.1
+  docker-ce_version: 18.06.3
   nodes:
     - address: rancher1.dev.example.com
       port: 22
