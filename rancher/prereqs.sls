@@ -12,6 +12,7 @@ nginx_files_1:
     - contents: |
         worker_processes 4;
         worker_rlimit_nofile 40000;
+        load_module /usr/lib/nginx/modules/ngx_stream_module.so;
 
         events {
             worker_connections 8192;
