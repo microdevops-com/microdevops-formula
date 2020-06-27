@@ -5,12 +5,12 @@
       {%- set container_name = container_name_dots|replace(".", "-") %}
 lxd_launch_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc list | grep -q -e "| {{ container_name }} *|" || lxc launch {{ container_val['image'] }} {{ container_name }}'
+    - name: 'lxc list | grep -q -e "| {{ container_name }} *|" || lxc init {{ container_val['image'] }} {{ container_name }}'
 
       {%- if 'allow_stop_start' in pillar['lxd'] and pillar['lxd']['allow_stop_start'] %}
 lxd_stop_{{ loop.index }}:
   cmd.run:
-    - name: 'sleep 2; lxc stop {{ container_name }}'
+    - name: 'lxc list | grep -q -e "| {{ container_name }} *| RUNNING |" && lxc stop {{ container_name }}'
       {%- endif %}
 
       {%- if 'devices' in container_val %}
