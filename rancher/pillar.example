@@ -4,6 +4,9 @@
 # - add
 #   echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize
 #   to /etc/rc.local on host machine if running inside LXD
+# - remove apparmor on host machine if running inside LXD
+#   apt-get purge --auto-remove apparmor
+# - reboot host machine after apparmor removal
 # - prepare nodes, node fo nginx proxy, node for command exec
 # - generate new private key for usage in this pillar
 # - prepare this pillar and assign it for all hosts
