@@ -52,7 +52,7 @@ nginx_reload:
 kubectl_repo:
   pkgrepo.managed:
     - humanname: Kubernetes Repository
-    - name: deb http://apt.kubernetes.io/ kubernetes-{{ grains['oscodename'] }} main
+    - name: deb http://apt.kubernetes.io/ kubernetes-{{ 'xenial' if grains['oscodename'] == 'bionic' else grains['oscodename'] }} main
     - file: /etc/apt/sources.list.d/kubernetes.list
     - key_url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
 
@@ -120,12 +120,6 @@ docker_install_3:
   service.running:
     - name: docker
 
-# fix for k8s in lxd
-docker_install_4:
-  file.symlink:
-    - name: '/dev/kmsg'
-    - target: '/dev/console'
-          
   {%- endif %}
 
   # command hosts only
@@ -210,15 +204,20 @@ auth_file_from_cmd:
         - {{ pillar['rancher']['cluster_ssh_public_key'] }}
 
 docker_mount_1:
-  file.line:
+  file.managed:
     - name: '/etc/rc.local'
-    - mode: ensure
-    - before: '^exit\ 0$'
-    - content: 'mount --make-shared /; ln -s /dev/console /dev/kmsg'
+    - user: root
+    - group: root
+    - mode: 0755
+    - contents: |
+        #!/bin/bash
+        mount --make-shared /
+        ln -s /dev/console /dev/kmsg
+        exit 0
 
 docker_mount_2:
   cmd.run:
-    - name: 'mount --make-shared /'
+    - name: 'mount --make-shared /; ln -s /dev/console /dev/kmsg'
   {%- endif %}
 
 {% endif %}
