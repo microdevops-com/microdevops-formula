@@ -55,6 +55,7 @@ kubectl_repo:
     - name: deb http://apt.kubernetes.io/ kubernetes-{{ 'xenial' if grains['oscodename'] == 'bionic' else grains['oscodename'] }} main
     - file: /etc/apt/sources.list.d/kubernetes.list
     - key_url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    - clean_file: True
 
 kubectl_pkg:
   pkg.installed:
@@ -108,6 +109,7 @@ docker_install_1:
     - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
     - file: /etc/apt/sources.list.d/docker-ce.list
     - key_url: https://download.docker.com/linux/ubuntu/gpg
+    - clean_file: True
 
 docker_install_2:
   pkg.installed:
@@ -212,12 +214,12 @@ docker_mount_1:
     - contents: |
         #!/bin/bash
         mount --make-shared /
-        ln -s /dev/console /dev/kmsg
+        ln -sf /dev/console /dev/kmsg
         exit 0
 
 docker_mount_2:
   cmd.run:
-    - name: 'mount --make-shared /; ln -s /dev/console /dev/kmsg'
+    - name: 'mount --make-shared /; ln -sf /dev/console /dev/kmsg'
   {%- endif %}
 
 {% endif %}
