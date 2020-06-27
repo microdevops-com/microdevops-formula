@@ -10,7 +10,7 @@ lxd_launch_{{ loop.index }}:
       {%- if 'allow_stop_start' in pillar['lxd'] and pillar['lxd']['allow_stop_start'] %}
 lxd_stop_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc list | grep -q -e "| {{ container_name }} *| RUNNING |" && lxc stop {{ container_name }}'
+    - name: 'lxc list | grep -q -e "| {{ container_name }} *| RUNNING |" && lxc stop {{ container_name }} || true'
       {%- endif %}
 
       {%- if 'devices' in container_val %}
