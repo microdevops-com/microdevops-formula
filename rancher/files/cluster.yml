@@ -139,7 +139,7 @@ monitoring:
   provider: ""
   options: {}
   node_selector: {}
-  update_strategy: null 
+  update_strategy: null
   replicas: null
 restore:
   restore: false
