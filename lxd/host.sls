@@ -7,76 +7,80 @@ lxd_depencies_installed:
       - lvm2
       - gdisk
       - thin-provisioning-tools
+      - snapd
 
 lxd_installed:
-  pkg.latest:
-    - refresh: True
-    - fromrepo: {{ grains['oscodename'] }}-backports
-    - pkgs:
-      - lxd
-      - lxd-client
+  cmd.run:
+    - name: 'snap install lxd'
 
 lxd_activate:
   cmd.run:
-    - name: 'lxd activateifneeded'
+    - name: '/snap/bin/lxd activateifneeded'
 
 lxd_start:
-  service.running:
-    - name: lxd
-    - enable: True
+  cmd.run:
+    - name: 'systemctl unmask snap.lxd.daemon && systemctl start snap.lxd.daemon'
+
+lxd_lxcfs_settings:
+  cmd.run:
+    - name: 'ps ax | grep -v "ps ax" | grep lxcfs | grep enable-loadavg | grep enable-pidfd | grep enable-cfs || ( snap set lxd lxcfs.cfs=true && snap set lxd lxcfs.loadavg=true && snap set lxd lxcfs.pidfd=true && systemctl unmask snap.lxd.daemon && systemctl stop snap.lxd.daemon && systemctl start snap.lxd.daemon )'
 
 lxd_init:
   cmd.run:
-    - name: 'lxd init --auto --network-address=[::] --network-port=8443 --trust-password={{ pillar['lxd']['password'] }}'
+    - name: '/snap/bin/lxd init --auto --network-address=[::] --network-port=8443 --trust-password={{ pillar['lxd']['password'] }}'
+
+lxd_wait:
+  cmd.run:
+    - name: '/snap/bin/lxd waitready'
 
 lxd_local_remote:
   cmd.run:
-    - name: 'lxc remote list | grep -q -e $(hostname -f) || lxc remote add $(hostname -f) https://localhost:8443 --accept-certificate --password={{ pillar['lxd']['password'] }}'
+    - name: '/snap/bin/lxc remote list | grep -q -e $(hostname -f) || lxc remote add $(hostname -f) https://localhost:8443 --accept-certificate --password={{ pillar['lxd']['password'] }}'
 
 lxd_remove_lxdbr0:
   cmd.run:
-    - name: 'lxc network delete lxdbr0 || true'
+    - name: '/snap/bin/lxc network delete lxdbr0 || true'
 
 lxd_remove_lxdbr0_default_profile:
   cmd.run:
-    - name: 'lxc profile device remove default eth0 || true'
+    - name: '/snap/bin/lxc profile device remove default eth0 || true'
 
 lxd_image_xenial:
   cmd.run:
-    - name: 'lxc image copy images:ubuntu/xenial/amd64 local: --alias ubuntu/xenial/amd64 --auto-update'
+    - name: '/snap/bin/lxc image copy images:ubuntu/xenial/amd64 local: --alias ubuntu/xenial/amd64 --auto-update'
 
 lxd_image_bionic:
   cmd.run:
-    - name: 'lxc image copy images:ubuntu/bionic/amd64 local: --alias ubuntu/bionic/amd64 --auto-update'
+    - name: '/snap/bin/lxc image copy images:ubuntu/bionic/amd64 local: --alias ubuntu/bionic/amd64 --auto-update'
 
   {%- if 'images' in pillar['lxd'] %}
     {%- for image_alias, image_source in pillar['lxd']['images'].items() %}
 lxd_image_pillar_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc image copy {{ image_source }} local: --alias {{ image_alias }} --auto-update'
+    - name: '/snap/bin/lxc image copy {{ image_source }} local: --alias {{ image_alias }} --auto-update'
 
     {%- endfor %}
   {%- endif %}
 
 lxd_profile_create_autostart:
   cmd.run:
-    - name: 'lxc profile list | grep -q -e "| autostart *|" || lxc profile create autostart'
+    - name: '/snap/bin/lxc profile list | grep -q -e "| autostart *|" || lxc profile create autostart'
 
 lxd_profile_set_autostart:
   cmd.run:
-    - name: 'lxc profile set autostart boot.autostart true'
+    - name: '/snap/bin/lxc profile set autostart boot.autostart true'
 
 lxd_profile_create_privileged:
   cmd.run:
-    - name: 'lxc profile list | grep -q -e "| privileged *|" || lxc profile create privileged'
+    - name: '/snap/bin/lxc profile list | grep -q -e "| privileged *|" || lxc profile create privileged'
 
 lxd_profile_set_privileged:
   cmd.run:
-    - name: 'lxc profile set privileged security.privileged true'
+    - name: '/snap/bin/lxc profile set privileged security.privileged true'
 
 lxd_profile_create_nfs:
   cmd.run:
-    - name: 'lxc profile list | grep -q -e "| nfs *|" || lxc profile create nfs'
+    - name: '/snap/bin/lxc profile list | grep -q -e "| nfs *|" || lxc profile create nfs'
 
 lxd_profile_set_nfs:
   cmd.run:
@@ -84,7 +88,7 @@ lxd_profile_set_nfs:
 
 lxd_profile_create_docker:
   cmd.run:
-    - name: 'lxc profile list | grep -q -e "| docker *|" || lxc profile create docker'
+    - name: '/snap/bin/lxc profile list | grep -q -e "| docker *|" || lxc profile create docker'
 
 lxd_profile_set_docker:
   cmd.run:
@@ -95,19 +99,19 @@ lxd_profile_set_docker:
       {%- set a_loop = loop %}
 lxd_profile_create_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc profile list | grep -q -e "| {{ profile_name }} *|" || lxc profile create {{ profile_name }}'
+    - name: '/snap/bin/lxc profile list | grep -q -e "| {{ profile_name }} *|" || lxc profile create {{ profile_name }}'
 
       {%- if 'devices' in profile_val %}
         {%- for device_name, device_val in profile_val['devices'].items() %}
           {%- set b_loop = loop %}
 lxd_profile_device_add_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc profile device list {{ profile_name }} | grep -q -e "^{{ device_name }}$" || lxc profile device add {{ profile_name }} {{ device_name }} {{ device_val['type'] }}{% for device_param_key, device_param_val in device_val.items() %} {{ device_param_key }}={{ device_param_val }}{% endfor %}'
+    - name: '/snap/bin/lxc profile device list {{ profile_name }} | grep -q -e "^{{ device_name }}$" || lxc profile device add {{ profile_name }} {{ device_name }} {{ device_val['type'] }}{% for device_param_key, device_param_val in device_val.items() %} {{ device_param_key }}={{ device_param_val }}{% endfor %}'
 
           {%- for device_param_key, device_param_val in device_val.items() %}
 lxd_profile_device_set_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc profile device set {{ profile_name }} {{ device_name }} {{ device_param_key }} {{ device_param_val }}'
+    - name: '/snap/bin/lxc profile device set {{ profile_name }} {{ device_name }} {{ device_param_key }} {{ device_param_val }}'
 
           {%- endfor %}
         {%- endfor %}
@@ -117,7 +121,7 @@ lxd_profile_device_set_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
         {%- for config_key, config_val in profile_val['config'].items() %}
 lxd_profile_config_set_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: 'lxc profile set {{ profile_name }} {{ config_key }} {{ config_val }}'
+    - name: '/snap/bin/lxc profile set {{ profile_name }} {{ config_key }} {{ config_val }}'
 
         {%- endfor %}
       {%- endif %}

@@ -39,4 +39,4 @@ EOM
 /bin/systemctl unmask networking
 /bin/systemctl enable networking
 /bin/systemctl restart networking
-/usr/bin/apt-get -qy purge nplan netplan.io snapd
+/usr/bin/apt-get -qy purge nplan netplan.io
