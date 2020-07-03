@@ -1,5 +1,7 @@
 # vi: set ft=yaml:
 
+# These bugs are has workarounds in formula code now, deprecated.
+#
 # Salt has a bug for RabbitMQ 3.8+ user management, quick ugly fix:
 # edit /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py:
 # change cmd = ('rabbit_auth_backend_internal:check_user_login'
