@@ -55,7 +55,7 @@ lxd:
           - 111.111.111.111
           - 255.255.255.0
           - 111.111.111.100
-          - '[8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1]'
+          - '[8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1]' # '[]' - netplan yaml syntax
           - '[example.com]'
         - focal_hostname_and_hosts.sh:
           - __CONTAINER_NAME__ # special parameter __CONTAINER_NAME__ is replaced with container name with dots
@@ -99,7 +99,7 @@ lxd:
           - salt1.example.com
           - 3001
       bootstrap: # focal with fixed mac on eth0 with eth1
-        - focal_network_mac.sh:
+        - focal_network_two_nets_mac.sh:
           - 111.111.111.111
           - 255.255.255.0
           - 111.111.111.100
