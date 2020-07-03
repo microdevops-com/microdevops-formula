@@ -42,7 +42,7 @@ echo "Going to refresh firewall on $MY_HN to reread the file /srv/pillar/ufw_sim
 read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	( set -x ; salt $MY_HN state.apply ufw_simple.ufw_simple )
+	( set -x ; salt $MY_HN state.apply ufw_simple.ufw_simple queue=True )
 fi
 
 # Remove minion key
@@ -70,7 +70,7 @@ echo "Going to launch container $HN on host $LXDHOST" | ccze -A
 read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	( set -x ; time salt $LXDHOST state.apply lxd.containers pillar='{lxd: {only: {"'$HN'"}, allow_stop_start: True}}' )
+	( set -x ; time salt $LXDHOST state.apply lxd.containers pillar='{lxd: {only: {"'$HN'"}, allow_stop_start: True}}' queue=True )
 fi
 
 # Wait minion key comes to master
