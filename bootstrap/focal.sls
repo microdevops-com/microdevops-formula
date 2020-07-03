@@ -131,6 +131,10 @@ br_netfilter_module:
     - mode: ensure
     - after: '^#$'
 
+br_netfilter_modprobe:
+  cmd.run:
+    - name: modprobe br_netfilter
+
 net.bridge.bridge-nf-call-arptables:
   sysctl.present:
     - value: 0
