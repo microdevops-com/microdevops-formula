@@ -22,7 +22,11 @@ percona_config_dir:
 
 mysql_python_dep:
   pkg.installed:
+      {%- if grains['oscodename'] in ['focal'] %}
+    - name: python3-mysqldb
+      {%- else %}
     - name: python-mysqldb
+      {%- endif %}
     - reload_modules: True
 
 percona_debconf_utils:
