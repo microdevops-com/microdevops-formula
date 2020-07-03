@@ -47,7 +47,15 @@ services:
   kubelet:
     image: ""
     extra_args: {}
-    extra_binds: []
+    extra_binds:
+      - "/proc/cpuinfo:/proc/cpuinfo:rw"
+      - "/proc/diskstats:/proc/diskstats:rw"
+      - "/proc/loadavg:/proc/loadavg:rw"
+      - "/proc/meminfo:/proc/meminfo:rw"
+      - "/proc/stat:/proc/stat:rw"
+      - "/proc/swaps:/proc/swaps:rw"
+      - "/proc/uptime:/proc/uptime:rw"
+      - "/sys/devices/system/cpu/online:/sys/devices/system/cpu/online:rw"
     extra_env: []
     cluster_domain: {{ cluster_domain }}
     infra_container_image: ""

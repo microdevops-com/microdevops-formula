@@ -2,7 +2,8 @@
 
   {%- if grains['fqdn'] in pillar['rancher']['nginx_hosts'] %}
 nginx_deps:
-  pkg.installed:
+  pkg.latest:
+    - refresh: True
     - pkgs:
       - nginx
 
@@ -59,7 +60,7 @@ kubectl_repo:
     - clean_file: True
 
 kubectl_pkg:
-  pkg.installed:
+  pkg.latest:
     - refresh: True
     - pkgs:
         - kubectl
@@ -113,7 +114,7 @@ docker_install_1:
     - clean_file: True
 
 docker_install_2:
-  pkg.installed:
+  pkg.latest:
     - refresh: True
     - pkgs:
         - docker-ce: '{{ pillar['rancher']['docker-ce_version'] }}*'
