@@ -54,7 +54,7 @@ nginx_reload:
 kubectl_repo:
   pkgrepo.managed:
     - humanname: Kubernetes Repository
-    - name: deb http://apt.kubernetes.io/ kubernetes-{{ 'xenial' if grains['oscodename'] == 'bionic' else grains['oscodename'] }} main
+    - name: deb http://apt.kubernetes.io/ kubernetes-{{ 'xenial' if grains['oscodename'] in ['bionic', 'focal'] else grains['oscodename'] }} main
     - file: /etc/apt/sources.list.d/kubernetes.list
     - key_url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     - clean_file: True
@@ -114,11 +114,15 @@ docker_install_1:
     - clean_file: True
 
 docker_install_2:
-  pkg.latest:
+  pkg.installed:
     - refresh: True
     - pkgs:
         - docker-ce: '{{ pillar['rancher']['docker-ce_version'] }}*'
+    {%- if grains['oscodename'] in ['focal'] %}
+        - python3-docker
+    {%- else %}
         - python-docker
+    {%- endif %}
 
 docker_install_3:
   service.running:
