@@ -87,7 +87,6 @@ read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; salt $MY_HN cmd.shell 'salt-key -y -a '$HN )
-	sleep 5
 fi
 
 # Waiting for the minion to be alive
@@ -106,14 +105,22 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	sleep 5
 fi
 
-# pkg state
+# bootstrap state
 echo
-echo "Going to apply cloud.pkg" | ccze -A
+echo "Going to apply bootstrap" | ccze -A
 read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	( set -x ; time salt $HN state.apply cloud.pkg )
-	sleep 5
+	( set -x ; time salt $HN state.apply bootstrap )
+fi
+
+# bootstrap test state
+echo
+echo "Going to apply bootstrap" | ccze -A
+read -ep "Are we OK with that? "
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+	( set -x ; time salt $HN state.apply bootstrap.test )
 fi
 
 # high state
@@ -123,7 +130,6 @@ read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	( set -x ; time salt -t 600 $HN state.highstate )
-	sleep 5
 fi
 
 # Stop container
@@ -150,16 +156,6 @@ echo
 echo "Waiting for the minion to be alive" | ccze -A
 time until salt -t 5 $HN test.ping 2>&1 | grep -q True; do sleep 1; echo -n .; done
 echo
-
-# fail2ban
-echo
-echo "Going to setup fail2ban" | ccze -A
-read -ep "Are we OK with that? "
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	( set -x ; salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf' )
-	sleep 5
-fi
 
 # app.deploy state
 echo

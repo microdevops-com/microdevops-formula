@@ -25,13 +25,17 @@ lxd_lxcfs_settings:
   cmd.run:
     - name: 'ps ax | grep -v "ps ax" | grep lxcfs | grep enable-loadavg | grep enable-pidfd | grep enable-cfs || ( snap set lxd lxcfs.cfs=true && snap set lxd lxcfs.loadavg=true && snap set lxd lxcfs.pidfd=true && systemctl unmask snap.lxd.daemon && systemctl stop snap.lxd.daemon && systemctl start snap.lxd.daemon )'
 
+lxd_wait_1:
+  cmd.run:
+    - name: 'sleep 5'
+
 lxd_init:
   cmd.run:
     - name: '/snap/bin/lxd init --auto --network-address=[::] --network-port=8443 --trust-password={{ pillar['lxd']['password'] }}'
 
-lxd_wait:
+lxd_wait_2:
   cmd.run:
-    - name: '/snap/bin/lxd waitready'
+    - name: 'sleep 2'
 
 lxd_local_remote:
   cmd.run:
@@ -52,6 +56,10 @@ lxd_image_xenial:
 lxd_image_bionic:
   cmd.run:
     - name: '/snap/bin/lxc image copy images:ubuntu/bionic/amd64 local: --alias ubuntu/bionic/amd64 --auto-update'
+
+lxd_image_focal:
+  cmd.run:
+    - name: '/snap/bin/lxc image copy images:ubuntu/focal/amd64 local: --alias ubuntu/focal/amd64 --auto-update'
 
   {%- if 'images' in pillar['lxd'] %}
     {%- for image_alias, image_source in pillar['lxd']['images'].items() %}
@@ -90,9 +98,17 @@ lxd_profile_create_docker:
   cmd.run:
     - name: '/snap/bin/lxc profile list | grep -q -e "| docker *|" || /snap/bin/lxc profile create docker'
 
+  {%- if grains['oscodename'] in ['focal'] %}
+lxd_profile_set_docker:
+  cmd.run:
+    - name: 'printf "lxc.apparmor.profile = unconfined\nlxc.cgroup.devices.allow = a\nlxc.mount.auto=proc:rw sys:rw\nlxc.cap.drop =" | /snap/bin/lxc profile set docker raw.lxc -; /snap/bin/lxc profile set docker security.nesting true; /snap/bin/lxc profile set docker security.privileged true; /snap/bin/lxc profile set docker linux.kernel_modules "bridge,br_netfilter,ip_tables,ip6_tables,ip_vs,netlink_diag,nf_nat,overlay,xt_conntrack,ip_vs_rr,ip_vs_wrr,ip_vs_sh,nf_conntrack"'
+
+  {%- else %}
 lxd_profile_set_docker:
   cmd.run:
     - name: 'printf "lxc.apparmor.profile = unconfined\nlxc.cgroup.devices.allow = a\nlxc.mount.auto=proc:rw sys:rw\nlxc.cap.drop =" | /snap/bin/lxc profile set docker raw.lxc -; /snap/bin/lxc profile set docker security.nesting true; /snap/bin/lxc profile set docker security.privileged true; /snap/bin/lxc profile set docker linux.kernel_modules "bridge,br_netfilter,ip_tables,ip6_tables,ip_vs,netlink_diag,nf_nat,overlay,xt_conntrack,ip_vs_rr,ip_vs_wrr,ip_vs_sh,nf_conntrack_ipv4"'
+
+  {%- endif %}
 
   {%- if 'profiles' in pillar['lxd'] %}
     {%- for profile_name, profile_val in pillar['lxd']['profiles'].items() %}
