@@ -1,4 +1,22 @@
 # vi: set ft=yaml:
+#
+# Tip: connect from old clients to percona on Focal could lead to SSL/TLS handshake/cipher rerrors.
+# Fix: edit /etc/ssl/openssl.cnf:
+# openssl_conf = default_conf # in the top of the file
+# ...
+# # in the bottom of the file
+# [ default_conf ]
+#
+# ssl_conf = ssl_sect
+#
+# [ ssl_sect ]
+#
+# system_default = ssl_default_sect
+#
+# [ ssl_default_sect ]
+#
+# MinProtocol = TLSv1
+# CipherString = DEFAULT:@SECLEVEL=1
 
 # percona
 percona:
