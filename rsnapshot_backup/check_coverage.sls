@@ -207,6 +207,15 @@ check_coverage_no_server_in_sources:
         ERROR: '{{ grains['fqdn'] }}' not found in pillar:rsnapshot_backup:sources list - rsnapshot_backup is not configured at all.
   {%- endif %}
   
+{% elif grains['os'] == "Windows" %}
+check_coverage_nothing_to_do:
+  test.configurable_test_state:
+    - name: check_coverage_nothing_to_do_info
+    - changes: False
+    - result: True
+    - comment: |
+         NOTICE: check_coverage is not for Windows, doing nothing.
+
 {% else %}
 check_coverage_unknown_oscodename:
   test.configurable_test_state:

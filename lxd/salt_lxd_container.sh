@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Get variables
 MY_HN=`hostname -f`
@@ -28,80 +29,64 @@ echo "- LXD container info in /srv/pillar/lxd/some_lxd_host.sls" | ccze -A
 # Refresh pillar salt master
 echo
 echo "Going to refresh pillars on $MY_HN to reread pillar files" | ccze -A
-echo "Going to run: salt $MY_HN saltutil.refresh_pillar" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $MY_HN saltutil.refresh_pillar
+	( set -x ; salt $MY_HN saltutil.refresh_pillar )
 	sleep 5
 fi
 
 # Update firewall
 echo
 echo "Going to refresh firewall on $MY_HN to reread the file /srv/pillar/ufw_simple/vars.jinja." | ccze -A
-echo "Going to run: salt $MY_HN state.apply ufw_simple.ufw_simple" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $MY_HN state.apply ufw_simple.ufw_simple
+	( set -x ; salt $MY_HN state.apply ufw_simple.ufw_simple queue=True )
 fi
 
 # Remove minion key
 echo
 echo "Removing the minion acceptance (otherwise profile fails) on $MY_HN." | ccze -A
-echo "Going to run: salt $MY_HN cmd.shell 'salt-key -y -d $HN'" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $MY_HN cmd.shell 'salt-key -y -d '$HN
-fi
-
-# Make current container symlink
-echo
-echo "Going to change current container pillar symlink for $LXDHOST on $MY_HN." | ccze -A
-echo "Going to run: salt $MY_HN cmd.shell 'ln -svf $HN_UNDER.sls /srv/pillar/lxd/$LXDHOST_UNDER/current_container.sls'" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $MY_HN cmd.shell 'ln -svf '$HN_UNDER'.sls /srv/pillar/lxd/'$LXDHOST_UNDER'/current_container.sls'
-	sleep 5
+	( set -x ; salt $MY_HN cmd.shell 'salt-key -y -d '$HN )
 fi
 
 # Refresh pillar LXD host
 echo
 echo "Going to refresh pillars on $LXDHOST to reread LXD pillar files" | ccze -A
-echo "Going to run: salt $LXDHOST saltutil.refresh_pillar" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $LXDHOST saltutil.refresh_pillar
+	( set -x ;  salt $LXDHOST saltutil.refresh_pillar )
 	sleep 5
 fi
 
 # lxd.init
 echo
-echo "Going to run: salt $LXDHOST state.apply lxd.init" | ccze -A
-echo "It could take 10+ minutes." | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+echo "Going to launch container $HN on host $LXDHOST" | ccze -A
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $LXDHOST state.apply lxd.init
+	( set -x ; time salt $LXDHOST state.apply lxd.containers pillar='{lxd: {only: {"'$HN'"}, allow_stop_start: True}}' queue=True )
 fi
 
 # Wait minion key comes to master
 echo
 echo "Waiting for minion key" | ccze -A
 time until salt-key -L 2>&1 | grep -q $HN; do sleep 1; echo -n .; done
+sleep 5
 echo
 
 # Accept minion key
 echo
 echo "Accepting minion key on $MY_HN." | ccze -A
-echo "Going to run: salt $MY_HN cmd.shell 'salt-key -y -a $HN'" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $MY_HN cmd.shell 'salt-key -y -a '$HN
+	( set -x ; salt $MY_HN cmd.shell 'salt-key -y -a '$HN )
 fi
 
 # Waiting for the minion to be alive
@@ -113,50 +98,57 @@ echo
 # Refresh pillar minion in case of script rerun
 echo
 echo "Going to refresh pillars on $HN in case of this script rerun and pillar change" | ccze -A
-echo "Going to run: salt $HN saltutil.refresh_pillar" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $HN saltutil.refresh_pillar
+	( set -x ; salt $HN saltutil.refresh_pillar )
 	sleep 5
 fi
 
-# pkg state
+# bootstrap state
 echo
-echo "Going to run: salt $HN state.apply cloud.pkg" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+echo "Going to apply bootstrap" | ccze -A
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $HN state.apply cloud.pkg
+	( set -x ; time salt $HN state.apply bootstrap )
+fi
+
+# bootstrap test state
+echo
+echo "Going to apply bootstrap" | ccze -A
+read -ep "Are we OK with that? "
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+	( set -x ; time salt $HN state.apply bootstrap.test )
 fi
 
 # high state
 echo
-echo "Going to run: salt -t 600 $HN state.highstate" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+echo "Going to apply highstate" | ccze -A
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt -t 600 $HN state.highstate
+	( set -x ; time salt -t 600 $HN state.highstate )
 fi
 
 # Stop container
 echo
 echo "We need to stop the container for the final steps" | ccze -A
-echo "Going to run: salt $LXDHOST cmd.shell \"lxc stop $HN_DASH\"" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $LXDHOST cmd.shell "lxc stop $HN_DASH"
+	( set -x ; time salt $LXDHOST cmd.shell "lxc stop $HN_DASH" )
+	sleep 10
 fi
 
 # Start container
 echo
 echo "Alsmost done, lets start the container" | ccze -A
-echo "Going to run: salt $LXDHOST cmd.shell \"lxc start $HN_DASH\"" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt $LXDHOST cmd.shell "lxc start $HN_DASH"
+	( set -x ; time salt $LXDHOST cmd.shell "lxc start $HN_DASH" )
 fi
 
 # Waiting for the minion to be alive
@@ -165,22 +157,13 @@ echo "Waiting for the minion to be alive" | ccze -A
 time until salt -t 5 $HN test.ping 2>&1 | grep -q True; do sleep 1; echo -n .; done
 echo
 
-# fail2ban
-echo
-echo "Going to run: salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-	salt $HN cmd.shell 'cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/jail.conf'
-fi
-
 # app.deploy state
 echo
-echo "Going to run: salt -t 600 $HN state.apply app.deploy" | ccze -A
-read -p "Are we OK with that? " -n 1 -r
+echo "Going to apply app.deploy" | ccze -A
+read -ep "Are we OK with that? "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-	time salt -t 600 $HN state.apply app.deploy
+	( set -x ; time salt -t 600 $HN state.apply app.deploy )
 fi
 
 # Final info
