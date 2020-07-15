@@ -36,6 +36,7 @@ pkg_latest:
       - apt-transport-https
       - apt-listchanges
       - gnupg
+      - python-apt
       # man
       - doc-debian
       - info
