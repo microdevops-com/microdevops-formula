@@ -85,6 +85,12 @@ pyenv_3_7_1_installed:
     - name: python-3.7.1
   {%- endif %}
 
+  {%- if (pillar['pyenv']['version_3_7_7'] is defined) and (pillar['pyenv']['version_3_7_7'] is not none) and (pillar['pyenv']['version_3_7_7']) %}
+pyenv_3_7_7_installed:
+  pyenv.installed:
+    - name: python-3.7.7
+  {%- endif %}
+
   {%- if (pillar['pyenv']['version_3_7_8'] is defined) and (pillar['pyenv']['version_3_7_8'] is not none) and (pillar['pyenv']['version_3_7_8']) %}
 pyenv_3_7_8_installed:
   pyenv.installed:

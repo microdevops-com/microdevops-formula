@@ -166,7 +166,7 @@ nginx:
 
 pyenv:
   enabled: True
-  version_3_7_8: True
+  version_3_7_7: True
 
 pkg:
   {{ appname }}_after:
@@ -295,7 +295,7 @@ app:
       app_root: '/opt/alerta/{{ appname }}'
       shell: '/bin/bash'
       virtualenv:
-        pyenv_version: '3.7.8'
+        pyenv_version: '3.7.7'
         target: '/opt/alerta/{{ appname }}/venv'
       setup_script:
         cwd: '/opt/alerta/{{ appname }}/src'
