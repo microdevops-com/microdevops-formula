@@ -1,16 +1,15 @@
 {#
-First you need to generate two ids and twoapi keys for cli, urlmon and telegram, also one secret key for flask:
+First you need to generate ids and api keys for cli, urlmon and telegram, also one secret key for flask:
 
 apt-get install uuid-runtime
-uuidgen # 3 times
-cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1 # 3 times
+uuidgen; cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1 # 3 times
 
 You will get like:
 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
-zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz
 zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 
 cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
@@ -122,11 +121,8 @@ And you need postgres formula.
 #}
 
 {#
-Actually you can set telegram?api-key= and cli api-key only on the second deploy, so:
-- app.deploy
-- get api keys in the web
-- put it to pillar
-- app.deploy once again
+Deploy:
+- state.apply app.deploy
 #}
 
 {#
