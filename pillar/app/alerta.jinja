@@ -20,7 +20,8 @@ Then this file should be included in pillar, which sets the following:
 {% set appname = 'alerta' %}
 {% set db_pass = 'XXX-set-alerta-db-pass-here-XXX' %}
 {% set domain  = 'alerta.example.com' %}
-{% set version = 'v6.5.0' %}
+{% set version = 'v8.0.3' %}
+{% set webui_version = 'v8.0.1' %}
 {% set add_pip_install = "git+https://github.com/alerta/alerta-contrib.git#subdirectory=plugins/telegram" %}
 {% set cli_key_id = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' %}
 {% set cli_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %}
@@ -45,11 +46,61 @@ CUSTOMER_VIEWS = True
 
 SITE_LOGO_URL = 'https://gitlab.example.com/uploads/-/system/appearance/header_logo/1/company.png'
 DATE_FORMAT_LONG_DATE = 'yyyy-MM-dd HH:mm:ss.sss'
-DEFAULT_AUDIO_FILE = '/audio/Bike Horn.mp3'
+DEFAULT_AUDIO_FILE = '/audio/alert_high-intensity.ogg'
 
 API_KEY_EXPIRE_DAYS = 36500 # 100 years
 
+ALERT_TIMEOUT = 86400
+HEARTBEAT_TIMEOUT = 86400
+DEFAULT_EXPIRED_DELETE_HRS = 12
+DEFAULT_INFO_DELETE_HRS = 0  # do not delete info alerts
+
+SEVERITY_MAP = {
+    'fatal': 0,
+    'security': 0,
+    'critical': 1,
+    'major': 2,
+    'minor': 3,
+    'warning': 4,
+    'ok': 5,
+    'normal': 5,
+    'cleared': 5,
+    'indeterminate': 5,
+    'informational': 6,
+    'debug': 7,
+    'trace': 8,
+    'unknown': 9
+}
+
+COLOR_MAP = {
+    'severity': {
+        'fatal': 'blue',
+        'security': 'blue',
+        'critical': 'red',
+        'major': 'orange',
+        'minor': 'yellow',
+        'warning': 'dodgerblue'
+        'ok': '#00CC00',
+        'normal': '#00CC00',
+        'cleared': '#00CC00',
+        'indeterminate': 'lightblue',
+        'informational': '#00CC00',
+        'debug': '#9D006D',
+        'trace': '#7554BF',
+        'unknown': 'silver'
+    },
+    'text': 'black',
+    'highlight': 'skyblue'
+}
+
+DEFAULT_NORMAL_SEVERITY = 'ok'
+DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
+
 PLUGINS = ['blackout','telegram']
+
+BLACKOUT_DURATION = 3600
+NOTIFICATION_BLACKOUT = True
+BLACKOUT_ACCEPT = True
 
 TELEGRAM_TOKEN = 'xxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'
@@ -119,7 +170,7 @@ nginx:
 
 pyenv:
   enabled: True
-  version_3_6_7: True
+  version_3_7_8: True
 
 pkg:
   {{ appname }}_after:
@@ -132,23 +183,13 @@ pkg:
             - group: 'root'
             - makedirs: True
           2:
-            - name: '/opt/alerta/{{ appname }}/html'
-            - user: '{{ appname }}'
-            - group: '{{ appname }}'
-            - makedirs: True
-          3:
-            - name: '/opt/alerta/{{ appname }}/webuisrc'
-            - user: '{{ appname }}'
-            - group: '{{ appname }}'
-            - makedirs: True
-          4:
             - name: '/opt/alerta/{{ appname }}/uwsgi'
             - user: '{{ appname }}'
             - group: '{{ appname }}'
             - makedirs: True
       - cmd.run:
           1:
-            - name: 'cd /opt/alerta/{{ appname }}/webuisrc && wget -q -O - https://github.com/alerta/angular-alerta-webui/tarball/{{ version }} | tar zxf - && rm -f alerta*/app/config.json && cp -r -f alerta*/app/* /opt/alerta/{{ appname }}/html'
+            - name: 'rm -rf /opt/alerta/{{ appname }}/webuisrc /opt/alerta/{{ appname }}/html && mkdir -p /opt/alerta/{{ appname }}/webuisrc /opt/alerta/{{ appname }}/html && cd /opt/alerta/{{ appname }}/webuisrc && wget -q -O - https://github.com/alerta/alerta-webui/releases/download/{{ webui_version }}/alerta-webui.tar.gz | tar zxf - && cp -r -f dist/* /opt/alerta/{{ appname }}/html && rm -f /opt/alerta/{{ appname }}/html/config.json.example'
             - runas: '{{ appname }}'
           2:
             - name: 'sed -i /etc/nginx/sites-available/{{ appname }}.conf -e "s#__SOCKET__#/tmp/uwsgi-{{ appname }}.sock#"'
@@ -166,7 +207,8 @@ pkg:
             - group: '{{ appname }}'
             - mode: '0644'
             - contents: |
-                from alerta import app
+                from alerta import create_app
+                app = create_app()
           2:
             - name: '/etc/uwsgi/sites/{{ appname }}.ini'
             - user: 'root'
@@ -257,7 +299,7 @@ app:
       app_root: '/opt/alerta/{{ appname }}'
       shell: '/bin/bash'
       virtualenv:
-        pyenv_version: '3.6.7'
+        pyenv_version: '3.7.8'
         target: '/opt/alerta/{{ appname }}/venv'
       setup_script:
         cwd: '/opt/alerta/{{ appname }}/src'
