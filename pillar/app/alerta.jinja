@@ -121,10 +121,11 @@ Do not forget to allow telegram webhooks (pillar/ufw_simple/http_https_webhooks_
 Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pkg/acme_*.jinja.
 And you need postgres formula.
 
-uWSGI debug:
+Logs and debug:
 su - alerta
 /opt/alerta/alerta/venv/bin/uwsgi --ini /etc/uwsgi/sites/alerta.ini # should not detach
-tail -F /var/log/syslog | grep alertad
+tail -F /opt/alerta/alerta/uwsgi.log
+tail -F /opt/alerta/alerta/alertad.log
 #}
 
 {#
@@ -235,6 +236,7 @@ pkg:
                 gid: '{{ appname }}'
                 socket: '/tmp/uwsgi-{{ appname }}.sock'
                 alertad_conf: '/opt/alerta/{{ appname }}/alertad.conf'
+                uwsgi_log: '/opt/alerta/{{ appname }}/uwsgi.log'
           3:
             - name: '/etc/systemd/system/uwsgi-{{ appname }}.service'
             - user: 'root'
