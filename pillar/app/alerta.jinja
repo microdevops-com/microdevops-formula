@@ -1,4 +1,6 @@
 {#
+Salt minion 3001+ with python3-pip deb package required for virtualenv.managed to work with recent python versions.
+
 First you need to generate ids and api keys for cli, urlmon and telegram, also one secret key for flask:
 
 apt-get install uuid-runtime
@@ -165,8 +167,8 @@ nginx:
   configs: 'nginx/app_hosting'
 
 pyenv:
-  enabled: True
-  version_3_7_7: True
+  versions:
+    python-3.7.8: True
 
 pkg:
   {{ appname }}_after:
@@ -295,7 +297,7 @@ app:
       app_root: '/opt/alerta/{{ appname }}'
       shell: '/bin/bash'
       virtualenv:
-        pyenv_version: '3.7.7'
+        pyenv_version: '3.7.8'
         target: '/opt/alerta/{{ appname }}/venv'
       setup_script:
         cwd: '/opt/alerta/{{ appname }}/src'

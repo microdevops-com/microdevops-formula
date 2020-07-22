@@ -1,6 +1,6 @@
 pyenv:
-  enabled: True
-  version_3_6_7: True
+  versions:
+    python-3.7.8: True
 
 {% set python_version = '3.6.7' %}
 

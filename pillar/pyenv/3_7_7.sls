@@ -1,3 +1,3 @@
 pyenv:
-  enabled: True
-  version_3_7_7: True
+  versions:
+    python-3.7.7: True

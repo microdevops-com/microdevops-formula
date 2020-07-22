@@ -1,3 +1,7 @@
+{#
+Salt minion 3001+ with python3-pip deb package required for virtualenv.managed to work with recent python versions.
+#}
+
 {% if (pillar['app'] is defined) and (pillar['app'] is not none) %}
   {%- if (pillar['app']['python_apps'] is defined) and (pillar['app']['python_apps'] is not none) %}
 
@@ -213,7 +217,7 @@ python_apps_app_virtualenv_python_version_{{ loop.index }}:
 python_apps_app_virtualenv_pip_{{ loop.index }}:
   pip.installed:
     - name: virtualenv
-    - user: root
+    - user: {{ app_params['user'] }}
     - cwd: /tmp
     - bin_env: /usr/local/pyenv/shims/pip
     - env_vars:
