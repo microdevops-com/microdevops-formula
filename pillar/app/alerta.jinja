@@ -80,7 +80,7 @@ COLOR_MAP = {
         'critical': 'red',
         'major': 'orange',
         'minor': 'yellow',
-        'warning': 'dodgerblue'
+        'warning': 'dodgerblue',
         'ok': '#00CC00',
         'normal': '#00CC00',
         'cleared': '#00CC00',
@@ -120,6 +120,11 @@ Do not forget to allow telegram webhooks (pillar/ufw_simple/http_https_webhooks_
 
 Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pkg/acme_*.jinja.
 And you need postgres formula.
+
+uWSGI debug:
+su - alerta
+/opt/alerta/alerta/venv/bin/uwsgi --ini /etc/uwsgi/sites/alerta.ini # should not detach
+tail -F /var/log/syslog | grep alertad
 #}
 
 {#
@@ -171,6 +176,14 @@ pyenv:
     python-3.7.8: True
 
 pkg:
+  {{ appname }}_before:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - pkg.installed:
+          1:
+            - pkgs:
+                - libpcre3
+                - libpcre3-dev
   {{ appname }}_after:
     when: 'PKG_AFTER_DEPLOY'
     states:
@@ -200,7 +213,7 @@ pkg:
 {% endif %}
       - file.managed:
           1:
-            - name: '/opt/alerta/{{ appname }}/uwsgi/uwsgi.py'
+            - name: '/opt/alerta/{{ appname }}/uwsgi/wsgi.py'
             - user: '{{ appname }}'
             - group: '{{ appname }}'
             - mode: '0644'
@@ -266,7 +279,7 @@ pkg:
 
       - cmd.run:
           1:
-            - name: 'systemctl daemon-reload && systemctl restart uwsgi-{{ appname }} && systemctl enable uwsgi-{{ appname }}'
+            - name: 'systemctl daemon-reload && systemctl restart uwsgi-{{ appname }} && systemctl enable uwsgi-{{ appname }} && systemctl is-active uwsgi-{{ appname }}'
           2:
             - name: 'sleep 10 && service nginx reload'
           3: 
@@ -274,7 +287,7 @@ pkg:
           4: 
             - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', ''root'', ''{read,write}'', ''telegram'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
           5: 
-            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ urlmon_key_id }}'', ''{{ urlmon_key }}'', ''root'', ''{write:alerts}'', ''urlmon'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
+            - name: '( echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ urlmon_key_id }}'', ''{{ urlmon_key }}'', ''root'', ''{write:alerts,write:heartbeats}'', ''urlmon'', now() + interval ''100 years'', 0);" | su -l postgres -c "psql {{ appname }}" | grep -q "INSERT" ) || true'
       - cron.present:
           1:
             - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping'
@@ -301,7 +314,7 @@ app:
         target: '/opt/alerta/{{ appname }}/venv'
       setup_script:
         cwd: '/opt/alerta/{{ appname }}/src'
-        name: '~/venv/bin/pip install --upgrade alerta-server alerta uwsgi; ~/venv/bin/pip install --upgrade -r requirements.txt'
+        name: '~/venv/bin/pip install --upgrade uwsgi -I --no-cache-dir; ~/venv/bin/pip install --upgrade alerta-server alerta; ~/venv/bin/pip install --upgrade -r requirements.txt'
       nginx:
         link_sites-enabled: True
         reload: True
