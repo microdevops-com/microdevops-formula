@@ -18,14 +18,10 @@ pyenv_deps_2:
   cmd.run:
     - name: apt-get -y build-dep python3
 
-pyenv_install:
-  pyenv.install_pyenv:
-    - user: root
-
 pyenv_update:
   cmd.run:
     - name: |
-        cd /usr/local/pyenv && git pull
+        cd /usr/local/pyenv && git pull || true
 
   {%- for ver, ver_enabled in pillar["pyenv"]["versions"].items() %}
     {%- if ver_enabled %}
