@@ -282,14 +282,14 @@ pkg:
           2:
             - name: 'sleep 10 && service nginx reload'
           3: 
-            - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', ''root'', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'', 0) ON CONFLICT (id) DO UPDATE SET key = ''{{ cli_key }}'', \"user\" = 'root', scopes = ''{admin,read,write}'', text = ''cli'', expire_time = now() + interval ''100 years'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
+            - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', ''root'', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'', 0) ON CONFLICT (id) DO UPDATE SET key = ''{{ cli_key }}'', \"user\" = ''root'', scopes = ''{admin,read,write}'', text = ''cli'', expire_time = now() + interval ''100 years'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
 {% if customers is defined %}
   {%- for customer in customers %}
       - cmd.run:
           1: 
             - name: 'echo "INSERT INTO customers (id, match, customer) VALUES (''{{ customer["id"] }}'', ''{{ customer["match"] }}'', ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET match = ''{{ customer["match"] }}'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
           2: 
-            - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count, customer) VALUES (''{{ customer["key_id"] }}'', ''{{ customer["key"] }}'', ''root'', ''{write:alerts,write:heartbeats}'', ''{{ customer["name"] }}'', now() + interval ''100 years'', 0, ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET key = ''{{ customer["key_id"] }}'', \"user\" = 'root', scopes = ''{write:alerts,write:heartbeats}'', text = ''{{ customer["name"] }}'', expire_time = now() + interval ''100 years'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
+            - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count, customer) VALUES (''{{ customer["key_id"] }}'', ''{{ customer["key"] }}'', ''root'', ''{write:alerts,write:heartbeats}'', ''{{ customer["name"] }}'', now() + interval ''100 years'', 0, ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET key = ''{{ customer["key"] }}'', \"user\" = ''root'', scopes = ''{write:alerts,write:heartbeats}'', text = ''{{ customer["name"] }}'', expire_time = now() + interval ''100 years'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
   {%- endfor %}
 {% endif %}
       - cron.present:
