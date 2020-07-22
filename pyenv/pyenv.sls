@@ -34,7 +34,7 @@ pyenv_installed_{{ ver }}:
     - name: {{ ver }}
 
     {%- endif %}
-  {%- endif %}
+  {%- endfor %}
 
 pyenv_profile_file:
   file.managed:
