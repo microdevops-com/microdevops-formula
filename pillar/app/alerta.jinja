@@ -291,7 +291,7 @@ pkg:
           2: 
             - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count, customer) VALUES (''{{ customer["key_id"] }}'', ''{{ customer["key"] }}'', ''root'', ''{write:alerts,write:heartbeats}'', ''{{ customer["name"] }}'', now() + interval ''100 years'', 0, ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET key = ''{{ customer["key_id"] }}'', \"user\" = 'root', scopes = ''{write:alerts,write:heartbeats}'', text = ''{{ customer["name"] }}'', expire_time = now() + interval ''100 years'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
   {%- endfor %}
-{% endif
+{% endif %}
       - cron.present:
           1:
             - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping'
