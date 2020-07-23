@@ -1,3 +1,7 @@
+{#
+Salt minion 3001+ with python3-pip deb package required for virtualenv.managed to work with recent python versions.
+#}
+
 {% if (pillar['app'] is defined) and (pillar['app'] is not none) %}
   {%- if (pillar['app']['python_apps'] is defined) and (pillar['app']['python_apps'] is not none) %}
 

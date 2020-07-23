@@ -1,31 +1,44 @@
 # vi: set ft=yaml:
 #
 # usage:
+#
 # - add
 #   echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize
 #   to /etc/rc.local on host machine if running inside LXD
+#
 # - prepare nodes, node fo nginx proxy, node for command exec
+#
 # - generate new private key for usage in this pillar
+#
 # - prepare this pillar and assign it for all hosts
+#
 # - salt rancher*.dev.example.com saltutil.refresh_pillar
+#
 # - install binaries, cluster, yaml etc
 #   salt rancher*.dev.example.com state.apply rancher.prereqs
+#
 # - rke up
 #   salt ranchercmdSOME.dev.example.com state.apply rancher.rke_up
+#
 # - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
 #   salt ranchercmdSOME.dev.example.com state.apply rancher.install
+#
 # - open rancher web admin
+#
 # - give password and url
+#
 # - wait for provisioning
+#
 # - take bearer_token from admin - API & Keys - add key and put it below
+#
 # - apply users
 #   salt ranchercmdSOME.dev.example.com state.apply rancher.users
 #
 # last two steps are not required to do from each command host and should be done once
 #
 # docker versions:
-# - 18.06.1 - works inside LXD container as node
-# - 17.03.2 - will not work inside LXD, works inside KVM, officially recommended
+# - 18.06.3+ - works inside xenial, bionic LXD containers, but apparmor shoud be disabled on the host
+# - 5:19.03.12 - works inside focal LXD containers
 
 rancher:
   cluster_name: dev
@@ -47,7 +60,7 @@ rancher:
     - rancherweb1.dev.example.com
     - rancherweb2.dev.example.com
     - rancherweb3.dev.example.com
-  docker-ce_version: 18.06.1
+  docker-ce_version: 5:19.03.12
   nodes:
     - address: rancher1.dev.example.com
       port: 22

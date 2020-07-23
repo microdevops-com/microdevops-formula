@@ -2,7 +2,8 @@
 
   {%- if grains['fqdn'] in pillar['rancher']['nginx_hosts'] %}
 nginx_deps:
-  pkg.installed:
+  pkg.latest:
+    - refresh: True
     - pkgs:
       - nginx
 
@@ -12,6 +13,7 @@ nginx_files_1:
     - contents: |
         worker_processes 4;
         worker_rlimit_nofile 40000;
+        load_module /usr/lib/nginx/modules/ngx_stream_module.so;
 
         events {
             worker_connections 8192;
@@ -52,51 +54,44 @@ nginx_reload:
 kubectl_repo:
   pkgrepo.managed:
     - humanname: Kubernetes Repository
-    - name: deb http://apt.kubernetes.io/ kubernetes-{{ grains['oscodename'] }} main
+    - name: deb http://apt.kubernetes.io/ kubernetes-{{ 'xenial' if grains['oscodename'] in ['bionic', 'focal'] else grains['oscodename'] }} main
     - file: /etc/apt/sources.list.d/kubernetes.list
     - key_url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    - clean_file: True
 
 kubectl_pkg:
-  pkg.installed:
+  pkg.latest:
     - refresh: True
     - pkgs:
         - kubectl
 
 rke_install_1:
   cmd.run:
-    - name: 'curl -L https://github.com/rancher/rke/releases/download/v1.0.4/rke_linux-amd64 -o /usr/local/bin/rke'
+    - name: 'curl -L https://github.com/rancher/rke/releases/download/v1.1.3/rke_linux-amd64 -o /usr/local/bin/rke'
 
 rke_install_2:
   cmd.run:
     - name: 'chmod +x /usr/local/bin/rke'
 
-helm_install_1:
-  cmd.run:
-    - name: 'rm -f /tmp/helm-v3.0.2-linux-amd64.tar.gz'
-
 helm_install_2:
   cmd.run:
-    - name: 'curl -L https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz -o /tmp/helm-v3.0.2-linux-amd64.tar.gz'
+    - name: 'curl -L https://get.helm.sh/helm-v3.2.4-linux-amd64.tar.gz -o /tmp/helm-v3.2.4-linux-amd64.tar.gz'
 
 helm_install_3:
   cmd.run:
-    - name: 'tar zxvf /tmp/helm-v3.0.2-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/helm'
+    - name: 'tar zxvf /tmp/helm-v3.2.4-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/helm'
 
 helm_install_5:
   cmd.run:
     - name: 'chmod +x /usr/local/bin/helm'
 
-rancher_cli_install_1:
-  cmd.run:
-    - name: 'rm -f /tmp/rancher-linux-amd64-v2.3.2.tar.gz'
-
 rancher_cli_install_2:
   cmd.run:
-    - name: 'curl -L https://github.com/rancher/cli/releases/download/v2.3.2/rancher-linux-amd64-v2.3.2.tar.gz -o /tmp/rancher-linux-amd64-v2.3.2.tar.gz'
+    - name: 'curl -L https://github.com/rancher/cli/releases/download/v2.4.5/rancher-linux-amd64-v2.4.5.tar.gz -o /tmp/rancher-linux-amd64-v2.4.5.tar.gz'
 
 rancher_cli_install_3:
   cmd.run:
-    - name: 'sudo tar zxvf /tmp/rancher-linux-amd64-v2.3.2.tar.gz --strip-components=2 -C /usr/local/bin ./rancher-v2.3.2/rancher'
+    - name: 'sudo tar zxvf /tmp/rancher-linux-amd64-v2.4.5.tar.gz --strip-components=2 -C /usr/local/bin ./rancher-v2.4.5/rancher'
 
 rancher_cli_install_4:
   cmd.run:
@@ -116,24 +111,23 @@ docker_install_1:
     - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
     - file: /etc/apt/sources.list.d/docker-ce.list
     - key_url: https://download.docker.com/linux/ubuntu/gpg
+    - clean_file: True
 
 docker_install_2:
   pkg.installed:
     - refresh: True
     - pkgs:
         - docker-ce: '{{ pillar['rancher']['docker-ce_version'] }}*'
+    {%- if grains['oscodename'] in ['focal'] %}
+        - python3-docker
+    {%- else %}
         - python-docker
+    {%- endif %}
 
 docker_install_3:
   service.running:
     - name: docker
 
-# fix for k8s in lxd
-docker_install_4:
-  file.symlink:
-    - name: '/dev/kmsg'
-    - target: '/dev/console'
-          
   {%- endif %}
 
   # command hosts only
@@ -218,15 +212,20 @@ auth_file_from_cmd:
         - {{ pillar['rancher']['cluster_ssh_public_key'] }}
 
 docker_mount_1:
-  file.line:
+  file.managed:
     - name: '/etc/rc.local'
-    - mode: ensure
-    - before: '^exit\ 0$'
-    - content: 'mount --make-shared /; ln -s /dev/console /dev/kmsg'
+    - user: root
+    - group: root
+    - mode: 0755
+    - contents: |
+        #!/bin/bash
+        mount --make-shared /
+        ln -sf /dev/console /dev/kmsg
+        exit 0
 
 docker_mount_2:
   cmd.run:
-    - name: 'mount --make-shared /'
+    - name: 'mount --make-shared /; ln -sf /dev/console /dev/kmsg'
   {%- endif %}
 
 {% endif %}

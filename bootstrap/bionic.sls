@@ -1,0 +1,163 @@
+uptodate:
+  pkg.uptodate:
+    - refresh: True
+
+dist_upgrade:
+  cmd.run:
+    - name: |
+        apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' dist-upgrade
+
+bashrc:
+  file.managed:
+    - name: '/etc/bash.bashrc'
+    - source: salt://bootstrap/files/{{ grains['oscodename'] }}_bashrc
+    - mode: 0644
+
+pkg_latest:
+  pkg.latest:
+    - refresh: True
+    - pkgs:
+      # console tools
+      - vim
+      - links
+      - screen
+      - tmux
+      - byobu
+      - mc
+      - ftp
+      - ncftp
+      - ncdu
+      - ccze
+      - pv
+      - tree
+      - bash-completion
+      - bc
+      # apt
+      - apt-transport-https
+      - apt-listchanges
+      - gnupg
+      - python-apt
+      # man
+      - doc-debian
+      - info
+      - man-db
+      - manpages
+      # tools
+      - at
+      - rsnapshot
+      - util-linux-locales
+      - mlocate
+      # libs
+      - ncurses-term
+      # diag
+      - traceroute
+      - ethtool
+      - iotop
+      - htop
+      - nload
+      - lsof
+      - dnsutils
+      - psmisc
+      - telnet
+      - strace
+      - whois
+      # build
+      - build-essential
+      - git
+      - checkinstall
+      - gawk
+      - curl
+      - wget
+      # security
+      - fail2ban
+      - iptables
+      - openssh-server
+      # mail
+      - postfix
+      - s-nail 
+{% if grains['virtual'] == 'physical' %}
+      # physical
+      - smartmontools
+      - bridge-utils
+      # stress
+      - memtester
+      - bonnie++
+      - stress
+{% endif %}
+
+full_hostname:
+  cmd.run:
+    - name: |
+        cat /etc/hostname | grep -q {{ pillar['network']['domain'] }} && \
+        echo 'hostname is already full' || \
+        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar['network']['domain'] }} > /etc/hostname && hostname $(cat /etc/hostname) )
+
+{% if grains['virtual'] == 'physical' %}
+swapiness:
+  sysctl.present:
+    - name: vm.swappiness
+    - value: 10
+
+debconf_utils:
+  pkg.latest:
+    - reload_modules: True
+    - pkgs:
+      - debconf-utils
+
+mdadm_config_hack:
+  file.replace:
+    - name: /etc/mdadm/mdadm.conf
+    - pattern: '^MAILADDR .*$'
+    - repl: 'MAILADDR {{ pillar["monitoring"]["email"]}}'
+
+mdadm_debconf:
+  debconf.set:
+    - name: mdadm
+    - data:
+        'mdadm/mail_to': {'type': 'string', 'value': '{{ pillar["monitoring"]["email"]}}' }
+        'mdadm/start_daemon': {'type': 'boolean', 'value': True}
+        'mdadm/autocheck': {'type': 'boolean', 'value': True}
+        'mdadm/autoscan': {'type': 'boolean', 'value': True}
+
+mdadm_reconfigure:
+  cmd.run:
+    - name: dpkg-reconfigure -f noninteractive mdadm
+    - onchanges:
+      - debconf: mdadm_debconf
+
+br_netfilter_module:
+  file.line:
+    - name: /etc/modules-load.d/modules.conf
+    - content: br_netfilter
+    - mode: ensure
+    - after: '^#$'
+
+br_netfilter_modprobe:
+  cmd.run:
+    - name: modprobe br_netfilter
+
+net.bridge.bridge-nf-call-arptables:
+  sysctl.present:
+    - value: 0
+
+net.bridge.bridge-nf-call-ip6tables:
+  sysctl.present:
+    - value: 0
+
+net.bridge.bridge-nf-call-iptables:
+  sysctl.present:
+    - value: 0
+
+net.bridge.bridge-nf-filter-pppoe-tagged:
+  sysctl.present:
+    - value: 0
+
+net.bridge.bridge-nf-filter-vlan-tagged:
+  sysctl.present:
+    - value: 0
+
+net.bridge.bridge-nf-pass-vlan-input-dev:
+  sysctl.present:
+    - value: 0
+
+{% endif %}
