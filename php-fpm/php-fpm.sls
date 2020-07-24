@@ -387,7 +387,7 @@ php-fpm_7_4_modules_ioncube_3:
     {%- endif %}
 
     {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
-      {%- for k, v in pillar['php-fpm']['tz'].iteritems() %}
+      {%- for k, v in pillar['php-fpm']['tz'].items() %}
         {%- set phpversion = k.replace('_','.').split('php')[1] %}
         {%- set timezone = v %}
 
