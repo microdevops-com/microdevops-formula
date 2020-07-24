@@ -137,7 +137,7 @@ TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'
 TELEGRAM_WEBHOOK_URL = 'https://" ~ domain ~ "/api/webhooks/telegram?api-key=" ~ telegram_key ~ "'
 
 TELEGRAM_CHAT_ID_PER_CUSTOMER = {
-    'Customer1': '-xxxxxxxxxxxxx'
+    'Customer1': '-xxxxxxxxxxxxx',
 }
 "
 %}
