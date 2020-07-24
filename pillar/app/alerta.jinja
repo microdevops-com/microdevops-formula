@@ -185,7 +185,7 @@ pkg:
           3: 
             - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ cli_key_id }}'', ''{{ cli_key }}'', ''root'', ''{admin,read,write}'', ''cli'', now() + interval ''100 years'', 0) ON CONFLICT (id) DO UPDATE SET key = ''{{ cli_key }}'', \"user\" = ''root'', scopes = ''{admin,read,write}'', text = ''cli'', expire_time = now() + interval ''100 years'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
           4: 
-            - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', ''root'', ''{write:webhooks}'', ''telegram'', now() + interval ''100 years'', 0) ON CONFLICT (id) DO UPDATE SET key = ''{{ telegram_key }}'', \"user\" = ''root'', scopes = ''{admin:alerts,admin:blackouts}'', text = ''telegram'', expire_time = now() + interval ''100 years'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
+            - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count) VALUES (''{{ telegram_key_id }}'', ''{{ telegram_key }}'', ''root'', ''{write:webhooks}'', ''telegram'', now() + interval ''100 years'', 0) ON CONFLICT (id) DO UPDATE SET key = ''{{ telegram_key }}'', \"user\" = ''root'', scopes = ''{write:webhooks}'', text = ''telegram'', expire_time = now() + interval ''100 years'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
 {% if customers is defined %}
   {%- for customer in customers %}
       - cmd.run:
