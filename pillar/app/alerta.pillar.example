@@ -42,11 +42,11 @@ set telegram_template = "
 source: [alerta](https://" ~ domain ~ "/)
 severity: *{{ severity }}*
 status: *{{ status }}*
-customer: *{{customer}}*
+customer: *{{ customer }}*
 environment: *{{ environment }}*
 service: *{{ service|join(', ') }}*
 resource: *{{ resource }}*
-event: *{{ event|replace('_', '\_') }}*
+event: *{{ event }}*
 value: *{{ value }}*
 group: *{{ group }}*
 origin: *{{ origin }}*
