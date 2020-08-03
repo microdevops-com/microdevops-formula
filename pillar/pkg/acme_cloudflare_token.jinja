@@ -3,6 +3,9 @@ This file should be included in pillar, which sets the following:
 {% set acme_cf_token = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
 {% set acme_cf_account_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
 
+In order to use the new token, the token currently needs access read access to Zone.Zone, and write access to Zone.DNS, across all Zones. See Issue #2398 for more info.
+https://github.com/acmesh-official/acme.sh/wiki/dnsapi#1-cloudflare-option
+
 And then:
 {% include 'pkg/acme_cloudflare_token.jinja' with context %}
 #}
