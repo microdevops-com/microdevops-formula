@@ -21,9 +21,7 @@ pkg_latest_utils:
   pkg.latest:
     - refresh: True
     - pkgs:
-      {%- if pillar["sysadmws-utils"]["v1"] is defined and pillar["sysadmws-utils"]["v1"] is not none and pillar["sysadmws-utils"]["v1"]|lower == "latest" %}
         - sysadmws-utils-v1
-      {%- endif %}
 
     {%- else %}
       {%- if grains["osfinger"] in ["CentOS-6"] %}
@@ -44,7 +42,6 @@ install_utils_deps_karmic:
         - python-yaml
       {%- endif %}
 
-      {%- if pillar["sysadmws-utils"]["v1"] is defined and pillar["sysadmws-utils"]["v1"] is not none and pillar["sysadmws-utils"]["v1"]|lower == "latest" %}
 install_utils_tgz_v1_1:
   cmd.run:
     - name: "rm -f /root/sysadmws-utils-v1.tar.gz"
@@ -60,14 +57,13 @@ install_utils_tgz_v1_3:
     - name: "tar zxf /root/sysadmws-utils-v1.tar.gz -C /"
     - runas: "root"
 
-        {%- if grains["osfinger"] in ["CentOS-6"] %}
+      {%- if grains["osfinger"] in ["CentOS-6"] %}
 install_utils_tgz_v1_4:
   cmd.run:
     - name: "sed -i '1s_.*_#!/usr/bin/python3.4_' /opt/sysadmws/notify_devilry/notify_devilry.py"
     - runas: "root"
-        {%- endif %}
-
       {%- endif %}
+
     {%- endif %}
   {%- endif %}
 
@@ -79,4 +75,5 @@ sysadmws-utils_nothing_done_info:
     - result: True
     - comment: |
         INFO: This state was not configured for a minion of this type, so nothing has been done. But it is OK.
+
 {% endif %}
