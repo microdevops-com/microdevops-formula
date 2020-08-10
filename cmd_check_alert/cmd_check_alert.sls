@@ -11,7 +11,7 @@ cmd_check_alert_config_managed:
 cmd_check_alert_cron_managed:
   cron.present:
     - identifier: cmd_check_alert
-    - name: /opt/sysadmws/cmd_check_alert/cmd_check_alert.sh
+    - name: /opt/sysadmws/cmd_check_alert/cmd_check_alert.py
     - user: root
     - minute: "{{ pillar["cmd_check_alert"]["cron"] }}"
 
