@@ -1,4 +1,4 @@
-{% if pillar["sysadmws-utils"] is defined and pillar["sysadmws-utils"] is not none and "v1" in pillar["sysadmws-utils"] and pillar["sysadmws-utils"]["v1"]|lower == "latest" %}
+{% if pillar["sysadmws-utils"] is defined and "v1" in pillar["sysadmws-utils"] and pillar["sysadmws-utils"]["v1"]|lower == "latest" %}
 
   {%- if grains["oscodename"] == "precise" %}
 pkgrepo_precise_backports:

@@ -1,5 +1,5 @@
-{% if pillar["notify_devilry"] is defined and pillar["notify_devilry"] is not none %}
-  {%- if pillar["notify_devilry"]["config_file_override"] is defined and pillar["notify_devilry"]["config_file_override"] is not none %}
+{% if pillar["notify_devilry"] is defined %}
+  {%- if "config_file_override" in pillar["notify_devilry"] %}
 
     {%- if salt["file.directory_exists"]("/opt/sysadmws/notify_devilry") %}
 swsu_v1_notify_devilry_config_managed:
@@ -11,7 +11,7 @@ swsu_v1_notify_devilry_config_managed:
     - source: {{ pillar["notify_devilry"]["config_file_override"] }}
     {%- endif %}
 
-  {%- elif pillar["notify_devilry"]["config_file"] is defined and pillar["notify_devilry"]["config_file"] is not none %}
+  {%- elif "config_file" in pillar["notify_devilry"] %}
 
     {%- if salt["file.directory_exists"]("/opt/sysadmws/notify_devilry") %}
 swsu_v1_notify_devilry_config_managed:
