@@ -12,9 +12,11 @@ swsu_v1_disk_alert_config_managed:
     {%- endif %}
 
 # 240 = 4 minutes, sleep randomly within cron time frame to flatten load on alerta servers
+# % - is a special char in crontab and should be escaped
 swsu_v1_disk_alert_cron_managed:
   cron.present:
-    - name: "bash -c 'sleep $((RANDOM % 240))' && /opt/sysadmws/disk_alert/disk_alert.sh"
+    - name:
+        bash -c 'sleep $((RANDOM \% 240))' && /opt/sysadmws/disk_alert/disk_alert.sh
     - identifier: disk_alert
     - user: root
     - minute: "*/5"
