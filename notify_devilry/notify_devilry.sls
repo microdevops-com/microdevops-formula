@@ -2,7 +2,7 @@
   {%- if "config_file_override" in pillar["notify_devilry"] %}
 
     {%- if salt["file.directory_exists"]("/opt/sysadmws/notify_devilry") %}
-swsu_v1_notify_devilry_config_managed:
+notify_devilry_config_managed:
   file.managed:
     - name: "/opt/sysadmws/notify_devilry/notify_devilry.yaml"
     - mode: 0600
@@ -14,7 +14,7 @@ swsu_v1_notify_devilry_config_managed:
   {%- elif "config_file" in pillar["notify_devilry"] %}
 
     {%- if salt["file.directory_exists"]("/opt/sysadmws/notify_devilry") %}
-swsu_v1_notify_devilry_config_managed:
+notify_devilry_config_managed:
   file.managed:
     - name: "/opt/sysadmws/notify_devilry/notify_devilry.yaml"
     - mode: 0600
