@@ -1,7 +1,7 @@
 cmd_check_alert:
   cron: '*/2' # run checks each 2 minutes
   config_file: salt://cmd_check_alert/cmd_check_alert.yaml # see https://github.com/sysadmws/sysadmws-utils/blob/master/cmd_check_alert/cmd_check_alert.yaml.example
-  checks:
+  checks: # these checks are added to those that are in config file in template placeholder
     mysqld:
       cmd: systemctl is-active mysql.service && ps ax | grep '/usr/sbin/mysql[d]'
       service: service

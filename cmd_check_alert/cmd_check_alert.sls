@@ -12,9 +12,12 @@ cmd_check_alert_config_managed:
     - template: mako
     - defaults:
         additional_checks: |
-      {%- for check_name, check_val in pillar["cmd_check_alert"].items() %}
-          {{ check_name|indent(width=10,indentfirst=False) }}:
-            {{ check_val||indent(width=12,indentfirst=False) }}
+          # additional checks added by pillar:
+      {%- for check_name, check_val in pillar["cmd_check_alert"]["checks"].items() %}
+            {{ check_name }}:
+        {%- for check_val_key, check_val_val in check_val.items() %}
+              {{ check_val_key }}: {{ check_val_val }}
+        {%- endfor %}
       {%- endfor %}
     {%- endif %}
 
