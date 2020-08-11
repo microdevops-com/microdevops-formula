@@ -1,0 +1,12 @@
+enabled: True
+
+limits:
+  time: 120
+  threads: 5
+
+defaults:
+  timeout: 15
+  severity: minor
+
+checks:
+  ${additional_checks}

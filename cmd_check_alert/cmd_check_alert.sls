@@ -7,6 +7,16 @@ cmd_check_alert_config_managed:
     - user: root
     - group: root
     - source: {{ pillar["cmd_check_alert"]["config_file"] }}
+    - replace: True
+    {%- if "checks" in pillar["cmd_check_alert"] %}
+    - template: mako
+    - defaults:
+        additional_checks: |
+      {%- for check_name, check_val in pillar["cmd_check_alert"].items() %}
+          {{ check_name|indent(width=10,indentfirst=False) }}:
+            {{ check_val||indent(width=12,indentfirst=False) }}
+      {%- endfor %}
+    {%- endif %}
 
 cmd_check_alert_cron_managed:
   cron.present:
