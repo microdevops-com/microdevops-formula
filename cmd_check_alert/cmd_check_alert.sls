@@ -2,13 +2,13 @@
   {%- if salt["file.directory_exists"]("/opt/sysadmws/cmd_check_alert") %}
 cmd_check_alert_mako_module:
   pkg.installed:
-    - reload_modules: True
     - pkgs:
     {%- if grains['oscodename'] in ['focal'] %}
         - python3-mako
     {%- else %}
         - python-mako
     {%- endif %}
+    - reload_modules: True
 
 cmd_check_alert_config_managed:
   file.managed:
