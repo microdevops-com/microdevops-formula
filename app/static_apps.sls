@@ -529,7 +529,7 @@ static_apps_nginx_logrotate_file_{{ loop.index }}:
           rotate {{ app_params['nginx']['log']['rotate_count']|default('31') }}
           {{ app_params['nginx']['log']['rotate_when']|default('daily') }}
           missingok
-          create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default('www-data') }} {{ app_params['nginx']['log']['log_group']|default('adm') }}
+          create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default(app_params['user']) }} {{ app_params['nginx']['log']['log_group']|default(app_params['group']) }}
           compress
           delaycompress
           postrotate
