@@ -5,4 +5,4 @@ heartbeat_mesh:
       enabled: True
       receivers:
         receiver1.example.com:
-        token: aaaaaaaaaaaaaaaaaaaaa
+          token: aaaaaaaaaaaaaaaaaaaaa
