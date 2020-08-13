@@ -12,7 +12,7 @@ install_cmd_2:
 install_cmd_3:
   cmd.run:
     - shell: /bin/bash
-    - name: 'openssl verify -CAfile /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_ca.cer /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_cert.cer --key-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_key.key --ca-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_ca.cer --fullchain-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer --issue -d {{ pillar['rancher']['cluster_domain'] }} || true'
+    - name: 'openssl verify -CAfile /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_ca.cer /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_cert.cer --key-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_key.key --ca-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_ca.cer --fullchain-file /opt/acme/cert/rancher_{{ pillar['rancher']['cluster_name'] }}_fullchain.cer --issue -d {{ pillar['rancher']['cluster_domain'] }} || true'
 
 install_cmd_4:
   cmd.run:

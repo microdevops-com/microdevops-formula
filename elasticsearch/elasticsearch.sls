@@ -129,7 +129,7 @@ nginx_files_2:
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: 'openssl verify -CAfile /opt/acme/cert/elasticsearch_{{ domain['name'] }}_ca.cer /opt/acme/cert/elasticsearch_{{ domain['name'] }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_cert.cer --key-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_key.key --ca-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_ca.cer --fullchain-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_fullchain.cer --issue -d {{ domain['name'] }} || true'
+    - name: 'openssl verify -CAfile /opt/acme/cert/elasticsearch_{{ domain['name'] }}_ca.cer /opt/acme/cert/elasticsearch_{{ domain['name'] }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_cert.cer --key-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_key.key --ca-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_ca.cer --fullchain-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_fullchain.cer --issue -d {{ domain['name'] }} || true'
 
     {%- endfor %}
 
