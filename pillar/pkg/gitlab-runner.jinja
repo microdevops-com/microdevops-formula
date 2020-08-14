@@ -13,6 +13,8 @@ This file should be included in pillar, which sets the following:
   'myorg/dev/myproject',
 ] %}
 
+!!!! {{ gitlab_runner_tags }} SHOULD CONTAIN AT LEAST {{ gitlab_runner_name }} value !!!!
+
 And then:
 {% include 'pkg/gitlab-runner.jinja' with context %}
 #}
