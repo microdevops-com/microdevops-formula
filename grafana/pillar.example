@@ -12,6 +12,7 @@ grafana:
             instance_name = grafana.example.com-prod
             [server]
             root_url = https://grafana.example.com/prod
+            serve_from_sub_path = true
             [database]
             url = postgres://grafana-prod:xxx@grafana1.example.com:5432/grafana-prod
             [auth.gitlab]
@@ -33,6 +34,7 @@ grafana:
             instance_name = grafana.example.com-dev
             [server]
             root_url = https://grafana.example.com/dev
+            serve_from_sub_path = true
             [database]
             url = postgres://grafana-dev:xxx@grafana1.example.com:5432/grafana-dev
             [auth.gitlab]
