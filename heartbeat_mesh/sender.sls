@@ -10,7 +10,7 @@ heartbeat_mesh_sender_config:
     - create: True
     - merge_if_exists: False
     - formatter: yaml
-    - dataset: {{ pillar["heartbeat_mesh"]["sender"]["config"] }}
+    - dataset: {{ pillar["heartbeat_mesh"]["sender"]["config_override"] if "config_override" in pillar["heartbeat_mesh"]["sender"] else pillar["heartbeat_mesh"]["sender"]["config"] }}
 
 heartbeat_mesh_sender_cron_managed:
   cron.present:
