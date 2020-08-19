@@ -13,6 +13,8 @@ This file should be included in pillar, which sets the following:
   'myorg/dev/myproject',
 ] %}
 
+!!!! {{ gitlab_runner_tags }} SHOULD CONTAIN AT LEAST {{ gitlab_runner_name }} value !!!!
+
 And then:
 {% include 'pkg/gitlab-runner.jinja' with context %}
 #}
@@ -71,7 +73,7 @@ pkg:
       - cmd.run:
           1:
             - name: |
-                RUNNER_ID=$(curl --silent --header "PRIVATE-TOKEN: {{ gitlab_admin_token }}" "{{ gitlab_url }}/api/v4/runners/all" | jq '.[] | select(.description=="{{ gitlab_runner_name }}") | .id') \
+                RUNNER_ID=$(curl --silent --header "PRIVATE-TOKEN: {{ gitlab_admin_token }}" "{{ gitlab_url }}/api/v4/runners/all?tag_list={{ gitlab_runner_tags }}" | jq '.[] | select(.description=="{{ gitlab_runner_name }}") | .id') \
                   && curl --silent --request POST --header "PRIVATE-TOKEN: {{ gitlab_admin_token }}" \
                   "{{ gitlab_url }}/api/v4/projects/{{ project | replace("/","%2F") }}/runners" --form "runner_id=${RUNNER_ID}"
             - runas: 'root'
