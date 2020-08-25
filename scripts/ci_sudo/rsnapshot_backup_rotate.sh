@@ -15,7 +15,7 @@ if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
 	if [ "_$6" = "_" ]; then
 		SSH_JUMP=""
 	else
-		SSH_JUMP="-J $5"
+		SSH_JUMP="-J $6"
 	fi
 	if [ "_$5" = "_" ]; then
 		SSH_PORT=22
