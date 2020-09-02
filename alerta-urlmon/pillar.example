@@ -1,6 +1,9 @@
 alerta-urlmon:
   global_endpoint: https://alerta.example.com/api # required by config
   global_api_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # required by config
+  loop_every: 60
+  server_threads: 20
+  queue_warn: 100
   checks:
     group_name: # name for the group of checks, used only for pillar merging
       - resource: www.google.com
