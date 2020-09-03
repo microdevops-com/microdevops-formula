@@ -22,7 +22,11 @@ pkg:
             - refresh: True
             - pkgs:
               - docker-ce: '5:19.03.12*'
+{%- if grains['oscodename'] in ['focal'] %}
+              - python3-docker
+{%- else %}
               - python-docker
+{%- endif %}
       - service.running:
           1:
             - name: docker
