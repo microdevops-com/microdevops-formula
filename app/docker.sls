@@ -23,7 +23,11 @@ docker_install_2:
     - reload_modules: True
     - pkgs:
         - docker-ce: '{{ pillar['app']['docker']['docker-ce_version'] }}*'
-        - python-pip
+  {%- if grains['oscodename'] in ['focal'] %}
+        - python3-docker
+  {%- else %}
+        - python-docker
+  {%- endif %}
 
 docker_pip_install:
   pip.installed:
