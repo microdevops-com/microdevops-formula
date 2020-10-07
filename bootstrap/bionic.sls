@@ -75,6 +75,8 @@ pkg_latest:
       # mail
       - postfix
       - s-nail 
+      # python
+      - python-pip
 {% if grains['virtual'] == 'physical' %}
       # physical
       - smartmontools
