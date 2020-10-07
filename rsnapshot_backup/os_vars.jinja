@@ -16,6 +16,7 @@ set db_ps = {
 %}
 {% do db_ps.update({'precise': db_ps['ubuntu']}) %}
 {% do db_ps.update({'trusty': db_ps['ubuntu']}) %}
+{% do db_ps.update({'xenial': db_ps['ubuntu']}) %}
 {% do db_ps.update({'stretch': db_ps['ubuntu']}) %}
 {% do db_ps.update({'bionic': db_ps['ubuntu']}) %}
 {% do db_ps.update({'focal': db_ps['ubuntu']}) %}
@@ -33,6 +34,7 @@ set data_dirs_to_find = {
 %}
 {% do data_dirs_to_find.update({'precise': data_dirs_to_find['ubuntu']}) %}
 {% do data_dirs_to_find.update({'trusty': data_dirs_to_find['ubuntu']}) %}
+{% do data_dirs_to_find.update({'xenial': data_dirs_to_find['ubuntu']}) %}
 {% do data_dirs_to_find.update({'stretch': data_dirs_to_find['ubuntu']}) %}
 {% do data_dirs_to_find.update({'bionic': data_dirs_to_find['ubuntu']}) %}
 {% do data_dirs_to_find.update({'focal': data_dirs_to_find['ubuntu']}) %}
@@ -92,6 +94,7 @@ set data_dirs_to_skip = {
 %}
 {% do data_dirs_to_skip.update({'precise': data_dirs_to_skip['ubuntu']}) %}
 {% do data_dirs_to_skip.update({'trusty': data_dirs_to_skip['ubuntu']}) %}
+{% do data_dirs_to_skip.update({'xenial': data_dirs_to_skip['ubuntu']}) %}
 {% do data_dirs_to_skip.update({'stretch': data_dirs_to_skip['ubuntu']}) %}
 {% do data_dirs_to_skip.update({'bionic': data_dirs_to_skip['ubuntu']}) %}
 {% do data_dirs_to_skip.update({'focal': data_dirs_to_skip['ubuntu']}) %}
