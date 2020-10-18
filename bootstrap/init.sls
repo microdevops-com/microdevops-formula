@@ -1,7 +1,7 @@
 include:
 {% if grains['oscodename'] == 'bionic' %}
-  - bootstrap.bionic
+  - .bionic
 {% endif %}
 {% if grains['oscodename'] == 'focal' %}
-  - bootstrap.focal
+  - .focal
 {% endif %}
