@@ -185,6 +185,7 @@ ssh_key_file_3:
         cluster_domain: {{ pillar['rancher']['cluster_domain']  }}
         cluster_dns_server: {{ pillar['rancher']['cluster_dns_server']  }}
         cluster_name: {{ pillar['rancher']['cluster_name']  }}
+        node_max_pods: {{ pillar['rancher']['node_max_pods']  }}
 
 ssh_key_file_4:
   file.managed:
