@@ -52,6 +52,7 @@ rancher:
   cluster_cidr: 10.42.0.0/16
   cluster_ip_range: 10.43.0.0/16
   cluster_dns_server: 10.43.0.10
+  node_max_pods: 110
   command_hosts:
     - ranchercmd1.dev.example.com
     - ranchercmd2.dev.example.com

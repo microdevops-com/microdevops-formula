@@ -46,7 +46,8 @@ services:
     extra_env: []
   kubelet:
     image: ""
-    extra_args: {}
+    extra_args:
+      max-pods: {{ node_max_pods }}
     extra_binds:
       - "/proc/cpuinfo:/proc/cpuinfo:rw"
       - "/proc/diskstats:/proc/diskstats:rw"
@@ -56,6 +57,11 @@ services:
       - "/proc/swaps:/proc/swaps:rw"
       - "/proc/uptime:/proc/uptime:rw"
       - "/sys/devices/system/cpu/online:/sys/devices/system/cpu/online:rw"
+      - "/var/openebs/local:/var/openebs/local"
+      - "/etc/iscsi:/etc/iscsi"
+      - "/sbin/iscsiadm:/sbin/iscsiadm"
+      - "/var/lib/iscsi:/var/lib/iscsi"
+      - "/lib/modules"
     extra_env: []
     cluster_domain: {{ cluster_domain }}
     infra_container_image: ""
