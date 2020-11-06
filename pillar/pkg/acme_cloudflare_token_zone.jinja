@@ -1,0 +1,62 @@
+{#
+This file should be included in pillar, which sets the following:
+{% set acme_cf_token = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% set acme_cf_account_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
+{% set acme_cf_zone_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
+
+In order to use the new token, the token currently needs access read access to Zone.Zone, and write access to Zone.DNS, across all Zones. See Issue #2398 for more info.
+Alternatively, if the certificate only covers a single zone, you can restrict the API Token only for write access to Zone.DNS for a single domain.
+https://github.com/acmesh-official/acme.sh/wiki/dnsapi#1-cloudflare-option
+
+And then:
+{% include 'pkg/acme_cloudflare_token.jinja' with context %}
+#}
+
+pkg:
+  acme:
+    when: 'PKG_BEFORE_DEPLOY'
+    states:
+      - git.latest:
+          acme:
+            - name: https://github.com/Neilpang/acme.sh.git
+            - target: /opt/acme/git
+            - force_reset: True
+            - force_fetch: True
+      - file.directory:
+          1:
+            - name: /opt/acme/home
+            - makedirs: True
+          2:
+            - name: /opt/acme/cert
+            - makedirs: True
+          3:
+            - name: /opt/acme/config
+            - makedirs: True
+      - cmd.run:
+          1:
+            - name: '/opt/acme/git/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --install'
+            - runas: root
+            - cwd: /opt/acme/git
+      - environ.setenv:
+          1:
+            - name: CF_Token
+            - value: "{{ acme_cf_token }}"
+            - update_minion: True
+          2:
+            - name: CF_Account_ID
+            - value: "{{ acme_cf_account_id }}"
+            - update_minion: True
+          2:
+            - name: CF_Zone_ID
+            - value: "{{ acme_cf_zone_id }}"
+            - update_minion: True
+      - file.managed:
+          1:
+            - name: '/opt/acme/home/acme_local.sh'
+            - mode: 0700
+            - contents: |
+                #!/bin/bash
+                export CF_Token="{{ acme_cf_token }}"
+                export CF_Account_ID="{{ acme_cf_account_id }}"
+                export CF_Zone_ID="{{ acme_cf_zone_id }}"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cf "$@"
