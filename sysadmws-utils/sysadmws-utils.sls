@@ -40,6 +40,11 @@ install_utils_tgz_v1_3:
 
   {%- endif %}
 
+install_requirements_v1:
+  cmd.run:
+    - name: "/opt/sysadmws/misc/install_requirements.sh"
+    - runas: "root"
+
 {% else %}
 sysadmws-utils_nothing_done_info:
   test.configurable_test_state:
