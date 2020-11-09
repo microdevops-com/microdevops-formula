@@ -550,7 +550,7 @@ app_link_sites_enabled_{{ loop.index }}:
         {%- endif %}
 
         {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
-app_nginx_reload_{{ loop.index }}:
+static_apps_nginx_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
     - name: 'service nginx configtest && service nginx reload'

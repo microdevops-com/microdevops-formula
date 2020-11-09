@@ -622,7 +622,7 @@ app_php-fpm_reload_{{ loop.index }}:
         {%- endif %}
 
         {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
-app_nginx_reload_{{ loop.index }}:
+php-fpm_apps_nginx_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
     - name: 'service nginx configtest && service nginx reload'
