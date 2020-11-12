@@ -217,13 +217,11 @@ python_apps_app_virtualenv_python_version_{{ loop.index }}:
       - {{ app_params['virtualenv']['pyenv_version'] }}
 
 python_apps_app_virtualenv_pip_{{ loop.index }}:
-  pip.installed:
-    - name: virtualenv
-    - user: root
+  cmd.run:
     - cwd: /tmp
-    - bin_env: /usr/local/pyenv/shims/pip
-    - env_vars:
+    - env:
         PYENV_VERSION: {{ app_params['virtualenv']['pyenv_version'] }}
+    - name: /usr/local/pyenv/shims/pip install virtualenv
 
 python_apps_app_virtualenv_bin_{{ loop.index }}:
   file.managed:
