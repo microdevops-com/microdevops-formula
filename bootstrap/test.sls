@@ -15,6 +15,12 @@ full_hostname:
         hostname -f | grep {{ grains['fqdn'] }} && \
         grep "search {{ pillar['network']['domain'] }}" /etc/resolv.conf
 
+memory_accounting:
+  cmd.run:
+    - name: |
+        grep cgroup_enable=memory /proc/cmdline && \
+        grep swapaccount=1 /proc/cmdline
+
 {% if grains['virtual'] == 'physical' %}
 smartd_test:
   cmd.run:
