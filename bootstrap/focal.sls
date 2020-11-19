@@ -61,6 +61,7 @@ pkg_latest:
       - telnet
       - strace
       - whois
+      - net-tools
       # build
       - build-essential
       - git
