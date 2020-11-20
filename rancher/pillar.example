@@ -7,7 +7,8 @@
 #
 # - prepare nodes, node fo nginx proxy (optional if vendor cloud balancer is not used), host for command
 #
-# - ensure nodes are accessible from command host by ssh
+# - ensure nodes are accessible from command host by ssh, needed firewall ports open on cluster nodes
+#   docker will manipulate iptables on nodes, so add input deny rules from internet
 #
 # - generate new private key for usage in this pillar
 #   ssh-keygen -N "" -t ed25519 -f ./cluster_name -C cluster_name
@@ -16,7 +17,7 @@
 #
 # - salt rancher*.dev.example.com saltutil.refresh_pillar
 #
-# - install binaries, cluster, yaml etc
+# - install binaries, cluster, yaml etc (ensure state run on command host, nginx nodes (if needed) and nodes
 #   salt rancher*.dev.example.com state.apply rancher.prereqs
 #
 # - rke up
@@ -57,8 +58,6 @@ rancher:
   node_max_pods: 110
   command_hosts:
     - ranchercmd1.dev.example.com
-    - ranchercmd2.dev.example.com
-    - ranchercmd3.dev.example.com
   nginx_hosts:
     - rancherweb1.dev.example.com
     - rancherweb2.dev.example.com
