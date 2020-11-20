@@ -19,6 +19,7 @@ pkg_latest:
     - pkgs:
       # console tools
       - vim
+      - nano
       - links
       - screen
       - tmux
