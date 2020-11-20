@@ -2,15 +2,17 @@
 #
 # usage:
 #
-# - add
-#   echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize
-#   to /etc/rc.local on host machine if running inside LXD
+# - add pkg.k8s.lxd_host pillar to host machine if running inside LXD and apply
+#   (check 1048576 in /sys/module/nf_conntrack/parameters/hashsize after apply)
 #
-# - prepare nodes, node fo nginx proxy, node for command exec
+# - prepare nodes, node fo nginx proxy (optional if vendor cloud balancer is not used), host for command
+#
+# - ensure nodes are accessible from command host by ssh
 #
 # - generate new private key for usage in this pillar
+#   ssh-keygen -N "" -t ed25519 -f ./cluster_name -C cluster_name
 #
-# - prepare this pillar and assign it for all hosts
+# - prepare this pillar and assign it for all nodes and command host
 #
 # - salt rancher*.dev.example.com saltutil.refresh_pillar
 #
@@ -41,7 +43,7 @@
 # - 5:19.03.12 - works inside focal LXD containers
 
 rancher:
-  cluster_name: dev
+  cluster_name: rancher.dev.example.com
   cluster_domain: rancher.dev.example.com
   cluster_ssh_private_key: |
     -----BEGIN OPENSSH PRIVATE KEY-----
@@ -61,7 +63,11 @@ rancher:
     - rancherweb1.dev.example.com
     - rancherweb2.dev.example.com
     - rancherweb3.dev.example.com
-  docker-ce_version: 5:19.03.12
+  docker-ce_version: 5:19.03.13
+  rke_version: v1.2.3
+  helm_version: v3.4.1
+  rancher_cli_version: v2.4.9
+  cluster_yml: cluster.yml_v1
   nodes:
     - address: rancher1.dev.example.com
       port: 22
