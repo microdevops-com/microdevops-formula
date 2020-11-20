@@ -146,13 +146,13 @@ ssh_key_dir_2:
 
 ssh_key_file_1:
   file.managed:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_rsa
+    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_ed25519
     - mode: 600
     - contents: {{ pillar["rancher"]["cluster_ssh_private_key"] | yaml_encode }}
 
 ssh_key_file_2:
   file.managed:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_rsa.pub
+    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_ed25519.pub
     - mode: 644
     - contents: |
         {{ pillar["rancher"]["cluster_ssh_public_key"] }}
@@ -174,7 +174,7 @@ ssh_key_file_3:
             user: {{ node["user"] }}
             docker_socket: /var/run/docker.sock
             ssh_key: ""
-            ssh_key_path: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_rsa
+            ssh_key_path: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_ed25519
             ssh_cert: ""
             ssh_cert_path: ""
             labels: {}

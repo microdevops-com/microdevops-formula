@@ -117,7 +117,7 @@ system_images:
   ingress_backend: rancher/nginx-ingress-controller-defaultbackend:1.5-rancher1
   metrics_server: rancher/metrics-server:v0.3.6
   windows_pod_infra_container: rancher/kubelet-pause:v0.1.4
-ssh_key_path: /opt/rancher/clusters/{{ cluster_name }}/.ssh/id_rsa
+ssh_key_path: /opt/rancher/clusters/{{ cluster_name }}/.ssh/id_ed25519
 ssh_cert_path: ""
 ssh_agent_auth: false
 authorization:
