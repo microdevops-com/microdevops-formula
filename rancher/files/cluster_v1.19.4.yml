@@ -143,7 +143,7 @@ private_registries: []
 ingress:
   provider: ""
   options: {}
-  node_selector: {}
+  node_selector: {{ ingress_node_selector }}
   extra_args: {}
   dns_policy: ""
   extra_envs: []
