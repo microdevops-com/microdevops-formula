@@ -66,7 +66,7 @@ rancher:
   rke_version: v1.2.3
   helm_version: v3.4.1
   rancher_cli_version: v2.4.9
-  cluster_yml: cluster.yml_v1
+  cluster_yml: cluster_v1.19.4.yml
   nodes:
     - address: rancher1.dev.example.com
       port: 22
