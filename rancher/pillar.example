@@ -15,16 +15,16 @@
 #
 # - prepare this pillar and assign it for all nodes and command host
 #
-# - salt rancher*.dev.example.com saltutil.refresh_pillar
+# - salt -L 'srv1.example.com,*.rancher.dev.example.com' saltutil.refresh_pillar
 #
 # - install binaries, cluster, yaml etc (ensure state run on command host, nginx nodes (if needed) and nodes
-#   salt rancher*.dev.example.com state.apply rancher.prereqs
+#   salt '*.rancher.dev.example.com' state.apply rancher.prereqs
 #
 # - rke up
-#   salt ranchercmdSOME.dev.example.com state.apply rancher.rke_up
+#   salt srv1.example.com state.apply rancher.rke_up
 #
 # - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
-#   salt ranchercmdSOME.dev.example.com state.apply rancher.install
+#   salt srv1.example.com state.apply rancher.install
 #
 # - open rancher web admin
 #
@@ -35,7 +35,7 @@
 # - take bearer_token from admin - API & Keys - add key and put it below
 #
 # - apply users
-#   salt ranchercmdSOME.dev.example.com state.apply rancher.users
+#   salt srv1.example.com state.apply rancher.users
 #
 # last two steps are not required to do from each command host and should be done once
 #
@@ -104,7 +104,9 @@ rancher:
       labels:
         dedicated: commonGroup
       taints:
-        - dedicated=commonGroup:NoSchedule
+        - key: dedicated
+          value: commonGroup
+          effect: NoSchedule
     - address: worker2.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.6
@@ -114,7 +116,9 @@ rancher:
       labels:
         dedicated: commonGroup
       taints:
-        - dedicated=commonGroup:NoSchedule
+        - key: dedicated
+          value: commonGroup
+          effect: NoSchedule
     - address: worker3.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.7
@@ -124,7 +128,9 @@ rancher:
       labels:
         dedicated: commonGroup
       taints:
-        - dedicated=commonGroup:NoSchedule
+        - key: dedicated
+          value: commonGroup
+          effect: NoSchedule
     - address: mon1.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.8
@@ -134,7 +140,9 @@ rancher:
       labels:
         dedicated: monitoringGroup
       taints:
-        - dedicated=monitoringGroup:NoSchedule
+        - key: dedicated
+          value: monitoringGroup
+          effect: NoSchedule
   bearer_token: token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # add after install (taken from web admin), used to manage users via api
   users:
     - username: user
