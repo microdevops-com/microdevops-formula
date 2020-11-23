@@ -177,8 +177,8 @@ ssh_key_file_3:
             ssh_key_path: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_ed25519
             ssh_cert: ""
             ssh_cert_path: ""
-            labels: {}
-            taints: []
+            labels: {{ node["labels"] }}
+            taints: {{ node["taints"] }}
     {%- endfor %}
         cluster_ip_range: {{ pillar["rancher"]["cluster_ip_range"] }}
         cluster_cidr: {{ pillar["rancher"]["cluster_cidr"]  }}

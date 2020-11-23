@@ -8,7 +8,7 @@
 # - prepare nodes, node fo nginx proxy (optional if vendor cloud balancer is not used), host for command
 #
 # - ensure nodes are accessible from command host by ssh, needed firewall ports open on cluster nodes
-#   docker will manipulate iptables on nodes, so add input deny rules from internet
+#   docker will manipulate iptables on nodes, so add input deny rules from internet if node has internet ip
 #
 # - generate new private key for usage in this pillar
 #   ssh-keygen -N "" -t ed25519 -f ./cluster_name -C cluster_name
@@ -57,32 +57,84 @@ rancher:
   cluster_dns_server: 10.43.0.10
   node_max_pods: 110
   command_hosts:
-    - ranchercmd1.dev.example.com
+    - srv1.example.com
   nginx_hosts:
-    - rancherweb1.dev.example.com
-    - rancherweb2.dev.example.com
-    - rancherweb3.dev.example.com
+    - web1.rancher.dev.example.com
+    - web2.rancher.dev.example.com
+    - web3.rancher.dev.example.com
   docker-ce_version: 5:19.03.13
   rke_version: v1.2.3
   helm_version: v3.4.1
   rancher_cli_version: v2.4.9
   cluster_yml: cluster_v1.19.4.yml
   nodes:
-    - address: rancher1.dev.example.com
+    - address: cp1.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.2
       user: root
-      role: ['controlplane', 'worker', 'etcd']
-    - address: rancher2.dev.example.com
+      role: 
+        - controlplane
+        - etcd
+      labels: {}
+      taints: []
+    - address: cp2.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.3
       user: root
-      role: ['controlplane', 'worker', 'etcd']
-    - address: rancher3.dev.example.com
+      role: 
+        - controlplane
+        - etcd
+      labels: {}
+      taints: []
+    - address: cp3.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.4
       user: root
-      role: ['controlplane', 'worker', 'etcd']
+      role: 
+        - controlplane
+        - etcd
+      labels: {}
+      taints: []
+    - address: worker1.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.5
+      user: root
+      role: 
+        - worker
+      labels:
+        dedicated: commonGroup
+      taints:
+        - dedicated=commonGroup:NoSchedule
+    - address: worker2.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.6
+      user: root
+      role: 
+        - worker
+      labels:
+        dedicated: commonGroup
+      taints:
+        - dedicated=commonGroup:NoSchedule
+    - address: worker3.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.7
+      user: root
+      role: 
+        - worker
+      labels:
+        dedicated: commonGroup
+      taints:
+        - dedicated=commonGroup:NoSchedule
+    - address: mon1.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.8
+      user: root
+      role: 
+        - worker
+      labels:
+        dedicated: monitoringGroup
+      taints:
+        - dedicated=monitoringGroup:NoSchedule
   bearer_token: token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # add after install (taken from web admin), used to manage users via api
   users:
     - username: user
