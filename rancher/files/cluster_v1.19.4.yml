@@ -170,7 +170,7 @@ bastion_host:
 monitoring:
   provider: ""
   options: {}
-  node_selector: {}
+  node_selector: {{ monitoring_node_selector }}
   update_strategy: null
   replicas: null
 restore:

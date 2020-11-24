@@ -69,9 +69,10 @@ rancher:
   helm_version: v3.4.1
   rancher_cli_version: v2.4.9
   cluster_yml: cluster_v1.19.4.yml
-  ingress_node_selector: {}
+  ingress_node_selector:
+    dedicated: general
   monitoring_node_selector:
-    dedicated: monitoringGroup
+    dedicated: monitoring
   nodes:
     - address: cp1.rancher.dev.example.com
       port: 22
@@ -106,7 +107,8 @@ rancher:
       user: root
       role:
         - worker
-      labels: {}
+      labels:
+        dedicated: general
       taints: []
     - address: worker2.rancher.dev.example.com
       port: 22
@@ -114,7 +116,8 @@ rancher:
       user: root
       role:
         - worker
-      labels: {}
+      labels:
+        dedicated: general
       taints: []
     - address: worker3.rancher.dev.example.com
       port: 22
@@ -122,7 +125,8 @@ rancher:
       user: root
       role:
         - worker
-      labels: {}
+      labels:
+        dedicated: general
       taints: []
     - address: mon1.rancher.dev.example.com
       port: 22
@@ -131,11 +135,11 @@ rancher:
       role:
         - worker
       labels:
-        dedicated: monitoringGroup
+        dedicated: monitoring
       taints:
         - key: dedicated
-          value: monitoringGroup
-          effect: NoSchedule
+          value: monitoring
+          effect: PreferNoSchedule
   bearer_token: token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # add after install (taken from web admin), used to manage users via api
   users:
     - username: user
