@@ -77,7 +77,7 @@ rancher:
       port: 22
       internal_address: 10.0.10.2
       user: root
-      role: 
+      role:
         - controlplane
         - etcd
       labels: {}
@@ -86,7 +86,7 @@ rancher:
       port: 22
       internal_address: 10.0.10.3
       user: root
-      role: 
+      role:
         - controlplane
         - etcd
       labels: {}
@@ -95,7 +95,7 @@ rancher:
       port: 22
       internal_address: 10.0.10.4
       user: root
-      role: 
+      role:
         - controlplane
         - etcd
       labels: {}
@@ -104,7 +104,7 @@ rancher:
       port: 22
       internal_address: 10.0.10.5
       user: root
-      role: 
+      role:
         - worker
       labels: {}
       taints: []
@@ -112,7 +112,7 @@ rancher:
       port: 22
       internal_address: 10.0.10.6
       user: root
-      role: 
+      role:
         - worker
       labels: {}
       taints: []
@@ -120,7 +120,7 @@ rancher:
       port: 22
       internal_address: 10.0.10.7
       user: root
-      role: 
+      role:
         - worker
       labels: {}
       taints: []
@@ -128,7 +128,7 @@ rancher:
       port: 22
       internal_address: 10.0.10.8
       user: root
-      role: 
+      role:
         - worker
       labels:
         dedicated: monitoringGroup
