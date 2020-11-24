@@ -2,46 +2,48 @@
 #
 # usage:
 #
-# - add pkg.k8s.lxd_host pillar to host machine if running inside LXD and apply
-#   (check 1048576 in /sys/module/nf_conntrack/parameters/hashsize after apply)
+# - Add pkg.k8s.lxd_host pillar to host machine if running inside LXD and apply.
+#   Check 1048576 in /sys/module/nf_conntrack/parameters/hashsize after apply.
 #
-# - prepare nodes, node fo nginx proxy (optional if vendor cloud balancer is not used), host for command
+# - Prepare nodes, node fo nginx proxy (optional if vendor cloud balancer is not used), host for command.
 #
-# - ensure nodes are accessible from command host by ssh, needed firewall ports open on cluster nodes
-#   docker will manipulate iptables on nodes, so add input deny rules from internet if node has internet ip
+# - Ensure nodes are accessible from command host by ssh.
+#   Ensure needed firewall ports open on cluster nodes between each other (or all traffic open inside cluster).
 #
-# - generate new private key for usage in this pillar
+# - Ensure internet and nodes are accessible from inside docker on nodes (may require nat_managed_docker_eth0, nat_managed_docker_eth1 etc).
+#
+# - Docker will manipulate iptables on nodes, so add input deny rules from internet if node has internet ip.
+#
+# - Generate new private key for usage in this pillar:
 #   ssh-keygen -N "" -t ed25519 -f ./cluster_name -C cluster_name
 #
-# - prepare this pillar and assign it for all nodes and command host
+# - Prepare this pillar and assign it for all nodes and command host.
 #
 # - salt -L 'srv1.example.com,*.rancher.dev.example.com' saltutil.refresh_pillar
 #
-# - install binaries, cluster, yaml etc (ensure state run on command host, nginx nodes (if needed) and nodes
+# - Install binaries, cluster, yaml etc (ensure state run on command host, nginx nodes (if needed) and nodes:
 #   salt '*.rancher.dev.example.com' state.apply rancher.prereqs
 #
-# - rke up
+# - rke up:
 #   salt srv1.example.com state.apply rancher.rke_up
 #
-# - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
+# - Install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar):
 #   salt srv1.example.com state.apply rancher.install
 #
-# - open rancher web admin
+# - Open rancher web admin.
 #
-# - give password and url
+# - Give password and url.
 #
-# - wait for provisioning
+# - Wait for provisioning.
 #
-# - take bearer_token from admin - API & Keys - add key and put it below
+# - Take bearer_token from admin - API & Keys - add key and put it below.
 #
-# - apply users
+# - Apply users:
 #   salt srv1.example.com state.apply rancher.users
-#
-# last two steps are not required to do from each command host and should be done once
 #
 # docker versions:
 # - 18.06.3+ - works inside xenial, bionic LXD containers, but apparmor shoud be disabled on the host
-# - 5:19.03.12 - works inside focal LXD containers
+# - 5:19.03.12+ - works inside focal LXD containers
 
 rancher:
   cluster_name: rancher.dev.example.com
@@ -67,8 +69,9 @@ rancher:
   helm_version: v3.4.1
   rancher_cli_version: v2.4.9
   cluster_yml: cluster_v1.19.4.yml
-  ingress_node_selector:
-    dedicated: commonGroup
+  ingress_node_selector: {}
+  monitoring_node_selector:
+    dedicated: monitoringGroup
   nodes:
     - address: cp1.rancher.dev.example.com
       port: 22
@@ -103,36 +106,24 @@ rancher:
       user: root
       role: 
         - worker
-      labels:
-        dedicated: commonGroup
-      taints:
-        - key: dedicated
-          value: commonGroup
-          effect: NoSchedule
+      labels: {}
+      taints: []
     - address: worker2.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.6
       user: root
       role: 
         - worker
-      labels:
-        dedicated: commonGroup
-      taints:
-        - key: dedicated
-          value: commonGroup
-          effect: NoSchedule
+      labels: {}
+      taints: []
     - address: worker3.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.7
       user: root
       role: 
         - worker
-      labels:
-        dedicated: commonGroup
-      taints:
-        - key: dedicated
-          value: commonGroup
-          effect: NoSchedule
+      labels: {}
+      taints: []
     - address: mon1.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.8
