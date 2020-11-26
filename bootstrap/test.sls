@@ -3,8 +3,7 @@ resolvers_test:
     - name: |
         grep "nameserver 8.8.8.8" /run/systemd/resolve/resolv.conf && \
         grep "nameserver 8.8.4.4" /run/systemd/resolve/resolv.conf && \
-        grep "nameserver 1.1.1.1" /run/systemd/resolve/resolv.conf && \
-        grep "nameserver 1.0.0.1" /run/systemd/resolve/resolv.conf
+        grep "nameserver 1.1.1.1" /run/systemd/resolve/resolv.conf
 
 full_hostname:
   cmd.run:
