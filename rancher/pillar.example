@@ -55,7 +55,6 @@
 #     canal_flannel_backend_type: vxlan
 #   mtu: 1300
 #   node_selector: {}
-#   update_strategy: null
 #   canal_network_provider:
 #     iface: eth1
 
@@ -92,7 +91,6 @@ rancher:
     options: {}
     mtu: 1350
     node_selector: {}
-    update_strategy: null
   nodes:
     - address: cp1.rancher.dev.example.com
       port: 22
