@@ -188,6 +188,7 @@ ssh_key_file_3:
         node_max_pods: {{ pillar["rancher"]["node_max_pods"] }}
         ingress_node_selector: {{ pillar["rancher"]["ingress_node_selector"] }}
         monitoring_node_selector: {{ pillar["rancher"]["monitoring_node_selector"] }}
+        network: {{ pillar["rancher"]["network"] }}
 
 ssh_key_file_4:
   file.managed:

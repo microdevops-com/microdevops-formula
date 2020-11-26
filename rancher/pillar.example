@@ -1,6 +1,6 @@
 # vi: set ft=yaml:
 #
-# usage:
+# Usage:
 #
 # - Add pkg.k8s.lxd_host pillar to host machine if running inside LXD and apply.
 #   Check 1048576 in /sys/module/nf_conntrack/parameters/hashsize after apply.
@@ -41,9 +41,23 @@
 # - Apply users:
 #   salt srv1.example.com state.apply rancher.users
 #
-# docker versions:
+# Docker versions:
 # - 18.06.3+ - works inside xenial, bionic LXD containers, but apparmor shoud be disabled on the host
 # - 5:19.03.12+ - works inside focal LXD containers
+#
+# The only CNI plugin found working with Hetzner vSwitch is calico with MTU < 1350.
+#
+# If vSwitch is not needed, this canal configuration works in Hetzner cloud network:
+# network:
+#   plugin: canal
+#   options:
+#     canal_iface: eth1
+#     canal_flannel_backend_type: vxlan
+#   mtu: 1300
+#   node_selector: {}
+#   update_strategy: null
+#   canal_network_provider:
+#     iface: eth1
 
 rancher:
   cluster_name: rancher.dev.example.com
@@ -73,6 +87,12 @@ rancher:
     dedicated: general
   monitoring_node_selector:
     dedicated: monitoring
+  network:
+    plugin: calico
+    options: {}
+    mtu: 1350
+    node_selector: {}
+    update_strategy: null
   nodes:
     - address: cp1.rancher.dev.example.com
       port: 22

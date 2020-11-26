@@ -86,12 +86,7 @@ services:
     win_extra_args: {}
     win_extra_binds: []
     win_extra_env: []
-network:
-  plugin: canal
-  options: {}
-  mtu: 0
-  node_selector: {}
-  update_strategy: null
+network: {{ network }}
 authentication:
   strategy: x509
   sans: []
