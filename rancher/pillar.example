@@ -5,6 +5,8 @@
 # - Add pkg.k8s.lxd_host pillar to host machine if running inside LXD and apply.
 #   Check 1048576 in /sys/module/nf_conntrack/parameters/hashsize after apply.
 #
+# - Avoid more than 3 NS on nodes, otherwise you will be flooded with "DNSConfigForming Nameserver limits were exceeded, some nameservers have been omitted".
+#
 # - Prepare nodes, node fo nginx proxy (optional if vendor cloud balancer is not used), host for command.
 #
 # - Ensure nodes are accessible from command host by ssh.
