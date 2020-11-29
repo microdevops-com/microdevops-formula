@@ -7,8 +7,7 @@ bootstrap_file_{{ loop.index }}:
     - source: {{ file["source"] }}
     - mode: {{ file["mode"] }}
     - template: jinja
-    - defaults: 
-        bootstrap_network_domain: {{ file["values"] }}
+    - defaults: {{ file["values"] }}
 
   {%- endfor %}
 {% endif %}
