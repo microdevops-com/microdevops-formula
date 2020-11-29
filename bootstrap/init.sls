@@ -1,2 +1,2 @@
 include:
-- .{{ grains['oscodename'] }}
+- .{{ grains["oscodename"] }}

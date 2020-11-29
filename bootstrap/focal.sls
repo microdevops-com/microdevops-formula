@@ -5,12 +5,12 @@ uptodate:
 dist_upgrade:
   cmd.run:
     - name: |
-        apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' dist-upgrade
+        apt-get -qy -o "DPkg::Options::=--force-confold" -o "DPkg::Options::=--force-confdef" dist-upgrade
 
 bashrc:
   file.managed:
-    - name: '/etc/bash.bashrc'
-    - source: salt://bootstrap/files/{{ grains['oscodename'] }}_bashrc
+    - name: /etc/bash.bashrc
+    - source: salt://bootstrap/files/{{ grains["oscodename"] }}_bashrc
     - mode: 0644
 
 pkg_latest:
@@ -79,7 +79,7 @@ pkg_latest:
       - s-nail 
       # python
       - python3-pip
-{% if grains['virtual'] == 'physical' %}
+{% if grains["virtual"] == "physical" %}
       # physical
       - smartmontools
       - bridge-utils
@@ -92,11 +92,11 @@ pkg_latest:
 full_hostname:
   cmd.run:
     - name: |
-        cat /etc/hostname | grep -q {{ pillar['network']['domain'] }} && \
+        cat /etc/hostname | grep -q {{ pillar["network"]["domain"] }} && \
         echo 'hostname is already full' || \
-        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar['network']['domain'] }} > /etc/hostname && hostname $(cat /etc/hostname) )
+        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar["network"]["domain"] }} > /etc/hostname && hostname $(cat /etc/hostname) )
 
-{% if grains['virtual'] == 'physical' %}
+{% if grains["virtual"] == "physical" %}
 swapiness:
   sysctl.present:
     - name: vm.swappiness

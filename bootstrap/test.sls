@@ -8,11 +8,11 @@ resolvers_test:
 full_hostname:
   cmd.run:
     - name: |
-        grep {{ grains['fqdn'] }} /etc/hostname && \
-        grep {{ grains['fqdn'] }} /etc/hosts && \
-        hostname | grep {{ grains['fqdn'] }} && \
-        hostname -f | grep {{ grains['fqdn'] }} && \
-        grep "search {{ pillar['network']['domain'] }}" /etc/resolv.conf
+        grep {{ grains["fqdn"] }} /etc/hostname && \
+        grep {{ grains["fqdn"] }} /etc/hosts && \
+        hostname | grep {{ grains["fqdn"] }} && \
+        hostname -f | grep {{ grains["fqdn"] }} && \
+        grep "search {{ pillar["network"]["domain"] }}" /etc/resolv.conf
 
 memory_accounting:
   cmd.run:
@@ -20,7 +20,7 @@ memory_accounting:
         grep cgroup_enable=memory /proc/cmdline && \
         grep swapaccount=1 /proc/cmdline
 
-{% if grains['virtual'] == 'physical' %}
+{% if grains["virtual"] == "physical" %}
 smartd_test:
   cmd.run:
     - name: systemctl is-active smartd
