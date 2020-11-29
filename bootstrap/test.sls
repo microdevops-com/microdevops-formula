@@ -12,7 +12,7 @@ full_hostname:
         grep {{ grains["fqdn"] }} /etc/hosts && \
         hostname | grep {{ grains["fqdn"] }} && \
         hostname -f | grep {{ grains["fqdn"] }} && \
-        grep "search {{ pillar["network"]["domain"] }}" /etc/resolv.conf
+        grep "search {{ pillar["bootstrap"]["network"]["domain"] }}" /etc/resolv.conf
 
 memory_accounting:
   cmd.run:
