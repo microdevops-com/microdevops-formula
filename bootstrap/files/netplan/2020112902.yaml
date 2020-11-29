@@ -1,0 +1,29 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses:
+        - {{ ipv6_address }}
+      dhcp4: true
+      dhcp4-overrides:
+        use-dns: no
+      gateway6: {{ ipv6_gw }}
+      match:
+        macaddress: {{ mac_eth0 }}
+      set-name: eth0
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+    eth1:
+      dhcp4: true
+      dhcp4-overrides:
+        use-dns: no
+      dhcp6: no
+      match:
+        macaddress: {{ mac_eth1 }}
+      set-name: eth1
