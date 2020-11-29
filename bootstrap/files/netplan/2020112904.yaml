@@ -1,0 +1,35 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses:
+        - {{ ipv4_address }}
+        - {{ ipv6_address }}
+      routes:
+        - on-link: true
+          to: 0.0.0.0/0
+          via: {{ ipv4_gw }}
+      gateway6: {{ ipv6_gw }}
+      match:
+        macaddress: {{ mac }}
+      set-name: eth0
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+  vlans:
+    eth1:
+      id: {{ vlan_id }}
+      link: eth0
+      mtu: 1400
+      addresses:
+        - {{ eth1_address }}
+      routes:
+        - on-link: true
+          to: {{ eth1_network }}
+          via: {{ eth1_network_gw }}
+      dhcp6: no
