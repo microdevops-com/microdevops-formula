@@ -1,2 +1,3 @@
 include:
-- .{{ grains["oscodename"] }}
+  - .{{ grains["oscodename"] }}
+  - .files

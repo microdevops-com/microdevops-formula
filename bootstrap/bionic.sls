@@ -10,7 +10,7 @@ dist_upgrade:
 bashrc:
   file.managed:
     - name: /etc/bash.bashrc
-    - source: salt://bootstrap/files/{{ grains["oscodename"] }}_bashrc
+    - source: salt://bootstrap/files/bashrc/{{ grains["oscodename"] }}
     - mode: 0644
 
 pkg_latest:
@@ -92,9 +92,9 @@ pkg_latest:
 full_hostname:
   cmd.run:
     - name: |
-        cat /etc/hostname | grep -q {{ pillar["network"]["domain"] }} && \
+        cat /etc/hostname | grep -q {{ pillar["bootstrap"]["network"]["domain"] }} && \
         echo 'hostname is already full' || \
-        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar["network"]["domain"] }} > /etc/hostname && hostname $(cat /etc/hostname) )
+        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar["bootstrap"]["network"]["domain"] }} > /etc/hostname && hostname $(cat /etc/hostname) )
 
 {% if grains["virtual"] == "physical" %}
 swapiness:
@@ -112,13 +112,13 @@ mdadm_config_hack:
   file.replace:
     - name: /etc/mdadm/mdadm.conf
     - pattern: '^MAILADDR .*$'
-    - repl: 'MAILADDR {{ pillar["monitoring"]["email"]}}'
+    - repl: 'MAILADDR {{ pillar["bootstrap"]["monitoring"]["email"] }}'
 
 mdadm_debconf:
   debconf.set:
     - name: mdadm
     - data:
-        'mdadm/mail_to': {'type': 'string', 'value': '{{ pillar["monitoring"]["email"]}}' }
+        'mdadm/mail_to': {'type': 'string', 'value': '{{ pillar["bootstrap"]["monitoring"]["email"] }}' }
         'mdadm/start_daemon': {'type': 'boolean', 'value': True}
         'mdadm/autocheck': {'type': 'boolean', 'value': True}
         'mdadm/autoscan': {'type': 'boolean', 'value': True}
