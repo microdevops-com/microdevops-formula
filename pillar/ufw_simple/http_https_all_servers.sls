@@ -14,5 +14,5 @@ ufw_simple:
       http_https_All_Servers_1:
         proto: 'tcp'
         from:
-          {{ vars['All_Servers'] }}
+          {{ vars['Delete_All_Servers'] }}
         to_port: '80,443'

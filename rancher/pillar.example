@@ -34,9 +34,11 @@
 #
 # - Open rancher web admin.
 #
-# - Give password and url.
+# - Give password and url (in cluster manager old UI).
 #
-# - Wait for provisioning.
+# - Wait for provisioning if needed.
+#
+# - Add Monitoring Chart from Marketplace.
 #
 # - Take bearer_token from admin - API & Keys - add key and put it below.
 #
