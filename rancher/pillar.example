@@ -38,7 +38,7 @@
 #
 # - Wait for provisioning if needed.
 #
-# - Add Monitoring Chart from Marketplace.
+# - Add Monitoring Chart from Marketplace. Select Chart Options - Edit as YAML to provide nodeSelector: {dedicated: monitoring}.
 #
 # - Add Google Auth from Global. Assign Global Roles for Groups from Google Auth.
 #
