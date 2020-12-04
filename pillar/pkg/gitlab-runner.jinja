@@ -57,6 +57,10 @@ pkg:
 
                 [session_server]
                   session_timeout = 1800
+      - file.absent:
+          1:
+            # https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading
+            - name: /home/gitlab-runner/.bash_logout
       - cmd.run:
           1:
             - name: |
