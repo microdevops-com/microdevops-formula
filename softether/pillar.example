@@ -4,16 +4,14 @@
 # vpnserver only managed for now
 softether:
   # Do not use tag here, it cannot be rev parsed then
-  #version: 'c23142a8ffc35088047060989fc3d76c5b4e00af'
-  # New version for install on Ubuntu 18.04
-  version: '12b0330d8b67049d5940f0045e45c48092b7cf43' 
+  version: ec3d052e218281dc1aa734f1bf84cf42127744aa
   vpnserver:
     install: True
     # Main management password, state softether.vpnserver_install sets it at the end of install, state softether.vpnserver_settings uses it to connect
-    password: 'XXX-SET-SERVER-PASS-HERE-XXX'
+    password: XXX-SET-SERVER-PASS-HERE-XXX
     cmds:
-      - 'IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:yes /PSK:XXX-SET-OWN-PSK-PASS-HERE-XXX /DEFAULTHUB:myhub'
-      - 'OpenVpnMakeConfig "\/opt/softether/vpnserver/openvpnconfig.zip"'
+      - IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:yes /PSK:XXX-SET-OWN-PSK-PASS-HERE-XXX /DEFAULTHUB:myhub
+      - OpenVpnMakeConfig "\/opt/softether/vpnserver/openvpnconfig.zip"
     server_key: | # optional key and cert, https://www.softether.org/4-docs/1-manual/3._SoftEther_VPN_Server_Manual/3.3_VPN_Server_Administration (/CMD ServerCertSet, /CMD ServerKeyGet, /CMD ServerCertGet)
       -----BEGIN PRIVATE KEY-----
       ...
@@ -26,15 +24,15 @@ softether:
       DEFAULT:
         delete: True
       myhub:
-        password: 'XXX-SET-OWN-HUB-PASS-HERE-XXX'
+        password: XXX-SET-OWN-HUB-PASS-HERE-XXX
         cmds:
-          - 'SecureNatEnable'
-          - 'SetEnumDeny'
-          - 'SecureNatHostSet /MAC:none /IP:192.168.30.1 /MASK:255.255.255.0'
-          - 'DhcpSet /START:192.168.30.10 /END:192.168.30.200 /MASK:255.255.255.0 /EXPIRE:7200 /GW:none /DNS:8.8.8.8 /DNS2:1.1.1.1 /DOMAIN:mydomain.com /LOG:yes /PUSHROUTE:"10.0.0.1/255.255.255.255/192.168.30.1,10.0.0.2/255.255.255.255/192.168.30.1"'
+          - SecureNatEnable
+          - SetEnumDeny
+          - SecureNatHostSet /MAC:none /IP:192.168.30.1 /MASK:255.255.255.0
+          - DhcpSet /START:192.168.30.10 /END:192.168.30.200 /MASK:255.255.255.0 /EXPIRE:7200 /GW:none /DNS:8.8.8.8 /DNS2:1.1.1.1 /DOMAIN:mydomain.com /LOG:yes /PUSHROUTE:"10.0.0.1/255.255.255.255/192.168.30.1,10.0.0.2/255.255.255.255/192.168.30.1"
         users:
           user1:
-            password: 'XXX-SET-OWN-USER-PASS-HERE-XXX'
-            realname: 'Real Name'
+            password: XXX-SET-OWN-USER-PASS-HERE-XXX
+            realname: Real Name
           user2:
             delete: True
