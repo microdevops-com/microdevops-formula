@@ -154,7 +154,7 @@ softether_vpnserver_systemd_reload:
 
 softether_vpnserver_systemd_start_hack:
   cmd.run:
-    - name: 'service softether-vpnserver start'
+    - name: 'sleep 2; service softether-vpnserver start'
 
 softether_vpnserver_start:
   service.running:
