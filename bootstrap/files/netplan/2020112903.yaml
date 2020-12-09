@@ -1,3 +1,4 @@
+# Hetzner Dedicated with vSwitch on br2
 network:
   version: 2
   renderer: networkd
