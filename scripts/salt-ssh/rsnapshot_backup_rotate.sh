@@ -42,11 +42,11 @@ if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
 	( set -x ; set -o pipefail && stdbuf -oL -eL ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh daily'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 elif [ "${RSNAPSHOT_BACKUP_TYPE}" = "SALT" ]; then
 	# Monthly
-	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --force-color ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [ $(date +%d) = 01 ]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh monthly; fi'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
+	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --wipe --force-color ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [ $(date +%d) = 01 ]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh monthly; fi'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 	# Weekly
-	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --force-color ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [ $(date +%u) = 1 ]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh weekly; fi'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
+	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --wipe --force-color ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [ $(date +%u) = 1 ]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh weekly; fi'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 	# Daily
-	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --force-color ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh daily'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
+	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --wipe --force-color ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh daily'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
