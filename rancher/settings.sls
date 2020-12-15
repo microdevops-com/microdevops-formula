@@ -82,7 +82,12 @@ rancher_user_token_{{ a_loop.index }}_{{ loop.index }}:
             "userId": "'${USER_ID}'"
           }' "https://{{ pillar["rancher"]["cluster_domain"] }}/v3/tokens" | jq -r .token)
         # Save token to file
-        echo ${TOKEN} > /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/tokens/{{ user["username"] }}/{{ token["description"] }}
+        if [[ -z ${TOKEN} ]]; then
+          echo token not created and not saved
+        else
+          echo ${TOKEN} > /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/tokens/{{ user["username"] }}/{{ token["description"] }}
+          echo token saved to /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/tokens/{{ user["username"] }}/{{ token["description"] }}
+        fi
           {%- endfor %}
         {%- endif %}
       {%- endfor %}

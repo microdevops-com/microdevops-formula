@@ -178,7 +178,7 @@ rancher:
       must_change_password: False
       global_permissions: user # user-base user restricted-admin admin
       tokens:
-        - description: gitlab # state will not get another token with the same description if already exists
+        - description: prj_one-gitlab # state will not get another token with the same description if already exists
   projects:
     - name: Project One
       description: Project One
