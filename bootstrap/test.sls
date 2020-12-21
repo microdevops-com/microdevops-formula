@@ -3,19 +3,24 @@ resolvers_test:
     - name: |
         grep "nameserver 8.8.8.8" /run/systemd/resolve/resolv.conf && \
         grep "nameserver 8.8.4.4" /run/systemd/resolve/resolv.conf && \
-        grep "nameserver 1.1.1.1" /run/systemd/resolve/resolv.conf && \
-        grep "nameserver 1.0.0.1" /run/systemd/resolve/resolv.conf
+        grep "nameserver 1.1.1.1" /run/systemd/resolve/resolv.conf
 
 full_hostname:
   cmd.run:
     - name: |
-        grep {{ grains['fqdn'] }} /etc/hostname && \
-        grep {{ grains['fqdn'] }} /etc/hosts && \
-        hostname | grep {{ grains['fqdn'] }} && \
-        hostname -f | grep {{ grains['fqdn'] }} && \
-        grep "search {{ pillar['network']['domain'] }}" /etc/resolv.conf
+        grep {{ grains["fqdn"] }} /etc/hostname && \
+        grep {{ grains["fqdn"] }} /etc/hosts && \
+        hostname | grep {{ grains["fqdn"] }} && \
+        hostname -f | grep {{ grains["fqdn"] }} && \
+        grep "search {{ pillar["bootstrap"]["network"]["domain"] }}" /etc/resolv.conf
 
-{% if grains['virtual'] == 'physical' %}
+memory_accounting:
+  cmd.run:
+    - name: |
+        grep cgroup_enable=memory /proc/cmdline && \
+        grep swapaccount=1 /proc/cmdline
+
+{% if grains["virtual"] == "physical" %}
 smartd_test:
   cmd.run:
     - name: systemctl is-active smartd

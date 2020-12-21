@@ -34,7 +34,7 @@ rabbit_pkg:
 rabbit_cert_for_management:
   cmd.run:
     - shell: /bin/bash
-    - name: 'openssl verify -CAfile /opt/acme/cert/rabbitmq_ca.cer /opt/acme/cert/rabbitmq_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/rabbitmq_cert.cer --key-file /opt/acme/cert/rabbitmq_key.key --ca-file /opt/acme/cert/rabbitmq_ca.cer --fullchain-file /opt/acme/cert/rabbitmq_fullchain.cer --issue -d {{ pillar['rabbitmq']['management_domain'] }} || true'
+    - name: 'openssl verify -CAfile /opt/acme/cert/rabbitmq_ca.cer /opt/acme/cert/rabbitmq_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/rabbitmq_cert.cer --key-file /opt/acme/cert/rabbitmq_key.key --ca-file /opt/acme/cert/rabbitmq_ca.cer --fullchain-file /opt/acme/cert/rabbitmq_fullchain.cer --issue -d {{ pillar['rabbitmq']['management_domain'] }} || true'
 
 rabbit_cert_perm_1:
   file.managed:

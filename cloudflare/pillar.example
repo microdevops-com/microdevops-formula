@@ -1,0 +1,10 @@
+# see https://github.com/cloudflare/salt-cloudflare
+
+cloudflare:
+  example.com:
+    api_token: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    zone_id: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    records:
+      - name: srv1.example.com
+        content: 1.2.3.4
+        type: A

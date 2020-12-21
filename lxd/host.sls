@@ -41,13 +41,13 @@ lxd_local_remote:
   cmd.run:
     - name: '/snap/bin/lxc remote list | grep -q -e $(hostname -f) || /snap/bin/lxc remote add $(hostname -f) https://localhost:8443 --accept-certificate --password={{ pillar['lxd']['password'] }}'
 
-lxd_remove_lxdbr0:
-  cmd.run:
-    - name: '/snap/bin/lxc network delete lxdbr0 || true'
-
 lxd_remove_lxdbr0_default_profile:
   cmd.run:
     - name: '/snap/bin/lxc profile device remove default eth0 || true'
+
+lxd_remove_lxdbr0:
+  cmd.run:
+    - name: '/snap/bin/lxc network delete lxdbr0 || true'
 
 lxd_image_xenial:
   cmd.run:

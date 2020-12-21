@@ -26,6 +26,8 @@ Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pk
 Tip:
 Here are the steps needed to connect google auth:
 https://docs.gitlab.com/ee/integration/google.html
+
+GitLab in LXD requires permissions as defined in docker profile.
 #}
 
 pkg:
@@ -54,7 +56,7 @@ pkg:
             - runas: 'root'
       - cmd.run:
           1:
-            - name: 'openssl verify -CAfile /opt/acme/cert/{{ gitlab_ext_name }}/ca.cer /opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --issue -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart" || true'
+            - name: 'openssl verify -CAfile /opt/acme/cert/{{ gitlab_ext_name }}/ca.cer /opt/acme/cert/{{ gitlab_ext_name }}/fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --issue -d {{ gitlab_ext_name }} --renew-hook "gitlab-ctl restart" || true'
             - cwd: /opt/acme/home
             - shell: '/bin/bash'
             - runas: root

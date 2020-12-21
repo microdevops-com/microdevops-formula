@@ -1,3 +1,3 @@
 pyenv:
-  enabled: True
-  version_2_7_14: True
+  versions:
+    python-2.7.14: True

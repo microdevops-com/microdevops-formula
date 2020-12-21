@@ -1,3 +1,7 @@
+{#
+Salt minion 3001+ with python3-pip deb package required for virtualenv.managed to work with recent python versions.
+#}
+
 {% if (pillar['app'] is defined) and (pillar['app'] is not none) %}
   {%- if (pillar['app']['python_apps'] is defined) and (pillar['app']['python_apps'] is not none) %}
 
@@ -24,6 +28,8 @@
     {%- else %}
       {%- set acme_force_renewal = " " %}
     {%- endif %}
+
+    {%- set acme_custom_params = "--reloadcmd 'nginx -t && nginx -s reload'" %}
 
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
@@ -211,13 +217,11 @@ python_apps_app_virtualenv_python_version_{{ loop.index }}:
       - {{ app_params['virtualenv']['pyenv_version'] }}
 
 python_apps_app_virtualenv_pip_{{ loop.index }}:
-  pip.installed:
-    - name: virtualenv
-    - user: root
+  cmd.run:
     - cwd: /tmp
-    - bin_env: /usr/local/pyenv/shims/pip
-    - env_vars:
+    - env:
         PYENV_VERSION: {{ app_params['virtualenv']['pyenv_version'] }}
+    - name: /usr/local/pyenv/shims/pip install virtualenv
 
 python_apps_app_virtualenv_bin_{{ loop.index }}:
   file.managed:
@@ -517,9 +521,11 @@ python_apps_app_acme_run_{{ loop.index }}:
     - cwd: /opt/acme/home
     - shell: '/bin/bash'
             {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
-    - name: 'openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true'
+    - name: |
+        openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
             {%- else %}
-    - name: 'openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true'
+    - name: |
+        openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
             {%- endif %}
 
 python_apps_app_acme_replace_symlink_1_{{ loop.index }}:
@@ -560,7 +566,7 @@ app_link_sites_enabled_{{ loop.index }}:
         {%- endif %}
 
         {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
-app_nginx_reload_{{ loop.index }}:
+python_apps_nginx_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
     - name: 'service nginx configtest && service nginx reload'

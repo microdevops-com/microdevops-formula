@@ -1,0 +1,8 @@
+heartbeat_mesh:
+  sender:
+    cron: '*' # send heartbeats each minute
+    config: # see https://github.com/sysadmws/sysadmws-utils/blob/master/heartbeat_mesh/sender.yaml.example
+      enabled: True
+      receivers:
+        receiver1.example.com:
+          token: aaaaaaaaaaaaaaaaaaaaa
