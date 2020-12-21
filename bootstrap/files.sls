@@ -10,6 +10,15 @@ bootstrap_file_managed_{{ loop.index }}:
     - template: jinja
     - defaults: {{ file["values"] }}
 
+      {%- if "apply" in file %}
+        {%- set a_loop = loop %}
+        {%- for cmd in file["apply"] %}
+bootstrap_file_managed_run_{{ loop.index }}_{{ a_loop.index }}:
+  cmd.run:
+    - name: {{ cmd }}
+
+        {%- endfor %}
+      {%- endif %}
     {%- endfor %}
   {%- endif %}
 
