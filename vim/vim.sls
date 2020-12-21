@@ -18,5 +18,5 @@ vim_custom_syntax_files:
 
 vim_rewrite_default_editor:
   cmd.run:
-    - name: 'update-alternatives --set editor /usr/bin/vim.basic'
+    - name: 'if [ -f /etc/alternatives/editor ] ; then _vim_bin=$(which vim) && update-alternatives --set editor ${_vim_bin} ; else exit 0 ; fi'
     - runas: 'root'
