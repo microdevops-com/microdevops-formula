@@ -15,7 +15,17 @@ percona_client:
     - refresh: True
     - pkgs:
         - libmysqlclient-dev
+    {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|string = '8.0' %}
+        - percona-server-server
+    {%- else %}
         - percona-server-client-{{ pillar['percona']['version'] }}
+    {%- endif %}
+
+    {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|string = '8.0' %}
+percona_repo_8:
+  cmd.run:
+    - name: percona-release setup ps80
+    {%- endif %}
 
 percona_config_dir:
   file.directory:
@@ -112,7 +122,7 @@ percona_create_symlink_debian_sys_maint_to_root:
     - target: /etc/mysql/debian.cnf
         {% endif %}
 
-        {%- if pillar['percona']['secure_install'] is defined and pillar['percona']['secure_install'] is not none and pillar['percona']['secure_install'] and pillar['percona']['version']|string != '5.7' %}
+        {%- if pillar['percona']['secure_install'] is defined and pillar['percona']['secure_install'] is not none and pillar['percona']['secure_install'] and pillar['percona']['version']|string < '5.7' %}
 percona_disallow_root_remote_connection:
   mysql_query.run:
     - database: mysql
@@ -198,7 +208,7 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
           {%- endfor %}
         {%- endif %}
 
-        {%- if pillar['percona']['version']|string != '5.7' %}
+        {%- if pillar['percona']['version']|string < '5.7' %}
 percona_create_post_install_toolkit_functions:
     mysql_query.run:
     - database: mysql
