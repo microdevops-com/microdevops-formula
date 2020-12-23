@@ -1,6 +1,6 @@
 # IPv4
 127.0.0.1 localhost.localdomain localhost
-{{ ipv4_ext_address }} {{ full_hostname }} {{ short_hostname }}
+{{ ipv4_ext_ip }} {{ full_hostname }} {{ short_hostname }}
 #
 # IPv6
 ::1     ip6-localhost ip6-loopback
