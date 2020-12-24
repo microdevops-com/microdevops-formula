@@ -21,6 +21,10 @@ lxd_start:
   cmd.run:
     - name: 'systemctl unmask snap.lxd.daemon && systemctl start snap.lxd.daemon'
 
+lxd_wait_0:
+  cmd.run:
+    - name: 'sleep 5'
+
 lxd_lxcfs_settings:
   cmd.run:
     - name: 'ps ax | grep -v "ps ax" | grep lxcfs | grep enable-loadavg | grep enable-pidfd | grep enable-cfs || ( snap set lxd lxcfs.cfs=true && snap set lxd lxcfs.loadavg=true && snap set lxd lxcfs.pidfd=true && systemctl unmask snap.lxd.daemon && systemctl stop snap.lxd.daemon && systemctl start snap.lxd.daemon )'
