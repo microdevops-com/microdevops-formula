@@ -29,6 +29,11 @@ lxd_wait_1:
   cmd.run:
     - name: 'sleep 5'
 
+# temporarely create lxdbr0, sometimes it fails to detect needed ip, so create manually with some ip and then remove
+lxd_pre_init:
+  cmd.run:
+    - name: 'lxc network create lxdbr0 ipv4.address=172.16.0.1/12 ipv4.nat=true'
+
 lxd_init:
   cmd.run:
     - name: '/snap/bin/lxd init --auto --network-address=[::] --network-port=8443 --trust-password={{ pillar['lxd']['password'] }}'
