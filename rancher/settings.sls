@@ -82,8 +82,8 @@ rancher_user_token_{{ a_loop.index }}_{{ loop.index }}:
             "password": "{{ user["password"] }}",
             "ttl": 60000
           }' "https://{{ pillar["rancher"]["cluster_domain"] }}/v3-public/localProviders/local?action=login" | jq -r .token)
-        # Check with admin token if token with the needed description exist, make new token with user temp token if not
-        TOKEN=$(curl -sS -u "{{ pillar["rancher"]["bearer_token"] }}" --get "https://{{ pillar["rancher"]["cluster_domain"] }}/v3/tokens" \
+        # Check if token with the needed description exist, make new token if not
+        TOKEN=$(curl -sS -u "${USER_BEARER_TOKEN}" --get "https://{{ pillar["rancher"]["cluster_domain"] }}/v3/tokens" \
           | jq '.data[] | select(.description == "{{ token["description"] }}")' | jq -r .id | grep -q token- || \
           curl -sS -u "${USER_BEARER_TOKEN}" -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{
             "description": "{{ token["description"] }}"
