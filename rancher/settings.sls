@@ -66,7 +66,7 @@ rancher_user_token_dir_{{ a_loop.index }}_{{ loop.index }}:
 rancher_user_token_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
     - name: |
-        # Get user
+        # Get user just to check user exists
         USER_ID=$(curl -sS -u "{{ pillar["rancher"]["bearer_token"] }}" \
           --get --data-urlencode "username={{ user["username"] }}" \
           "https://{{ pillar["rancher"]["cluster_domain"] }}/v3/users" | jq .data | jq -r .[].id | head -n 1)
@@ -74,12 +74,19 @@ rancher_user_token_{{ a_loop.index }}_{{ loop.index }}:
           echo username not found
           exit 1
         fi
-        # Check if token with the same description exist, make new if not
+        # Even admin cannot create token for another user, but rancher has public api with auth and one can get temporary bearer token with auth
+        # https://forums.rancher.com/t/unable-to-create-api-keys-for-an-user-using-curl/12899/3
+        # https://rancher.com/adding-custom-nodes-kubernetes-cluster-rancher-2-0-tech-preview-2
+        USER_BEARER_TOKEN=$(curl -sS -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{
+            "username": "{{ user["username"] }}",
+            "password": "{{ user["password"] }}",
+            "ttl": 60000
+          }' "https://{{ pillar["rancher"]["cluster_domain"] }}/v3-public/localProviders/local?action=login" | jq -r .token)
+        # Check with admin token if token with the needed description exist, make new token with user temp token if not
         TOKEN=$(curl -sS -u "{{ pillar["rancher"]["bearer_token"] }}" --get "https://{{ pillar["rancher"]["cluster_domain"] }}/v3/tokens" \
           | jq '.data[] | select(.description == "{{ token["description"] }}")' | jq -r .id | grep -q token- || \
-          curl -sS -u "{{ pillar["rancher"]["bearer_token"] }}" -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{
-            "description": "{{ token["description"] }}",
-            "userId": "'${USER_ID}'"
+          curl -sS -u "${USER_BEARER_TOKEN}" -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{
+            "description": "{{ token["description"] }}"
           }' "https://{{ pillar["rancher"]["cluster_domain"] }}/v3/tokens" | jq -r .token)
         # Save token to file
         if [[ -z ${TOKEN} ]]; then
