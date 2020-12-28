@@ -1,4 +1,4 @@
-{% set rancher_version = "v2.4.9" %}
+{% set rancher_version = "v2.4.10" %}
 pkg:
   k8s-rancher:
     when: 'PKG_BEFORE_DEPLOY'
