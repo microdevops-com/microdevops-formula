@@ -80,6 +80,7 @@ rancher_user_token_{{ a_loop.index }}_{{ loop.index }}:
         USER_BEARER_TOKEN=$(curl -sS -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{
             "username": "{{ user["username"] }}",
             "password": "{{ user["password"] }}",
+            "description": "temp salt",
             "ttl": 60000
           }' "https://{{ pillar["rancher"]["cluster_domain"] }}/v3-public/localProviders/local?action=login" | jq -r .token)
         # Check if token with the needed description exist, make new token if not
