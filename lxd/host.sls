@@ -21,6 +21,10 @@ lxd_start:
   cmd.run:
     - name: 'systemctl unmask snap.lxd.daemon && systemctl start snap.lxd.daemon'
 
+lxd_wait_0:
+  cmd.run:
+    - name: 'sleep 5'
+
 lxd_lxcfs_settings:
   cmd.run:
     - name: 'ps ax | grep -v "ps ax" | grep lxcfs | grep enable-loadavg | grep enable-pidfd | grep enable-cfs || ( snap set lxd lxcfs.cfs=true && snap set lxd lxcfs.loadavg=true && snap set lxd lxcfs.pidfd=true && systemctl unmask snap.lxd.daemon && systemctl stop snap.lxd.daemon && systemctl start snap.lxd.daemon )'
@@ -28,6 +32,11 @@ lxd_lxcfs_settings:
 lxd_wait_1:
   cmd.run:
     - name: 'sleep 5'
+
+# temporarely create lxdbr0, sometimes it fails to detect needed ip, so create manually with some ip and then remove
+lxd_pre_init:
+  cmd.run:
+    - name: 'lxc network create lxdbr0 ipv4.address=172.16.0.1/12 ipv4.nat=true'
 
 lxd_init:
   cmd.run:
