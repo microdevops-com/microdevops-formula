@@ -50,11 +50,16 @@ ufw_simple_update_deb:
   pkg.installed:
     - sources:
       - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all_deadsnakes.deb'
-    {%- else %}
+    {%- elif (grains['oscodename'] == 'trusty' or grains['oscodename'] == 'xenial' ) %}
 ufw_simple_update_deb:
   pkg.installed:
     - sources:
       - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all.deb'
+    {%- else %}
+ufw_simple_update_deb:
+  pkg.latest:
+    - pkgs:
+        - ufw
     {%- endif %}
 
     # managed nat or custom rules
