@@ -19,7 +19,7 @@ rancher_user_{{ loop.index }}:
             "mustChangePassword": {{ 'true' if user["must_change_password"] else 'false' }},
             "name": "{{ user["name"] }}",
             "password": "{{ user["password"] }}",
-            "principalIds": ["local://${USER_ID}"]
+            "principalIds": ["local://'${USER_ID}'"]
           }' "https://{{ pillar["rancher"]["cluster_domain"] }}/v3/users/${USER_ID}"
         else
           # Create user
