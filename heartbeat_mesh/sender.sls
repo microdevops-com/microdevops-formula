@@ -16,7 +16,7 @@ heartbeat_mesh_sender_task:
     - name: |
         c:\windows\system32\schtasks.exe /create /tn heartbeat_mesh_sender /ru SYSTEM /sc MINUTE /tr "c:\salt\bin\python.exe c:\opt\sysadmws\heartbeat_mesh\sender.py" /np /f                                    {%- endif %}
 
-  {%- if salt["file.directory_exists"]("/opt/sysadmws/heartbeat_mesh") %}
+  {%- if salt["file.directory_exists"]("/opt/sysadmws/heartbeat_mesh") or grains["os"] in ["Windows"] %}
 heartbeat_mesh_sender_config:
   file.serialize:
     - name: /opt/sysadmws/heartbeat_mesh/sender.yaml
