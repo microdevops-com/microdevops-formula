@@ -95,6 +95,7 @@ docker_app_container_{{ loop.index }}:
     - environment: {{ app['environment'] }}
     - binds: {{ app['binds'] }}
     - networks: {{ app['networks'] }}
+    - privileged: {{ app['privileged'] | default(False) }}
 
       {%- if app['exec_after_deploy'] is defined and app['exec_after_deploy'] is not none %}
 docker_app_container_exec_{{ loop.index }}:
