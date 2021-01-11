@@ -114,6 +114,7 @@ app:
     apps:
       proto:
         image: php:7.3-fpm
+        privileged: False # optional, default False
         docker_registry_login:
           username: salt
           password: xxxxxxxxxxxxxxxxxxxx
