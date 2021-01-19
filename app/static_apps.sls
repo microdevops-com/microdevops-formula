@@ -516,8 +516,8 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
 static_apps_nginx_log_dir_{{ loop.index }}:
   file.directory:
     - name: '{{ app_params['nginx']['log']['dir'] }}'
-    - user: {{ app_params['nginx']['log']['dir_user']|default('root') }}
-    - group: {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+    - user: {{ app_params['nginx']['log']['dir_user']|default(app_params['user']) }}
+    - group: {{ app_params['nginx']['log']['dir_group']|default(app_params['group']) }}
     - mode: {{ app_params['nginx']['log']['dir_mode']|default('755') }}
     - makedirs: True
 
