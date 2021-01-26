@@ -1,7 +1,4 @@
 include:
-{% if grains['oscodename'] == 'bionic' %}
-  - bootstrap.bionic
-{% endif %}
-{% if grains['oscodename'] == 'focal' %}
-  - bootstrap.focal
-{% endif %}
+  - .{{ grains["oscodename"] }}
+  - .files
+  - .root_password_hash

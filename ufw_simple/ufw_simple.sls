@@ -50,11 +50,16 @@ ufw_simple_update_deb:
   pkg.installed:
     - sources:
       - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all_deadsnakes.deb'
-    {%- else %}
+    {%- elif (grains['oscodename'] == 'trusty' or grains['oscodename'] == 'xenial' ) %}
 ufw_simple_update_deb:
   pkg.installed:
     - sources:
-      - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all.deb'
+      - ufw: 'salt://ufw_simple/files/ufw_{{ pillar['ufw_simple']['version'] | default('0.35-4', true) }}_all.deb'
+    {%- else %}
+ufw_simple_update_deb:
+  pkg.latest:
+    - pkgs:
+        - ufw
     {%- endif %}
 
     # managed nat or custom rules
@@ -185,7 +190,7 @@ ufw_simple_nat_or_custom_managed_file_3:
 
 ufw_simple_nat_or_custom_managed_restart:
   cmd.run:
-    - name: 'ufw disable && sleep 5 && ufw enable'
+    - name: 'ufw disable && sleep 5 && ufw --force enable'
     - runas: root
     - onchanges:
       {%- if
@@ -208,7 +213,7 @@ ufw_simple_set_logging:
     {%- if (pillar['ufw_simple']['reset'] is defined) and (pillar['ufw_simple']['reset'] is not none) and (pillar['ufw_simple']['reset']) %}
 ufw_simple_reset:
   cmd.run:
-    - name: 'ufw --force reset && sleep 5 && ufw enable'
+    - name: 'ufw --force reset && sleep 5 && ufw --force enable'
     - runas: root
     {%- endif %}
 
@@ -301,7 +306,7 @@ ufw_simple_reset:
 
 ufw_simple_enable:
   cmd.run:
-    - name: 'ufw enable'
+    - name: 'ufw --force enable'
     - runas: root
 
   {%- endif %}

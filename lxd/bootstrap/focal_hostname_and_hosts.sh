@@ -14,6 +14,7 @@ ff02::2 ip6-allrouters
 
 # Salt
 $4 $3
+$6 $5
 EOM
 
 cat > /etc/hostname <<- EOM

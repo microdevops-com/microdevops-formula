@@ -12,7 +12,11 @@ pyenv_deps_1:
       - wget
       - curl
       - llvm
+  {%- if grains['oscodename'] in ['focal'] %}
+      - python3-pip
+  {%- else %}
       - python-pip
+  {%- endif %}
 
 pyenv_deps_2:
   cmd.run:

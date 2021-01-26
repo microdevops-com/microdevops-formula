@@ -25,6 +25,8 @@
       {%- set acme_force_renewal = " " %}
     {%- endif %}
 
+    {%- set acme_custom_params = "--reloadcmd 'nginx -t && nginx -s reload'" %}
+
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
     {%- else %}
@@ -472,9 +474,11 @@ php-fpm_apps_app_acme_run_{{ loop.index }}:
     - cwd: /opt/acme/home
     - shell: '/bin/bash'
             {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
-    - name: 'openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true'
+    - name: |
+        openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
             {%- else %}
-    - name: 'openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true'
+    - name: |
+        openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
             {%- endif %}
 
 php-fpm_apps_app_acme_replace_symlink_1_{{ loop.index }}:
@@ -542,9 +546,9 @@ php-fpm_apps_app_pool_config_{{ loop.index }}:
 php-fpm_apps_pool_log_dir_{{ loop.index }}:
   file.directory:
     - name: '{{ (app_params['pool']['log']|default(dict()))['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/'
-    - user: {{ (app_params['pool']['log']|default(dict()))['dir_user']|default('root') }}
-    - group: {{ (app_params['pool']['log']|default(dict()))['dir_group']|default('adm') }}
-    - mode: {{ (app_params['pool']['log']|default(dict()))['dir_mode']|default('775') }}
+    - user: {{ (app_params['pool']['log']|default(dict()))['dir_user']|default(app_params['user']) }}
+    - group: {{ (app_params['pool']['log']|default(dict()))['dir_group']|default(app_params['group']) }}
+    - mode: {{ (app_params['pool']['log']|default(dict()))['dir_mode']|default('755') }}
     - makedirs: True
 
 php-fpm_apps_pool_log_file_{{ loop.index }}:
@@ -552,7 +556,7 @@ php-fpm_apps_pool_log_file_{{ loop.index }}:
     - name: '{{ (app_params['pool']['log']|default(dict()))['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log'
     - user: {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }}
     - group: {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
-    - mode: {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('664') }}
+    - mode: {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('644') }}
 
 php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
   file.managed:
@@ -565,7 +569,7 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
           rotate {{ (app_params['pool']['log']|default(dict()))['rotate_count']|default('31') }}
           {{ (app_params['pool']['log']|default(dict()))['rotate_when']|default('daily') }}
           missingok
-          create {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('664') }} {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }} {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
+          create {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('644') }} {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }} {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
           compress
           delaycompress
           postrotate
@@ -577,8 +581,8 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
 php-fpm_apps_nginx_log_dir_{{ loop.index }}:
   file.directory:
     - name: '{{ app_params['nginx']['log']['dir'] }}'
-    - user: {{ app_params['nginx']['log']['dir_user']|default('root') }}
-    - group: {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+    - user: {{ app_params['nginx']['log']['dir_user']|default(app_params['user']) }}
+    - group: {{ app_params['nginx']['log']['dir_group']|default(app_params['group']) }}
     - mode: {{ app_params['nginx']['log']['dir_mode']|default('755') }}
     - makedirs: True
 
@@ -594,7 +598,7 @@ php-fpm_apps_nginx_logrotate_file_{{ loop.index }}:
           rotate {{ app_params['nginx']['log']['rotate_count']|default('31') }}
           {{ app_params['nginx']['log']['rotate_when']|default('daily') }}
           missingok
-          create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default('www-data') }} {{ app_params['nginx']['log']['log_group']|default('adm') }}
+          create {{ app_params['nginx']['log']['log_mode']|default('640') }} {{ app_params['nginx']['log']['log_user']|default(app_params['user']) }} {{ app_params['nginx']['log']['log_group']|default(app_params['group']) }}
           compress
           delaycompress
           postrotate
@@ -618,7 +622,7 @@ app_php-fpm_reload_{{ loop.index }}:
         {%- endif %}
 
         {%- if (pillar['nginx_reload'] is defined and pillar['nginx_reload'] is not none and pillar['nginx_reload']) or (app_params['nginx']['reload'] is defined and app_params['nginx']['reload'] is not none and app_params['nginx']['reload']) %}
-app_nginx_reload_{{ loop.index }}:
+php-fpm_apps_nginx_reload_{{ loop.index }}:
   cmd.run:
     - runas: 'root'
     - name: 'service nginx configtest && service nginx reload'

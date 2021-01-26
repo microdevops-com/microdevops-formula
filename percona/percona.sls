@@ -9,13 +9,25 @@ percona_repo_deb:
       - percona-release: 'salt://percona/files/percona-release_0.1-6.{{ grains['oscodename'] }}_all.deb'
     {%- endif %}
 
+    {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|float >= 8.0 %}
+percona_repo_8:
+  cmd.run:
+    - name: percona-release setup ps80
+    - require:
+      - pkg: percona_repo_deb
+    {%- endif %}
+
     {%- if pillar['percona']['version'] is defined and pillar['percona']['version'] is not none %}
 percona_client:
   pkg.installed:
     - refresh: True
     - pkgs:
         - libmysqlclient-dev
+    {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|float >= 8.0 %}
+        - percona-server-server
+    {%- else %}
         - percona-server-client-{{ pillar['percona']['version'] }}
+    {%- endif %}
 
 percona_config_dir:
   file.directory:
@@ -40,11 +52,19 @@ percona_debconf_utils:
       {%- if pillar['percona']['root_password'] is defined and pillar['percona']['root_password'] is not none %}
 percona_debconf:
   debconf.set:
+        {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|float >= 8.0 %}
+    - name: percona-server-server
+        {%- else %}
     - name: percona-server-server-{{ pillar['percona']['version'] }}
+        {%- endif %}
     - data:
         'percona-server-server/root_password': {'type': 'password', 'value': '{{ pillar["percona"]["root_password"] }}'}
         'percona-server-server/root_password_again': {'type': 'password', 'value': '{{ pillar["percona"]["root_password"] }}'}
+        {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|float >= 8.0 %}
+        'percona-server-server/start_on_boot': {'type': 'boolean', 'value': 'true'}
+        {%- else %}
         'percona-server-server-{{ pillar['percona']['version'] }}/start_on_boot': {'type': 'boolean', 'value': 'true'}
+        {%- endif %}
     - require_in:
       - pkg: percona_server
     - require:
@@ -52,7 +72,11 @@ percona_debconf:
 
 percona_server:
   pkg.installed:
+        {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|float >= 8.0 %}
+    - name: percona-server-server
+        {%- else %}
     - name: percona-server-server-{{ pillar['percona']['version']  }}
+        {%- endif %}
 
 percona_svc:
   service.running:
@@ -84,7 +108,7 @@ percona_remove_limits:
       - service: percona_svc
         {%- endif %}
 
-        {%- if pillar['percona']['version']|string == '5.7' %}
+        {%- if pillar['percona']['version']|float >= 5.7 %}
 percona_debian_conf:
   file.managed:
     - name: '/etc/mysql/debian.cnf'
@@ -102,7 +126,6 @@ percona_debian_conf:
         user     = root
         password = {{ pillar['percona']['root_password'] }}
         socket   = /var/run/mysqld/mysqld.sock
-        basedir  = /usr
         {%- endif %}
 
         {% if not salt['file.file_exists' ]('/root/.my.cnf') %}
@@ -112,7 +135,7 @@ percona_create_symlink_debian_sys_maint_to_root:
     - target: /etc/mysql/debian.cnf
         {% endif %}
 
-        {%- if pillar['percona']['secure_install'] is defined and pillar['percona']['secure_install'] is not none and pillar['percona']['secure_install'] and pillar['percona']['version']|string != '5.7' %}
+        {%- if pillar['percona']['secure_install'] is defined and pillar['percona']['secure_install'] is not none and pillar['percona']['secure_install'] and pillar['percona']['version']|float < 5.7 %}
 percona_disallow_root_remote_connection:
   mysql_query.run:
     - database: mysql
@@ -198,7 +221,7 @@ mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
           {%- endfor %}
         {%- endif %}
 
-        {%- if pillar['percona']['version']|string != '5.7' %}
+        {%- if pillar['percona']['version']|float < 5.7 %}
 percona_create_post_install_toolkit_functions:
     mysql_query.run:
     - database: mysql
@@ -214,3 +237,4 @@ percona_create_post_install_toolkit_functions:
     {%- endif %}
   {%- endif %}
 {% endif %}
+

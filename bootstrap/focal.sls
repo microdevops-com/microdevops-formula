@@ -5,12 +5,12 @@ uptodate:
 dist_upgrade:
   cmd.run:
     - name: |
-        apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' dist-upgrade
+        apt-get -qy -o "DPkg::Options::=--force-confold" -o "DPkg::Options::=--force-confdef" dist-upgrade
 
 bashrc:
   file.managed:
-    - name: '/etc/bash.bashrc'
-    - source: salt://bootstrap/files/{{ grains['oscodename'] }}_bashrc
+    - name: /etc/bash.bashrc
+    - source: salt://bootstrap/files/bashrc/{{ grains["oscodename"] }}
     - mode: 0644
 
 pkg_latest:
@@ -19,6 +19,7 @@ pkg_latest:
     - pkgs:
       # console tools
       - vim
+      - nano
       - links
       - screen
       - tmux
@@ -36,6 +37,7 @@ pkg_latest:
       - apt-transport-https
       - apt-listchanges
       - gnupg
+      - python3-apt
       # man
       - doc-debian
       - info
@@ -60,6 +62,7 @@ pkg_latest:
       - telnet
       - strace
       - whois
+      - net-tools
       # build
       - build-essential
       - git
@@ -74,7 +77,9 @@ pkg_latest:
       # mail
       - postfix
       - s-nail 
-{% if grains['virtual'] == 'physical' %}
+      # python
+      - python3-pip
+{% if grains["virtual"] == "physical" %}
       # physical
       - smartmontools
       - bridge-utils
@@ -87,11 +92,11 @@ pkg_latest:
 full_hostname:
   cmd.run:
     - name: |
-        cat /etc/hostname | grep -q {{ pillar['network']['domain'] }} && \
+        cat /etc/hostname | grep -q {{ pillar["bootstrap"]["network"]["domain"] }} && \
         echo 'hostname is already full' || \
-        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar['network']['domain'] }} > /etc/hostname && hostname $(cat /etc/hostname) )
+        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar["bootstrap"]["network"]["domain"] }} > /etc/hostname && hostname $(cat /etc/hostname) )
 
-{% if grains['virtual'] == 'physical' %}
+{% if grains["virtual"] == "physical" %}
 swapiness:
   sysctl.present:
     - name: vm.swappiness
@@ -107,13 +112,13 @@ mdadm_config_hack:
   file.replace:
     - name: /etc/mdadm/mdadm.conf
     - pattern: '^MAILADDR .*$'
-    - repl: 'MAILADDR {{ pillar["monitoring"]["email"]}}'
+    - repl: 'MAILADDR {{ pillar["bootstrap"]["monitoring"]["email"] }}'
 
 mdadm_debconf:
   debconf.set:
     - name: mdadm
     - data:
-        'mdadm/mail_to': {'type': 'string', 'value': '{{ pillar["monitoring"]["email"]}}' }
+        'mdadm/mail_to': {'type': 'string', 'value': '{{ pillar["bootstrap"]["monitoring"]["email"] }}' }
         'mdadm/start_daemon': {'type': 'boolean', 'value': True}
         'mdadm/autocheck': {'type': 'boolean', 'value': True}
         'mdadm/autoscan': {'type': 'boolean', 'value': True}

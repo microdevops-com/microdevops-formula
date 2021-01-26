@@ -1,8 +1,8 @@
 #!/bin/bash
 
 /usr/bin/apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install wget
-echo "deb http://repo.saltstack.com/apt/ubuntu/$(lsb_release -sr)/amd64/$2 $(lsb_release -sc) main">> /etc/apt/sources.list.d/saltstack.list
-/usr/bin/wget -qO - https://repo.saltstack.com/apt/ubuntu/$(lsb_release -sr)/amd64/$2/SALTSTACK-GPG-KEY.pub | apt-key add -
+echo "deb http://archive.repo.saltstack.com/apt/ubuntu/$(lsb_release -sr)/amd64/$2 $(lsb_release -sc) main">> /etc/apt/sources.list.d/saltstack.list
+/usr/bin/wget -qO - https://archive.repo.saltstack.com/apt/ubuntu/$(lsb_release -sr)/amd64/$2/SALTSTACK-GPG-KEY.pub | apt-key add -
 
 [[ -d /home/ubuntu ]] && /usr/sbin/userdel -r "ubuntu"
 

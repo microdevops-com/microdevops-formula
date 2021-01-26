@@ -10,6 +10,9 @@ alerta-urlmon_conf:
         # This file is managed by Salt, changes will be overwritten
         ENDPOINT = "{{ pillar['alerta-urlmon']['global_endpoint'] }}"
         API_KEY = "{{ pillar['alerta-urlmon']['global_api_key'] }}"
+        LOOP_EVERY = {{ pillar['alerta-urlmon']['loop_every'] if 'loop_every' in pillar['alerta-urlmon'] else 60 }}
+        SERVER_THREADS = {{ pillar['alerta-urlmon']['server_threads'] if 'server_threads' in pillar['alerta-urlmon'] else 20 }}
+        QUEUE_WARN = {{ pillar['alerta-urlmon']['queue_warn'] if 'queue_warn' in pillar['alerta-urlmon'] else 100 }}
         checks = [
   {%- for group, checks in pillar['alerta-urlmon']['checks'].items()|sort %}
     {%- for check in checks %}

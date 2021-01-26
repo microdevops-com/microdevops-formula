@@ -23,7 +23,11 @@ docker_install_2:
     - reload_modules: True
     - pkgs:
         - docker-ce: '{{ pillar['app']['docker']['docker-ce_version'] }}*'
-        - python-pip
+  {%- if grains['oscodename'] in ['focal'] %}
+        - python3-docker
+  {%- else %}
+        - python-docker
+  {%- endif %}
 
 docker_pip_install:
   pip.installed:
@@ -91,6 +95,7 @@ docker_app_container_{{ loop.index }}:
     - environment: {{ app['environment'] }}
     - binds: {{ app['binds'] }}
     - networks: {{ app['networks'] }}
+    - privileged: {{ app['privileged'] | default(False) }}
 
       {%- if app['exec_after_deploy'] is defined and app['exec_after_deploy'] is not none %}
 docker_app_container_exec_{{ loop.index }}:

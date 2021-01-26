@@ -2,8 +2,8 @@
 GRAND_EXIT=0
 
 if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" ]; then
-	echo ERROR: needed args missing: use rsnapshot_backup_check_backup.sh TIMEOUT TARGET SSH/SALT SSH_HOST SSH_PORT
-	echo ERROR: SSH_HOST, SSH_PORT - optional
+	echo ERROR: needed args missing: use rsnapshot_backup_check_backup.sh TIMEOUT TARGET SSH/SALT SSH_HOST SSH_PORT SSH_JUMP
+	echo ERROR: SSH_HOST, SSH_PORT, SSH_JUMP - optional
 	exit 1
 fi
 
@@ -12,6 +12,11 @@ TARGET=$2
 RSNAPSHOT_BACKUP_TYPE=$3
 
 if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
+	if [ "_$6" = "_" ]; then
+		SSH_JUMP=""
+	else
+		SSH_JUMP="-J $6"
+	fi
 	if [ "_$5" = "_" ]; then
 		SSH_PORT=22
 	else
@@ -31,7 +36,7 @@ exec > >(tee ${OUT_FILE})
 exec 2>&1
 
 if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
-	( set -x ; set -o pipefail && stdbuf -oL -eL ssh -o BatchMode=yes -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_HOST} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
+	( set -x ; set -o pipefail && stdbuf -oL -eL ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 elif [ "${RSNAPSHOT_BACKUP_TYPE}" = "SALT" ]; then
 	( set -x ; set -o pipefail && stdbuf -oL -eL salt --force-color -t ${SALT_TIMEOUT} ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A | sed -e 's/33mNOTICE/32mNOTICE/' ) || GRAND_EXIT=1
 else

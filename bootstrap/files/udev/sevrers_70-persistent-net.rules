@@ -1,0 +1,4 @@
+SUBSYSTEM=="net",ACTION=="add",DRIVERS=="?*",ATTR{address}=="{{ mac_ext0 }}",ATTR{type}=="1",KERNEL=="eth*",NAME="ext1"
+SUBSYSTEM=="net",ACTION=="add",DRIVERS=="?*",ATTR{address}=="{{ mac_ext1 }}",ATTR{type}=="1",KERNEL=="eth*",NAME="ext2"
+SUBSYSTEM=="net",ACTION=="add",DRIVERS=="?*",ATTR{address}=="{{ mac_int0 }}",ATTR{type}=="1",KERNEL=="eth*",NAME="int1"
+SUBSYSTEM=="net",ACTION=="add",DRIVERS=="?*",ATTR{address}=="{{ mac_int1 }}",ATTR{type}=="1",KERNEL=="eth*",NAME="int2"

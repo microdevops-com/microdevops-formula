@@ -23,8 +23,6 @@
 
 # rsnapshot_backup => rsnapshot_backup/pillar.example
 
-# unit_status_alert => unit_status_alert/pillar.example
-
 # sentry => sentry/pillar.example
 
 # rancher => rancher/pillar.example

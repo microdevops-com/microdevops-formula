@@ -61,6 +61,9 @@ rsnapshot_backup:
         connect_user: toor # optional, root by default, user for ssh connect
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
+        mysqldump_args: # optional, pass additional arguments to mysqldump
+          --ignore-table=dbname.table1
+          --ignore-table=dbname.table2
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump folder over ssh
         data:
           - ALL # special meaning, expands to all databases available

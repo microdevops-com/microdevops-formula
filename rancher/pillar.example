@@ -1,47 +1,76 @@
 # vi: set ft=yaml:
 #
-# usage:
+# Usage:
 #
-# - add
-#   echo "1048576" > /sys/module/nf_conntrack/parameters/hashsize
-#   to /etc/rc.local on host machine if running inside LXD
+# - Add pkg.k8s.lxd_host pillar to host machine if running inside LXD and apply.
+#   Check 1048576 in /sys/module/nf_conntrack/parameters/hashsize after apply.
 #
-# - prepare nodes, node fo nginx proxy, node for command exec
+# - Avoid more than 3 NS on nodes, otherwise you will be flooded with "DNSConfigForming Nameserver limits were exceeded, some nameservers have been omitted".
 #
-# - generate new private key for usage in this pillar
+# - Prepare nodes, node fo nginx proxy (optional if vendor cloud balancer is not used), host for command.
 #
-# - prepare this pillar and assign it for all hosts
+# - Ensure nodes are accessible from command host by ssh.
+#   Ensure needed firewall ports open on cluster nodes between each other (or all traffic open inside cluster).
 #
-# - salt rancher*.dev.example.com saltutil.refresh_pillar
+# - Ensure internet and nodes are accessible from inside docker on nodes (may require nat_managed_docker_eth0, nat_managed_docker_eth1 etc).
 #
-# - install binaries, cluster, yaml etc
-#   salt rancher*.dev.example.com state.apply rancher.prereqs
+# - Docker will manipulate iptables on nodes, so add input deny rules from internet if node has internet ip.
 #
-# - rke up
-#   salt ranchercmdSOME.dev.example.com state.apply rancher.rke_up
+# - Generate new private key for usage in this pillar:
+#   ssh-keygen -N "" -t ed25519 -f ./cluster_name -C cluster_name
 #
-# - install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar)
-#   salt ranchercmdSOME.dev.example.com state.apply rancher.install
+# - Prepare this pillar and assign it for all nodes and command host.
 #
-# - open rancher web admin
+# - salt -L 'srv1.example.com,*.rancher.dev.example.com' saltutil.refresh_pillar
 #
-# - give password and url
+# - Install binaries, cluster, yaml etc (ensure state run on command host, nginx nodes (if needed) and nodes:
+#   salt '*.rancher.dev.example.com' state.apply rancher.prereqs
 #
-# - wait for provisioning
+# - rke up:
+#   salt srv1.example.com state.apply rancher.rke_up
 #
-# - take bearer_token from admin - API & Keys - add key and put it below
+# - Install helm, rancher chart and acme.sh cert (requires working acme.sh using pkg pillar):
+#   salt srv1.example.com state.apply rancher.install
 #
-# - apply users
-#   salt ranchercmdSOME.dev.example.com state.apply rancher.users
+# - Open rancher web admin.
 #
-# last two steps are not required to do from each command host and should be done once
+# - Give password and url (in cluster manager old UI).
 #
-# docker versions:
+# - Wait for provisioning if needed.
+#
+# - Add Monitoring Chart from Marketplace. Select Chart Options - Edit as YAML to provide nodeSelector: {dedicated: monitoring}.
+#
+# - Add Google Auth from Global. Assign Global Roles for Groups from Google Auth.
+#
+# - If you need to manage projects, local users (e.g. for deployment), tokens, project membership:
+#   Login with Google Auth (otherwise token will not see OAuth principles).
+#   Make new API Key from admin user - API & Keys - Add key - no scope.
+#   Take Bearer Token (consists of Access Key:Secret Key) and put it in the pillar below.
+#   Add users and projects pillar data.
+#   Apply: salt srv1.example.com state.apply rancher.settings
+#   Check projects, users, membership, etc.
+#   Check tokens in /opt/rancher/clusters/cluster_name/tokens/username/*.
+#   Check k8s kubectl: kubectl --server=https://cluster_name/k8s/clusters/local --token=token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx get pods --all-namespaces
+#
+# Docker versions:
 # - 18.06.3+ - works inside xenial, bionic LXD containers, but apparmor shoud be disabled on the host
-# - 5:19.03.12 - works inside focal LXD containers
+# - 5:19.03.12+ - works inside focal LXD containers
+#
+# The only CNI plugin found working with Hetzner vSwitch is calico with MTU < 1350.
+#
+# If vSwitch is not needed, this canal configuration works in Hetzner cloud network:
+# network:
+#   plugin: canal
+#   options:
+#     canal_iface: eth1
+#     canal_flannel_backend_type: vxlan
+#   mtu: 1300
+#   node_selector: {}
+#   canal_network_provider:
+#     iface: eth1
 
 rancher:
-  cluster_name: dev
+  cluster_name: rancher.dev.example.com
   cluster_domain: rancher.dev.example.com
   cluster_ssh_private_key: |
     -----BEGIN OPENSSH PRIVATE KEY-----
@@ -52,35 +81,113 @@ rancher:
   cluster_cidr: 10.42.0.0/16
   cluster_ip_range: 10.43.0.0/16
   cluster_dns_server: 10.43.0.10
+  node_max_pods: 110
   command_hosts:
-    - ranchercmd1.dev.example.com
-    - ranchercmd2.dev.example.com
-    - ranchercmd3.dev.example.com
+    - srv1.example.com
   nginx_hosts:
-    - rancherweb1.dev.example.com
-    - rancherweb2.dev.example.com
-    - rancherweb3.dev.example.com
-  docker-ce_version: 5:19.03.12
+    - web1.rancher.dev.example.com
+    - web2.rancher.dev.example.com
+    - web3.rancher.dev.example.com
+  docker-ce_version: 5:19.03.13
+  rke_version: v1.2.3
+  helm_version: v3.5.0
+  rancher_cli_version: v2.4.10
+  cluster_yml: cluster_v1.19.4.yml
+  ingress_node_selector:
+    dedicated: general
+  monitoring_node_selector:
+    dedicated: monitoring
+  network:
+    plugin: calico
+    options: {}
+    mtu: 1350
+    node_selector: {}
   nodes:
-    - address: rancher1.dev.example.com
+    - address: cp1.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.2
       user: root
-      role: ['controlplane', 'worker', 'etcd']
-    - address: rancher2.dev.example.com
+      role:
+        - controlplane
+        - etcd
+      labels: {}
+      taints: []
+    - address: cp2.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.3
       user: root
-      role: ['controlplane', 'worker', 'etcd']
-    - address: rancher3.dev.example.com
+      role:
+        - controlplane
+        - etcd
+      labels: {}
+      taints: []
+    - address: cp3.rancher.dev.example.com
       port: 22
       internal_address: 10.0.10.4
       user: root
-      role: ['controlplane', 'worker', 'etcd']
+      role:
+        - controlplane
+        - etcd
+      labels: {}
+      taints: []
+    - address: worker1.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.5
+      user: root
+      role:
+        - worker
+      labels:
+        dedicated: general
+      taints: []
+    - address: worker2.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.6
+      user: root
+      role:
+        - worker
+      labels:
+        dedicated: general
+      taints: []
+    - address: worker3.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.7
+      user: root
+      role:
+        - worker
+      labels:
+        dedicated: general
+      taints: []
+    - address: mon1.rancher.dev.example.com
+      port: 22
+      internal_address: 10.0.10.8
+      user: root
+      role:
+        - worker
+      labels:
+        dedicated: monitoring
+      taints:
+        - key: dedicated
+          value: monitoring
+          effect: PreferNoSchedule
   bearer_token: token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # add after install (taken from web admin), used to manage users via api
   users:
-    - username: user
+    - username: prj_one
       password: password
-      name: Some User
-      description: Some Description
+      name: Project One
+      description: User to deploy Project One
       must_change_password: False
+      global_permissions: user # user-base user restricted-admin admin
+      tokens:
+        - description: prj_one-gitlab # state will not get another token with the same description if already exists
+  projects:
+    - name: Project One
+      description: Project One
+      members:
+        users:
+          - username: prj_one
+            project_permissions: project-owner # read-only project-member project-owner
+          - name: John Doe # Google users can be found by name only after first login in Web UI
+            project_permissions: read-only
+        groups:
+          - groupname: dev@example.com # Google groups will not be found until first checkout in Web UI, e.g. after assigning Global Role
+            project_permissions: project-member
