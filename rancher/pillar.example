@@ -90,7 +90,7 @@ rancher:
     - web3.rancher.dev.example.com
   docker-ce_version: 5:19.03.13
   rke_version: v1.2.3
-  helm_version: v3.4.1
+  helm_version: v3.5.0
   rancher_cli_version: v2.4.10
   cluster_yml: cluster_v1.19.4.yml
   ingress_node_selector:

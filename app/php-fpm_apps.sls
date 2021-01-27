@@ -546,9 +546,9 @@ php-fpm_apps_app_pool_config_{{ loop.index }}:
 php-fpm_apps_pool_log_dir_{{ loop.index }}:
   file.directory:
     - name: '{{ (app_params['pool']['log']|default(dict()))['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/'
-    - user: {{ (app_params['pool']['log']|default(dict()))['dir_user']|default('root') }}
-    - group: {{ (app_params['pool']['log']|default(dict()))['dir_group']|default('adm') }}
-    - mode: {{ (app_params['pool']['log']|default(dict()))['dir_mode']|default('775') }}
+    - user: {{ (app_params['pool']['log']|default(dict()))['dir_user']|default(app_params['user']) }}
+    - group: {{ (app_params['pool']['log']|default(dict()))['dir_group']|default(app_params['group']) }}
+    - mode: {{ (app_params['pool']['log']|default(dict()))['dir_mode']|default('755') }}
     - makedirs: True
 
 php-fpm_apps_pool_log_file_{{ loop.index }}:
@@ -556,7 +556,7 @@ php-fpm_apps_pool_log_file_{{ loop.index }}:
     - name: '{{ (app_params['pool']['log']|default(dict()))['dir']|default('/var/log/php') }}/{{ app_params['pool']['php_version'] }}-fpm/{{ phpfpm_app }}.error.log'
     - user: {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }}
     - group: {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
-    - mode: {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('664') }}
+    - mode: {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('644') }}
 
 php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
   file.managed:
@@ -569,7 +569,7 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
           rotate {{ (app_params['pool']['log']|default(dict()))['rotate_count']|default('31') }}
           {{ (app_params['pool']['log']|default(dict()))['rotate_when']|default('daily') }}
           missingok
-          create {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('664') }} {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }} {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
+          create {{ (app_params['pool']['log']|default(dict()))['log_mode']|default('644') }} {{ (app_params['pool']['log']|default(dict()))['log_user']|default(app_params['user']) }} {{ (app_params['pool']['log']|default(dict()))['log_group']|default(app_params['group']) }}
           compress
           delaycompress
           postrotate
@@ -581,8 +581,8 @@ php-fpm_apps_pool_logrotate_file_{{ loop.index }}:
 php-fpm_apps_nginx_log_dir_{{ loop.index }}:
   file.directory:
     - name: '{{ app_params['nginx']['log']['dir'] }}'
-    - user: {{ app_params['nginx']['log']['dir_user']|default('root') }}
-    - group: {{ app_params['nginx']['log']['dir_group']|default('adm') }}
+    - user: {{ app_params['nginx']['log']['dir_user']|default(app_params['user']) }}
+    - group: {{ app_params['nginx']['log']['dir_group']|default(app_params['group']) }}
     - mode: {{ app_params['nginx']['log']['dir_mode']|default('755') }}
     - makedirs: True
 

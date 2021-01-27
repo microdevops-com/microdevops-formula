@@ -54,7 +54,7 @@ ufw_simple_update_deb:
 ufw_simple_update_deb:
   pkg.installed:
     - sources:
-      - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all.deb'
+      - ufw: 'salt://ufw_simple/files/ufw_{{ pillar['ufw_simple']['version'] | default('0.35-4', true) }}_all.deb'
     {%- else %}
 ufw_simple_update_deb:
   pkg.latest:

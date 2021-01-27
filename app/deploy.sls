@@ -1,5 +1,4 @@
 include:
-  - cloudflare
   - pkg.before_deploy
   - proftpd.users
 {% if pillar['postgres'] is defined and pillar['postgres'] is not none %}

@@ -1,4 +1,4 @@
-{% set helm_version = "v3.4.1" %}
+{% set helm_version = "v3.5.0" %}
 pkg:
   k8s-helm:
     when: 'PKG_BEFORE_DEPLOY'
