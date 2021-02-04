@@ -126,5 +126,5 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 			"ci_job_url": "'${CI_JOB_URL}'",
 			"ci_pipeline_url": "'${CI_PIPELINE_URL}'"
 		}
-	}' | /opt/sysadmws/notify_devilry/notify_devilry.py --debug
+	}' | /opt/sysadmws/notify_devilry/notify_devilry.py
 fi
