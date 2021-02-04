@@ -4,102 +4,97 @@ set -e
 # By default do not send notify
 NOTIFY_SEND=0
 
-# Run alerting only if minion connected to this master, 
-if cat alive_minions/${CI_RUNNER_DESCRIPTION}_${SALT_MINION} | grep -q 1; then
+# Pipelines for rsnapshot_backup
+if [[ -n "$RSNAPSHOT_BACKUP_TYPE" ]]; then
 
-	# Pipelines for rsnapshot_backup
-	if [[ -n "$RSNAPSHOT_BACKUP_TYPE" ]]; then
+	NOTIFY_SERVICE=pipeline_rsnapshot_backup
+	NOTIFY_RESOURCE=${SALT_MINION}
 
-		NOTIFY_SERVICE=pipeline_rsnapshot_backup
-		NOTIFY_RESOURCE=${SALT_MINION}
+	# Failed job on any stage - send notify
+	if [[ "$CI_JOB_STATUS" == "failed" ]]; then
 
-		# Failed job on any stage - send notify
-		if [[ "$CI_JOB_STATUS" == "failed" ]]; then
+		# Consider check_backup as major
+		if [[ $CI_JOB_NAME =~ rsnapshot_backup_check_backup ]]; then
+			NOTIFY_SEVERITY=major
+			NOTIFY_SEND=1
+			NOTIFY_EVENT=pipeline_rsnapshot_backup_check_backup_failed
+			NOTIFY_VALUE=failed
+			NOTIFY_TEXT="Pipeline for rsnapshot_backup failed on job check_backup ${CI_JOB_URL}"
+			NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_failed","pipeline_rsnapshot_backup_ok"]'
 
-			# Consider check_backup as major
-			if [[ $CI_JOB_NAME =~ rsnapshot_backup_check_backup ]]; then
-				NOTIFY_SEVERITY=major
-				NOTIFY_SEND=1
-				NOTIFY_EVENT=pipeline_rsnapshot_backup_check_backup_failed
-				NOTIFY_VALUE=failed
-				NOTIFY_TEXT="Pipeline for rsnapshot_backup failed on job check_backup ${CI_JOB_URL}"
-				NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_failed","pipeline_rsnapshot_backup_ok"]'
+		# Consider check_coverage as minor
+		elif [[ $CI_JOB_NAME =~ rsnapshot_backup_check_coverage ]]; then
+			NOTIFY_SEVERITY=minor
+			NOTIFY_SEND=1
+			NOTIFY_EVENT=pipeline_rsnapshot_backup_check_coverage_failed
+			NOTIFY_VALUE=failed
+			NOTIFY_TEXT="Pipeline for rsnapshot_backup failed on job check_coverage ${CI_JOB_URL}"
+			NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_backup_failed","pipeline_rsnapshot_backup_failed","pipeline_rsnapshot_backup_ok"]'
 
-			# Consider check_coverage as minor
-			elif [[ $CI_JOB_NAME =~ rsnapshot_backup_check_coverage ]]; then
-				NOTIFY_SEVERITY=minor
-				NOTIFY_SEND=1
-				NOTIFY_EVENT=pipeline_rsnapshot_backup_check_coverage_failed
-				NOTIFY_VALUE=failed
-				NOTIFY_TEXT="Pipeline for rsnapshot_backup failed on job check_coverage ${CI_JOB_URL}"
-				NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_backup_failed","pipeline_rsnapshot_backup_failed","pipeline_rsnapshot_backup_ok"]'
-
-			# All other stages are critical
-			else
-				NOTIFY_SEVERITY=critical
-				NOTIFY_SEND=1
-				NOTIFY_EVENT=pipeline_rsnapshot_backup_failed
-				NOTIFY_VALUE=failed
-				NOTIFY_TEXT="Pipeline for rsnapshot_backup failed ${CI_JOB_URL}"
-				NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_backup_failed","pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_ok"]'
-			fi
-
-		# Successful job only at last stage - check_coverage - send ok
-		elif [[ "$CI_JOB_STATUS" == "success" ]]; then
-
-			if [[ $CI_JOB_NAME =~ rsnapshot_backup_check_coverage ]]; then
-				NOTIFY_SEVERITY=ok
-				NOTIFY_SEND=1
-				NOTIFY_EVENT=pipeline_rsnapshot_backup_ok
-				NOTIFY_VALUE=ok
-				NOTIFY_TEXT="Pipeline for rsnapshot_backup succeeded ${CI_PIPELINE_URL}"
-				NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_backup_failed","pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_failed"]'
-			fi
-
+		# All other stages are critical
+		else
+			NOTIFY_SEVERITY=critical
+			NOTIFY_SEND=1
+			NOTIFY_EVENT=pipeline_rsnapshot_backup_failed
+			NOTIFY_VALUE=failed
+			NOTIFY_TEXT="Pipeline for rsnapshot_backup failed ${CI_JOB_URL}"
+			NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_backup_failed","pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_ok"]'
 		fi
 
-	# Pipelines for salt_cmd
-	elif [[ -n "$SALT_CMD" ]]; then
+	# Successful job only at last stage - check_coverage - send ok
+	elif [[ "$CI_JOB_STATUS" == "success" ]]; then
 
-		NOTIFY_SERVICE=pipeline_salt_cmd
-		SALT_CMD_DECODED=$(echo ${SALT_CMD} | base64 -d)
-		SALT_CMD_SAFE=$(echo ${SALT_CMD_DECODED} | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | cut -c -80)
-		NOTIFY_RESOURCE=${SALT_MINION}:${SALT_CMD_SAFE}
+		if [[ $CI_JOB_NAME =~ rsnapshot_backup_check_coverage ]]; then
+			NOTIFY_SEVERITY=ok
+			NOTIFY_SEND=1
+			NOTIFY_EVENT=pipeline_rsnapshot_backup_ok
+			NOTIFY_VALUE=ok
+			NOTIFY_TEXT="Pipeline for rsnapshot_backup succeeded ${CI_PIPELINE_URL}"
+			NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_backup_failed","pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_failed"]'
+		fi
 
-		# Failed job on any stage - send notify
-		if [[ "$CI_JOB_STATUS" == "failed" ]]; then
+	fi
 
-			# Consider test.ping as minor
-			if [[ "$SALT_CMD_DECODED" == "test.ping" ]]; then
-				NOTIFY_SEVERITY=minor
-				NOTIFY_SEND=1
-				NOTIFY_EVENT=pipeline_salt_cmd_failed
-				NOTIFY_VALUE=failed
-				NOTIFY_TEXT="Pipeline for salt_cmd test.ping failed on job ${CI_JOB_URL}"
-				NOTIFY_CORRELATE='["pipeline_salt_cmd_ok"]'
+# Pipelines for salt_cmd
+elif [[ -n "$SALT_CMD" ]]; then
 
-			# Consider everything else as major
-			else
-				NOTIFY_SEVERITY=major
-				NOTIFY_SEND=1
-				NOTIFY_EVENT=pipeline_salt_cmd_failed
-				NOTIFY_VALUE=failed
-				NOTIFY_TEXT="Pipeline for salt_cmd failed on job ${CI_JOB_URL}"
-				NOTIFY_CORRELATE='["pipeline_salt_cmd_ok"]'
-			fi
+	NOTIFY_SERVICE=pipeline_salt_cmd
+	SALT_CMD_DECODED=$(echo ${SALT_CMD} | base64 -d)
+	SALT_CMD_SAFE=$(echo ${SALT_CMD_DECODED} | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | cut -c -80)
+	NOTIFY_RESOURCE=${SALT_MINION}:${SALT_CMD_SAFE}
 
-		# Successful job only at last stage - salt_cmd - send ok
-		elif [[ "$CI_JOB_STATUS" == "success" ]]; then
+	# Failed job on any stage - send notify
+	if [[ "$CI_JOB_STATUS" == "failed" ]]; then
 
-			if [[ $CI_JOB_NAME =~ salt_cmd ]]; then
-				NOTIFY_SEVERITY=ok
-				NOTIFY_SEND=1
-				NOTIFY_EVENT=pipeline_salt_cmd_ok
-				NOTIFY_VALUE=ok
-				NOTIFY_TEXT="Pipeline for salt_cmd succeeded ${CI_PIPELINE_URL}"
-				NOTIFY_CORRELATE='["pipeline_salt_cmd_failed"]'
-			fi
+		# Consider test.ping as minor
+		if [[ "$SALT_CMD_DECODED" == "test.ping" ]]; then
+			NOTIFY_SEVERITY=minor
+			NOTIFY_SEND=1
+			NOTIFY_EVENT=pipeline_salt_cmd_failed
+			NOTIFY_VALUE=failed
+			NOTIFY_TEXT="Pipeline for salt_cmd test.ping failed on job ${CI_JOB_URL}"
+			NOTIFY_CORRELATE='["pipeline_salt_cmd_ok"]'
 
+		# Consider everything else as major
+		else
+			NOTIFY_SEVERITY=major
+			NOTIFY_SEND=1
+			NOTIFY_EVENT=pipeline_salt_cmd_failed
+			NOTIFY_VALUE=failed
+			NOTIFY_TEXT="Pipeline for salt_cmd failed on job ${CI_JOB_URL}"
+			NOTIFY_CORRELATE='["pipeline_salt_cmd_ok"]'
+		fi
+
+	# Successful job only at last stage - salt_cmd - send ok
+	elif [[ "$CI_JOB_STATUS" == "success" ]]; then
+
+		if [[ $CI_JOB_NAME =~ salt_cmd ]]; then
+			NOTIFY_SEVERITY=ok
+			NOTIFY_SEND=1
+			NOTIFY_EVENT=pipeline_salt_cmd_ok
+			NOTIFY_VALUE=ok
+			NOTIFY_TEXT="Pipeline for salt_cmd succeeded ${CI_PIPELINE_URL}"
+			NOTIFY_CORRELATE='["pipeline_salt_cmd_failed"]'
 		fi
 
 	fi
