@@ -66,16 +66,7 @@ elif [[ -n "$SALT_CMD" ]]; then
 	# Failed job on any stage - send notify
 	if [[ "$CI_JOB_STATUS" == "failed" ]]; then
 
-		# Consider test.ping as minor
-		if [[ "$SALT_CMD_DECODED" == "test.ping" ]]; then
-			NOTIFY_SEVERITY=minor
-			NOTIFY_SEND=1
-			NOTIFY_EVENT=pipeline_salt_cmd_failed
-			NOTIFY_VALUE=failed
-			NOTIFY_TEXT="Pipeline for salt_cmd test.ping failed on job ${CI_JOB_URL}"
-			NOTIFY_CORRELATE='["pipeline_salt_cmd_ok"]'
-
-		# Consider everything else as major
+		# Consider failure as major
 		else
 			NOTIFY_SEVERITY=major
 			NOTIFY_SEND=1
