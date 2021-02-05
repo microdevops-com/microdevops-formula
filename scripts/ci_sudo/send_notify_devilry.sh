@@ -66,15 +66,13 @@ elif [[ -n "$SALT_CMD" ]]; then
 	# Failed job on any stage - send notify
 	if [[ "$CI_JOB_STATUS" == "failed" ]]; then
 
-		# Consider failure as major
-		else
-			NOTIFY_SEVERITY=major
-			NOTIFY_SEND=1
-			NOTIFY_EVENT=pipeline_salt_cmd_failed
-			NOTIFY_VALUE=failed
-			NOTIFY_TEXT="Pipeline for salt_cmd failed on job ${CI_JOB_URL}"
-			NOTIFY_CORRELATE='["pipeline_salt_cmd_ok"]'
-		fi
+		# Consider any failure as major
+		NOTIFY_SEVERITY=major
+		NOTIFY_SEND=1
+		NOTIFY_EVENT=pipeline_salt_cmd_failed
+		NOTIFY_VALUE=failed
+		NOTIFY_TEXT="Pipeline for salt_cmd failed on job ${CI_JOB_URL}"
+		NOTIFY_CORRELATE='["pipeline_salt_cmd_ok"]'
 
 	# Successful job only at last stage - salt_cmd - send ok
 	elif [[ "$CI_JOB_STATUS" == "success" ]]; then
