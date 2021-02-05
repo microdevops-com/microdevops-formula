@@ -90,6 +90,7 @@ elif [[ -n "$SALT_CMD" ]]; then
 
 fi
 
+# Do not send SALT_CMD_DECODED in attributes as it may contain quotes, check original command in job logs if needed
 if [[ "$NOTIFY_SEND" == "1" ]]; then
 	echo '{
 		"severity": "'${NOTIFY_SEVERITY}'",
@@ -104,7 +105,6 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 		"attributes": {
 			"salt_minion": "'${SALT_MINION}'",
 			"salt_timeout": "'${SALT_TIMEOUT}'",
-			"salt_cmd_decoded": "'${SALT_CMD_DECODED}'",
 			"salt_cmd_safe": "'${SALT_CMD_SAFE}'",
 			"rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'",
 			"ssh_jump": "'${SSH_JUMP}'",
