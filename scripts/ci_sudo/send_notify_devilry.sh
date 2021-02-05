@@ -10,8 +10,8 @@ if [[ -n "$RSNAPSHOT_BACKUP_TYPE" ]]; then
 	NOTIFY_SERVICE=pipeline_rsnapshot_backup
 	NOTIFY_RESOURCE=${SALT_MINION}
 
-	# Failed job on any stage - send notify
-	if [[ "$CI_JOB_STATUS" == "failed" ]]; then
+	# Failed job on any stage or check_alive_minions failure - send notify
+	if [[ "$CI_JOB_STATUS" == "failed" || "$CHECK_ALIVE_MINIONS" == "failed" ]]; then
 
 		# Consider check_backup as major
 		if [[ $CI_JOB_NAME =~ rsnapshot_backup_check_backup ]]; then
@@ -63,8 +63,8 @@ elif [[ -n "$SALT_CMD" ]]; then
 	SALT_CMD_SAFE=$(echo ${SALT_CMD_DECODED} | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | cut -c -80)
 	NOTIFY_RESOURCE=${SALT_MINION}:${SALT_CMD_SAFE}
 
-	# Failed job on any stage - send notify
-	if [[ "$CI_JOB_STATUS" == "failed" ]]; then
+	# Failed job on any stage or check_alive_minions failure - send notify
+	if [[ "$CI_JOB_STATUS" == "failed" || "$CHECK_ALIVE_MINIONS" == "failed" ]]; then
 
 		# Consider any failure as major
 		NOTIFY_SEVERITY=major
