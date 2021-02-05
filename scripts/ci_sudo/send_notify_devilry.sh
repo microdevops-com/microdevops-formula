@@ -127,4 +127,6 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 			"ci_pipeline_url": "'${CI_PIPELINE_URL}'"
 		}
 	}' | /opt/sysadmws/notify_devilry/notify_devilry.py
+else
+	echo Not sending as NOTIFY_SEND == 0
 fi
