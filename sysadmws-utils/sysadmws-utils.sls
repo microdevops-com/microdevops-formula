@@ -35,7 +35,7 @@ install_utils_tgz_v1_2:
 
 install_utils_tgz_v1_3:
   cmd.run:
-    - name: "tar zxf /root/sysadmws-utils-v1.tar.gz -C /"
+    - name: "tar zxf /root/sysadmws-utils-v1.tar.gz -C /opt/"
     - runas: "root"
 
   {%- endif %}
