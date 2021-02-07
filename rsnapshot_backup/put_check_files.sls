@@ -23,11 +23,11 @@
 
               # Expand special words in the data_item
               {%- if data_item == 'UBUNTU' %}
-                {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws','/lib/ufw'] -%}
+                {%- set expanded_data = ['/etc','/home','/root','/var/spool/cron','/usr/local','/opt/sysadmws'] -%}
               {%- elif data_item == 'DEBIAN' %}
-                {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws','/lib/ufw'] -%}
+                {%- set expanded_data = ['/etc','/home','/root','/var/spool/cron','/usr/local','/opt/sysadmws'] -%}
               {%- elif data_item == 'CENTOS' %}
-                {%- set expanded_data = ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws'] -%}
+                {%- set expanded_data = ['/etc','/home','/root','/var/spool/cron','/usr/local','/opt/sysadmws'] -%}
               # Just one item data_item itself
               {%- else %}
                 # Check if check has path subst by data

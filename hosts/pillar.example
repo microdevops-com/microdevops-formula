@@ -1,0 +1,8 @@
+hosts:
+  present:
+    1.2.3.4:
+      - srv1.example.com
+      - srv2.example.com
+    2.3.4.5:
+      - srv3.example.com
+      - srv4.example.com

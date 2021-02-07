@@ -50,7 +50,7 @@ event: *{{ event }}*
 value: *{{ value }}*
 group: *{{ group }}*
 origin: *{{ origin }}*
-{% for a_key, a_val in attributes.items()|sort %}{{ a_key }}: *{{ a_val }}*
+{% for a_key, a_val in attributes.items()|sort %}{{ a_key | replace('_', '-') | replace('*', '-') }}: *{{ a_val | replace('_', '-') | replace('*', '-') }}*
 {% endfor %}
 ```
 {{ text }}
