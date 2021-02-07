@@ -23,27 +23,34 @@ pkg_latest_utils:
         - sysadmws-utils-v1
 
   {%- else %}
+install_utils_tgz_v1_0:
+  file.directory:
+    - name: /opt/sysadmws
+    - user: root
+    - group: root
+    - mode: 0775
+
 install_utils_tgz_v1_1:
   cmd.run:
-    - name: "rm -f /root/sysadmws-utils-v1.tar.gz"
-    - runas: "root"
+    - name: rm -f /root/sysadmws-utils-v1.tar.gz
+    - runas: root
 
 install_utils_tgz_v1_2:
   cmd.run:
-    - name: "cd /root && wget --no-check-certificate https://repo.sysadm.ws/tgz/sysadmws-utils-v1.tar.gz"
-    - runas: "root"
+    - name: cd /root && wget --no-check-certificate https://repo.sysadm.ws/tgz/sysadmws-utils-v1.tar.gz
+    - runas: root
 
 install_utils_tgz_v1_3:
   cmd.run:
-    - name: "tar zxf /root/sysadmws-utils-v1.tar.gz -C /"
-    - runas: "root"
+    - name: tar zxf /root/sysadmws-utils-v1.tar.gz --strip-components=3 -C /opt/sysadmws
+    - runas: root
 
   {%- endif %}
 
 install_requirements_v1:
   cmd.run:
-    - name: "/opt/sysadmws/misc/install_requirements.sh"
-    - runas: "root"
+    - name: /opt/sysadmws/misc/install_requirements.sh
+    - runas: root
 
 {% else %}
 sysadmws-utils_nothing_done_info:
