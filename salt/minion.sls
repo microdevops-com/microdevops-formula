@@ -78,7 +78,7 @@ salt_minion_update_restart:
         exec 0>&- # close stdin
         exec 1>&- # close stdout
         exec 2>&- # close stderr
-        nohup /bin/sh -c 'apt-get update; apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install salt-minion={{ pillar['salt']['minion']['version']|string }}* && salt-call --local service.restart salt-minion' &
+        nohup /bin/sh -c 'apt-get update; apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install --allow-downgrades salt-common={{ pillar['salt']['minion']['version']|string }}* salt-minion={{ pillar['salt']['minion']['version']|string }}* && salt-call --local service.restart salt-minion' &
       {%- endif %}
 
     {%- endif %}
