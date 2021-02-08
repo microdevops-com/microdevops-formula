@@ -1,4 +1,4 @@
-{% if pillar['salt'] is defined and pillar['salt'] is not none and pillar['salt']['minion'] is defined and pillar['salt']['minion'] is not none %}
+{% if pillar['salt'] is defined and ['minion'] in pillar['salt'] %}
 
   {%- for host in pillar['salt']['minion']['hosts'] %}
 salt_master_hosts_{{ loop.index }}:
@@ -10,14 +10,14 @@ salt_master_hosts_{{ loop.index }}:
   {%- endfor %}
 
   {%- if grains['os'] in ['Windows'] %}
-    {%- if pillar['salt']['minion']['version'] == 2019.2 %}
-      {%- set minion_exe = 'Salt-Minion-2019.2.5-Py3-AMD64-Setup.exe' -%}
+    {%- if pillar['salt']['minion']['version']|string == '3001' %}
+      {%- set minion_exe = 'Salt-Minion-3001.4-Py3-AMD64-Setup.exe' -%}
     {%- endif %}
 
     {%- if 
-           pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string
+           pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string
            or
-           (pillar['salt']['minion']['release'] is defined and pillar['salt']['minion']['release'] is not none and pillar['salt']['minion']['release'] != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string + '.' + grains['saltversioninfo'][2]|string)
+           (pillar['salt']['minion']['release'] is defined and pillar['salt']['minion']['release'] != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string)
     %}
 minion_installer_exe:
   file.managed:
@@ -29,7 +29,7 @@ minion_install_silent_cmd:
     - name: 'START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar['salt']['minion']['config']['master']|join(',') }} /minion-name={{ grains['fqdn'] }} /start-minion=1'
     {%- endif %}
 
-    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] is not none and pillar['salt']['minion']['grains_file_rm'] %}
+    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] %}
 salt_minion_grains_file_rm:
   file.absent:
     - name: 'C:\salt\conf\grains'
@@ -60,18 +60,18 @@ salt_minion_config_restart:
         - file: 'C:\salt\conf\minion_id'
 
   {%- elif grains['os'] in ['Ubuntu', 'Debian', 'CentOS'] %}
-    {%- if grains['os'] in ['Ubuntu', 'Debian'] and grains['oscodename'] in ['bionic', 'xenial', 'trusty', 'jessie', 'stretch'] %}
+    {%- if grains['os'] in ['Ubuntu', 'Debian'] and grains['oscodename'] in ['xenial', 'bionic', 'focal'] %}
 
 salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-    - name: deb http://repo.saltstack.com/apt/{{ grains['os']|lower }}/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['minion']['version'] }} {{ grains['oscodename'] }} main
+    - name: deb https://repo.saltstack.com/py3/{{ grains['os']|lower }}/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['minion']['version'] }} {{ grains['oscodename'] }} main
     - file: /etc/apt/sources.list.d/saltstack.list
-    - key_url: https://repo.saltstack.com/apt/{{ grains['os']|lower }}/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['minion']['version'] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://repo.saltstack.com/py3/{{ grains['os']|lower }}/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['minion']['version'] }}/SALTSTACK-GPG-KEY.pub
     - clean_file: True
     - refresh: True
 
-      {%- if pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string %}
+      {%- if pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string %}
 salt_minion_update_restart:
   cmd.run:
     - name: |
@@ -83,7 +83,7 @@ salt_minion_update_restart:
 
     {%- endif %}
 
-    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] is not none and pillar['salt']['minion']['grains_file_rm'] %}
+    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] %}
 salt_minion_grains_file_rm:
   file.absent:
     - name: /etc/salt/grains
