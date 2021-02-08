@@ -1,4 +1,4 @@
-{% if pillar['salt'] is defined and ['minion'] in pillar['salt'] %}
+{% if pillar['salt'] is defined and 'minion' in pillar['salt'] %}
 
   {%- for host in pillar['salt']['minion']['hosts'] %}
 salt_master_hosts_{{ loop.index }}:
