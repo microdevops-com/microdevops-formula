@@ -39,7 +39,7 @@ set customers = [
 %}
 {%
 set telegram_template = "
-source: [alerta](https://" ~ domain ~ "/)
+source: [alerta](https://" ~ domain ~ "/alert/{{ id }})
 severity: *{{ severity }}*
 status: *{{ status }}*
 customer: *{{ customer }}*
