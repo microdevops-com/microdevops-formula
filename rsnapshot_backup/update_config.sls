@@ -7,7 +7,7 @@ update_config_fail:
     - comment: |
          NOTICE: update_config is not for Windows, probably you run rsnapshot_backup pipeline for Windows server - it is wrong.
 
-{% elif pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
+{% elif pillar['rsnapshot_backup'] is defined and 'sources' in pillar['rsnapshot_backup'] %}
 
 # We don't know yet if there will be backups for this host as backup host, but start creating dir and config.
 # This is done to make things simplier and not to accumulate pillars in separate dict.
@@ -78,5 +78,14 @@ rsnapshot_backup_conf:
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}
+
+{% else %}
+rsnapshot_backup_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured, so nothing has been done. But it is OK.
 
 {% endif %}
