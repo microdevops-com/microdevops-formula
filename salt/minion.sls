@@ -122,4 +122,13 @@ salt_minion_config_restart:
 
   {%- endif %}
 
+{% else %}
+salt_minion_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured, so nothing has been done. But it is OK.
+
 {% endif %}
