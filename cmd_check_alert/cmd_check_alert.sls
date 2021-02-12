@@ -3,7 +3,7 @@
 cmd_check_alert_mako_module:
   pkg.installed:
     - pkgs:
-    {%- if grains['oscodename'] in ['focal'] %}
+    {%- if "300" in grains['saltversion']|string %}
         - python3-mako
     {%- else %}
         - python-mako
