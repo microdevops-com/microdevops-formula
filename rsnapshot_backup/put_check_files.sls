@@ -1,3 +1,11 @@
+put_check_files_nothing_to_do:
+  test.configurable_test_state:
+    - name: put_check_files_pretend_doing_something
+    - changes: False
+    - result: True
+    - comment: |
+         NOTICE: Pretend doing somtheing in case pillar results no actions further.
+
 {% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
 
   # Check if data definition exists for this host (there may be other hosts in this pillar)
@@ -102,12 +110,4 @@ put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
       {%- endif %}
     {%- endfor %}
   {%- endif %}
-{% else %}
-put_check_files_nothing_to_do:
-  test.configurable_test_state:
-    - name: put_check_files_nothing_to_do_info
-    - changes: False
-    - result: True
-    - comment: |
-         NOTICE: Pillar rsnapshot_backup not defined, doing nothing.
 {% endif %}
