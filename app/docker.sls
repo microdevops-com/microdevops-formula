@@ -23,7 +23,7 @@ docker_install_2:
     - reload_modules: True
     - pkgs:
         - docker-ce: '{{ pillar['app']['docker']['docker-ce_version'] }}*'
-  {%- if grains['oscodename'] in ['focal'] %}
+  {%- if "300" in grains['saltversion']|string %}
         - python3-docker
   {%- else %}
         - python-docker
