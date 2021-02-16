@@ -68,6 +68,7 @@ postgres:
   acls:
     - ['local', 'all', '{{ appname }}']
     - ['host', 'all', '{{ appname }}', '0/0']
+  config_backup: False # depends on salt-call which is not available in salt-ssh
   users:
     {{ appname }}:
       ensure: present
