@@ -56,7 +56,11 @@ postgres:
   use_upstream_repo: True
   version: '11'
   pkgs_extra:
+  {%- if grains['oscodename'] in ['focal'] %}
+    - postgresql-plpython3-11
+  {%- else %}
     - postgresql-plpython-11
+  {%- endif %}
     - postgresql-server-dev-11
   postgresconf: |-
     listen_addresses = '*'
