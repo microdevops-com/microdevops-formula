@@ -29,6 +29,29 @@ References:
 - http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
 #}
 
+{#
+Migration to yaml based settings:
+Define values in alerta1_example_com_settings.sls as yaml and assign pillar like this:
+{% import_yaml 'app/example/alerta1_example_com_settings.sls' as alerta %}
+{% include 'app/example/alerta.jinja' with context %}
+#}
+{% if alerta is defined %}
+  {%- set appname = alerta['appname'] %}
+  {%- set db_pass = alerta['db_pass'] %}
+  {%- set domain = alerta['domain'] %}
+  {%- set version = alerta['version'] %}
+  {%- set webui_version = alerta['webui_version'] %}
+  {%- set add_pip_install = alerta['add_pip_install'] %}
+  {%- set cli_key_id = alerta['cli_key_id'] %}
+  {%- set cli_key = alerta['cli_key'] %}
+  {%- set telegram_key_id = alerta['telegram_key_id'] %}
+  {%- set telegram_key = alerta['telegram_key'] %}
+  {%- set secret_key = alerta['secret_key'] %}
+  {%- set customers = alerta['customers'] %}
+  {%- set telegram_template = alerta['telegram_template'] %}
+  {%- set conf = alerta['conf'] %}
+{% endif %}
+
 postgres:
   use_upstream_repo: True
   version: '11'
