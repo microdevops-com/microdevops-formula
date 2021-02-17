@@ -57,25 +57,12 @@ pkg:
             - mode: '0644'
             - contents: |
                 {{ python_version }}
-      - pip.installed:
+      - cmd.run:
           1:
-            - name: pip
-            - user: root
             - cwd: /tmp
-            - bin_env: /usr/local/pyenv/shims/pip
-            - upgrade: True
-            - force_reinstall: True
-            - reload_modules: True
-            - env_vars:
+            - env:
                 PYENV_VERSION: '{{ python_version }}'
-      - pip.installed:
-          1:
-            - name: virtualenv
-            - user: root
-            - cwd: /tmp
-            - bin_env: /usr/local/pyenv/shims/pip
-            - env_vars:
-                PYENV_VERSION: '{{ python_version }}'
+            - name: /usr/local/pyenv/shims/pip install virtualenv
       - file.managed:
           1:  
             - name: '/opt/alerta/urlmon/virtualenv-{{ python_version }}'
