@@ -3,7 +3,7 @@
 remove_old_type_netdata:
   cmd.run:
     - name: |
-        [ -d /opt/netdata/git ] && ( service netdata stop; killall -9 netdata; rm -rf /opt/netdata )
+        [ -d /opt/netdata/git ] && ( service netdata stop; killall -9 netdata; rm -rf /opt/netdata ) || true
 
     # Set some vars
   {%- set netdata_seconds = pillar["netdata"]["seconds"] %}
