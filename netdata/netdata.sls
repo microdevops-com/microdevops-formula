@@ -6,11 +6,11 @@ remove_old_type_netdata:
         [ -d /opt/netdata/git ] && ( service netdata stop; killall -9 netdata; rm -rf /opt/netdata )
 
     # Set some vars
-    {%- set netdata_seconds = pillar["netdata"]["seconds"] %}
-    {%- set netdata_mini = pillar["netdata"].get("mini", False) %}
-    {%- set postgresql = pillar["netdata"].get("postgresql", False) %}
-    {%- set sensors = pillar["netdata"].get("sensors", False) %}
-    {%- set hostname_under = grains["fqdn"]|replace(".", "_") %}
+  {%- set netdata_seconds = pillar["netdata"]["seconds"] %}
+  {%- set netdata_mini = pillar["netdata"].get("mini", False) %}
+  {%- set postgresql = pillar["netdata"].get("postgresql", False) %}
+  {%- set sensors = pillar["netdata"].get("sensors", False) %}
+  {%- set hostname_under = grains["fqdn"]|replace(".", "_") %}
 
 # Basic depencies
 netdata_depencies_installed_netdata:
@@ -19,13 +19,13 @@ netdata_depencies_installed_netdata:
     - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
 
       # If sensors - install even more
-      {%- if sensors %}
+  {%- if sensors %}
 netdata_depencies_installed_sensors_1:
   cmd.script:
     - name: install-required-packages.sh --dont-wait --non-interactive sensors
     - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
 
-        {%- if grains["os"] in ["Ubuntu", "Debian"] %}
+    {%- if grains["os"] in ["Ubuntu", "Debian"] %}
 netdata_depencies_installed_sensors_2:
   pkg.installed:
     - pkgs:
@@ -72,9 +72,8 @@ netdata_dir_smartd:
     - mode: 755
     - makedirs: True
 
-        {%- endif %}
-      {%- endif %}
     {%- endif %}
+  {%- endif %}
     
 # Install netdata
 netdata_kickstart:
@@ -91,38 +90,38 @@ netdata_config_health_alarm:
 netdata_config_netdata:
   file.managed:
     - name: /opt/netdata/etc/netdata/netdata.conf
-    {%- if netdata_mini %}
+  {%- if netdata_mini %}
     - source: salt://netdata/files/netdata.conf_mini
-    {%- else %}
+  {%- else %}
     - source: salt://netdata/files/netdata.conf_host
-    {%- endif %}
+  {%- endif %}
     - mode: 0644
     - template: jinja
     - defaults:
         host_name: {{ hostname_under }}
         history_seconds: {{ netdata_seconds }}
     # Disable some unneeded features if sensors are not enabled
-    {%- if sensors %}
+  {%- if sensors %}
         container_block: ''
-    {%- else %}
+  {%- else %}
         container_block: |
           [plugins]
           	cgroups = no
           	proc = no
-    {%- endif %}
+  {%- endif %}
 
     # Disable some unneeded features if sensors are not enabled
-    {%- if not sensors %}
+  {%- if not sensors %}
 netdata_config_pythond:
   file.managed:
     - name: /opt/netdata/etc/netdata/python.d.conf
     - source: salt://netdata/files/python.d.conf_container
     - mode: 0644
-    {%- endif %}
+  {%- endif %}
 
     # Check postgres and configure agent if exists
-    {%- if postgresql %}
-      {%- set post_pass = salt["cmd.shell"]("grep postgres.pass /etc/salt/minion | sed -e 's/^postgres.pass: .\\(.*\\)./\\1/'") %}
+  {%- if postgresql %}
+    {%- set post_pass = salt["cmd.shell"]("grep postgres.pass /etc/salt/minion | sed -e 's/^postgres.pass: .\\(.*\\)./\\1/'") %}
 netdata_config_postgresql:
   file.managed:
     - name: /opt/netdata/etc/netdata/python.d/postgres.conf
@@ -131,19 +130,19 @@ netdata_config_postgresql:
     - template: jinja
     - defaults:
         postgresql_pass: {{ post_pass }}
-    {%- endif %}
+  {%- endif %}
 
     # Additional sensor tuning if enabled
-    {%- if sensors %}
-      {%- if grains["os"] in ["Ubuntu", "Debian"] %}
+  {%- if sensors %}
+    {%- if grains["os"] in ["Ubuntu", "Debian"] %}
 netdata_config_smartd:
   file.managed:
     - name: '/opt/netdata/etc/netdata/python.d/smartd_log.conf'
     - source: 'salt://netdata/files/deps/smartd_log.conf'
     - mode: 0660
 
-      {%- endif %}
     {%- endif %}
+  {%- endif %}
     
 {% else %}
 netdata_nothing_done_info:
