@@ -9,22 +9,24 @@ remove_old_type_netdata:
     {%- set netdata_seconds = pillar["netdata"]["seconds"] %}
     {%- set netdata_mini = pillar["netdata"].get("mini", False) %}
     {%- set postgresql = pillar["netdata"].get("postgresql", False) %}
+    {%- set sensors = pillar["netdata"].get("sensors", False) %}
     {%- set hostname_under = grains["fqdn"]|replace(".", "_") %}
 
-    # Install additional packages with netdata installer
-    {%- if "install-required-packages" in pillar["netdata"] %}
-      {%- for req_pack in pillar["netdata"]["install-required-packages"] %}
-netdata_depencies_installed_{{ loop.index }}:
+# Basic depencies
+netdata_depencies_installed_netdata:
   cmd.script:
-    - name: install-required-packages.sh --dont-wait --non-interactive {{ req_pack }}
+    - name: install-required-packages.sh --dont-wait --non-interactive netdata
     - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
 
-      {%- endfor %}
-      
-      # If sensors is in additional packages list - install even more
-      {%- if "sensors" in pillar["netdata"]["install-required-packages"] %}
+      # If sensors - install even more
+      {%- if sensors %}
+netdata_depencies_installed_sensors_1:
+  cmd.script:
+    - name: install-required-packages.sh --dont-wait --non-interactive sensors
+    - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
+
         {%- if grains["os"] in ["Ubuntu", "Debian"] %}
-netdata_depencies_sensors_installed:
+netdata_depencies_installed_sensors_2:
   pkg.installed:
     - pkgs:
       - libipmimonitoring-dev
@@ -100,7 +102,7 @@ netdata_config_netdata:
         host_name: {{ hostname_under }}
         history_seconds: {{ netdata_seconds }}
     # Disable some unneeded features if sensors are not enabled
-    {%- if "install-required-packages" in pillar["netdata"] and "sensors" in pillar["netdata"]["install-required-packages"] %}
+    {%- if sensors %}
         container_block: ''
     {%- else %}
         container_block: |
@@ -110,7 +112,7 @@ netdata_config_netdata:
     {%- endif %}
 
     # Disable some unneeded features if sensors are not enabled
-    {%- if not ("install-required-packages" in pillar["netdata"] and "sensors" in pillar["netdata"]["install-required-packages"]) %}
+    {%- if not sensors %}
 netdata_config_pythond:
   file.managed:
     - name: /opt/netdata/etc/netdata/python.d.conf
@@ -132,7 +134,7 @@ netdata_config_postgresql:
     {%- endif %}
 
     # Additional sensor tuning if enabled
-    {%- if "install-required-packages" in pillar["netdata"] and "sensors" in pillar["netdata"]["install-required-packages"] %}
+    {%- if sensors %}
       {%- if grains["os"] in ["Ubuntu", "Debian"] %}
 netdata_config_smartd:
   file.managed:

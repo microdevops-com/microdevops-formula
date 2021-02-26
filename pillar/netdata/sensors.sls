@@ -1,3 +1,2 @@
 netdata:
-  install-required-packages:
-    - sensors
+  sensors: True
