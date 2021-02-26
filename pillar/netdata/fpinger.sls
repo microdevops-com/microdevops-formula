@@ -1,2 +1,0 @@
-netdata:
-  fpinger: True

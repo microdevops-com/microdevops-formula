@@ -1,6 +1,4 @@
-include:
-  - netdata.version
-
 netdata:
-  enabled: True
-  seconds: '3600'
+  seconds: 3600
+  install-required-packages:
+    - netdata
