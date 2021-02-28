@@ -233,6 +233,10 @@ salt_master_gitlab-runner_register:
           --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
           --locked --access-level "ref_protected"
 
+salt_master_gitlab-runner_job_fail_on_clear_screen_fix:
+  file.absent:
+    - name: /home/gitlab-runner/.bash_logout
+
   {%- endif %}
 
 {% endif %}
