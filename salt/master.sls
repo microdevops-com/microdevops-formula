@@ -147,7 +147,7 @@ salt_master_service:
   cmd.run:
     - name: service salt-master restart
 
-  {%- if pillar["salt"]["master"]["repo"] is defined and pillar["salt"]["master"]["repo"] is not none %}
+  {%- if pillar["salt"]["master"]["repo"] is defined %}
 salt_master_deploy_repo:
   cmd.run:
     - name: |
@@ -157,6 +157,82 @@ salt_master_update_repo:
   cmd.run:
     - name: |
         [ -d /srv/.git ] && ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git fetch --prune origin +refs/tags/*:refs/tags/* && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update -f --checkout && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule foreach "git checkout master && git pull && git fetch --prune origin +refs/tags/*:refs/tags/*" )
+  {%- endif %}
+  
+  {%- if pillar["salt"]["master"]["gitlab-runner"] %}
+# Should be unregistered before config update.
+# Runners couldn't be unregistered without admin token or saving auth token.
+# We don't want to expose gitlab admin token to client repo.
+# So if salt master recreated from scratch - runner should be removed manually.
+# Auto unregister works only on state re apply of alive master container.
+salt_master_gitlab-runner_unregister:
+  cmd.run:
+    - name: |
+        gitlab-runner unregister --url "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_url"] }}/" --all-runners || true
+
+salt_master_gitlab-runner_repo:
+  pkgrepo.managed:
+    - humanname: Gitlab Runner Repository
+    - name: deb https://packages.gitlab.com/runner/gitlab-runner/{{ grains['os']|lower }}/ {{ grains['oscodename'] }} main
+    - file: /etc/apt/sources.list.d/gitlab-runner.list
+    - key_url: https://packages.gitlab.com/runner/gitlab-runner/gpgkey
+    - clean_file: True
+
+salt_master_gitlab-runner_config_dir:
+  file.directory:
+    - name: /etc/gitlab-runner
+    - user: root
+    - group: root
+    - mode: 700
+
+salt_master_gitlab-runner_config:
+  file.managed:
+    - name: /etc/gitlab-runner/config.toml
+    - user: root
+    - group: root
+    - mode: 600
+    - contents: |
+        concurrent = 200
+        check_interval = 0
+        
+        [session_server]
+          session_timeout = 1800
+
+salt_master_gitlab-runner_sudoers:
+  file.managed:
+    - name: /etc/sudoers.d/gitlab-runner
+    - user: root
+    - group: root
+    - mode: 440
+    - contents: |
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/salt_master_pull.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/salt_cmd.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/count_alive_minions.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/rsnapshot_backup_update_config.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/rsnapshot_backup_sync.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/rsnapshot_backup_rotate.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/rsnapshot_backup_check_backup.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/rsnapshot_backup_check_coverage.sh
+        gitlab-runner ALL=(ALL) NOPASSWD: /srv/scripts/ci_sudo/refresh_pillar.sh
+        gitlab-runner ALL=(ALL) NOPASSWD:SETENV: /srv/scripts/ci_sudo/send_notify_devilry.sh
+
+salt_master_gitlab-runner_pkg:
+  pkg.latest:
+    - refresh: True
+    - pkgs:
+        - gitlab-runner
+        - jq
+        - curl
+
+salt_master_gitlab-runner_register:
+  cmd.run:
+    - name: |
+        gitlab-runner register --non-interactive --url "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_url"] }}/" \
+          --registration-token "{{ pillar["salt"]["master"]["gitlab-runner"]["registration_token"] }}" \
+          --executor "shell" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
+          --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
+          --locked --access-level "ref_protected"
+
   {%- endif %}
 
 {% endif %}
