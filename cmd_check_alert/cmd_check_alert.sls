@@ -10,6 +10,10 @@ cmd_check_alert_mako_module:
     {%- endif %}
     - reload_modules: True
 
+    {%- set mako_installed = salt["cmd.shell"]("dpkg -l 2>/dev/null | grep -e '^ii *python.*-mako' | awk '{print $1}'") %}
+    # Ugly hack: only run this state if make already installed, coz reload_modules doesn't work inside salt-ssh and produces error on first highstate over salt-ssh
+    # So it will be run some time later
+    {%- if mako_installed == "ii" %}
 cmd_check_alert_config_managed:
   file.managed:
     - name: /opt/sysadmws/cmd_check_alert/cmd_check_alert.yaml
@@ -18,17 +22,18 @@ cmd_check_alert_config_managed:
     - group: root
     - source: {{ pillar["cmd_check_alert"]["config_file"] }}
     - replace: True
-    {%- if "checks" in pillar["cmd_check_alert"] %}
+      {%- if "checks" in pillar["cmd_check_alert"] %}
     - template: mako
     - defaults:
         additional_checks: |
           # additional checks added by pillar:
-      {%- for check_name, check_val in pillar["cmd_check_alert"]["checks"].items() %}
+        {%- for check_name, check_val in pillar["cmd_check_alert"]["checks"].items() %}
             {{ check_name }}:
-        {%- for check_val_key, check_val_val in check_val.items() %}
+          {%- for check_val_key, check_val_val in check_val.items() %}
               {{ check_val_key }}: {{ check_val_val }}
+          {%- endfor %}
         {%- endfor %}
-      {%- endfor %}
+      {%- endif %}
     {%- endif %}
 
 cmd_check_alert_cron_managed:
