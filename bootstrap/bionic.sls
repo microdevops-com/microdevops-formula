@@ -63,6 +63,7 @@ pkg_latest:
       - strace
       - whois
       - net-tools
+      - iputils-ping
       # build
       - build-essential
       - git
