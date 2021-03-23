@@ -33,6 +33,7 @@ pkg_latest:
       - tree
       - bash-completion
       - bc
+      - locales
       # apt
       - apt-transport-https
       - apt-listchanges
