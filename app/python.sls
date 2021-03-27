@@ -62,7 +62,6 @@ app_python_app_virtualenv_{{ loop.index }}:
 
       {%- include "app/setup_scripts.sls" with context %}
 
-
     {%- endif %}
   {%- endfor %}
 {% endif %}
