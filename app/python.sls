@@ -64,7 +64,7 @@ app_python_app_virtualenv_{{ loop.index }}:
 app_python_app_setup_script_run_{{ loop.index }}:
   cmd.run:
     - cwd: {{ app["setup_script"]["cwd"] }}
-    - name: {{ app["setup_script"]["name"] }}
+    - name: {{ app["setup_script"]["name"] | yaml_encode }}
     - runas: {{ app["user"] }}
 
       {%- endif %}
