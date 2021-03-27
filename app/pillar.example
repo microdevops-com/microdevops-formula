@@ -1,5 +1,81 @@
 # vi: set ft=yaml:
 
+app:
+  python:
+    pyenv:
+      versions:
+        python-3.8.8: True
+    apps:
+      pythoapp:
+        user: pythoapp
+        group: pythoapp
+        pass: '!'
+        app_root: /opt/pythoapp
+        shell: /bin/bash
+        virtualenv:
+          pyenv_version: 3.8.8
+          target: /opt/pythoapp/venv
+        source:
+          git: git@github.com:myorg/app.git
+          rev: master
+          target: /opt/pythoapp/src
+          branch: master
+          repo_key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            ...
+            -----END OPENSSH PRIVATE KEY-----
+          repo_key_pub: ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx app@example.com
+        setup_script:
+          cwd: /opt/pythoapp/src
+          name: ~/venv/bin/python setup.py develop
+  docker:
+    docker-ce_version: 18.06.1
+    networks:
+      - name: proto
+        subnet: 172.18.0.0/24
+        gateway: 172.18.0.1
+    apps:
+      proto:
+        image: php:7.3-fpm
+        privileged: False # optional, default False
+        docker_registry_login:
+          username: salt
+          password: xxxxxxxxxxxxxxxxxxxx
+          registry: gitlab.example.com:5001
+        exec_after_deploy: /app/after_deploy.sh
+        home: /var/www/proto
+        publish:
+          - 0.0.0.0:9000:9000/tcp
+        environment:
+          - APP_ENV: dev
+          - APP_DEBUG: 1
+          - MYSQL_DB: proto
+          - MYSQL_HOST: mysql.example.com
+          - MYSQL_PASS: xxxxxxxxxxxxxxxx
+          - MYSQL_PORT: 3306
+          - MYSQL_USER: proto
+        binds:
+          - /var/www/proto/app/data:/app/data:rw
+        networks:
+          - proto
+        cron: # optional, docker exec ... cmd by cron from docker host
+          - cmd: /app/some/command.sh
+            minute: ... # optional
+            hour: ... # optional 
+            daymonth: ... # optional 
+            month: ... # optional 
+            dayweek: ... # optional 
+            special: ... # optional 
+      proto-redis:
+        image: redis:latest
+        home: /var/www/proto-redis
+        publish: []
+        environment: []
+        binds: []
+        networks:
+          - proto
+
+# legacy
 # app: php-fpm, python, static (static pages only, no backend)
 app:
   php-fpm_apps|python_apps|static_apps: # fix to a type needed
@@ -104,50 +180,3 @@ app:
         cwd: /var/www/app_1/src
         name: bash /var/www/app_1/src/etc/setup.sh
 
-app:
-  docker:
-    docker-ce_version: 18.06.1
-    networks:
-      - name: proto
-        subnet: 172.18.0.0/24
-        gateway: 172.18.0.1
-    apps:
-      proto:
-        image: php:7.3-fpm
-        privileged: False # optional, default False
-        docker_registry_login:
-          username: salt
-          password: xxxxxxxxxxxxxxxxxxxx
-          registry: gitlab.example.com:5001
-        exec_after_deploy: /app/after_deploy.sh
-        home: /var/www/proto
-        publish:
-          - 0.0.0.0:9000:9000/tcp
-        environment:
-          - APP_ENV: dev
-          - APP_DEBUG: 1
-          - MYSQL_DB: proto
-          - MYSQL_HOST: mysql.example.com
-          - MYSQL_PASS: xxxxxxxxxxxxxxxx
-          - MYSQL_PORT: 3306
-          - MYSQL_USER: proto
-        binds:
-          - /var/www/proto/app/data:/app/data:rw
-        networks:
-          - proto
-        cron: # optional, docker exec ... cmd by cron from docker host
-          - cmd: /app/some/command.sh
-            minute: ... # optional
-            hour: ... # optional 
-            daymonth: ... # optional 
-            month: ... # optional 
-            dayweek: ... # optional 
-            special: ... # optional 
-      proto-redis:
-        image: redis:latest
-        home: /var/www/proto-redis
-        publish: []
-        environment: []
-        binds: []
-        networks:
-          - proto
