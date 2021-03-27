@@ -1,4 +1,8 @@
 {% if pillar["pyenv"] is defined %}
+  {%- set pyenv = pillar["pyenv"] %}
+{% endif %}
+
+{% if pyenv is defined %}
 pyenv_deps_1:
   pkg.installed:
     - pkgs:
@@ -30,7 +34,7 @@ pyenv_update:
     - name: |
         cd /usr/local/pyenv && git pull || true
 
-  {%- for ver, ver_enabled in pillar["pyenv"]["versions"].items() %}
+  {%- for ver, ver_enabled in pyenv["versions"].items() %}
     {%- if ver_enabled %}
 pyenv_installed_{{ ver }}:
   pyenv.installed:
