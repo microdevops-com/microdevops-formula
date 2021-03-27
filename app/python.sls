@@ -8,9 +8,9 @@
   {%- for app_name, app in pillar["app"]["python"]["apps"].items() %}
     {%- if not "deploy_only" in pillar["app"]["python"] or app_name in pillar["app"]["python"]["deploy_only"] %}
 
-    {%- set app_type = "python" %}
-    {%- set loop_index = loop.index %}
-    {%- include "app/home.sls" with context %}
+      {%- set app_type = "python" %}
+      {%- set loop_index = loop.index %}
+      {%- include "app/user_and_source.sls" with context %}
 
       {%- if "virtualenv" in app %}
 app_python_app_virtualenv_dir_{{ loop.index }}:
@@ -60,14 +60,8 @@ app_python_app_virtualenv_{{ loop.index }}:
 
       {%- endif %}
 
-      {%- if "setup_script" in app %}
-app_python_app_setup_script_run_{{ loop.index }}:
-  cmd.run:
-    - cwd: {{ app["setup_script"]["cwd"] }}
-    - name: {{ app["setup_script"]["name"] | yaml_encode }}
-    - runas: {{ app["user"] }}
+      {%- include "app/setup_scripts.sls" with context %}
 
-      {%- endif %}
 
     {%- endif %}
   {%- endfor %}

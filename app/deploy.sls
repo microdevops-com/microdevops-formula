@@ -19,6 +19,8 @@ include:
   - app.php-fpm_apps
   - app.static_apps
   - app.python_apps
+  - app.python
+  - app.docker
 {% if pillar['java'] is defined and pillar['java'] is not none %}
   - sun-java.opt_dir
   - sun-java

@@ -25,9 +25,28 @@ app:
             ...
             -----END OPENSSH PRIVATE KEY-----
           repo_key_pub: ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx app@example.com
-        setup_script:
-          cwd: /opt/pythoapp/src
-          name: ~/venv/bin/python setup.py develop
+        files:
+          src: app/pythoapp
+          dst: /opt/pythoapp
+        setup_script_root:
+          cwd: /opt/pythoapp
+          name: |
+            set -e
+            loginctl enable-linger pythoapp
+            loginctl show-user pythoapp
+        setup_script_app_user:
+          cwd: /opt/pythoapp
+          name: |
+            set -e
+            cd src
+            ~/venv/bin/python setup.py develop
+            cd ..
+            mkdir -p ~/.config/systemd/user
+            cp -f pythoapp.service ~/.config/systemd/user
+            export XDG_RUNTIME_DIR=/run/user/$(id -u pythoapp)
+            systemctl --user daemon-reload
+            systemctl --user enable --now pythoapp.service
+            systemctl --user status pythoapp.service
   docker:
     docker-ce_version: 18.06.1
     networks:
