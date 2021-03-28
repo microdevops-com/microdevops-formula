@@ -38,7 +38,7 @@ pkg_latest:
       - apt-transport-https
       - apt-listchanges
       - gnupg
-      - python-apt
+      - python3-apt
       # man
       - doc-debian
       - info
@@ -80,7 +80,7 @@ pkg_latest:
       - postfix
       - s-nail 
       # python
-      - python-pip
+      - python3-pip
 {% if grains["virtual"] == "physical" %}
       # physical
       - smartmontools
