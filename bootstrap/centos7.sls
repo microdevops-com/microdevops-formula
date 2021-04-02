@@ -2,6 +2,12 @@ uptodate:
   pkg.uptodate:
     - refresh: True
 
+pkg_epel:
+  pkg.latest:
+    - refresh: True
+    - pkgs:
+      - epel-release
+
 remove_firewalld:
   pkg.purged:
     - pkgs:
@@ -95,12 +101,6 @@ ufw_fixes_3:
         -A ufw6-user-limit-accept -j ACCEPT
         ### END RATE LIMITING ###
         COMMIT
-
-pkg_epel:
-  pkg.latest:
-    - refresh: True
-    - pkgs:
-      - epel-release
 
 pkg_latest:
   pkg.latest:
