@@ -12,12 +12,6 @@ pkg:
             - contents: |
                 LANG="C.UTF-8"
                 LC_ALL="C.UTF-8"
-  {%- if grains['osmajorrelease']|int == 7 %}
-      - file.symlink:
-          1:
-            - name: "/usr/share/terminfo/s/screen-256color-bce"
-            - target: "/usr/share/terminfo/s/screen-256color"
-  {%- endif %}
 {% else %}
       - locale.present:
           1:
