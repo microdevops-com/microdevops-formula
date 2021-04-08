@@ -16,14 +16,14 @@ remove_old_type_netdata:
 netdata_depencies_installed_netdata:
   cmd.script:
     - name: install-required-packages.sh --dont-wait --non-interactive netdata
-    - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
+    - source: https://raw.githubusercontent.com/netdata/netdata/master/packaging/installer/install-required-packages.sh
 
       # If sensors - install even more
   {%- if sensors %}
 netdata_depencies_installed_sensors_1:
   cmd.script:
     - name: install-required-packages.sh --dont-wait --non-interactive sensors
-    - source: https://raw.githubusercontent.com/netdata/netdata-demo-site/master/install-required-packages.sh
+    - source: https://raw.githubusercontent.com/netdata/netdata/master/packaging/installer/install-required-packages.sh
 
     {%- if grains["os"] in ["Ubuntu", "Debian"] %}
 netdata_depencies_installed_sensors_2:
