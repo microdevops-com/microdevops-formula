@@ -1,4 +1,4 @@
-{% if pillar["nextcloud"] is defined and pillar["nextcloud"] is not none %}
+{% if pillar["nextcloud"] is defined %}
 docker_install_00:
   file.directory:
     - name: /etc/docker
