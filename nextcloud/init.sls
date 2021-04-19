@@ -263,6 +263,10 @@ nextcloud_container_install_libmagickcore_{{ loop.index }}:
   cmd.run:
     - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install libmagickcore-6.q16-6-extra -y'
 
+nextcloud_config_default_phone_region_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'sleep 10; export PHP_MEMORY_LIMIT=512M; php occ config:system:set default_phone_region --value="{{ domain["default_phone_region"] }}"'
+
 nextcloud_cron_{{ loop.index }}:
   cron.present:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} php -f /var/www/html/cron.php
