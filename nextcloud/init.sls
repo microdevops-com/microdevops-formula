@@ -111,12 +111,21 @@ nginx_files_1:
                 
                 # The following 2 rules are only needed for the user_webfinger app.
                 # Uncomment it if you're planning to use this app.
-                rewrite ^/.well-known/host-meta /public.php?service=host-meta last;
-                rewrite ^/.well-known/host-meta.json /public.php?service=host-meta-json last;
-
+                #rewrite ^/.well-known/host-meta /public.php?service=host-meta last;
+                #rewrite ^/.well-known/host-meta.json /public.php?service=host-meta-json last;
+                #
                 # The following rule is only needed for the Social app.
                 # Uncomment it if you're planning to use this app.
-                rewrite ^/.well-known/webfinger /public.php?service=webfinger last;
+                #rewrite ^/.well-known/webfinger /public.php?service=webfinger last;
+                #
+                # The folliwing 2 rules have been added to remove the following warnings from the status page:
+                #    "Your web server is not properly set up to resolve "/.well-known/webfinger".
+                #     Further information can be found in the documentation."
+                #    "Your web server is not properly set up to resolve "/.well-known/nodeinfo".
+                #     Further information can be found in the documentation."
+                rewrite ^/.well-known/webfinger /index.php$uri redirect;
+                rewrite ^/.well-known/nodeinfo /index.php$uri redirect;
+
 
                 location = /.well-known/carddav {
                     return 301 $scheme://$host/remote.php/dav;
@@ -249,6 +258,14 @@ nextcloud_container_{{ loop.index }}:
     {%- for var_key, var_val in domain["env_vars"].items() %}
         - {{ var_key }}: {{ var_val }}
     {%- endfor %}
+
+nextcloud_container_install_libmagickcore_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install libmagickcore-6.q16-6-extra -y'
+
+nextcloud_config_default_phone_region_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'sleep 10; export PHP_MEMORY_LIMIT=512M; php occ config:system:set default_phone_region --value="{{ domain["default_phone_region"] }}"'
 
 nextcloud_cron_{{ loop.index }}:
   cron.present:
