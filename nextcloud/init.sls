@@ -24,7 +24,7 @@ docker_install_2:
     - pkgs: 
         - docker-ce: "{{ pillar["nextcloud"]["docker-ce_version"] }}*"
         - python3-pip
-                
+
 docker_pip_install:
   pip.installed:
     - name: docker-py >= 1.10
