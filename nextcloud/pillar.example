@@ -6,6 +6,10 @@ nextcloud:
       internal_port: 9000
       image: nextcloud:fpm
       default_phone_region: IL
+      onlyoffice: True
+      onlyoffice_DocumentServerUrl: https://onlyoffice.example.com/
+      onlyoffice_DocumentServerInternalUrl: https://onlyoffice.example.com/
+      onlyoffice_StorageUrl: https://nextcloud.example.com/
       env_vars:
         NEXTCLOUD_ADMIN_USER: admin
         NEXTCLOUD_ADMIN_PASSWORD: xxxxxxxxxxxxxxxxxxxxx
