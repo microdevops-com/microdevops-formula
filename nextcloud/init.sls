@@ -274,6 +274,24 @@ nextcloud_cron_{{ loop.index }}:
     - user: root
     - minute: "*/5"
 
+  {% if domain["onlyoffice"] is sameas True %}
+
+nextcloud_config_onlyoffice_1_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:install onlyoffice'
+
+nextcloud_config_onlyoffice_2_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value={{ domain["onlyoffice_DocumentServerUrl"] }}'
+nextcloud_config_onlyoffice_3_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value={{ domain["onlyoffice_DocumentServerInternalUrl"] }}'
+nextcloud_config_onlyoffice_4_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice_StorageUrl"] }}'
+
+  {% endif %}
+
   {%- endfor %}
 
 nginx_reload:
