@@ -210,8 +210,8 @@ nginx_files_1:
                     # Optional: Don't log access to other assets
                     access_log off;
                 }
-  {%- endfor %}
             }
+  {%- endfor %}
         }
 
 nginx_files_2:
