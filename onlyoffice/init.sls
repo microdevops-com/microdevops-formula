@@ -101,8 +101,8 @@ onlyoffice_container_{{ loop.index }}:
     - publish:
         - 127.0.0.1:{{ domain["internal_port"] }}:80/tcp
     - client_timeout: 120
-    - environment:
     {%- if "env_vars" in domain %}
+    - environment:
       {%- for var_key, var_val in domain["env_vars"].items() %}
         - {{ var_key }}: {{ var_val }}
       {%- endfor %}
