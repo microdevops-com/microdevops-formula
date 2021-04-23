@@ -1,0 +1,12 @@
+xwiki:
+  docker-ce_version: 5:19.03.13
+  domains:
+    - name: xwiki.example.com
+      internal_port: 8080
+      image: xwiki:lts-postgres-tomcat
+      env_vars:
+        DB_USER: xwiki-prd
+        DB_PASSWORD: xxxxxxxxxxxxxxxxxxxx
+        DB_DATABASE: xwiki-prd # xwiki will try to use pg schema xwiki_prd in this case, ensure you create schema owned by user within db and subst - with _ in its name
+        DB_HOST: pg-srv1.example.com
+        JAVA_OPTS: -Xmx16384m
