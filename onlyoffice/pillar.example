@@ -2,5 +2,5 @@ onlyoffice:
   docker-ce_version: 5:19.03.13
   domains:
     - name: onlyoffice.example.com
-      internal_port: 80
+      internal_port: 8080
       image: onlyoffice/documentserver:latest
