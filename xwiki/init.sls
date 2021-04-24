@@ -85,6 +85,7 @@ nginx_files_1:
                 location / {
                     proxy_pass http://localhost:{{ domain["internal_port"] }}/;
                     include    proxy_params;
+                    add_header Content-Security-Policy upgrade-insecure-requests;
                 }
             }
   {%- endfor %}
