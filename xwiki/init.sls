@@ -129,6 +129,28 @@ xwiki_container_{{ loop.index }}:
       {%- endfor %}
     {%- endif %}
 
+wait_for_container_{{ loop.index }}:
+  cmd.run:
+    - name: sleep {{ domain["container_start_timeout"] }}
+
+xwiki_validationkey_{{ loop.index }}:
+    file.replace:
+      - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+      - pattern: '^ *(xwiki.authentication.validationKey=).*$'
+      - repl: '\1{{ domain["validationkey"] }}'
+
+xwiki_encryptionkey_{{ loop.index }}:
+    file.replace:
+      - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+      - pattern: '^ *(xwiki.authentication.encryptionKey=).*$'
+      - repl: '\1{{ domain["encryptionkey"] }}'
+
+xwiki_container_restart_{{ loop.index }}:
+  cmd.run:
+    - name: docker stop xwiki-{{ domain["name"] }} && docker start xwiki-{{ domain["name"] }}
+    - onchanges:
+        - file: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+
   {%- endfor %}
 
 nginx_reload:
