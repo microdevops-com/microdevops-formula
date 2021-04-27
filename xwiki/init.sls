@@ -148,6 +148,8 @@ xwiki_encryptionkey_{{ loop.index }}:
 xwiki_container_restart_{{ loop.index }}:
   cmd.run:
     - name: docker stop xwiki-{{ domain["name"] }} && docker start xwiki-{{ domain["name"] }}
+    - onchanges:
+        - file: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
 
   {%- endfor %}
 
