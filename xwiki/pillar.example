@@ -3,7 +3,10 @@ xwiki:
   domains:
     - name: xwiki.example.com
       internal_port: 8080
-      image: xwiki:lts-postgres-tomcat
+      image: xwiki:postgres-tomcat
+      validationkey: lolChav6pohnoLeih8ohJohCheidelol
+      encryptionkey: kekaiZah7Ohsha2aevoo8phei9depkek
+      container_start_timeout: 10
       env_vars:
         DB_USER: xwiki-prd
         DB_PASSWORD: xxxxxxxxxxxxxxxxxxxx
