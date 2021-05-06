@@ -69,6 +69,7 @@ nginx_files_1:
             gzip_types text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
             gzip_vary on;
             gzip_proxied any;
+            client_max_body_size 1000m;
             
             server {
                 listen 80;
@@ -121,7 +122,7 @@ xwiki_container_{{ loop.index }}:
     - publish:
         - 127.0.0.1:{{ domain["internal_port"] }}:8080/tcp
     - binds:
-        - /opt/xwiki/{{ domain["name"] }}/data:/usr/local/xwiki:rw
+        - /opt/xwiki/{{ domain["name"] }}/data:/usr/local/xwiki/data:rw
     {%- if "env_vars" in domain %}
     - environment:
       {%- for var_key, var_val in domain["env_vars"].items() %}
