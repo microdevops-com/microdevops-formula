@@ -20,7 +20,7 @@ salt_master_hosts_{{ loop.index }}:
     %}
 minion_installer_exe:
   file.managed:
-    - name: "C:\Windows\{{ minion_exe }}"
+    - name: 'C:\Windows\{{ minion_exe }}' # DO NOT USE "" here - slash \ is treated as escape inside
     - source: salt://salt/{{ minion_exe }}
 
 minion_install_silent_cmd:
@@ -32,18 +32,18 @@ minion_install_silent_cmd:
     {%- if pillar["salt"]["minion"]["grains_file_rm"] is defined and pillar["salt"]["minion"]["grains_file_rm"] %}
 salt_minion_grains_file_rm:
   file.absent:
-    - name: "C:\salt\conf\grains"
+    - name: 'C:\salt\conf\grains'
     {%- endif %}
 
 salt_minion_id:
   file.managed:
-    - name: "C:\salt\conf\minion_id"
+    - name: 'C:\salt\conf\minion_id'
     - contents: |
         {{ grains["fqdn"] }}
 
 salt_minion_config:
   file.serialize:
-    - name: "C:\salt\conf\minion"
+    - name: 'C:\salt\conf\minion'
     - show_changes: True
     - create: True
     - merge_if_exists: False
@@ -55,9 +55,9 @@ salt_minion_config_restart:
     - name: service.restart
     - m_name: salt-minion
     - onchanges:
-        - file: "C:\salt\conf\minion"
-        - file: "C:\salt\conf\grains"
-        - file: "C:\salt\conf\minion_id"
+        - file: 'C:\salt\conf\minion'
+        - file: 'C:\salt\conf\grains'
+        - file: 'C:\salt\conf\minion_id'
 
   {%- elif grains["os"] in ["Ubuntu", "Debian", "CentOS"] %}
 salt_minion_dirs_1:
