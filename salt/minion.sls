@@ -142,7 +142,11 @@ salt_minion_pki_minion_master_pub:
 salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-    - name: deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main
+      {%- if grains["osarch"] == "arm64" %}
+    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+      {%- else %}
+    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+      {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
     - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
     - clean_file: True
