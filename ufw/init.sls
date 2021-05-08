@@ -291,4 +291,13 @@ ufw_reload:
       - file: /etc/ufw/user.rules
       - file: /etc/ufw/user6.rules
 
+{% else %}
+ufw_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured with pillar, so nothing has been done. But it is OK.
+
 {% endif %}
