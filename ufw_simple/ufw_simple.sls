@@ -1,4 +1,4 @@
-{% if (pillar['ufw_simple'] is defined) and (pillar['ufw_simple'] is not none) %}
+{% if pillar['ufw_simple'] is defined and pillar['ufw'] is not defined %}
   {%- if (pillar['ufw_simple']['enabled'] is defined) and (pillar['ufw_simple']['enabled'] is not none) and (pillar['ufw_simple']['enabled']) %}
 
     {%- if (grains['oscodename'] == 'precise') %}
