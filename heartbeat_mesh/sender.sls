@@ -20,16 +20,20 @@ heartbeat_mesh_sender_task:
 heartbeat_mesh_sender_dir:
   file.directory:
     - name: /opt/sysadmws/heartbeat_mesh
+  {%- if grains["os"] not in ["Windows"] %}
     - user: root
     - group: root
     - mode: 0775
+  {%- endif %}
 
 heartbeat_mesh_sender_config:
   file.serialize:
     - name: /opt/sysadmws/heartbeat_mesh/sender.yaml
+  {%- if grains["os"] not in ["Windows"] %}
     - user: root
     - group: root
     - mode: 644
+  {%- endif %}
     - show_changes: True
     - create: True
     - merge_if_exists: False
@@ -41,7 +45,9 @@ heartbeat_mesh_sender_cron_managed:
   cron.present:
     - identifier: heartbeat_mesh_sender
     - name: /opt/sysadmws/heartbeat_mesh/sender.py
+  {%- if grains["os"] not in ["Windows"] %}
     - user: root
+  {%- endif %}
     - minute: "{{ pillar["heartbeat_mesh"]["sender"]["cron"] }}"
 
   {%- endif %}
