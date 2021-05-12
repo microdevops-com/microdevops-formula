@@ -14,7 +14,8 @@ heartbeat_mesh_sender_py:
 heartbeat_mesh_sender_task:
   cmd.run:
     - name: |
-        c:\windows\system32\schtasks.exe /create /tn heartbeat_mesh_sender /ru SYSTEM /sc MINUTE /tr "c:\salt\bin\python.exe c:\opt\sysadmws\heartbeat_mesh\sender.py" /np /f                                    {%- endif %}
+        c:\windows\system32\schtasks.exe /create /tn heartbeat_mesh_sender /ru SYSTEM /sc MINUTE /tr "c:\salt\bin\python.exe c:\opt\sysadmws\heartbeat_mesh\sender.py" /np /f
+  {%- endif %}
 
 heartbeat_mesh_sender_dir:
   file.directory:
