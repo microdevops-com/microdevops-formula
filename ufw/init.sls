@@ -233,7 +233,11 @@ ufw_user_rules_src_managed:
 ufw_user_rules_py_managed:
   file.managed:
     - name: /etc/ufw/user.rules.py
+  {%- if grains["os"] in ["CentOS"] %}
     - source: salt://ufw/files/etc_ufw_user.rules.py
+  {%- else %}
+    - source: salt://ufw/files/etc_ufw_user.rules.py2
+  {%- endif %}
     - mode: 0700
 
   # Generate tmp user rules
