@@ -8,7 +8,7 @@ pkgrepo_precise_backports:
     - refresh: True
   {%- endif %}
 
-  {%- if grains["os"] in ["Ubuntu", "Debian"] %}
+  {%- if grains["os"] in ["Ubuntu", "Debian"] and grains["oscodename"] != "precise" %}
 pkgrepo_sysadmws:
   pkgrepo.managed:
     - file: /etc/apt/sources.list.d/sysadmws.list
