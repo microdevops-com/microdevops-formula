@@ -234,9 +234,9 @@ ufw_user_rules_py_managed:
   file.managed:
     - name: /etc/ufw/user.rules.py
   {%- if grains["os"] in ["CentOS"] %}
-    - source: salt://ufw/files/etc_ufw_user.rules.py
-  {%- else %}
     - source: salt://ufw/files/etc_ufw_user.rules.py2
+  {%- else %}
+    - source: salt://ufw/files/etc_ufw_user.rules.py
   {%- endif %}
     - mode: 0700
 
