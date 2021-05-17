@@ -264,7 +264,11 @@ ufw_user6_rules_gen_tmp:
   # Manage /etc/ufw/user.rules
 ufw_user_rules_managed:
   file.managed:
+  {%- if grains["os"] in ["CentOS"] %}
+    - name: /var/lib/ufw/user.rules
+  {%- else %}
     - name: /etc/ufw/user.rules
+  {%- endif %}
     - source: /etc/ufw/user.rules.tmp
     - mode: 0640
     - keep_source: False
@@ -275,7 +279,11 @@ ufw_user_rules_managed:
   # Manage /etc/ufw/user6.rules
 ufw_user6_rules_managed:
   file.managed:
+  {%- if grains["os"] in ["CentOS"] %}
+    - name: /var/lib/ufw/user6.rules
+  {%- else %}
     - name: /etc/ufw/user6.rules
+  {%- endif %}
     - source: /etc/ufw/user6.rules.tmp
     - mode: 0640
     - keep_source: False
