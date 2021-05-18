@@ -264,7 +264,7 @@ ufw_user6_rules_gen_tmp:
   # Manage /etc/ufw/user.rules
 ufw_user_rules_managed:
   file.managed:
-  {%- if grains["osfinger"] == "CentOS Linux-7" %}
+  {%- if grains["os"] in ["CentOS"] %}
     - name: /var/lib/ufw/user.rules
   {%- else %}
     - name: /etc/ufw/user.rules
@@ -279,7 +279,7 @@ ufw_user_rules_managed:
   # Manage /etc/ufw/user6.rules
 ufw_user6_rules_managed:
   file.managed:
-  {%- if grains["osfinger"] == "CentOS Linux-7" %}
+  {%- if grains["os"] in ["CentOS"] %}
     - name: /var/lib/ufw/user6.rules
   {%- else %}
     - name: /etc/ufw/user6.rules
@@ -300,7 +300,7 @@ ufw_reload:
       - file: /etc/ufw/sysctl.conf
       - file: /etc/default/ufw
       - file: /etc/ufw/before.rules
-  {%- if grains["osfinger"] == "CentOS Linux-7" %}
+  {%- if grains["os"] in ["CentOS"] %}
       - file: /var/lib/ufw/user.rules
       - file: /var/lib/ufw/user6.rules
   {%- else %}
