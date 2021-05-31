@@ -22,7 +22,6 @@ cmd_check_alert_common_cron_absent:
     - user: root
 
   {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() %}
-
     {%- if "install_sensu-plugins" in check_group_params %}
       {%- for plugin in check_group_params["install_sensu-plugins"] %}
         {%- if plugin not in sensu_plugins_needed %}
@@ -30,7 +29,42 @@ cmd_check_alert_common_cron_absent:
         {%- endif %}
       {%- endfor %}
     {%- endif %}
+  {%- endfor %}
 
+  {%- if sensu_plugins_needed|length > 0 %}
+    {%- if grains["os_family"] == "Debian" %}
+sensu-plugins_repo:
+  pkgrepo.managed:
+    - humanname: Sensu Plugins
+    - name: deb https://packagecloud.io/sensu/community/{{ grains["os"]|lower }}/ {{ grains["oscodename"] }} main
+    - file: /etc/apt/sources.list.d/sensu_community.list
+    - key_url: https://packagecloud.io/sensu/community/gpgkey
+    - clean_file: True
+
+    {%- elif grains["os_family"] == "RedHat" %}
+sensu-plugins_repo:
+  cmd.script:
+    - name: script.rpm.sh
+    - source: https://packagecloud.io/install/repositories/sensu/community/script.rpm.sh
+
+    {%- endif %}
+
+sensu-plugins_pkg:
+  pkg.latest:
+    - refresh: True
+    - pkgs:
+        - sensu-plugins-ruby
+
+    {%- for plugin in sensu_plugins_needed %}
+sensu-plugins_install_{{ loop.index }}:
+  cmd.run:
+    - name: sensu-install -p {{ plugin }}
+
+    {%- endfor %}
+
+  {%- endif %}
+
+  {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() %}
 cmd_check_alert_config_managed_{{ loop.index }}:
   file.serialize:
     - name: /opt/sysadmws/cmd_check_alert/checks/{{ check_group_name }}.yaml
@@ -85,38 +119,6 @@ cvescan_installed:
     {%- endif %}
 
   {%- endfor %}
-
-  {%- if sensu_plugins_needed|length > 0 %}
-    {%- if grains["os_family"] == "Debian" %}
-sensu-plugins_repo:
-  pkgrepo.managed:
-    - humanname: Sensu Plugins
-    - name: deb https://packagecloud.io/sensu/community/{{ grains["os"]|lower }}/ {{ grains["oscodename"] }} main
-    - file: /etc/apt/sources.list.d/sensu_community.list
-    - key_url: https://packagecloud.io/sensu/community/gpgkey
-    - clean_file: True
-
-    {%- elif grains["os_family"] == "RedHat" %}
-sensu-plugins_repo:
-  cmd.script:
-    - name: script.rpm.sh
-    - source: https://packagecloud.io/install/repositories/sensu/community/script.rpm.sh
-
-    {%- endif %}
-
-sensu-plugins_pkg:
-  pkg.latest:
-    - refresh: True
-    - pkgs:
-        - sensu-plugins-ruby
-
-    {%- for plugin in sensu_plugins_needed %}
-sensu-plugins_install_{{ loop.index }}:
-  cmd.run:
-    - name: sensu-install -p {{ plugin }}
-    {%- endfor %}
-
-  {%- endif %}
 
 {% else %}
 cmd_check_alert_nothing_done_info:
