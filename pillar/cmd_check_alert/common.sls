@@ -90,6 +90,7 @@ cmd_check_alert:
       hour: '*/6'
     install_sensu-plugins:
       - disk-checks
+      - raid-checks
     config:
       enabled: True
       limits:
