@@ -148,12 +148,10 @@ cmd_check_alert:
 {% if grains["oscodename"] not in ["bionic", "focal"] %}
           disabled: True
 {% endif %}
-          cmd: cvescan -p all
+          cmd: CVESCAN_OUT=$(cvescan -p all); if echo "${CVESCAN_OUT}" | grep -q -e "Fixes Available by.*apt-get upgrade.* 0$"; then echo "${CVESCAN_OUT}"; ( exit 0 ); else echo "${CVESCAN_OUT}"; ( exit 2 ); fi
           severity_per_retcode:
             1: minor
-            2: minor
-            3: security
-            4: security
+            2: security
           service: pkg
           resource: __hostname__:cvescan
         yum_security:
