@@ -148,7 +148,7 @@ cmd_check_alert:
 {% if grains["oscodename"] not in ["bionic", "focal"] %}
           disabled: True
 {% endif %}
-          cmd: cvescan
+          cmd: cvescan -p all
           severity_per_retcode:
             1: minor
             2: minor
