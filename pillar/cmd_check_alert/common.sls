@@ -13,6 +13,7 @@ cmd_check_alert:
         severity: critical
       checks:
         cpu-usage:
+          disabled: True
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-cpu.rb -w 90 -c 95
           severity_per_retcode:
             1: major
