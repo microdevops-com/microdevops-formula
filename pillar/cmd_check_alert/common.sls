@@ -34,6 +34,12 @@ cmd_check_alert:
         severity: critical
       checks:
         memory-percent:
+{% if grains["virtual"] == "lxc"|lower %}
+          # Available memory in LXC containers is shown wrong (without buffers/cache).
+          # Only host machine will have mem checks enabled - it is usually ok.
+          # But if you have LXC container with memory limits by LXC - you should enable mem checks for it individually.
+          disabled: True
+{% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-memory-percent.rb -w 80 -c 90
           severity_per_retcode:
             1: major
@@ -41,6 +47,9 @@ cmd_check_alert:
           service: memory
           resource: __hostname__:memory-percent
         swap-percent:
+{% if grains["virtual"] == "lxc"|lower %}
+          disabled: True
+{% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap-percent.rb -w 70 -c 80
           severity_per_retcode:
             1: major
@@ -48,6 +57,9 @@ cmd_check_alert:
           service: memory
           resource: __hostname__:swap-percent
         swap-usage:
+{% if grains["virtual"] == "lxc"|lower %}
+          disabled: True
+{% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap.rb -w 1024 -c 2048
           severity_per_retcode:
             1: major
