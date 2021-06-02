@@ -9,9 +9,8 @@ salt_master_hosts_{{ loop.index }}:
   {%- endfor %}
 
   {%- if grains["os"] in ["Windows"] %}
-    {%- if pillar["salt"]["minion"]["version"]|string == '3001' %}
-      {%- set minion_exe = 'Salt-Minion-3001.4-Py3-AMD64-Setup.exe' -%}
-    {%- endif %}
+    {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+    {%- set minion_exe = 'Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
 
     {%- if 
            pillar["salt"]["minion"]["version"]|string != grains["saltversioninfo"][0]|string
@@ -21,7 +20,7 @@ salt_master_hosts_{{ loop.index }}:
 minion_installer_exe:
   file.managed:
     - name: 'C:\Windows\{{ minion_exe }}' # DO NOT USE "" here - slash \ is treated as escape inside
-    - source: salt://salt/{{ minion_exe }}
+    - source: '{{ minion_src }}'
 
 minion_install_silent_cmd:
   cmd.run:
