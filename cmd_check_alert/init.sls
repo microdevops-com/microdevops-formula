@@ -105,7 +105,8 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
     {%- endif %}
 
     {%- if "install_cvescan" in check_group_params %}
-      {%- if grains["oscodename"] in ["bionic", "focal"] %}
+      # snapd is not working on bionic inside lxc
+      {%- if grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and grains["virtual"] != "lxc"|lower) %}
 cmd_check_alert_snapd_installed:
   pkg.installed:
     - pkgs:

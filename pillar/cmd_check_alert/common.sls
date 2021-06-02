@@ -144,7 +144,7 @@ cmd_check_alert:
     cron:
       minute: '15'
       hour: '10'
-{% if grains["oscodename"] in ["bionic", "focal"] %}
+{% if grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and grains["virtual"] != "lxc"|lower) %}
     install_cvescan: True
 {% endif %}
     config:
@@ -157,7 +157,7 @@ cmd_check_alert:
         severity: minor
       checks:
         cvescan:
-{% if grains["oscodename"] not in ["bionic", "focal"] %}
+{% if not (grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and grains["virtual"] != "lxc"|lower)) %}
           disabled: True
 {% endif %}
           cmd: CVESCAN_OUT=$(cvescan -p all); if echo "${CVESCAN_OUT}" | grep -q -e "Fixes Available by.*apt-get upgrade.* 0$"; then echo "${CVESCAN_OUT}"; ( exit 0 ); else echo "${CVESCAN_OUT}"; ( exit 2 ); fi
