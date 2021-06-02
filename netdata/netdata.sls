@@ -78,7 +78,7 @@ netdata_dir_smartd:
 # Install netdata
 netdata_kickstart:
   cmd.script:
-    - name: kickstart-static64.sh --dont-wait --stable-channel --no-updates
+    - name: kickstart-static64.sh --dont-wait --stable-channel --no-updates --reinstall
     - source: https://raw.githubusercontent.com/netdata/netdata/master/packaging/installer/kickstart-static64.sh
 
 netdata_config_health_alarm:
