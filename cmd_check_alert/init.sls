@@ -33,6 +33,7 @@ cmd_check_alert_common_cron_absent:
 
   {%- if sensu_plugins_needed|length > 0 %}
     {%- if grains["os_family"] == "Debian" %}
+      {%- if grains["oscodename"] not in ["precise"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
@@ -40,6 +41,8 @@ sensu-plugins_repo:
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
+
+      {%- endif %}
 
     {%- elif grains["os_family"] == "RedHat" %}
 sensu-plugins_repo:
@@ -49,18 +52,20 @@ sensu-plugins_repo:
 
     {%- endif %}
 
+    {%- if grains["oscodename"] not in ["precise"] %}
 sensu-plugins_pkg:
   pkg.latest:
     - refresh: True
     - pkgs:
         - sensu-plugins-ruby
 
-    {%- for plugin in sensu_plugins_needed %}
+      {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
     - name: sensu-install -p {{ plugin }}
 
-    {%- endfor %}
+      {%- endfor %}
+    {%- endif %}
 
   {%- endif %}
 

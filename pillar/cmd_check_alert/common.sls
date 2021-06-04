@@ -34,7 +34,7 @@ cmd_check_alert:
         severity: critical
       checks:
         memory-percent:
-{% if grains["virtual"] == "lxc"|lower %}
+{% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
           # Available memory in LXC containers is shown wrong (without buffers/cache).
           # Only host machine will have mem checks enabled - it is usually ok.
           # But if you have LXC container with memory limits by LXC - you should enable mem checks for it individually.
@@ -47,7 +47,7 @@ cmd_check_alert:
           service: memory
           resource: __hostname__:memory-percent
         swap-percent:
-{% if grains["virtual"] == "lxc"|lower %}
+{% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap-percent.rb -w 70 -c 80
@@ -57,7 +57,7 @@ cmd_check_alert:
           service: memory
           resource: __hostname__:swap-percent
         swap-usage:
-{% if grains["virtual"] == "lxc"|lower %}
+{% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap.rb -w 1024 -c 2048
@@ -80,6 +80,9 @@ cmd_check_alert:
         severity: critical
       checks:
         netfilter-conntrack:
+{% if grains["oscodename"] in ["precise"] %}
+          disabled: True
+{% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-netfilter-conntrack.rb -w 80 -c 90
           severity_per_retcode:
             1: major
@@ -87,7 +90,7 @@ cmd_check_alert:
           service: network
           resource: __hostname__:netfilter-conntrack
         iptables_input_drop:
-{% if grains["oscodename"] == "precise" %}
+{% if grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           cmd: iptables -w -S | grep -q -e "-P INPUT DROP"
@@ -95,7 +98,7 @@ cmd_check_alert:
           service: network
           resource: __hostname__:iptables_input_drop
         iptables_open_from_any:
-{% if grains["oscodename"] == "precise" %}
+{% if grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           # we check rules that are without source, exclude standard ufw rules, exclude open 80, 443, 2226
@@ -120,6 +123,9 @@ cmd_check_alert:
         severity: critical
       checks:
         fstab-mounts:
+{% if grains["oscodename"] in ["precise"] %}
+          disabled: True
+{% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-fstab-mounts.rb
           severity_per_retcode:
             1: minor
@@ -127,7 +133,7 @@ cmd_check_alert:
           service: disk
           resource: __hostname__:fstab-mounts
         smart:
-{% if grains["virtual"] != "physical" %}
+{% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-smart.rb
@@ -137,7 +143,7 @@ cmd_check_alert:
           service: disk
           resource: __hostname__:smart
         raid:
-{% if grains["virtual"] != "physical" %}
+{% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-raid.rb
