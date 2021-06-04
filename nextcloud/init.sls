@@ -292,6 +292,29 @@ nextcloud_config_onlyoffice_4_{{ loop.index }}:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice"]["StorageUrl"] }}'
 
     {%- endif %}
+    {%- if "user_saml" in domain %}
+
+nextcloud_config_user_saml_1_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:install user_saml || true'
+
+nextcloud_config_user_saml_2_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:enable user_saml'
+
+nextcloud_config_user_saml_3_{{ loop.index }}:
+  file.serialize:
+    - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
+    - dataset:
+        apps:
+          user_saml: {{ domain["user_saml"] }}
+    - formatter: json
+
+nextcloud_config_user_saml_4_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:import < user_saml_config.json'
+
+    {%- endif %}
   {%- endfor %}
 
 nginx_reload:
