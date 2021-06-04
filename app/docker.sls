@@ -91,10 +91,10 @@ docker_app_container_{{ loop.index }}:
     - image: {{ app["image"] }}
     - detach: True
     - restart_policy: unless-stopped
-    - publish: {{ app["publish"] }}
-    - environment: {{ app["environment"] }}
-    - binds: {{ app["binds"] }}
-    - networks: {{ app["networks"] }}
+    - publish: {{ app["publish"] | default([]) }}
+    - environment: {{ app["environment"] | default([]) }}
+    - binds: {{ app["binds"] | default([]) }}
+    - networks: {{ app["networks"] | default([]) }}
     - privileged: {{ app["privileged"] | default(False) }}
 
       {%- if app["exec_after_deploy"] is defined %}

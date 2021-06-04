@@ -1,5 +1,8 @@
 # vi: set ft=yaml:
 
+# This state is DEPRECATED, use ufw instead.
+# It will not run if pillar["ufw"] is defined.
+
 # ufw_simple
 ufw_simple:
   version: '0.35-4' # or 0.36-7.1

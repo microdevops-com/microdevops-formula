@@ -1,7 +1,9 @@
-{% if (pillar['ufw_simple'] is defined) and (pillar['ufw_simple'] is not none) %}
+{% if pillar['ufw_simple'] is defined and pillar['ufw'] is not defined %}
   {%- if (pillar['ufw_simple']['enabled'] is defined) and (pillar['ufw_simple']['enabled'] is not none) and (pillar['ufw_simple']['enabled']) %}
 
     {%- if (grains['oscodename'] == 'precise') %}
+{#
+# disabling precise hacks in deprecated state
 python_snakes_repo:
   pkgrepo.managed:
     - name: deb http://ppa.launchpad.net/fkrull/deadsnakes/ubuntu precise main
@@ -36,6 +38,7 @@ ufw_simple_dep_deb:
   pkg.installed:
     - sources:
       - init-system-helpers: 'salt://ufw_simple/files/init-system-helpers_1.18_all.deb'
+#}
     {%- endif %}
 
     {%- if (grains['oscodename'] == 'trusty') %}
@@ -46,10 +49,13 @@ ufw_simple_dep_deb:
     {%- endif %}
 
     {%- if (grains['oscodename'] == 'precise') %}
+{#
+# disabling precise hacks in deprecated state
 ufw_simple_update_deb:
   pkg.installed:
     - sources:
       - ufw: 'salt://ufw_simple/files/ufw_0.35-4_all_deadsnakes.deb'
+#}
     {%- elif (grains['oscodename'] == 'trusty' or grains['oscodename'] == 'xenial' ) %}
 ufw_simple_update_deb:
   pkg.installed:
@@ -310,4 +316,14 @@ ufw_simple_enable:
     - runas: root
 
   {%- endif %}
+
+{% else %}
+ufw_simple_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured with pillar, so nothing has been done. But it is OK.
+
 {% endif %}

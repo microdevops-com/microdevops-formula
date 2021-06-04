@@ -70,6 +70,10 @@ lxd_image_focal:
   cmd.run:
     - name: '/snap/bin/lxc image copy images:ubuntu/focal/amd64 local: --alias ubuntu/focal/amd64 --auto-update'
 
+lxd_image_hirsute:
+  cmd.run:
+    - name: '/snap/bin/lxc image copy images:ubuntu/hirsute/amd64 local: --alias ubuntu/hirsute/amd64 --auto-update'
+
   {%- if 'images' in pillar['lxd'] %}
     {%- for image_alias, image_source in pillar['lxd']['images'].items() %}
 lxd_image_pillar_{{ loop.index }}:
