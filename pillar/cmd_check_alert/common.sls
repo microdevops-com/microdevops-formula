@@ -87,13 +87,13 @@ cmd_check_alert:
           service: network
           resource: __hostname__:netfilter-conntrack
         iptables_input_drop:
-          cmd: iptables -w 60 -S | grep -q -e "-P INPUT DROP"
+          cmd: iptables -w -S | grep -q -e "-P INPUT DROP"
           severity: security
           service: network
           resource: __hostname__:iptables_input_drop
         iptables_open_from_any:
           # we heck rules that are without source, exclude standard ufw rules, exclude open 80, 443, 2226
-          cmd: IPT_RULES=$(iptables -w 60 -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -e ufw-before-forward -e ufw-before-input -e ufw-before-output -e ufw-skip-to-policy-forward -e ufw-skip-to-policy-output -e ufw-track-forward -e ufw-track-output -e ufw-user-limit-accept | grep -v -e "--dport 80" -e "--dport 443" -e "--dport 2226"); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
+          cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -e ufw-before-forward -e ufw-before-input -e ufw-before-output -e ufw-skip-to-policy-forward -e ufw-skip-to-policy-output -e ufw-track-forward -e ufw-track-output -e ufw-user-limit-accept | grep -v -e "--dport 80" -e "--dport 443" -e "--dport 2226"); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
           severity: security
           service: network
           resource: __hostname__:iptables_open_from_any
