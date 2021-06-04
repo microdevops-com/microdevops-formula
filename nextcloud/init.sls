@@ -1,11 +1,4 @@
 {% if pillar["nextcloud"] is defined %}
-download_yaml2json:
-  file.managed:
-    - name: /opt/yaml2json
-    - source: https://github.com/bronze1man/yaml2json/releases/download/v1.3/yaml2json_linux_amd64
-    - source_hash: md5=f3bd082bfceca50525f0c39de1401952
-    - mode: 500
-
 docker_install_00:
   file.directory:
     - name: /etc/docker
@@ -311,15 +304,11 @@ nextcloud_config_user_saml_2_{{ loop.index }}:
 
 nextcloud_config_user_saml_3_{{ loop.index }}:
   file.serialize:
-    - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.yaml
+    - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
     - dataset:
         apps:
           user_saml: {{ domain["user_saml"] }}
-    - formatted: yaml
-
-nextcloud_config_user_saml_yaml2json_{{ loop.index }}:
-  cmd.run:
-    - name: /opt/yaml2json < /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.yaml | aeson-pretty | sed 's/\\\\n/\\n/g' > /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
+    - formatter: json
 
 nextcloud_config_user_saml_4_{{ loop.index }}:
   cmd.run:
