@@ -135,16 +135,127 @@ wait_for_container_{{ loop.index }}:
     - name: sleep {{ domain["container_start_timeout"] }}
 
 xwiki_validationkey_{{ loop.index }}:
-    file.replace:
-      - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
-      - pattern: '^ *xwiki.authentication.validationKey=.*$'
-      - repl: 'xwiki.authentication.validationKey={{ domain["validationkey"] }}'
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+    - pattern: '^ *xwiki.authentication.validationKey=.*$'
+    - repl: 'xwiki.authentication.validationKey={{ domain["validationkey"] }}'
+    - append_if_not_found: True
 
 xwiki_encryptionkey_{{ loop.index }}:
-    file.replace:
-      - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
-      - pattern: '^ *xwiki.authentication.encryptionKey=.*$'
-      - repl: 'xwiki.authentication.encryptionKey={{ domain["encryptionkey"] }}'
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+    - pattern: '^ *xwiki.authentication.encryptionKey=.*$'
+    - repl: 'xwiki.authentication.encryptionKey={{ domain["encryptionkey"] }}'
+    - append_if_not_found: True
+
+  {%- if "oidc" in domain %}
+
+xwiki_authentication_authclass_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+    - pattern: '^ *xwiki.authentication.authclass=.*$'
+    - repl: 'xwiki.authentication.authclass={{ domain["oidc"]["xwiki.authentication.authclass"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_xwikiprovider_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.xwikiprovider=.*$'
+    - repl: 'oidc.xwikiprovider={{ domain["oidc"]["oidc.xwikiprovider"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_endpoint_authorization_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.endpoint.authorization=.*$'
+    - repl: 'oidc.endpoint.authorization={{ domain["oidc"]["oidc.endpoint.authorization"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_endpoint_token_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.endpoint.token=.*$'
+    - repl: 'oidc.endpoint.token={{ domain["oidc"]["oidc.endpoint.token"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_endpoint_userinfo_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc_endpoint_userinfo=.*$'
+    - repl: 'oidc.endpoint.userinfo={{ domain["oidc"]["oidc.endpoint.userinfo"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_scope_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.scope=.*$'
+    - repl: 'oidc.scope={{ domain["oidc"]["oidc.scope"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_endpoint_userinfo_method_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.endpoint.userinfo.method=.*$'
+    - repl: 'oidc.endpoint.userinfo.method={{ domain["oidc"]["oidc.endpoint.userinfo.method"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_user_nameFormater_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.user.nameFormater=.*$'
+    - repl: 'oidc_user_nameFormater={{ domain["oidc"]["oidc.user.nameFormater"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_user_subjectFormater_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.user.subjectFormater=.*$'
+    - repl: 'oidc.user.subjectFormater={{ domain["oidc"]["oidc.user.subjectFormater"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_groups_claim_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.groups.claim=.*$'
+    - repl: 'oidc.groups.claim={{ domain["oidc"]["oidc.groups.claim"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_userinfoclaims_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.userinfoclaims=.*$'
+    - repl: 'oidc.userinfoclaims={{ domain["oidc"]["oidc.userinfoclaims"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_clientid_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.clientid=.*$'
+    - repl: 'oidc.clientid={{ domain["oidc"]["oidc.clientid"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_secret_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.secret=.*$'
+    - repl: 'oidc.secret={{ domain["oidc"]["oidc.secret"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_endpoint_token_auth_method_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.endpoint.token.auth_method=.*$'
+    - repl: 'oidc.endpoint.token.auth_method={{ domain["oidc"]["oidc.endpoint.token.auth_method"] }}'
+    - append_if_not_found: True
+
+xwiki_oidc_skipped_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.properties'
+    - pattern: '^ *oidc.skipped=.*$'
+    - repl: 'oidc.skipped={{ domain["oidc"]["oidc.skipped"] }}'
+    - append_if_not_found: True
+
+  {%- endif %}
 
 xwiki_container_restart_{{ loop.index }}:
   cmd.run:
