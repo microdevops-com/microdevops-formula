@@ -1,11 +1,4 @@
 {% if pillar["nextcloud"] is defined %}
-download_yaml2json:
-  file.managed:
-    - name: /opt/yaml2json
-    - source: https://github.com/bronze1man/yaml2json/releases/download/v1.3/yaml2json_linux_amd64
-    - source_hash: md5=f3bd082bfceca50525f0c39de1401952
-    - mode: 500
-
 docker_install_00:
   file.directory:
     - name: /etc/docker
@@ -297,33 +290,6 @@ nextcloud_config_onlyoffice_3_{{ loop.index }}:
 nextcloud_config_onlyoffice_4_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice"]["StorageUrl"] }}'
-
-    {%- endif %}
-    {%- if "user_saml" in domain %}
-
-nextcloud_config_user_saml_1_{{ loop.index }}:
-  cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:install user_saml || true'
-
-nextcloud_config_user_saml_2_{{ loop.index }}:
-  cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:enable user_saml'
-
-nextcloud_config_user_saml_3_{{ loop.index }}:
-  file.serialize:
-    - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.yaml
-    - dataset:
-        apps:
-          user_saml: {{ domain["user_saml"] }}
-    - formatted: yaml
-
-nextcloud_config_user_saml_yaml2json_{{ loop.index }}:
-  cmd.run:
-    - name: /opt/yaml2json < /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.yaml | aeson-pretty | sed 's/\\\\n/\\n/g' > /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
-
-nextcloud_config_user_saml_4_{{ loop.index }}:
-  cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:import < user_saml_config.json'
 
     {%- endif %}
   {%- endfor %}
