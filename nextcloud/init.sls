@@ -307,7 +307,7 @@ nextcloud_config_user_saml_3_{{ loop.index }}:
     - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
     - dataset:
         apps:
-          user_saml: {{ domain["user_saml"] }}
+          user_saml: {{ domain["user_saml"] | json }}
     - formatter: json
 
 nextcloud_config_user_saml_4_{{ loop.index }}:
