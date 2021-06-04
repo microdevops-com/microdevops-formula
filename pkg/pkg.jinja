@@ -9,13 +9,23 @@ pkg:
 Do not use number as some_name, filter will not match for numbers.
 #}
 {% if pillar['pkg'] is defined and pillar['pkg'] is not none %}
-  {%- for pkg_key, pkg_val in pillar['pkg'].items()|sort %}
+  {%- set pkg_to_str = {} %}
+  # Fix Rendering SLS ... failed: Jinja error: < not supported between instances of str and int
+  # Create copy of pillar filtered to str
+  {%- for pkg_key, pkg_val in pillar['pkg'].items() %}
+    {%- do pkg_to_str.update({pkg_key|string: pkg_val}) %}
+  {%- endfor %}
+  {%- for pkg_key, pkg_val in pkg_to_str.items()|sort %}
     {%- if pkg_val['when'] is defined and pkg_val['when'] is not none and PKG_WHEN is defined and PKG_WHEN is not none and pkg_val['when'] == PKG_WHEN %}
       {%- for state in pkg_val['states'] %}
         {%- set a_loop = loop %}
         {%- for s_key, s_val in state.items() %}
           {%- set b_loop = loop %}
-          {%- for ss_key, ss_val in s_val.items()|sort %}
+          {%- set s_val_to_str = {} %}
+          {%- for ss_key, ss_val in s_val.items() %}
+            {%- do s_val_to_str.update({ss_key|string: ss_val}) %}
+          {%- endfor %}
+          {%- for ss_key, ss_val in s_val_to_str.items()|sort %}
             {%- if pillar['pkg_filter'] is defined and pillar['pkg_filter'] is not none %}
               {%- if pillar['pkg_filter'] in pkg_key %}
 pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
