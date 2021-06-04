@@ -277,7 +277,7 @@ nextcloud_cron_{{ loop.index }}:
     {%- if "onlyoffice" in domain %}
 nextcloud_config_onlyoffice_1_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:install onlyoffice'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:install onlyoffice || true'
 
 nextcloud_config_onlyoffice_2_{{ loop.index }}:
   cmd.run:
