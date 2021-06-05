@@ -64,6 +64,15 @@ sensu-plugins_install_{{ loop.index }}:
   cmd.run:
     - name: sensu-install -p {{ plugin }}
 
+        {%- if plugin == "disk-checks" %}
+sensu-plugins_install_{{ loop.index }}_patch_smart_1:
+  file.managed:
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-disk-checks-5.1.4/bin/check-smart.rb
+    - source: salt://cmd_check_alert/files/check-smart.rb
+    - create: False
+    - show_changes: True
+
+        {%- endif %}
       {%- endfor %}
     {%- endif %}
 
