@@ -80,7 +80,7 @@ cmd_check_alert:
         severity: critical
       checks:
         netfilter-conntrack:
-{% if grains["oscodename"] in ["precise"] %}
+{% if grains["oscodename"] in ["precise"] or not salt["file.file_exists"]("/proc/sys/net/netfilter/nf_conntrack_max") %}
           disabled: True
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-netfilter-conntrack.rb -w 80 -c 90
