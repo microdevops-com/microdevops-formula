@@ -102,7 +102,7 @@ cmd_check_alert:
           disabled: True
 {% endif %}
           # we check rules that are without source, exclude standard ufw rules, exclude open 80, 443, 2226
-          cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -e ufw-before-forward -e ufw-before-input -e ufw-before-output -e ufw-skip-to-policy-forward -e ufw-skip-to-policy-output -e ufw-track-forward -e ufw-track-output -e ufw-user-limit-accept -e OUTPUT -e FORWARD | grep -v -e "--dport 80" -e "--dport 443" -e "--dport 2226"); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
+          cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -e ufw-before-forward -e ufw-before-input -e ufw-before-output -e ufw-skip-to-policy-forward -e ufw-skip-to-policy-output -e ufw-track-forward -e ufw-track-output -e ufw-user-limit-accept -e OUTPUT -e FORWARD | grep -v -e "-i lxdbr0" | grep -v -e "--dport 80" -e "--dport 443" -e "--dport 2226"); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
           severity: security
           service: network
           resource: __hostname__:iptables_open_from_any
