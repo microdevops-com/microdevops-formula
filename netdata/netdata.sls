@@ -12,7 +12,7 @@ remove_old_type_netdata:
   {%- set sensors = pillar["netdata"].get("sensors", False) %}
   {%- set hostname_under = grains["fqdn"]|replace(".", "_") %}
 
-  {% if grains["oscodename"] not in ["precise"] %}
+  {% if grains["oscodename"] not in ["precise"] or not ("skip-install-required-packages" in pillar["netdata"] and pillar["netdata"]["skip-install-required-packages"]) %}
 # Basic depencies
 netdata_depencies_installed_netdata:
   cmd.script:
