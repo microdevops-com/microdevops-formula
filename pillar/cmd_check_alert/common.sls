@@ -80,10 +80,12 @@ cmd_check_alert:
         severity: critical
       checks:
         netfilter-conntrack:
-{% if grains["oscodename"] in ["precise"] or not salt["file.file_exists"]("/proc/sys/net/netfilter/nf_conntrack_max") %}
+{% if grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-netfilter-conntrack.rb -w 80 -c 90
+          # Checking not salt["file.file_exists"]("/proc/sys/net/netfilter/nf_conntrack_max") will not work in pillar as pillar is rendered on salt-master/salt-ssh runner, not minion.
+          # So check it in the check runtime.
+          cmd: if [[ -r /proc/sys/net/netfilter/nf_conntrack_max ]]; then /opt/sensu-plugins-ruby/embedded/bin/check-netfilter-conntrack.rb -w 80 -c 90; fi
           severity_per_retcode:
             1: major
             2: critical
