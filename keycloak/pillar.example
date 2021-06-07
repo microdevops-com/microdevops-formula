@@ -1,0 +1,16 @@
+keycloak:
+  docker-ce_version: 5:19.03.13
+  domains:
+    - name: keycloak.example.com
+      internal_port: 8080
+      image: jboss/keycloak:latest
+      env_vars:
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: XXXXXXXXXXXXXXXXXXXXXX
+        PROXY_ADDRESS_FORWARDING: true
+        DB_VENDOR: postgres
+        DB_USER: keycloak
+        DB_PASSWORD: YYYYYYYYYYYYYYYYYYYYYY
+        DB_DATABASE: keycloak
+        DB_ADDR: keycloak.example.com
+        JAVA_OPTS: -Xmx2048m
