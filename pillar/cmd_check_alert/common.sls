@@ -83,7 +83,9 @@ cmd_check_alert:
 {% if grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-netfilter-conntrack.rb -w 80 -c 90
+          # Checking not salt["file.file_exists"]("/proc/sys/net/netfilter/nf_conntrack_max") will not work in pillar as pillar is rendered on salt-master/salt-ssh runner, not minion.
+          # So check it in the check runtime.
+          cmd: if [[ -r /proc/sys/net/netfilter/nf_conntrack_max ]]; then /opt/sensu-plugins-ruby/embedded/bin/check-netfilter-conntrack.rb -w 80 -c 90; fi
           severity_per_retcode:
             1: major
             2: critical
@@ -101,8 +103,8 @@ cmd_check_alert:
 {% if grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          # we check rules that are without source, exclude standard ufw rules, exclude open 80, 443, 2226
-          cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -e ufw-before-forward -e ufw-before-input -e ufw-before-output -e ufw-skip-to-policy-forward -e ufw-skip-to-policy-output -e ufw-track-forward -e ufw-track-output -e ufw-user-limit-accept | grep -v -e "--dport 80" -e "--dport 443" -e "--dport 2226"); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
+          # we check rules that are without source, exclude standard ufw rules, exclude open 80, 443, 2226 etc
+          cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -e ufw-before-forward -e ufw-before-input -e ufw-before-output -e ufw-skip-to-policy-forward -e ufw-skip-to-policy-output -e ufw-track-forward -e ufw-track-output -e ufw-user-limit-accept -e OUTPUT -e FORWARD | grep -v -e "-i lxdbr0" | grep -v -e "--dport 80" -e "--dport 443" -e "--dport 2226" -e "--dport 25"); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
           severity: security
           service: network
           resource: __hostname__:iptables_open_from_any
