@@ -43,7 +43,7 @@ nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
     - contents: |
-    worker_processes 4;
+        worker_processes 4;
         worker_rlimit_nofile 40000;
         events {
             worker_connections 8192;
