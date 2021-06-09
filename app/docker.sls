@@ -97,7 +97,7 @@ docker_app_container_{{ loop.index }}:
     - networks: {{ app["networks"] | default([]) }}
     - privileged: {{ app["privileged"] | default(False) }}
       {%- if "command" in app %}
-    - command : {{ app["command "] }}
+    - command : {{ app["command"] }}
       {%- endif %}
 
       {%- if app["exec_after_deploy"] is defined %}
