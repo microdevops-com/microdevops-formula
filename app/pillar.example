@@ -85,6 +85,7 @@ app:
             month: ... # optional 
             dayweek: ... # optional 
             special: ... # optional 
+        #command: bash # optional, override cmd
       proto-redis:
         image: redis:latest
         home: /var/www/proto-redis
