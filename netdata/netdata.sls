@@ -104,6 +104,7 @@ netdata_config_netdata:
     - source: salt://netdata/files/netdata.conf_host
   {%- endif %}
     - mode: 0644
+    - show_changes: False
     - template: jinja
     - defaults:
         host_name: {{ hostname_under }}
