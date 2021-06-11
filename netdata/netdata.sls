@@ -78,6 +78,11 @@ netdata_dir_smartd:
     {%- endif %}
   {%- endif %}
     
+# Fix netdata installer bug, it tries to read nonexistant /opt/netdata/etc/netdata/.install-type, heck some time later
+netdata_install-type_fix:
+  cmd.run:
+    - name: mkdir -p /opt/netdata/etc/netdata && touch /opt/netdata/etc/netdata/.install-type
+
 # Install netdata
 netdata_kickstart:
   cmd.script:
@@ -99,6 +104,7 @@ netdata_config_netdata:
     - source: salt://netdata/files/netdata.conf_host
   {%- endif %}
     - mode: 0644
+    - show_changes: False
     - template: jinja
     - defaults:
         host_name: {{ hostname_under }}

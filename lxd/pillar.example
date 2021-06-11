@@ -1,8 +1,11 @@
 lxd:
   password: randompassword
-  #images: # optional, additional images to predownload on server, xenial, bionic and focal are preloaded by default
-  #  alias:                 image 
-  #  ubuntu/somename/amd64: images:ubuntu/somename/amd64
+  images: # optional, images to predownload on server, no images are preloaded by default
+    ubuntu/focal/amd64: # alias
+      source: images:ubuntu/focal/amd64
+    ubuntu/focal/amd64/vm:
+      source: images:ubuntu/focal/amd64
+      vm: True
   profiles:
     br0:
       devices:
@@ -19,19 +22,19 @@ lxd:
     #test: # profile config example
     #  config:
     #    some_key: some_value
-  containers:
+  instances:
     # actual lxd names are dots to dashes converted
-    container1.example.com: # with eth0 with mac and eth1 in br1
+    instance1.example.com: # with eth0 with mac and eth1 in br1
+      # vm: True # add --vm to lxc init
       image: ubuntu/focal/amd64
-      #image: ubuntu/bionic/amd64
-      #image: ubuntu/xenial/amd64
+      #image: ubuntu/focal/amd64/vm # use alias of vm image for virtual machines
       devices:
         root:
           type: disk
           path: /
           pool: vg_md3
           size: 10GB
-        eth0: # network with mac should be added as device, not profile
+        eth0: # network with mac should be added as device, not profile. enp5s0, enp6s0 etc device names are used inside vms
           type: nic
           nictype: bridged
           parent: br0
@@ -40,12 +43,17 @@ lxd:
       #  limits.cpu: 1
       #  limits.memory: 1024MB
       #  limits.memory.swap: False
+      #config: # minimal example for vm
+      #  limits.cpu: 4
+      #  limits.memory: 4GB
       profiles: # profile list will be applied on each state run
         - br1
         - autostart
-        - docker # this profile allows docker inside container
+        - docker # this profile allows docker inside instance
         #- privileged
         #- nfs
+      #profiles: # minimal needed for vm
+      #  - autostart
       bootstrap:
         ...
 
@@ -58,7 +66,7 @@ lxd:
           - '[8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1]' # '[]' - netplan yaml syntax
           - '[example.com]'
         - focal_hostname_and_hosts.sh:
-          - __CONTAINER_NAME__ # special parameter __CONTAINER_NAME__ is replaced with container name with dots
+          - __INSTANCE_NAME__ # special parameter __INSTANCE_NAME__ is replaced with instance name with dots
           - 111.111.111.111
           - salt1.example.com
           - 1.2.3.4
@@ -74,7 +82,7 @@ lxd:
           - '[example.com]'
           - aa:aa:aa:aa:aa:aa
         - focal_hostname_and_hosts.sh:
-          - __CONTAINER_NAME__
+          - __INSTANCE_NAME__
           - 111.111.111.111
           - salt1.example.com
           - 1.2.3.4
@@ -163,7 +171,7 @@ lxd:
           - salt1.example.com
           - 3000
 
-# set only specific containers
-... state.apply lxd.containers pillar='{lxd: {only: {"container1.example.com"}}}'
+# set only specific instances
+... state.apply lxd.instances pillar='{lxd: {only: {"instance1.example.com"}}}'
 # and allow stop and start for changes to apply
-... state.apply lxd.containers pillar='{lxd: {only: {"container1.example.com"}, allow_stop_start: True}}'
+... state.apply lxd.instances pillar='{lxd: {only: {"instance1.example.com"}, allow_stop_start: True}}'
