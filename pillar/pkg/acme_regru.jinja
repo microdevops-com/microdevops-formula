@@ -49,4 +49,4 @@ pkg:
                 #!/bin/bash
                 export REGRU_API_Username="{{ acme_regru_user }}"
                 export REGRU_API_Password="{{ acme_regru_pwd }}"
-                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_regru --dnssleep 120 "$@"
+                /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_regru --dnssleep 600 "$@"
