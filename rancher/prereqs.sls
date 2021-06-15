@@ -1,6 +1,13 @@
 {% if pillar["rancher"] is defined %}
+  {%- for rancher_key, rancher_val in pillar["rancher"].items() %}
+    {%- if "run" in rancher_val and rancher_val["run"] %}
+      {%- set node_list = [] %}
+      {%- for node in rancher_val["nodes"] %}
+        {%- do node_list.append(node["address"]) %}
+      {%- endfor %}
 
-  {%- if grains["fqdn"] in pillar["rancher"]["nginx_hosts"] %}
+      # nginx hosts only
+      {%- if grains["fqdn"] in rancher_val["nginx_hosts"] %}
 nginx_deps:
   pkg.latest:
     - refresh: True
@@ -29,7 +36,7 @@ nginx_files_1:
         stream {
             upstream rancher_servers {
                 least_conn;
-    {%- for node in pillar["rancher"]["nodes"] %}
+    {%- for node in rancher_val["nodes"] %}
                 server {{ node["internal_address"] }}:443 max_fails=3 fail_timeout=5s;
     {%- endfor %}
             }
@@ -47,10 +54,10 @@ nginx_reload:
   cmd.run:
     - runas: root
     - name: service nginx configtest && service nginx reload
-  {%- endif %}
+      {%- endif %}
 
-  # nodes and command_hosts
-  {%- if grains["fqdn"] in pillar["rancher"]["command_hosts"] or "address", grains["fqdn"] in pillar["rancher"]["nodes"] %}
+      # nodes and command_hosts
+      {%- if grains["fqdn"] in rancher_val["command_hosts"] or grains["fqdn"] in node_list %}
 kubectl_repo:
   pkgrepo.managed:
     - humanname: Kubernetes Repository
@@ -67,43 +74,130 @@ kubectl_pkg:
 
 rke_install_1:
   cmd.run:
-    - name: curl -L https://github.com/rancher/rke/releases/download/{{ pillar["rancher"]["rke_version"] }}/rke_linux-amd64 -o /usr/local/bin/rke
+    - name: curl -L https://github.com/rancher/rke/releases/download/{{ rancher_val["rke_version"] }}/rke_linux-amd64 -o /usr/local/bin/rke
 
 rke_install_2:
   cmd.run:
     - name: chmod +x /usr/local/bin/rke
 
+helm_install_1:
+  cmd.run:
+    - name: curl -L https://get.helm.sh/helm-{{ rancher_val["helm_version"] }}-linux-amd64.tar.gz -o /tmp/helm-{{ rancher_val["helm_version"] }}-linux-amd64.tar.gz
+
 helm_install_2:
   cmd.run:
-    - name: curl -L https://get.helm.sh/helm-{{ pillar["rancher"]["helm_version"] }}-linux-amd64.tar.gz -o /tmp/helm-{{ pillar["rancher"]["helm_version"] }}-linux-amd64.tar.gz
+    - name: tar zxvf /tmp/helm-{{ rancher_val["helm_version"] }}-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/helm
 
 helm_install_3:
   cmd.run:
-    - name: tar zxvf /tmp/helm-{{ pillar["rancher"]["helm_version"] }}-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin linux-amd64/helm
-
-helm_install_5:
-  cmd.run:
     - name: chmod +x /usr/local/bin/helm
+
+rancher_cli_install_1:
+  cmd.run:
+    - name: curl -L https://github.com/rancher/cli/releases/download/{{ rancher_val["rancher_cli_version"] }}/rancher-linux-amd64-{{ rancher_val["rancher_cli_version"] }}.tar.gz -o /tmp/rancher-linux-amd64-{{ rancher_val["rancher_cli_version"] }}.tar.gz
 
 rancher_cli_install_2:
   cmd.run:
-    - name: curl -L https://github.com/rancher/cli/releases/download/{{ pillar["rancher"]["rancher_cli_version"] }}/rancher-linux-amd64-{{ pillar["rancher"]["rancher_cli_version"] }}.tar.gz -o /tmp/rancher-linux-amd64-{{ pillar["rancher"]["rancher_cli_version"] }}.tar.gz
+    - name: sudo tar zxvf /tmp/rancher-linux-amd64-{{ rancher_val["rancher_cli_version"] }}.tar.gz --strip-components=2 -C /usr/local/bin ./rancher-{{ rancher_val["rancher_cli_version"] }}/rancher
 
 rancher_cli_install_3:
   cmd.run:
-    - name: sudo tar zxvf /tmp/rancher-linux-amd64-{{ pillar["rancher"]["rancher_cli_version"] }}.tar.gz --strip-components=2 -C /usr/local/bin ./rancher-{{ pillar["rancher"]["rancher_cli_version"] }}/rancher
-
-rancher_cli_install_4:
-  cmd.run:
     - name: chmod +x /usr/local/bin/rancher
 
-    {%- for node in pillar["rancher"]["nodes"] %}
+      {%- endif %}
+
+      # command hosts only
+      {%- if grains["fqdn"] in rancher_val["command_hosts"] %}
+cluster_dir:
+  file.directory:
+    - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}
+    - mode: 755
+    - makedirs: True
+
+ssh_key_dir:
+  file.directory:
+    - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/.ssh
+    - mode: 700
+    - makedirs: True
+
+ssh_key_file_1:
+  file.managed:
+    - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/.ssh/id_ed25519
+    - mode: 600
+    - contents: {{ rancher_val["cluster_ssh_private_key"] | yaml_encode }}
+
+ssh_key_file_2:
+  file.managed:
+    - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/.ssh/id_ed25519.pub
+    - mode: 644
+    - contents: |
+        {{ rancher_val["cluster_ssh_public_key"] }}
+
+cluster_file_1:
+  file.managed:
+    - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/cluster.yml
+    - mode: 644
+    - source: salt://rancher/files/{{ rancher_val["cluster_yml"] }}
+    - template: jinja
+    - defaults:
+        nodes: |
+        {%- for node in rancher_val["nodes"] %}
+          - address: {{ node["address"] }}
+            port: "{{ node["port"] }}"
+            internal_address: {{ node["internal_address"] }}
+            role: {{ node["role"] }}
+            hostname_override: {{ node["address"] }}
+            user: {{ node["user"] }}
+            docker_socket: /var/run/docker.sock
+            ssh_key: ""
+            ssh_key_path: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/.ssh/id_ed25519
+            ssh_cert: ""
+            ssh_cert_path: ""
+            labels: {{ node["labels"] }}
+            taints: {{ node["taints"] }}
+        {%- endfor %}
+        cluster_ip_range: {{ rancher_val["cluster_ip_range"] }}
+        cluster_cidr: {{ rancher_val["cluster_cidr"]  }}
+        cluster_domain: {{ rancher_val["cluster_domain"]  }}
+        cluster_dns_server: {{ rancher_val["cluster_dns_server"]  }}
+        cluster_name: {{ rancher_val["cluster_name"]  }}
+        node_max_pods: {{ rancher_val["node_max_pods"] }}
+        ingress_node_selector: {{ rancher_val["ingress_node_selector"] }}
+        monitoring_node_selector: {{ rancher_val["monitoring_node_selector"] }}
+        network: {{ rancher_val["network"] }}
+
+cluster_file_2:
+  file.managed:
+    - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/kubectl.sh
+    - mode: 0755
+    - contents: |
+        #!/bin/bash
+        kubectl --kubeconfig /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/kube_config_cluster.yml "$@"
+
+cluster_file_3:
+  file.managed:
+    - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/helm.sh
+    - mode: 0755
+    - contents: |
+        #!/bin/bash
+        helm --kubeconfig /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/kube_config_cluster.yml "$@"
+      {%- endif %}
+
+      # nodes only
+      {%- if grains["fqdn"] in node_list %}
+        {%- for node in rancher_val["nodes"] %}
 hosts_file_node_{{ loop.index }}:
   host.present:
     - ip: {{ node["internal_address"] }}
     - names:
         - {{ node["address"] }}
-    {%- endfor %}
+        {%- endfor %}
+
+auth_file_from_cmd:
+  ssh_auth.present:
+    - user: root
+    - names:
+        - {{ rancher_val["cluster_ssh_public_key"] }}
 
 docker_install_1:
   pkgrepo.managed:
@@ -117,103 +211,16 @@ docker_install_2:
   pkg.installed:
     - refresh: True
     - pkgs:
-        - docker-ce: {{ pillar["rancher"]["docker-ce_version"] }}*
-    {%- if grains["oscodename"] in ["focal"] %}
+        - docker-ce: {{ rancher_val["docker-ce_version"] }}*
+        {%- if grains["oscodename"] in ["focal"] %}
         - python3-docker
-    {%- else %}
+        {%- else %}
         - python-docker
-    {%- endif %}
+        {%- endif %}
 
 docker_install_3:
   service.running:
     - name: docker
-
-  {%- endif %}
-
-  # command hosts only
-  {%- if grains["fqdn"] in pillar["rancher"]["command_hosts"] %}
-cluster_dir_1:
-  file.directory:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}
-    - mode: 755
-    - makedirs: True
-
-ssh_key_dir_2:
-  file.directory:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh
-    - mode: 700
-    - makedirs: True
-
-ssh_key_file_1:
-  file.managed:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_ed25519
-    - mode: 600
-    - contents: {{ pillar["rancher"]["cluster_ssh_private_key"] | yaml_encode }}
-
-ssh_key_file_2:
-  file.managed:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_ed25519.pub
-    - mode: 644
-    - contents: |
-        {{ pillar["rancher"]["cluster_ssh_public_key"] }}
-
-ssh_key_file_3:
-  file.managed:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/cluster.yml
-    - mode: 644
-    - source: salt://rancher/files/{{ pillar["rancher"]["cluster_yml"] }}
-    - template: jinja
-    - defaults:
-        nodes: |
-    {%- for node in pillar["rancher"]["nodes"] %}
-          - address: {{ node["address"] }}
-            port: "{{ node["port"] }}"
-            internal_address: {{ node["internal_address"] }}
-            role: {{ node["role"] }}
-            hostname_override: {{ node["address"] }}
-            user: {{ node["user"] }}
-            docker_socket: /var/run/docker.sock
-            ssh_key: ""
-            ssh_key_path: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/.ssh/id_ed25519
-            ssh_cert: ""
-            ssh_cert_path: ""
-            labels: {{ node["labels"] }}
-            taints: {{ node["taints"] }}
-    {%- endfor %}
-        cluster_ip_range: {{ pillar["rancher"]["cluster_ip_range"] }}
-        cluster_cidr: {{ pillar["rancher"]["cluster_cidr"]  }}
-        cluster_domain: {{ pillar["rancher"]["cluster_domain"]  }}
-        cluster_dns_server: {{ pillar["rancher"]["cluster_dns_server"]  }}
-        cluster_name: {{ pillar["rancher"]["cluster_name"]  }}
-        node_max_pods: {{ pillar["rancher"]["node_max_pods"] }}
-        ingress_node_selector: {{ pillar["rancher"]["ingress_node_selector"] }}
-        monitoring_node_selector: {{ pillar["rancher"]["monitoring_node_selector"] }}
-        network: {{ pillar["rancher"]["network"] }}
-
-ssh_key_file_4:
-  file.managed:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/kubectl.sh
-    - mode: 0755
-    - contents: |
-        #!/bin/bash
-        kubectl --kubeconfig /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/kube_config_cluster.yml "$@"
-
-ssh_key_file_5:
-  file.managed:
-    - name: /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/helm.sh
-    - mode: 0755
-    - contents: |
-        #!/bin/bash
-        helm --kubeconfig /opt/rancher/clusters/{{ pillar["rancher"]["cluster_name"] }}/kube_config_cluster.yml "$@"
-  {%- endif %}
-
-  # nodes only
-  {%- if grains["fqdn"] in pillar["rancher"]["command_hosts"] or "address", grains["fqdn"] in pillar["rancher"]["nodes"] %}
-auth_file_from_cmd:
-  ssh_auth.present:
-    - user: root
-    - names:
-        - {{ pillar["rancher"]["cluster_ssh_public_key"] }}
 
 docker_mount_1:
   file.managed:
@@ -230,6 +237,8 @@ docker_mount_1:
 docker_mount_2:
   cmd.run:
     - name: mount --make-shared /; ln -sf /dev/console /dev/kmsg
-  {%- endif %}
 
+      {%- endif %}
+    {%- endif %}
+  {%- endfor %}
 {% endif %}
