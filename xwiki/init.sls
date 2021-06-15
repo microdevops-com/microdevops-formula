@@ -257,6 +257,10 @@ xwiki_oidc_skipped_{{ loop.index }}:
 
   {%- endif %}
 
+xwiki_tomcat_https_proxy_fix_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec -it xwiki-{{ domain["name"] }} bash -c 'sed -ie "s/<Connector port=\"8080\" protocol=\"HTTP\/1.1\" *$/<Connector port=\"8080\" protocol=\"HTTP\/1.1\" scheme=\"https\"/g" /usr/local/tomcat/conf/server.xml'
+
 xwiki_container_restart_{{ loop.index }}:
   cmd.run:
     - name: docker stop xwiki-{{ domain["name"] }} && docker start xwiki-{{ domain["name"] }}
