@@ -1,0 +1,8 @@
+acme:
+  example.com: # account name for settings separation into dirs
+    rev: 2.9.0
+    vars: # vars to set in account
+      CF_Token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      CF_Account_ID: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      CF_Zone_ID: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    args: "--dns dns_cf" # agrs to use with acme.sh
