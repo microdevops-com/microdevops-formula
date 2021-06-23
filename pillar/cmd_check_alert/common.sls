@@ -40,7 +40,7 @@ cmd_check_alert:
           # But if you have LXC container with memory limits by LXC - you should enable mem checks for it individually.
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-memory-percent.rb -w 80 -c 90
+          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-memory-percent.rb -w 91 -c 95
           severity_per_retcode:
             1: major
             2: critical
