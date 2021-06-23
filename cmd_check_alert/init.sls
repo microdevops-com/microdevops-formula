@@ -42,6 +42,16 @@ sensu-plugins_repo:
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
 
+sensu-plugins_libc_dep:
+  pkg.installed:
+    - pkgs:
+        - libc6-dev
+
+sensu-plugins_mkdir_fix:
+  cmd.run:
+    - name: |
+        if [[ ! -e /usr/bin/mkdir ]]; then ln -vs /bin/mkdir /usr/bin/mkdir; else echo /usr/bin/mkdir exists; fi
+
       {%- endif %}
 
     {%- elif grains["os_family"] == "RedHat" %}
