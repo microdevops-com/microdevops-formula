@@ -22,7 +22,8 @@ ufw_simple:
       to_port: '5555'
 cmd_check_alert:
   network:
-    network_exclusions:
+    exclusion_files:
+      /opt/sysadmws/cmd_check_alert/checks/network_exclusions.txt:
         softether_vpnserver: |
           --dport 1194
           --dport 500
