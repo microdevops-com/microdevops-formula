@@ -20,3 +20,11 @@ ufw_simple:
     vpn_SoftEther:
       proto: 'tcp'
       to_port: '5555'
+cmd_check_alert:
+  network:
+    network_exclusions:
+        softether_vpnserver: |
+          --dport 1194
+          --dport 500
+          --dport 5555
+          --dport 4500
