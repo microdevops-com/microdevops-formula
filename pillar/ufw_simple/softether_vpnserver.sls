@@ -25,7 +25,8 @@ cmd_check_alert:
     files:
       /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt:
         softether_vpnserver: |
-          --dport 1194
+          --dport 443
           --dport 500
-          --dport 5555
           --dport 4500
+          --dport 1194
+          --dport 5555
