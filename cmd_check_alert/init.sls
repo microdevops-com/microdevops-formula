@@ -130,11 +130,26 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
 
     {%- if "install_cvescan" in check_group_params %}
       {%- if grains["oscodename"] in ["bionic", "focal"] %}
-cvescan_installed:
+cvescan_installed_{{ loop.index }}:
   cmd.run:
     - name: pip3 install --user git+https://github.com/canonical/sec-cvescan
 
       {%- endif %}
+    {%- endif %}
+
+    {%- if "files" in check_group_params %}
+      {%- set a_loop = loop %}
+      {%- for file_name, file_data_items in check_group_params["files"].items() %}
+        {%- set contents_list = [] %}
+        {%- for file_data_item_name, file_data_item_data in file_data_items.items() %}
+          {%- do contents_list.append(file_data_item_data) %}
+        {%- endfor %}
+cmd_check_alert_file_managed_{{ loop.index }}_{{ a_loop.index }}:
+  file.managed:
+    - name: {{ file_name }}
+    - contents: {{ contents_list | json }}
+
+      {%- endfor %}
     {%- endif %}
 
   {%- endfor %}

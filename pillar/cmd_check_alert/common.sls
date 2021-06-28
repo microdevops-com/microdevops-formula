@@ -103,11 +103,29 @@ cmd_check_alert:
 {% if grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          # we check rules that are without source, exclude standard ufw rules, exclude open 80, 443, 2226 etc
-          cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -e ufw-before-forward -e ufw-before-input -e ufw-before-output -e ufw-skip-to-policy-forward -e ufw-skip-to-policy-output -e ufw-track-forward -e ufw-track-output -e ufw-user-limit-accept -e OUTPUT -e FORWARD | grep -v -e "-i lxdbr0" -e "-A cali" | grep -v -e "--dport 80" -e "--dport 443" -e "--dport 2226" -e "--dport 25"); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
+          # we check rules that are without source, exclude standard ufw rules, exclude open port from exclusion list file
+          cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -f /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_std_ufw.txt | grep -v -f /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
           severity: security
           service: network
           resource: __hostname__:iptables_open_from_any
+    files:
+      /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_std_ufw.txt:
+        std_ufw: |
+          OUTPUT
+          FORWARD
+          ufw-before-forward
+          ufw-before-input
+          ufw-before-output
+          ufw-skip-to-policy-forward
+          ufw-skip-to-policy-output
+          ufw-track-forward
+          ufw-track-output
+          ufw-user-limit-accept
+      /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt:
+        lxd: |
+          -i lxdbr0
+        k8s_cali: |
+          -A cali
   disk:
     cron:
       minute: '10'
