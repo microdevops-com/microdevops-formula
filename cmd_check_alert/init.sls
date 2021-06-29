@@ -46,6 +46,8 @@ sensu-plugins_libc_dep:
   pkg.installed:
     - pkgs:
         - libc6-dev
+        - python3-pip
+        - python3-setuptools
 
 sensu-plugins_mkdir_fix:
   cmd.run:
