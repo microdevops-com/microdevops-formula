@@ -96,7 +96,8 @@ cmd_check_alert:
           disabled: True
 {% endif %}
           cmd: iptables -w -S | grep -q -e "-P INPUT DROP"
-          severity: security
+          #severity: security
+          severity: minor
           service: network
           resource: __hostname__:iptables_input_drop
         iptables_open_from_any:
@@ -105,7 +106,8 @@ cmd_check_alert:
 {% endif %}
           # we check rules that are without source, exclude standard ufw rules, exclude open port from exclusion list file
           cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -f /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_std_ufw.txt | grep -v -f /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
-          severity: security
+          severity: minor
+          #severity: security
           service: network
           resource: __hostname__:iptables_open_from_any
     files:
@@ -195,7 +197,8 @@ cmd_check_alert:
           cmd: CVESCAN_OUT=$(/root/.local/bin/cvescan -p all); if echo "${CVESCAN_OUT}" | grep -q -e "Fixes Available by.*apt-get upgrade.* 0$"; then echo "${CVESCAN_OUT}"; ( exit 0 ); else echo "${CVESCAN_OUT}"; ( exit 2 ); fi
           severity_per_retcode:
             1: minor
-            2: security
+            2: minor
+            #2: security
           service: pkg
           resource: __hostname__:cvescan
         yum_security:
@@ -205,6 +208,7 @@ cmd_check_alert:
           cmd: yum -q makecache && if yum --cacheonly updateinfo summary updates | grep -q "Security"; then yum --cacheonly updateinfo list updates | grep "/Sec."; yum --cacheonly updateinfo summary updates | grep "Security"; ( exit 2 ); else true; fi
           severity_per_retcode:
             1: minor
-            2: security
+            2: minor
+            #2: security
           service: pkg
           resource: __hostname__:yum_security
