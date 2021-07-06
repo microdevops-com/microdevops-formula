@@ -162,6 +162,9 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
             solr-mailcow:
               volumes:
                 - ./volumes/opt/solr/server/solr/dovecot-fts/data:/opt/solr/server/solr/dovecot-fts/data:Z
+            sogo-mailcow:
+              volumes:
+                - ./volumes/usr/lib/GNUstep/SOGo:/sogo_web:z
 
 mailcow_docker_compose_up_{{ loop.index }}:
   cmd.run:
