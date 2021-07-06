@@ -1,0 +1,5 @@
+mailcow:
+  docker-ce_version: 5:19.03.13
+  domains:
+    - name: mailcow.example.com
+      internal_port: 8080
