@@ -30,7 +30,7 @@ install_cmd_5:
 install_cmd_6:
   cron.present:
     - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/kubectl.sh -n cattle-system create secret tls tls-rancher-ingress --cert=/opt/acme/cert/rancher_{{ rancher_val["cluster_name"] }}_fullchain.cer --key=/opt/acme/cert/rancher_{{ rancher_val["cluster_name"] }}_key.key -o yaml --dry-run | /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/kubectl.sh -n cattle-system replace --force -f -
-    - identifier: rancher_update_cert
+    - identifier: rancher_update_cert_{{ rancher_val["cluster_name"] }}
     - user: root
     - minute: 30
     - hour: 7

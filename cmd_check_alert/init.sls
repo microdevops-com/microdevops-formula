@@ -42,6 +42,18 @@ sensu-plugins_repo:
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
 
+sensu-plugins_libc_dep:
+  pkg.installed:
+    - pkgs:
+        - libc6-dev
+        - python3-pip
+        - python3-setuptools
+
+sensu-plugins_mkdir_fix:
+  cmd.run:
+    - name: |
+        if [[ ! -e /usr/bin/mkdir ]]; then ln -vs /bin/mkdir /usr/bin/mkdir; else echo /usr/bin/mkdir exists; fi
+
       {%- endif %}
 
     {%- elif grains["os_family"] == "RedHat" %}
@@ -119,18 +131,27 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
     {%- endif %}
 
     {%- if "install_cvescan" in check_group_params %}
-      # snapd is not working on bionic inside lxc
-      {%- if grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and grains["virtual"] != "lxc"|lower) %}
-cmd_check_alert_snapd_installed:
-  pkg.installed:
-    - pkgs:
-      - snapd
-
-cvescan_installed:
+      {%- if grains["oscodename"] in ["bionic", "focal"] %}
+cvescan_installed_{{ loop.index }}:
   cmd.run:
-    - name: snap install cvescan
+    - name: pip3 install --user git+https://github.com/canonical/sec-cvescan
 
       {%- endif %}
+    {%- endif %}
+
+    {%- if "files" in check_group_params %}
+      {%- set a_loop = loop %}
+      {%- for file_name, file_data_items in check_group_params["files"].items() %}
+        {%- set contents_list = [] %}
+        {%- for file_data_item_name, file_data_item_data in file_data_items.items() %}
+          {%- do contents_list.append(file_data_item_data) %}
+        {%- endfor %}
+cmd_check_alert_file_managed_{{ loop.index }}_{{ a_loop.index }}:
+  file.managed:
+    - name: {{ file_name }}
+    - contents: {{ contents_list | json }}
+
+      {%- endfor %}
     {%- endif %}
 
   {%- endfor %}
