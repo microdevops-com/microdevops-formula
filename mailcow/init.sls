@@ -88,7 +88,7 @@ nginx_files_1:
             }
   {%- endfor %}
         }
-nginx_files_2:                                                                                                                                                                                                                 [37/40190]
+nginx_files_2:                                                                                                                                                                                                                 
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
