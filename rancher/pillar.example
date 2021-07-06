@@ -52,7 +52,6 @@
 #   Apply: salt srv1.example.com state.apply rancher.settings pillar='{rancher: {rancher.dev.example.com: {run: True}}}'
 #   Check projects, users, membership, etc.
 #   Check tokens in /opt/rancher/clusters/cluster_name/tokens/username/*.
-#   Check k8s kubectl: kubectl --server=https://cluster_name/k8s/clusters/local --token=token-xxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx get pods --all-namespaces
 #
 # Docker versions:
 # - 18.06.3+ - works inside xenial, bionic LXD containers, but apparmor shoud be disabled on the host
