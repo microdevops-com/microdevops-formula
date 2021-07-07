@@ -219,7 +219,12 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
       {% else %}
         {% set retention_time_arg = '' %}
       {% endif %}
-    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data {{ retention_time_arg }} --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
+      {% if instance['debug'] is defined and instance['debug'] == 'true' %}
+        {% set debug_arg = '--log.level=debug' %}
+      {% else %}
+        {% set debug_arg = '' %}
+      {% endif %}
+    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data {{ retention_time_arg }} --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api {{ debug_arg }}
 
 prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
   cron.present:

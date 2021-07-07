@@ -7,6 +7,7 @@ prometheus:
           port: 9090 # docker published port, nginx will forward /prod to it
           image: prom/prometheus
           #retention_time: 30d # optional
+          #debug: true # optional
           auth:
             - developer1: password1
             - developer2: password2
