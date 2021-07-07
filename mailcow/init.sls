@@ -129,42 +129,135 @@ mailcow_generate_config_{{ loop.index }}:
     - env:
       - MAILCOW_HOSTNAME: {{ domain["name"] }}
       - MAILCOW_TZ: Etc/UTC
+
+mailcow_data_dir_1_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/data
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_2_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/mail_crypt
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_3_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_4_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/sogo_web
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_5_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/sogo_backup
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_6_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/vmail_index
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_7_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/vmail
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_8_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/lib/rspamd
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_9_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/lib/mysql
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_10_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/spool/postfix
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_11_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/run/mysqld
+    - mode: 755
+    - makedirs: True
+
 mailcow_docker_compose_owerride_{{ loop.index }}:
   file.managed:
     - name: /opt/mailcow/{{ domain["name"] }}/docker-compose.override.yml
     - contents: |
         version: '2.1'
-        services:
-            mysql-mailcow:
-              volumes:
-                - ./volumes/mysql/var/lib/mysql/:/var/lib/mysql/:Z
-            rspamd-mailcow:
-              volumes:
-                - ./volumes/var/lib/rspamd:/var/lib/rspamd:z
-            dovecot-mailcow:
-              volumes:
-                - ./volumes/var/vmail:/var/vmail:Z
-                - ./volumes/var/vmail_index:/var/vmail_index:Z
-                - ./volumes/mail_crypt:/mail_crypt/:z
-                - ./volumes/var/lib/rspamd:/var/lib/rspamd:z
-            postfix-mailcow:
-              volumes:
-                - ./volumes/var/spool/postfix:/var/spool/postfix:z
-                - ./volumes/var/lib/zeyple:/var/lib/zeyple:z
-                - ./volumes/var/lib/rspamd:/var/lib/rspamd:z
-            nginx-mailcow:
-              volumes:
-                - ./volumes/usr/lib/GNUstep/SOGo/:/usr/lib/GNUstep/SOGo/:z
-            watchdog-mailcow:
-              volumes:
-                - ./volumes/var/lib/rspamd:/var/lib/rspamd:z
-                - ./volumes/var/spool/postfix:/var/spool/postfix:z
-            solr-mailcow:
-              volumes:
-                - ./volumes/opt/solr/server/solr/dovecot-fts/data:/opt/solr/server/solr/dovecot-fts/data:Z
-            sogo-mailcow:
-              volumes:
-                - ./volumes/usr/lib/GNUstep/SOGo:/sogo_web:z
+        volumes:
+          vmail-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/vmail'
+          vmail-index-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/vmail_index'
+          mysql-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/lib/mysql'
+          mysql-socket-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/run/mysqld'
+          redis-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/data/'
+          rspamd-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/lib/rspamd'
+          solr-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/opt/solr/server/solr/dovecot-fts/data'
+          postfix-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/spool/postfix'
+          crypt-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/mail_crypt'
+          sogo-web-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/sogo_web'
+          sogo-userdata-backup-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/sogo_backup'
 
 mailcow_docker_compose_up_{{ loop.index }}:
   cmd.run:
