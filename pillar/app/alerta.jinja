@@ -228,7 +228,8 @@ pkg:
 {% endif %}
       - cron.present:
           1:
-            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping'
+            # otherwise it will swipe out closed (green) after default 2 hours and info after 12 hours
+            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping --expired 24 --info 24'
             - identifier: alerta_housekeeping
             - user: {{ appname }}
             - minute: '*'
