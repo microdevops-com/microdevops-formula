@@ -18,6 +18,26 @@
 # MinProtocol = TLSv1
 # CipherString = DEFAULT:@SECLEVEL=1
 
+for init.sls
+# percona
+percona:
+  enabled: True
+  version: 5.6
+  root_password: 'cooldnpassword'
+  databases:
+    db0:
+      character_set: utf8mb4 # optional, utf8mb4 is used by default, you cannot change this param if db is already created
+      collate: utf8mb4_unicode_ci # optional, utf8mb4_unicode_ci is used by default, you cannot change this param if db is already created
+    db1: # should be an empty mapping for defaults applied
+  users:
+    db:
+      host: localhost
+      password: 'userpass'
+      databases:
+        - database: db
+          grant: ['all privileges']
+
+for percona.sls
 # percona
 percona:
   enabled: True
