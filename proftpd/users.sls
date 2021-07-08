@@ -8,7 +8,7 @@ proftpd_delete_user_{{ loop.index }}:
         {%- else %}
 create_proftpd_user_{{ loop.index }}:
   cmd.run:
-    - name: 'PROFTPD_PASS="{{ pillar['proftpd']['users'][proftpd_user]['password'] }}" && echo $PROFTPD_PASS | ftpasswd --stdin --passwd --file=/etc/proftpd/ftpd.users --name={{ proftpd_user }} --uid=$(id -u {{ pillar['proftpd']['users'][proftpd_user]['user'] }}) --gid=$(id -g {{ pillar['proftpd']['users'][proftpd_user]['group'] }}) --home={{ pillar['proftpd']['users'][proftpd_user]['homedir'] }} --shell=/bin/false'
+    - name: 'echo "{{ pillar['proftpd']['users'][proftpd_user]['password'] }}" | ftpasswd --stdin --passwd --file=/etc/proftpd/ftpd.users --name={{ proftpd_user }} --uid=$(id -u {{ pillar['proftpd']['users'][proftpd_user]['user'] }}) --gid=$(id -g {{ pillar['proftpd']['users'][proftpd_user]['group'] }}) --home={{ pillar['proftpd']['users'][proftpd_user]['homedir'] }} --shell=/bin/false'
     - runas: 'root'
       {%- endif %}
       {%- if (pillar['proftpd']['users'][proftpd_user]['makedir'] is defined) and (pillar['proftpd']['users'][proftpd_user]['makedir'] is not none) and (pillar['proftpd']['users'][proftpd_user]['makedir']) %}
