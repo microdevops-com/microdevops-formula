@@ -7,7 +7,7 @@ docker_install_01:
   file.managed:
     - name: /etc/docker/daemon.json
     - contents: |
-        { "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
+        { "iptables": true, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
 docker_install_02:
   pkgrepo.managed:
     - humanname: Docker CE Repository
