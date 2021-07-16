@@ -33,6 +33,10 @@ docker_install_4:
     - name: systemctl restart docker
     - onchanges:
         - file: /etc/docker/daemon.json
+postfix_stop_and_disable:
+  service.dead:
+    - name: postfix
+      enable: False
 nginx_install:
   pkg.installed:
     - pkgs:
