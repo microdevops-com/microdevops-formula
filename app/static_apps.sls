@@ -58,7 +58,7 @@ static_apps_group_{{ loop.index }}:
   group.present:
     - name: {{ app_params['group'] }}
 
-{% if not app_params['keep_user'] is defined and app_params['keep_user'] != True %}
+{% if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 static_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
