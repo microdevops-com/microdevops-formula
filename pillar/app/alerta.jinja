@@ -219,11 +219,13 @@ pkg:
       - cmd.run:
           1: 
             - name: 'echo "INSERT INTO customers (id, match, customer) VALUES (''{{ customer["id"] }}'', ''{{ customer["match"] }}'', ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET match = ''{{ customer["match"] }}'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
-    {%- for c_key in customer["keys"] %}
+    {%- if "keys" in customer %}
+      {%- for c_key in customer["keys"] %}
       - cmd.run:
           1: 
             - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count, customer) VALUES (''{{ c_key["key_id"] }}'', ''{{ c_key["key"] }}'', ''root'', ''{write:alerts,write:heartbeats}'', ''{{ c_key["name"] }}'', now() + interval ''100 years'', 0, ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET key = ''{{ c_key["key"] }}'', \"user\" = ''root'', scopes = ''{write:alerts,write:heartbeats}'', text = ''{{ c_key["name"] }}'', expire_time = now() + interval ''100 years'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
-    {%- endfor %}
+      {%- endfor %}
+    {%- endif %}
   {%- endfor %}
 {% endif %}
       - cron.present:
