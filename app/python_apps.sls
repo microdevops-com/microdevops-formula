@@ -65,7 +65,7 @@ python_apps_user_homedir_{{ loop.index }}:
     - name: {{ app_params['app_root'] }}
     - makedirs: True
 
-{% if not app_params['keep_user'] is defined and app_params['keep_user'] != True %}
+{% if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 python_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
