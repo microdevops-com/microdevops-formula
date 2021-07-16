@@ -65,20 +65,29 @@ python_apps_user_homedir_{{ loop.index }}:
     - name: {{ app_params['app_root'] }}
     - makedirs: True
 
+{% if not app_params['keep_user'] is defined and app_params['keep_user'] != True %}
 python_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
     - gid: {{ app_params['group'] }}
+    {%- if app_params['user_home'] is defined and app_params['user_home'] is not none %}
+    - home: {{ app_params['user_home'] }}
+    {%- else %}
     - home: {{ app_params['app_root'] }}
+    {%- endif %}
     - createhome: True
-    {% if app_params['pass'] == '!' %}
+    {%- if app_params['pass'] == '!' %}
     - password: '{{ app_params['pass'] }}'
-    {% else %}
+    {%- else %}
     - password: '{{ app_params['pass'] }}'
     - hash_password: True
-    {% endif %}
+    {%- endif %}
+    {%- if app_params['enforce_password'] is defined and app_params['enforce_password'] is not none and app_params['enforce_password'] == False %}
+    - enforce_password: False
+    {%- endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ python_app }}
+{%- endif %}
 
 python_apps_user_homedir_userown_{{ loop.index }}:
   file.directory:

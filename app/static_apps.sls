@@ -58,20 +58,29 @@ static_apps_group_{{ loop.index }}:
   group.present:
     - name: {{ app_params['group'] }}
 
+{% if not app_params['keep_user'] is defined and app_params['keep_user'] != True %}
 static_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
     - gid: {{ app_params['group'] }}
+    {%- if app_params['user_home'] is defined and app_params['user_home'] is not none %}
+    - home: {{ app_params['user_home'] }}
+    {%- else %}
     - home: {{ app_params['app_root'] }}
+    {%- endif %}
     - createhome: True
-    {% if app_params['pass'] == '!' %}
+    {%- if app_params['pass'] == '!' %}
     - password: '{{ app_params['pass'] }}'
-    {% else %}
+    {%- else %}
     - password: '{{ app_params['pass'] }}'
     - hash_password: True
-    {% endif %}
+    {%- endif %}
+    {%- if app_params['enforce_password'] is defined and app_params['enforce_password'] is not none and app_params['enforce_password'] == False %}
+    - enforce_password: False
+    {%- endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ static_app }}
+{% endif %}
 
 static_apps_nginx_root_dir_{{ loop.index }}:
   file.directory:
