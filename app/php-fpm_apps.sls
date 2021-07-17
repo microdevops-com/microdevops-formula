@@ -58,11 +58,11 @@
                (app_selector == phpfpm_app)
              )
       %}
+{%- if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 php-fpm_apps_group_{{ loop.index }}:
   group.present:
     - name: {{ app_params['group'] }}
 
-{% if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 php-fpm_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
@@ -84,7 +84,6 @@ php-fpm_apps_user_{{ loop.index }}:
     {%- endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ phpfpm_app }}
-{%- endif %}
 
 php-fpm_apps_user_ssh_dir_{{ loop.index }}:
   file.directory:
@@ -103,6 +102,7 @@ php-fpm_apps_user_ssh_auth_keys_{{ loop.index }}:
     - mode: 600
     - contents: {{ app_params['app_auth_keys'] | yaml_encode }}
         {%- endif %}
+{%- endif %}
 
         {%- if
                (app_params['source'] is defined) and (app_params['source'] is not none) and

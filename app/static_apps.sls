@@ -54,11 +54,15 @@
                (app_selector == static_app)
              )
       %}
+
+
+
+
+{%- if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 static_apps_group_{{ loop.index }}:
   group.present:
     - name: {{ app_params['group'] }}
 
-{% if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 static_apps_user_{{ loop.index }}:
   user.present:
     - name: {{ app_params['user'] }}
@@ -80,15 +84,6 @@ static_apps_user_{{ loop.index }}:
     {%- endif %}
     - shell: {{ app_params['shell'] }}
     - fullname: {{ 'application ' ~ static_app }}
-{% endif %}
-
-static_apps_nginx_root_dir_{{ loop.index }}:
-  file.directory:
-    - name: {{ app_params['nginx']['root'] }}
-    - user: {{ app_params['user'] }}
-    - group: {{ app_params['group'] }}
-    - mode: 755
-    - makedirs: True
 
 static_apps_user_ssh_dir_{{ loop.index }}:
   file.directory:
@@ -107,6 +102,7 @@ static_apps_user_ssh_auth_keys_{{ loop.index }}:
     - mode: 600
     - contents: {{ app_params['app_auth_keys'] | yaml_encode }}
         {%- endif %}
+{%- endif %}
 
         {%- if
                (app_params['source'] is defined) and (app_params['source'] is not none) and
@@ -125,6 +121,15 @@ static_apps_app_download_arc_{{ loop.index }}:
     - if_missing: {{ app_params['source']['if_missing'] }}
           {%- endif %}
         {%- endif %}
+
+# this creates if_missing dir usually, so it should be after download_arc
+static_apps_nginx_root_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app_params['nginx']['root'] }}
+    - user: {{ app_params['user'] }}
+    - group: {{ app_params['group'] }}
+    - mode: 755
+    - makedirs: True
 
         {%- if
                (app_params['source'] is defined) and (app_params['source'] is not none) and
