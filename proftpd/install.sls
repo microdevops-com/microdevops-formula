@@ -81,9 +81,13 @@ create_config_file:
                 SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
                 AuthUserFile /etc/proftpd/ftpd.users
         </IfModule>
+    - require:
+      - file: ensure_proftpd_key_dir_exists
 
 proftpd_restart_trigger:
-  test.succeed_with_changes
+  test.succeed_with_changes:
+    - require:
+      - pkg: install_proftpd
 
 ensure_proftpd_is_restarted:
   service.running:
@@ -92,4 +96,7 @@ ensure_proftpd_is_restarted:
     - full_restart: True
     - watch:
       - test: proftpd_restart_trigger
+    - require:
+      - pkg: install_proftpd
+
 {% endif %}
