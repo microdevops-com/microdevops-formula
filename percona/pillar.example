@@ -18,7 +18,7 @@
 # MinProtocol = TLSv1
 # CipherString = DEFAULT:@SECLEVEL=1
 
-for init.sls
+# for init.sls
 # percona
 percona:
   enabled: True
@@ -37,7 +37,11 @@ percona:
         - database: db
           grant: ['all privileges']
 
-for percona.sls
+
+# ///////// WARNING \\\\\\\\\\
+# >>>> legacy, do not use <<<<
+
+# for percona.sls
 # percona
 percona:
   enabled: True
