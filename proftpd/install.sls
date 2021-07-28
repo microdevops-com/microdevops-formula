@@ -67,11 +67,14 @@ create_config_file:
     - contents: | 
         DefaultRoot ~
         RequireValidShell off
+        Port 21
         AuthUserFile /etc/proftpd/ftpd.users
         AuthOrder mod_auth_file.c
         PassivePorts 65000 65534
         <IfModule mod_sftp.c>
+          <VirtualHost 0.0.0.0>
                 SFTPEngine on
+                RequireValidShell off
                 Port 2226
                 SFTPLog     /var/log/proftpd/sftp.log
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_rsa_key
@@ -80,6 +83,7 @@ create_config_file:
                 SFTPAuthMethods password
                 SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
                 AuthUserFile /etc/proftpd/ftpd.users
+          </VirtualHost>
         </IfModule>
     - require:
       - file: ensure_proftpd_key_dir_exists
