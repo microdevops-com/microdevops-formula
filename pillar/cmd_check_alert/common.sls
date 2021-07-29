@@ -10,14 +10,14 @@ cmd_check_alert:
         threads: 5
       defaults:
         timeout: 60
-        severity: critical
+        severity: major
       checks:
         cpu-usage:
           disabled: True
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-cpu.rb -w 90 -c 95
           severity_per_retcode:
-            1: major
-            2: critical
+            1: minor
+            2: major
           service: cpu
           resource: __hostname__:cpu-usage
   memory:
@@ -31,7 +31,7 @@ cmd_check_alert:
         threads: 5
       defaults:
         timeout: 60
-        severity: critical
+        severity: major
       checks:
         memory-percent:
 {% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
@@ -42,8 +42,8 @@ cmd_check_alert:
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-memory-percent.rb -w 91 -c 95
           severity_per_retcode:
-            1: major
-            2: critical
+            1: minor
+            2: major
           service: memory
           resource: __hostname__:memory-percent
         swap-percent:
@@ -52,8 +52,8 @@ cmd_check_alert:
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap-percent.rb -w 70 -c 80
           severity_per_retcode:
-            1: major
-            2: critical
+            1: minor
+            2: major
           service: memory
           resource: __hostname__:swap-percent
         swap-usage:
@@ -62,8 +62,8 @@ cmd_check_alert:
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap.rb -w 1024 -c 2048
           severity_per_retcode:
-            1: major
-            2: critical
+            1: minor
+            2: major
           service: memory
           resource: __hostname__:swap-usage
   network:
@@ -77,7 +77,7 @@ cmd_check_alert:
         threads: 5
       defaults:
         timeout: 60
-        severity: critical
+        severity: major
       checks:
         netfilter-conntrack:
 {% if grains["oscodename"] in ["precise"] %}
@@ -106,8 +106,8 @@ cmd_check_alert:
 {% endif %}
           # we check rules that are without source, exclude standard ufw rules, exclude open port from exclusion list file
           cmd: IPT_RULES=$(iptables -w -S | grep -e "-j ACCEPT" | grep -v -e "-s " | grep -v -f /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_std_ufw.txt | grep -v -f /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt); if [[ -n "$IPT_RULES" ]]; then echo "${IPT_RULES}"; ( exit 1 ); fi
-          severity: minor
           #severity: security
+          severity: minor
           service: network
           resource: __hostname__:iptables_open_from_any
     files:
@@ -149,9 +149,7 @@ cmd_check_alert:
           disabled: True
 {% endif %}
           cmd: /opt/sensu-plugins-ruby/embedded/bin/check-fstab-mounts.rb
-          severity_per_retcode:
-            1: minor
-            2: major
+          severity: critical
           service: disk
           resource: __hostname__:fstab-mounts
         smart:
@@ -196,9 +194,9 @@ cmd_check_alert:
 {% endif %}
           cmd: CVESCAN_OUT=$(/root/.local/bin/cvescan -p all); if echo "${CVESCAN_OUT}" | grep -q -e "Fixes Available by.*apt-get upgrade.* 0$"; then echo "${CVESCAN_OUT}"; ( exit 0 ); else echo "${CVESCAN_OUT}"; ( exit 2 ); fi
           severity_per_retcode:
-            1: minor
-            2: minor
+            1: warning
             #2: security
+            2: minor
           service: pkg
           resource: __hostname__:cvescan
         yum_security:
@@ -207,8 +205,8 @@ cmd_check_alert:
 {% endif %}
           cmd: yum -q makecache && if yum --cacheonly updateinfo summary updates | grep -q "Security"; then yum --cacheonly updateinfo list updates | grep "/Sec."; yum --cacheonly updateinfo summary updates | grep "Security"; ( exit 2 ); else true; fi
           severity_per_retcode:
-            1: minor
-            2: minor
+            1: warning
             #2: security
+            2: minor
           service: pkg
           resource: __hostname__:yum_security
