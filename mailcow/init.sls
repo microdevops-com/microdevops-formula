@@ -263,11 +263,47 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
                 o: 'bind'
                 device: './volumes/sogo_backup'
 
+bind_ssl_certificate_for_services_in_docker_{{ loop.index }}:
+  mount.mounted:
+    - name: /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem
+    - device: /opt/acme/cert/{{ domain["name"] }}/fullchain.cer
+    - mkmnt: True
+    - persist: True
+    - opts: bind
+
+bind_ssl_key_for_services_in_docker_{{ loop.index }}:
+  mount.mounted:
+    - name: /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
+    - device: /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key
+    - mkmnt: True
+    - persist: True
+    - opts: bind
+
+create_script_rebind_ssl_for_services_in_docker_{{ loop.index }}:
+  file.managed:
+    - name: /opt/mailcow/{{ domain["name"] }}/rebind-ssl-for-services.sh
+    - mode: 0744
+    - contents: |
+        #!/bin/bash
+        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem
+        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
+        mount --bind /opt/acme/cert/{{ domain["name"] }}/fullchain.cer /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem
+        mount --bind /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
+        cd /opt/mailcow/{{ domain["name"] }} && docker-compose restart
+
 mailcow_docker_compose_up_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
     - cwd: /opt/mailcow/{{ domain["name"] }}
     - name: cd /opt/mailcow/{{ domain["name"] }} && docker-compose up -d
+
+create_cron_rebind_ssl_for_services_in_docker_{{ loop.index }}:
+  cron.present:
+    - name: /opt/mailcow/{{ domain["name"] }}/rebind-ssl-for-services.sh
+    - identifier: rebind_ssl_certificates_for_services_in_docker
+    - user: root
+    - minute: 0
+    - hour: 4
 
   {%- endfor %}
 
