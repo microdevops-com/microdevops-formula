@@ -7,6 +7,9 @@ pkgrepo_sysadmws:
     - name: "deb https://repo.sysadm.ws/sysadmws-apt/ any main"
     - keyid: 2E7DCF8C
     - keyserver: keyserver.ubuntu.com
+    {%- if grains["osarch"] in ["arm64"] %}
+    - architectures: amd64
+    {%- endif %}
 
 pkg_latest_utils:
   pkg.latest:
