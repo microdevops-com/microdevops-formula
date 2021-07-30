@@ -158,7 +158,7 @@ cmd_check_alert:
           service: disk
           resource: __hostname__:fstab-mounts
         smart:
-{% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] %}
+{% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] or "-aws" in grains["kernelrelease"] %}
           disabled: True
 {% endif %}
           cmd: {{ ruby_prefix }}/check-smart.rb
@@ -168,7 +168,7 @@ cmd_check_alert:
           service: disk
           resource: __hostname__:smart
         raid:
-{% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] %}
+{% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] or "-aws" in grains["kernelrelease"] %}
           disabled: True
 {% endif %}
           cmd: {{ ruby_prefix }}/check-raid.rb
