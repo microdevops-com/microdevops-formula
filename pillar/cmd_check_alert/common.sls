@@ -1,3 +1,8 @@
+{% if grains["osarch"] in ["arm64"] %}
+  {%- set ruby_prefix = "source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/bin" %}
+{% else %}
+  {%- set ruby_prefix = "/opt/sensu-plugins-ruby/embedded/bin" %}
+{% endif %}
 cmd_check_alert:
   cpu:
     cron: '*/3'
@@ -14,7 +19,7 @@ cmd_check_alert:
       checks:
         cpu-usage:
           disabled: True
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-cpu.rb -w 90 -c 95
+          cmd: {{ ruby_prefix }}/check-cpu.rb -w 90 -c 95
           severity_per_retcode:
             1: minor
             2: major
@@ -40,7 +45,7 @@ cmd_check_alert:
           # But if you have LXC container with memory limits by LXC - you should enable mem checks for it individually.
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-memory-percent.rb -w 91 -c 95
+          cmd: {{ ruby_prefix }}/check-memory-percent.rb -w 91 -c 95
           severity_per_retcode:
             1: minor
             2: major
@@ -50,7 +55,7 @@ cmd_check_alert:
 {% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap-percent.rb -w 70 -c 80
+          cmd: {{ ruby_prefix }}/check-swap-percent.rb -w 70 -c 80
           severity_per_retcode:
             1: minor
             2: major
@@ -60,7 +65,7 @@ cmd_check_alert:
 {% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-swap.rb -w 1024 -c 2048
+          cmd: {{ ruby_prefix }}/check-swap.rb -w 1024 -c 2048
           severity_per_retcode:
             1: minor
             2: major
@@ -85,7 +90,7 @@ cmd_check_alert:
 {% endif %}
           # Checking not salt["file.file_exists"]("/proc/sys/net/netfilter/nf_conntrack_max") will not work in pillar as pillar is rendered on salt-master/salt-ssh runner, not minion.
           # So check it in the check runtime.
-          cmd: if [[ -r /proc/sys/net/netfilter/nf_conntrack_max ]]; then /opt/sensu-plugins-ruby/embedded/bin/check-netfilter-conntrack.rb -w 80 -c 90; fi
+          cmd: if [[ -r /proc/sys/net/netfilter/nf_conntrack_max ]]; then {{ ruby_prefix }}/check-netfilter-conntrack.rb -w 80 -c 90; fi
           severity_per_retcode:
             1: major
             2: critical
@@ -148,7 +153,7 @@ cmd_check_alert:
 {% if grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-fstab-mounts.rb
+          cmd: {{ ruby_prefix }}/check-fstab-mounts.rb
           severity: critical
           service: disk
           resource: __hostname__:fstab-mounts
@@ -156,7 +161,7 @@ cmd_check_alert:
 {% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-smart.rb
+          cmd: {{ ruby_prefix }}/check-smart.rb
           severity_per_retcode:
             1: major
             2: critical
@@ -166,7 +171,7 @@ cmd_check_alert:
 {% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
-          cmd: /opt/sensu-plugins-ruby/embedded/bin/check-raid.rb
+          cmd: {{ ruby_prefix }}/check-raid.rb
           severity_per_retcode:
             1: major
             2: critical
