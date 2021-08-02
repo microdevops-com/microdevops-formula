@@ -230,7 +230,7 @@ mailcow_config_submission_local_port_{{ loop.index }}:
     - pattern: '^ *SUBMISSION_PORT=.*$'
     - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
 
-mailcow_config_acme_off{{ loop.index }}:
+mailcow_config_acme_off_{{ loop.index }}:
   file.replace:
     - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
     - pattern: '^ *SKIP_LETS_ENCRYPT=.*$'
