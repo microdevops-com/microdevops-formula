@@ -39,7 +39,45 @@ postfix_stop_and_disable:
       enable: False
 nginx_install:
   pkg.installed:
-
+    - pkgs:
+      - nginx
+nginx_files_1:
+  file.managed:
+    - name: /etc/nginx/nginx.conf
+    - contents: |
+        worker_processes 4;
+        worker_rlimit_nofile 40000;
+        events {
+            worker_connections 8192;
+            use epoll;
+            multi_accept on;
+        }
+        http {
+            include /etc/nginx/mime.types;
+            default_type application/octet-stream;
+            sendfile on;
+            tcp_nopush on;
+            tcp_nodelay on;
+            gzip on;
+            gzip_comp_level 4;
+            gzip_types text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+            gzip_vary on;
+            gzip_proxied any;
+            client_max_body_size 1000m;
+            log_format  main  '$remote_addr - [$time_local] "$host$request_uri" '
+                              '$status $body_bytes_sent "$http_referer" '
+                              '"$http_user_agent" "$proxy_add_x_forwarded_for"';
+            server {
+                listen 80;
+                return 301 https://$host$request_uri;
+            }
+  {%- for domain in pillar["mailcow"]["domains"] %}
+            server {
+                listen 443 ssl;
+                server_name {{ domain["name"] }};
+                access_log /var/log/nginx/{{ domain["name"] }}-access.log main;
+                error_log /var/log/nginx/{{ domain["name"] }}-error.log;
+                ssl_certificate /opt/acme/cert/mailcow_{{ domain["name"] }}_fullchain.cer;
                 ssl_certificate_key /opt/acme/cert/mailcow_{{ domain["name"] }}_key.key;
                 location / {
                     proxy_pass http://localhost:{{ domain["HTTP_PORT"] }};
@@ -85,7 +123,7 @@ mailcow_config_generator_https_port_{{ loop.index }}:
   file.replace:
     - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
     - pattern: '^ *HTTPS_PORT=.*$'
-    - repl: 'HTTPS_PORT={{ domain["HTTP_PORT"] }}'
+    - repl: 'HTTPS_PORT={{ domain["HTTPS_PORT"] }}'
 
 mailcow_config_generator_https_bind_{{ loop.index }}:
   file.replace:
@@ -99,7 +137,30 @@ mailcow_config_generator_smtp_local_port_{{ loop.index }}:
     - pattern: '^ *SMTP_PORT=.*$'
     - repl: 'SMTP_PORT={{ domain["SMTP_PORT"] }}'
 
-mai
+mailcow_config_generator_smtps_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *SMTPS_PORT=.*$'
+    - repl: 'SMTPS_PORT={{ domain["SMTPS_PORT"] }}'
+
+mailcow_config_generator_imap_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *IMAP_PORT=.*$'
+    - repl: 'IMAP_PORT={{ domain["IMAP_PORT"] }}'
+
+mailcow_config_generator_imaps_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *IMAPS_PORT=.*$'
+    - repl: 'IMAPS_PORT={{ domain["IMAPS_PORT"] }}'
+
+mailcow_config_generator_submission_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *SUBMISSION_PORT=.*$'
+    - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
+
 mailcow_generate_config_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
@@ -145,12 +206,6 @@ mailcow_config_smtps_local_port_{{ loop.index }}:
     - pattern: '^ *SMTPS_PORT=.*$'
     - repl: 'SMTPS_PORT={{ domain["SMTPS_PORT"] }}'
 
-mailcow_config_submission_local_port_{{ loop.index }}:
-  file.replace:
-    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
-    - pattern: '^ *SUBMISSION_PORT=.*$'
-    - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
-
 mailcow_config_imap_local_port_{{ loop.index }}:
   file.replace:
     - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
@@ -159,7 +214,47 @@ mailcow_config_imap_local_port_{{ loop.index }}:
 
 mailcow_config_imaps_local_port_{{ loop.index }}:
   file.replace:
-    - name: '/opt/mailcow/{{ domain["name"] }}/
+    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
+    - pattern: '^ *IMAPS_PORT=.*$'
+    - repl: 'IMAPS_PORT={{ domain["IMAPS_PORT"] }}'
+
+mailcow_config_submission_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
+    - pattern: '^ *SUBMISSION_PORT=.*$'
+    - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
+
+mailcow_data_dir_1_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/data
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_2_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/mail_crypt
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_3_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_4_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/sogo_web
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_5_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/sogo_backup
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_6_{{ loop.index }}:
+  file.directory:
+    - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/vmail_index
+    - mode: 755
+    - makedirs: True
+mailcow_data_dir_7_{{ loop.index }}:
   file.directory:
     - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/vmail
     - mode: 755
@@ -192,6 +287,7 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
         version: '2.1'
     {%- if "haproxy" in domain %}
         services:
+
             dovecot-mailcow:
               ports:
                 - "${IMAP_PORT_HAPROXY:-127.0.0.1:10143}:10143"
@@ -205,6 +301,7 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
         #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
                 - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
                 - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
+                
     {%- endif %}
         volumes:
           vmail-vol-1:
@@ -220,6 +317,59 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
                 o: 'bind'
                 device: './volumes/var/vmail_index'
           mysql-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/lib/mysql'
+          mysql-socket-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/run/mysqld'
+          redis-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/data/'
+          rspamd-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/lib/rspamd'
+          solr-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/opt/solr/server/solr/dovecot-fts/data'
+          postfix-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/var/spool/postfix'
+          crypt-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/mail_crypt'
+          sogo-web-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/sogo_web'
+          sogo-userdata-backup-vol-1:
+            driver: local
+            driver_opts:
+                type: 'none'
+                o: 'bind'
+                device: './volumes/sogo_backup'
 
 bind_ssl_certificate_for_services_in_docker_{{ loop.index }}:
   mount.mounted:
@@ -245,10 +395,10 @@ create_script_rebind_ssl_for_services_in_docker_{{ loop.index }}:
     - mode: 0744
     - contents: |
         #!/bin/bash
-        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem ;\
-        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem ;\
-        mount --bind /opt/acme/cert/{{ domain["name"] }}/fullchain.cer /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem ;\
-        mount --bind /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem ;\
+        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem
+        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
+        mount --bind /opt/acme/cert/{{ domain["name"] }}/fullchain.cer /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem
+        mount --bind /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
         cd /opt/mailcow/{{ domain["name"] }} && docker-compose restart
 
 mailcow_docker_compose_up_{{ loop.index }}:
