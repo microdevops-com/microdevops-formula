@@ -2,16 +2,16 @@ mailcow:
   docker-ce_version: 5:19.03.13
   domains:
     - name: mailcow.example.com
-      HTTP_PORT: 8080
-      HTTP_BIND: 127.0.0.1
-      HTTPS_PORT: 8443
-      HTTPS_BIND: 127.0.0.1
-      SMTP_PORT: 25
-      SMTPS_PORT: 127.0.0.1:465
-      SUBMISSION_PORT: 127.0.0.1:587
-      IMAP_PORT: 127.0.0.1:143
-      IMAPS_PORT: 127.0.0.1:993
-      POP_PORT: 127.0.0.1:110
-      POPS_PORT: 127.0.0.1:995
-      SIEVE_PORT: 127.0.0.1:4190
-      haproxy:
+      HTTP_PORT: 8080                 #ONLY PORT
+      HTTP_BIND: 127.0.0.1            #ONLY IP
+      HTTPS_PORT: 8443                #ONLY PORT
+      HTTPS_BIND: 127.0.0.1           #ONLY IP
+      SMTP_PORT: 25                   #PORT OR IP:PORT
+      SMTPS_PORT: 127.0.0.1:465       #PORT OR IP:PORT
+      SUBMISSION_PORT: 127.0.0.1:587  #PORT OR IP:PORT
+      IMAP_PORT: 127.0.0.1:143        #PORT OR IP:PORT
+      IMAPS_PORT: 127.0.0.1:993       #PORT OR IP:PORT
+      POP_PORT: 127.0.0.1:110         #PORT OR IP:PORT
+      POPS_PORT: 127.0.0.1:995        #PORT OR IP:PORT
+      SIEVE_PORT: 127.0.0.1:4190      #PORT OR IP:PORT
+      haproxy:                        #REMOVE THIS ENTRY IF HAPROXY IS NOT USED
