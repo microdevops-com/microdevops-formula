@@ -11,7 +11,7 @@ include:
   - postgres
   {%- endif %}
 {% endif %}
-  - percona.percona
+  - percona
   - rabbitmq.rabbitmq
   - pyenv.pyenv
 {% if pillar['sentry'] is defined and pillar['sentry'] is not none %}

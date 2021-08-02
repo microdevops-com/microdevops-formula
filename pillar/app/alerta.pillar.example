@@ -132,7 +132,8 @@ NOTIFICATION_BLACKOUT = True
 BLACKOUT_ACCEPT = True
 
 TELEGRAM_TEMPLATE = '/opt/alerta/" ~ appname ~ "/telegram_template.jinja'
-TELEGRAM_SOUND_NOTIFICATION_SEVERITY = ['fatal', 'security', 'critical', 'major']
+TELEGRAM_FILTER_NOTIFICATION_SEVERITY = ['fatal', 'security', 'critical']
+TELEGRAM_SOUND_NOTIFICATION_SEVERITY = ['fatal']
 
 TELEGRAM_TOKEN = 'xxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'

@@ -33,7 +33,8 @@ cmd_check_alert_common_cron_absent:
 
   {%- if sensu_plugins_needed|length > 0 %}
     {%- if grains["os_family"] == "Debian" %}
-      {%- if grains["oscodename"] not in ["precise"] %}
+      # Sensu Plugins embedded doesn't work on arm64, but can be installed manually, see below
+      {%- if grains["oscodename"] not in ["precise"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
@@ -41,6 +42,8 @@ sensu-plugins_repo:
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
+
+      {%- endif %}
 
 sensu-plugins_libc_dep:
   pkg.installed:
@@ -52,9 +55,7 @@ sensu-plugins_libc_dep:
 sensu-plugins_mkdir_fix:
   cmd.run:
     - name: |
-        if [[ ! -e /usr/bin/mkdir ]]; then ln -vs /bin/mkdir /usr/bin/mkdir; else echo /usr/bin/mkdir exists; fi
-
-      {%- endif %}
+        bash -c 'if [[ ! -e /usr/bin/mkdir ]]; then ln -vs /bin/mkdir /usr/bin/mkdir; else echo /usr/bin/mkdir exists; fi'
 
     {%- elif grains["os_family"] == "RedHat" %}
 sensu-plugins_repo:
@@ -65,21 +66,37 @@ sensu-plugins_repo:
     {%- endif %}
 
     {%- if grains["oscodename"] not in ["precise"] %}
+      # On arm64 install is not automated yet, install manually:
+      # command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+      # command curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
+      # curl -sSL https://get.rvm.io | bash -s stable
+      # source /usr/local/rvm/scripts/rvm 
+      # rvm install ruby-2.4.0
+      # rvm --default use ruby-2.4.0
+      # rvm install rubygems 2.6.14 --force
+      # gem install sensu-install
+      {%- if grains["osarch"] not in ["arm64"] %}
 sensu-plugins_pkg:
   pkg.latest:
     - refresh: True
     - pkgs:
         - sensu-plugins-ruby
 
+      {%- endif %}
+
       {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
-    - name: sensu-install -p {{ plugin }}
+    - name: {% if grains["osarch"] in ["arm64"] %}source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/bin/{% endif %}sensu-install -p {{ plugin }}
 
         {%- if plugin == "disk-checks" %}
 sensu-plugins_install_{{ loop.index }}_patch_smart_1:
   file.managed:
+          {%- if grains["osarch"] not in ["arm64"] %}
     - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-disk-checks-5.1.4/bin/check-smart.rb
+          {%- else %}
+    - name: /usr/local/rvm/gems/ruby-2.4.0/gems/sensu-plugins-disk-checks-5.1.4/bin/check-smart.rb
+          {%- endif %}
     - source: salt://cmd_check_alert/files/check-smart.rb
     - create: False
     - show_changes: True
