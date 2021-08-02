@@ -161,6 +161,12 @@ mailcow_config_generator_submission_local_port_{{ loop.index }}:
     - pattern: '^ *SUBMISSION_PORT=.*$'
     - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
 
+mailcow_generator_config_acme_off{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *SKIP_LETS_ENCRYPT=.*$'
+    - repl: 'SKIP_LETS_ENCRYPT={{ domain["SKIP_LETS_ENCRYPT"] }}'
+
 mailcow_generate_config_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
@@ -168,7 +174,7 @@ mailcow_generate_config_{{ loop.index }}:
     - cwd: /opt/mailcow/{{ domain["name"] }}/
     - env:
       - MAILCOW_HOSTNAME: {{ domain["name"] }}
-      - MAILCOW_TZ: Etc/UTC
+      - MAILCOW_TZ: {{ domain["MAILCOW_TZ"] }}
 
 mailcow_config_http_port_{{ loop.index }}:
   file.replace:
@@ -223,6 +229,18 @@ mailcow_config_submission_local_port_{{ loop.index }}:
     - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
     - pattern: '^ *SUBMISSION_PORT=.*$'
     - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
+
+mailcow_config_acme_off{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
+    - pattern: '^ *SKIP_LETS_ENCRYPT=.*$'
+    - repl: 'SKIP_LETS_ENCRYPT={{ domain["SKIP_LETS_ENCRYPT"] }}'
+
+mailcow_config_timezone{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
+    - pattern: '^ *MAILCOW_TZ=.*$'
+    - repl: 'MAILCOW_TZ={{ domain["MAILCOW_TZ"] }}'
 
 mailcow_data_dir_1_{{ loop.index }}:
   file.directory:

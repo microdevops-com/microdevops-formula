@@ -14,4 +14,6 @@ mailcow:
       POP_PORT: 127.0.0.1:110         #PORT OR IP:PORT
       POPS_PORT: 127.0.0.1:995        #PORT OR IP:PORT
       SIEVE_PORT: 127.0.0.1:4190      #PORT OR IP:PORT
+      SKIP_LETS_ENCRYPT: y            #y or n
+      MAILCOW_TZ: Etc/UTC
       haproxy:                        #REMOVE THIS ENTRY IF HAPROXY IS NOT USED
