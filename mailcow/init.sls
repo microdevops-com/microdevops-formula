@@ -85,7 +85,7 @@ mailcow_config_generator_https_port_{{ loop.index }}:
   file.replace:
     - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
     - pattern: '^ *HTTPS_PORT=.*$'
-    - repl: 'HTTPS_PORT={{ domain["HTTP_PORT"] }}'
+    - repl: 'HTTPS_PORT={{ domain["HTTPS_PORT"] }}'
 
 mailcow_config_generator_https_bind_{{ loop.index }}:
   file.replace:
@@ -99,7 +99,30 @@ mailcow_config_generator_smtp_local_port_{{ loop.index }}:
     - pattern: '^ *SMTP_PORT=.*$'
     - repl: 'SMTP_PORT={{ domain["SMTP_PORT"] }}'
 
-mai
+mailcow_config_generator_smtps_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *SMTPS_PORT=.*$'
+    - repl: 'SMTPS_PORT={{ domain["SMTPS_PORT"] }}'
+
+mailcow_config_generator_imap_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *IMAP_PORT=.*$'
+    - repl: 'IMAP_PORT={{ domain["IMAP_PORT"] }}'
+
+mailcow_config_generator_imaps_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *IMAPS_PORT=.*$'
+    - repl: 'IMAPS_PORT={{ domain["IMAPS_PORT"] }}'
+
+mailcow_config_generator_submission_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/generate_config.sh'
+    - pattern: '^ *SUBMISSION_PORT=.*$'
+    - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
+
 mailcow_generate_config_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
@@ -145,12 +168,6 @@ mailcow_config_smtps_local_port_{{ loop.index }}:
     - pattern: '^ *SMTPS_PORT=.*$'
     - repl: 'SMTPS_PORT={{ domain["SMTPS_PORT"] }}'
 
-mailcow_config_submission_local_port_{{ loop.index }}:
-  file.replace:
-    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
-    - pattern: '^ *SUBMISSION_PORT=.*$'
-    - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
-
 mailcow_config_imap_local_port_{{ loop.index }}:
   file.replace:
     - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
@@ -159,7 +176,16 @@ mailcow_config_imap_local_port_{{ loop.index }}:
 
 mailcow_config_imaps_local_port_{{ loop.index }}:
   file.replace:
-    - name: '/opt/mailcow/{{ domain["name"] }}/
+    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
+    - pattern: '^ *IMAPS_PORT=.*$'
+    - repl: 'IMAPS_PORT={{ domain["IMAPS_PORT"] }}'
+
+mailcow_config_submission_local_port_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/mailcow/{{ domain["name"] }}/mailcow.conf'
+    - pattern: '^ *SUBMISSION_PORT=.*$'
+    - repl: 'SUBMISSION_PORT={{ domain["SUBMISSION_PORT"] }}'
+
   file.directory:
     - name: /opt/mailcow/{{ domain["name"] }}/volumes/var/vmail
     - mode: 755
@@ -245,10 +271,10 @@ create_script_rebind_ssl_for_services_in_docker_{{ loop.index }}:
     - mode: 0744
     - contents: |
         #!/bin/bash
-        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem ;\
-        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem ;\
-        mount --bind /opt/acme/cert/{{ domain["name"] }}/fullchain.cer /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem ;\
-        mount --bind /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem ;\
+        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem
+        umount /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
+        mount --bind /opt/acme/cert/{{ domain["name"] }}/fullchain.cer /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/cert.pem
+        mount --bind /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
         cd /opt/mailcow/{{ domain["name"] }} && docker-compose restart
 
 mailcow_docker_compose_up_{{ loop.index }}:
