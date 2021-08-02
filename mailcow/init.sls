@@ -196,6 +196,7 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
     - contents: |
         version: '2.1'
         services:
+
             dovecot-mailcow:
               ports:
                 - "${IMAP_PORT_HAPROXY:-127.0.0.1:10143}:10143"
@@ -203,11 +204,13 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
                 - "${POP_PORT_HAPROXY:-127.0.0.1:10110}:10110"
                 - "${POPS_PORT_HAPROXY:-127.0.0.1:10995}:10995"
                 - "${SIEVE_PORT_HAPROXY:-127.0.0.1:14190}:14190"
+
             postfix-mailcow:
               ports:
         #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
                 - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
                 - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
+
         volumes:
           vmail-vol-1:
             driver: local
