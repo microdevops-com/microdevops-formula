@@ -425,6 +425,15 @@ mailcow_docker_compose_up_{{ loop.index }}:
     - cwd: /opt/mailcow/{{ domain["name"] }}
     - name: cd /opt/mailcow/{{ domain["name"] }} && docker-compose up -d
 
+{% if "haproxy" in domain %}
+  dovecote_extra_conf_{{ loop.index }}:
+    file.managed:
+      - name: /opt/mailcow/{{ domain["name"] }}/data/conf/dovecot/extra.conf
+      - mode: 0644
+      - contents: |
+          haproxy_trusted_networks = 172.22.1.1
+{% endif %}
+
 create_cron_rebind_ssl_for_services_in_docker_{{ loop.index }}:
   cron.present:
     - name: /opt/mailcow/{{ domain["name"] }}/rebind-ssl-for-services.sh
