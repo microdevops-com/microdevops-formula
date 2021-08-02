@@ -195,6 +195,19 @@ mailcow_docker_compose_owerride_{{ loop.index }}:
     - name: /opt/mailcow/{{ domain["name"] }}/docker-compose.override.yml
     - contents: |
         version: '2.1'
+        services:
+            dovecot-mailcow:
+              ports:
+                - "${IMAP_PORT_HAPROXY:-127.0.0.1:10143}:10143"
+                - "${IMAPS_PORT_HAPROXY:-127.0.0.1:10993}:10993"
+                - "${POP_PORT_HAPROXY:-127.0.0.1:10110}:10110"
+                - "${POPS_PORT_HAPROXY:-127.0.0.1:10995}:10995"
+                - "${SIEVE_PORT_HAPROXY:-127.0.0.1:14190}:14190"
+            postfix-mailcow:
+              ports:
+        #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
+                - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
+                - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
         volumes:
           vmail-vol-1:
             driver: local
@@ -269,7 +282,8 @@ bind_ssl_certificate_for_services_in_docker_{{ loop.index }}:
     - device: /opt/acme/cert/{{ domain["name"] }}/fullchain.cer
     - mkmnt: True
     - persist: True
-    - opts: bind
+    - fstype: bind
+#    - opts: bind
 
 bind_ssl_key_for_services_in_docker_{{ loop.index }}:
   mount.mounted:
@@ -277,7 +291,8 @@ bind_ssl_key_for_services_in_docker_{{ loop.index }}:
     - device: /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key
     - mkmnt: True
     - persist: True
-    - opts: bind
+    - fstype: bind
+#    - opts: bind
 
 create_script_rebind_ssl_for_services_in_docker_{{ loop.index }}:
   file.managed:
