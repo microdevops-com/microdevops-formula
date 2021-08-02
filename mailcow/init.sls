@@ -419,20 +419,20 @@ create_script_rebind_ssl_for_services_in_docker_{{ loop.index }}:
         mount --bind /opt/acme/cert/{{ domain["name"] }}/{{ domain["name"] }}.key /opt/mailcow/{{ domain["name"] }}/data/assets/ssl/key.pem
         cd /opt/mailcow/{{ domain["name"] }} && docker-compose restart
 
+  {% if "haproxy" in domain %}
+dovecote_extra_conf_{{ loop.index }}:
+  file.managed:
+    - name: /opt/mailcow/{{ domain["name"] }}/data/conf/dovecot/extra.conf
+    - mode: 0644
+    - contents: |
+        haproxy_trusted_networks = 172.22.1.1
+  {% endif %}
+
 mailcow_docker_compose_up_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
     - cwd: /opt/mailcow/{{ domain["name"] }}
     - name: cd /opt/mailcow/{{ domain["name"] }} && docker-compose up -d
-
-{% if "haproxy" in domain %}
-  dovecote_extra_conf_{{ loop.index }}:
-    file.managed:
-      - name: /opt/mailcow/{{ domain["name"] }}/data/conf/dovecot/extra.conf
-      - mode: 0644
-      - contents: |
-          haproxy_trusted_networks = 172.22.1.1
-{% endif %}
 
 create_cron_rebind_ssl_for_services_in_docker_{{ loop.index }}:
   cron.present:
