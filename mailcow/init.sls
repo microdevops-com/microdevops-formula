@@ -450,6 +450,8 @@ mailcow_docker_compose_owerride:
                 o: 'bind'
                 device: './volumes/sogo_backup'
 
+  {% if pillar["mailcow"]["SKIP_LETS_ENCRYPT"] == 'y' %}
+
 bind_ssl_certificate_for_services_in_docker:
   mount.mounted:
     - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
@@ -479,13 +481,8 @@ create_script_rebind_ssl_for_services_in_docker:
         mount --bind /opt/acme/cert/{{ pillar["mailcow"]["servername"] }}/fullchain.cer /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
         mount --bind /opt/acme/cert/{{ pillar["mailcow"]["servername"] }}/{{ pillar["mailcow"]["servername"] }}.key /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
         cd /opt/mailcow/{{ pillar["mailcow"]["servername"] }} && docker-compose restart
-
+  {% endif %}
   {% if "haproxy" in pillar["mailcow"] %}
-
-haproxy_reload:
-  cmd.run:
-    - shell: /bin/bash
-    - name: service haproxy reload
 
 dovecote_extra_conf:
   file.managed:
@@ -494,6 +491,10 @@ dovecote_extra_conf:
     - contents: |
         haproxy_trusted_networks = 172.22.1.1
 
+haproxy_reload:
+  cmd.run:
+    - shell: /bin/bash
+    - name: service haproxy reload
   {% endif %}
 
 mailcow_docker_compose_up:
