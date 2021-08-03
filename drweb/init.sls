@@ -19,6 +19,7 @@ drweb_install_01:
         - drweb-antispam
         - drweb-vaderetro
         - drweb-httpd
+        - drweb-openssl
 
 drweb_log_dir:
   file.directory:
@@ -32,32 +33,38 @@ drweb_configure_00:
     - name: drweb-ctl cfset HTTPD.AdminListen {{ pillar["drweb"]["ip"] }}:443
 drweb_configure_01:
   cmd.run:
-    - name: drweb-ctl cfset ScanEngine.Log /var/log/drweb/scanning_engine.log
+    - name: drweb-ctl cfset HTTPD.AdminSslCertificate /opt/acme/cert/{{ pillar["drweb"]["servername"] }}/fullchain.cer
 drweb_configure_02:
   cmd.run:
-    - name: drweb-ctl cfset ScanEngine.LogLevel Debug
+    - name: drweb-ctl cfset HTTPD.AdminSslKey /opt/acme/cert/{{ pillar["drweb"]["servername"] }}/{{ pillar["drweb"]["servername"] }}.key
 drweb_configure_03:
   cmd.run:
-    - name: drweb-ctl cfset MailD.LogLevel Debug
+    - name: drweb-ctl cfset ScanEngine.Log /var/log/drweb/scanning_engine.log
 drweb_configure_04:
   cmd.run:
-    - name: drweb-ctl cfset MailD.Log /var/log/drweb/maild.log
+    - name: drweb-ctl cfset ScanEngine.LogLevel {{ pillar["drweb"]["ScanEngine_LogLevel"] }}
 drweb_configure_05:
   cmd.run:
-    - name: drweb-ctl cfset MailD.RepackPassword "HMAC({{ pillar["drweb"]["secret_word"] }})"
+    - name: drweb-ctl cfset MailD.LogLevel {{ pillar["drweb"]["MailD_LogLevel"] }}
 drweb_configure_06:
   cmd.run:
-    - name: drweb-ctl cfset MailD.MilterDebugIpc Yes
+    - name: drweb-ctl cfset MailD.Log /var/log/drweb/maild.log
 drweb_configure_07:
   cmd.run:
-    - name: drweb-ctl cfset MailD.MilterTraceContent Yes
+    - name: drweb-ctl cfset MailD.RepackPassword "HMAC({{ pillar["drweb"]["secret_word"] }})"
 drweb_configure_08:
   cmd.run:
-    - name: drweb-ctl cfset MailD.MilterSocket {{ pillar["drweb"]["ip"] }}:{{ pillar["drweb"]["smtp_milter_port"] }}
+    - name: drweb-ctl cfset MailD.MilterDebugIpc {{ pillar["drweb"]["MailD_MilterDebugIpc"] }}
 drweb_configure_09:
   cmd.run:
-    - name: drweb-ctl cfset Antispam.LogLevel Debug
+    - name: drweb-ctl cfset MailD.MilterTraceContent {{ pillar["drweb"]["MailD_MilterTraceContent"] }}
 drweb_configure_10:
+  cmd.run:
+    - name: drweb-ctl cfset MailD.MilterSocket {{ pillar["drweb"]["ip"] }}:{{ pillar["drweb"]["smtp_milter_port"] }}
+drweb_configure_11:
+  cmd.run:
+    - name: drweb-ctl cfset Antispam.LogLevel {{ pillar["drweb"]["Antispam_LogLevel"] }}
+drweb_configure_12:
   cmd.run:
     - name: drweb-ctl cfset Antispam.Log /var/log/drweb/antispam.log
 
