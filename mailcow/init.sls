@@ -216,6 +216,18 @@ mailcow_config_generator_imaps_local_port:
     - pattern: '^ *IMAPS_PORT=.*$'
     - repl: 'IMAPS_PORT={{ pillar["mailcow"]["IMAPS_PORT"] }}'
 
+mailcow_config_generator_pop_local_port:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
+    - pattern: '^ *POP_PORT=.*$'
+    - repl: 'POP_PORT={{ pillar["mailcow"]["POP_PORT"] }}'
+
+mailcow_config_generator_pops_local_port:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
+    - pattern: '^ *POPS_PORT=.*$'
+    - repl: 'POPS_PORT={{ pillar["mailcow"]["POPS_PORT"] }}'
+
 mailcow_config_generator_submission_local_port:
   file.replace:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
@@ -284,6 +296,18 @@ mailcow_config_imaps_local_port:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
     - pattern: '^ *IMAPS_PORT=.*$'
     - repl: 'IMAPS_PORT={{ pillar["mailcow"]["IMAPS_PORT"] }}'
+
+mailcow_config_pop_local_port:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
+    - pattern: '^ *POP_PORT=.*$'
+    - repl: 'POP_PORT={{ pillar["mailcow"]["POP_PORT"] }}'
+
+mailcow_config_pops_local_port:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
+    - pattern: '^ *POPS_PORT=.*$'
+    - repl: 'POPS_PORT={{ pillar["mailcow"]["POPS_PORT"] }}'
 
 mailcow_config_submission_local_port:
   file.replace:
