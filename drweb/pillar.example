@@ -5,5 +5,5 @@ drweb:
   ScanEngine_LogLevel: Debug
   Antispam_LogLevel: Debug
   MailD_LogLevel: Debug
-  MailD_MilterDebugIpc: Yes
-  MailD_MilterTraceContent: Yes
+  MailD_MilterDebugIpc: 'Yes'
+  MailD_MilterTraceContent: 'Yes'
