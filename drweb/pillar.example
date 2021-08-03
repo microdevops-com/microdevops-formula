@@ -1,4 +1,4 @@
 drweb:
   ip: 1.2.3.4
   smtp_milter_port: 13333
-  secret_word: YoUrSeCreTwOrD
+  secret_word: XXXXXXXXXXXXXXX
