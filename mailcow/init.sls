@@ -234,7 +234,7 @@ mailcow_config_generator_submission_local_port:
     - pattern: '^ *SUBMISSION_PORT=.*$'
     - repl: 'SUBMISSION_PORT={{ pillar["mailcow"]["SUBMISSION_PORT"] }}'
 
-mailcow_generator_config_acme_off:
+mailcow_config_generator_acme_off:
   file.replace:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
     - pattern: '^ *SKIP_LETS_ENCRYPT=.*$'
