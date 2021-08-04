@@ -521,6 +521,12 @@ haproxy_reload:
     - name: service haproxy reload
   {% endif %}
 
+rspamd_fishing_tank_enabled:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/rspamd/local.d/phishing.conf'
+    - pattern: '^ *phishtank_enabled = .*$'
+    - repl: 'phishtank_enabled = {{ pillar["mailcow"]["phishtank_enabled"] }};'
+
 mailcow_docker_compose_up:
   cmd.run:
     - shell: /bin/bash
