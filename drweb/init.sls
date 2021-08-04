@@ -1,4 +1,10 @@
 {% if pillar["drweb"] is defined %}
+
+cert:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar["drweb"]["acme_account"] }}/verify_and_issue.sh drweb {{ pillar["drweb"]["servername"] }}"
+
 drweb_install_00:
   pkgrepo.managed:
     - humanname: Dr.Web Repository
