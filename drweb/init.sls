@@ -12,7 +12,6 @@ drweb_install_00:
     - file: /etc/apt/sources.list.d/drweb.list
     - keyid: 8C42FC58D8752769
     - keyserver: keyserver.ubuntu.com
-
 drweb_install_01:
   pkg.installed:
     - refresh: True
@@ -26,6 +25,21 @@ drweb_install_01:
         - drweb-vaderetro
         - drweb-httpd
         - drweb-openssl
+
+  {% if "license_key" in pillar["drweb"] %}
+drweb_license_key_install:
+  file.managed:
+    - name: /etc/opt/drweb.com/drweb32.key
+      source: 'salt://{{ pillar["drweb"]["license_key"] }}'
+      user: root
+      group: root
+      mode: 0644
+drweb_configuration_reload:
+  cmd.run:
+    - name: drweb-ctl reload
+    - onchanges:
+      - file: /etc/opt/drweb.com/drweb32.key
+  {% endif %}
 
 drweb_log_dir:
   file.directory:
