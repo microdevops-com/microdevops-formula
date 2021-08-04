@@ -527,6 +527,22 @@ rspamd_fishing_tank_enabled:
     - pattern: '^ *phishtank_enabled = .*$'
     - repl: 'phishtank_enabled = {{ pillar["mailcow"]["phishtank_enabled"] }};'
 
+  {% if "drweb_milter_socket" in pillar["mailcow"] %}
+postfix_smtpd_milters_drweb:
+  file.managed:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/postfix/extra.cf
+    - pattern: '^ *smtpd_milters = .*$'
+    - repl: 'smtpd_milters = inet:rspamd:9900, {{ pillar["mailcow"]["drweb_milter_socket"] }}'
+    - append_if_not_found: True
+
+postfix_non_smtpd_milters_drweb:
+  file.managed:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/postfix/extra.cf
+    - pattern: '^ *non_smtpd_milters = .*$'
+    - repl: 'non_smtpd_milters = inet:rspamd:9900, {{ pillar["mailcow"]["drweb_milter_socket"] }}'
+    - append_if_not_found: True
+  {% endif %}
+
 mailcow_docker_compose_up:
   cmd.run:
     - shell: /bin/bash
