@@ -159,7 +159,7 @@ xwiki_home_{{ loop.index }}:
   file.replace:
     - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
     - pattern: '^ *xwiki.home=.*$'
-    - repl: 'xwiki.home={{ domain["xwiki_url_protocol"] }}://{{ domain["xwiki_home"] }}/'
+    - repl: 'xwiki.home={{ domain["xwiki_url_protocol"] }}://{{ domain["name"] }}/'
     - append_if_not_found: True
 
   {%- if "oidc" in domain %}
