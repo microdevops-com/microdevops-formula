@@ -148,6 +148,20 @@ xwiki_encryptionkey_{{ loop.index }}:
     - repl: 'xwiki.authentication.encryptionKey={{ domain["encryptionkey"] }}'
     - append_if_not_found: True
 
+xwiki_url_protocol_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+    - pattern: '^ *xwiki.url.protocol=.*$'
+    - repl: 'xwiki.url.protocol={{ domain["xwiki_url_protocol"] }}'
+    - append_if_not_found: True
+
+xwiki_home_{{ loop.index }}:
+  file.replace:
+    - name: '/opt/xwiki/{{ domain["name"] }}/data/xwiki.cfg'
+    - pattern: '^ *xwiki.home=.*$'
+    - repl: 'xwiki.home={{ domain["xwiki_url_protocol"] }}://{{ domain["name"] }}/'
+    - append_if_not_found: True
+
   {%- if "oidc" in domain %}
 
 xwiki_authentication_authclass_{{ loop.index }}:

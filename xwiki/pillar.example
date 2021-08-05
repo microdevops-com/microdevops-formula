@@ -7,6 +7,7 @@ xwiki:
       validationkey: lolChav6pohnoLeih8ohJohCheidelol
       encryptionkey: kekaiZah7Ohsha2aevoo8phei9depkek
       container_start_timeout: 10
+      xwiki_url_protocol: https
       env_vars:
         DB_USER: xwiki-prd
         DB_PASSWORD: xxxxxxxxxxxxxxxxxxxx
