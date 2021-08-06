@@ -4,7 +4,7 @@ put_check_files_nothing_to_do:
     - changes: False
     - result: True
     - comment: |
-         NOTICE: Pretend doing somtheing in case pillar results no actions further.
+         NOTICE: Pretend doing something in case pillar results no actions further.
 
 {% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
 
