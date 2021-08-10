@@ -1,0 +1,25 @@
+percona_pmm:
+  docker-ce_version: 5:20.10.8*
+  acme_account: example.com
+  servername: pmm.example.com
+  domains:
+    - name: pmm.example.com
+      instances:
+        - name: pmm-server
+          port: 3000
+          image: percona/pmm-server:2
+          config: |
+            [server]
+            root_url = https://pmm.example.com/graph/
+            serve_from_sub_path = true
+            [auth.gitlab]
+            enabled = true
+            allow_sign_up = true
+            client_id = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            client_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            scopes = read_api
+            auth_url = https://gitlab.example.com/oauth/authorize
+            token_url = https://gitlab.example.com/oauth/token
+            api_url = https://gitlab.example.com/api/v4
+            allowed_groups = pmm
+
