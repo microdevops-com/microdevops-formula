@@ -21,10 +21,10 @@ docker_install_2:
   pkg.installed:
     - refresh: True
     - reload_modules: True
-    - pkgs:
+    - pkgs: 
         - docker-ce: '{{ pillar['percona_pmm']['docker-ce_version'] }}*'
         - python3-pip
-
+                
 docker_pip_install:
   pip.installed:
     - name: docker-py >= 1.10
@@ -48,6 +48,8 @@ nginx_install:
 nginx_files_1:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
+
+
 nginx_files_2:
   file.managed:
     - name: /etc/nginx/nginx.conf
@@ -78,11 +80,11 @@ nginx_files_2:
   {%- endfor %}
             }
         }
-    
+
     {%- for domain in pillar['percona_pmm']['domains'] %}
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
-  
+
 percona_pmm_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc
@@ -99,6 +101,8 @@ percona_pmm_config_{{ loop.index }}_{{ i_loop.index }}:
 
 percona_pmm_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
+    - name: docker pull {{ instance['image'] }}
+
 percona_pmm_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: percona-{{ domain['name'] }}
@@ -149,4 +153,3 @@ dir_for_backups:
     - makedirs: True
 
 {% endif %}
-
