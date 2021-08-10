@@ -1,4 +1,4 @@
-{% if pillar['percona_pmm'] is defined %}
+{% if pillar['pmm'] is defined %}
 docker_install_00:
   file.directory:
     - name: /etc/docker
@@ -22,7 +22,7 @@ docker_install_2:
     - refresh: True
     - reload_modules: True
     - pkgs: 
-        - docker-ce: '{{ pillar['percona_pmm']['docker-ce_version'] }}*'
+        - docker-ce: '{{ pillar['pmm']['docker-ce_version'] }}*'
         - python3-pip
                 
 docker_pip_install:
@@ -66,7 +66,7 @@ nginx_files_2:
                 listen 80;
                  return 301 https://$host$request_uri;
             }
-  {%- for domain in pillar['percona_pmm']['domains'] %}
+  {%- for domain in pillar['pmm']['domains'] %}
             server {
                 listen 443 ssl;
                 server_name {{ domain['name'] }};
@@ -81,7 +81,7 @@ nginx_files_2:
             }
         }
 
-    {%- for domain in pillar['percona_pmm']['domains'] %}
+    {%- for domain in pillar['pmm']['domains'] %}
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
 
@@ -130,7 +130,7 @@ dump_pmm_cron:
 nginx_cert:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["percona_pmm"]["acme_account"] }}/verify_and_issue.sh percona_pmm {{ pillar["percona_pmm"]["servername"] }}"
+    - name: "/opt/acme/home/{{ pillar["pmm"]["acme_account"] }}/verify_and_issue.sh percona_pmm {{ pillar["pmm"]["servername"] }}"
 
 nginx_reload:
   cmd.run:

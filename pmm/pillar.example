@@ -1,4 +1,4 @@
-percona_pmm:
+pmm:
   docker-ce_version: 5:20.10.8*
   acme_account: example.com
   servername: pmm.example.com
