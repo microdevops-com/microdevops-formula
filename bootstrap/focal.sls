@@ -33,6 +33,7 @@ pkg_latest:
       - tree
       - bash-completion
       - bc
+      - locales
       # apt
       - apt-transport-https
       - apt-listchanges
@@ -63,6 +64,7 @@ pkg_latest:
       - strace
       - whois
       - net-tools
+      - iputils-ping
       # build
       - build-essential
       - git

@@ -58,6 +58,7 @@
                (app_selector == phpfpm_app)
              )
       %}
+{%- if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 php-fpm_apps_group_{{ loop.index }}:
   group.present:
     - name: {{ app_params['group'] }}
@@ -101,6 +102,7 @@ php-fpm_apps_user_ssh_auth_keys_{{ loop.index }}:
     - mode: 600
     - contents: {{ app_params['app_auth_keys'] | yaml_encode }}
         {%- endif %}
+{%- endif %}
 
         {%- if
                (app_params['source'] is defined) and (app_params['source'] is not none) and
@@ -513,21 +515,9 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
         {%- endif %}
 
         {%- set php_admin = app_params['pool'].get('php_admin', '; no other admin vals') %}
-        {%- if (app_params['pool']['php_version'] == '5.6' ) %}
-          {%- set etc_php = '/etc/php/5.6/' %}
-        {%- elif (app_params['pool']['php_version'] == '7.0' ) %}
-          {%- set etc_php = '/etc/php/7.0/' %}
-        {%- elif (app_params['pool']['php_version'] == '7.1' ) %}
-          {%- set etc_php = '/etc/php/7.1/' %}
-        {%- elif (app_params['pool']['php_version'] == '7.2' ) %}
-          {%- set etc_php = '/etc/php/7.2/' %}
-        {%- elif (app_params['pool']['php_version'] == '7.3' ) %}
-          {%- set etc_php = '/etc/php/7.3/' %}
-        {%- elif (app_params['pool']['php_version'] == '7.4' ) %}
-          {%- set etc_php = '/etc/php/7.4/' %}
-        {%- elif (app_params['pool']['php_version'] == '5.5' ) %}
-          {%- set etc_php = '/etc/php5/' %}
-        {%- endif %}
+
+        {%- set etc_php = '/etc/php/' ~ app_params['pool']['php_version'] ~ '/' %}
+
 php-fpm_apps_app_pool_config_{{ loop.index }}:
   file.managed:
     - name: '{{ etc_php }}/fpm/pool.d/{{ phpfpm_app }}.conf'

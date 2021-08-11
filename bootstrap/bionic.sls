@@ -33,11 +33,12 @@ pkg_latest:
       - tree
       - bash-completion
       - bc
+      - locales
       # apt
       - apt-transport-https
       - apt-listchanges
       - gnupg
-      - python-apt
+      - python3-apt
       # man
       - doc-debian
       - info
@@ -63,6 +64,7 @@ pkg_latest:
       - strace
       - whois
       - net-tools
+      - iputils-ping
       # build
       - build-essential
       - git
@@ -78,7 +80,7 @@ pkg_latest:
       - postfix
       - s-nail 
       # python
-      - python-pip
+      - python3-pip
 {% if grains["virtual"] == "physical" %}
       # physical
       - smartmontools

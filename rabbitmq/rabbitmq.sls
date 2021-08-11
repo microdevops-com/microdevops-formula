@@ -3,7 +3,7 @@
 erlang_repo:
   pkgrepo.managed:
     - humanname: Erlang Solutions
-    - name: deb https://packages.erlang-solutions.com/ubuntu {{ 'bionic' if grains['oscodename'] in ['focal'] else grains['oscodename'] }} contrib
+    - name: deb https://packages.erlang-solutions.com/ubuntu {{ grains['oscodename'] }} contrib
     - file: /etc/apt/sources.list.d/erlang-solutions.list
     - key_url: https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc
     - clean_file: True
@@ -18,9 +18,9 @@ erlang_pkg:
 rabbit_repo:
   pkgrepo.managed:
     - humanname: RabbitMQ Repository
-    - name: deb https://dl.bintray.com/rabbitmq/debian {{ 'bionic' if grains['oscodename'] in ['focal'] else grains['oscodename'] }} main
+    - name: deb https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ {{ grains['oscodename'] }} main
     - file: /etc/apt/sources.list.d/rabbitmq.list
-    - key_url: https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc
+    - key_url: https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey
     - clean_file: True
 
 rabbit_pkg:
@@ -94,11 +94,11 @@ rabbit_fix_salt_module:
   cmd.run:
     - name: |
   {%- if grains['oscodename'] in ['focal'] %}
-        sed -i -e 's/check_user_login/user_login_authentication/' /usr/lib/python3/dist-packages/salt/modules/rabbitmq.py;
+        [ -f /usr/lib/python3/dist-packages/salt/modules/rabbitmq.py ] && { sed -i -e 's/check_user_login/user_login_authentication/' /usr/lib/python3/dist-packages/salt/modules/rabbitmq.py &&
   {%- else %}
-        sed -i -e 's/check_user_login/user_login_authentication/' /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py;
+        [ -f /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py ] && { sed -i -e 's/check_user_login/user_login_authentication/' /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py &&
   {%- endif %}
-        salt-call saltutil.refresh_modules
+        salt-call saltutil.refresh_modules; } || true
 
   {%- for vhost in pillar['rabbitmq'].get('vhosts', []) %}
 rabbit_vhost_{{ loop.index }}:

@@ -1,8 +1,8 @@
 {%
 set data_expand = {
-  'UBUNTU': ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws','/lib/ufw'],
-  'DEBIAN': ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws','/lib/ufw'],
-  'CENTOS': ['/etc','/home','/root','/var/log','/var/spool/cron','/usr/local','/opt/sysadmws']
+  'UBUNTU': ['/etc','/home','/root','/var/spool/cron','/usr/local','/opt/sysadmws'],
+  'DEBIAN': ['/etc','/home','/root','/var/spool/cron','/usr/local','/opt/sysadmws'],
+  'CENTOS': ['/etc','/home','/root','/var/spool/cron','/usr/local','/opt/sysadmws']
 }
 %}
 {%
@@ -27,8 +27,7 @@ set data_dirs_to_find = {
     'find /opt -maxdepth 1 -type d',
     'find /usr -maxdepth 1 -type d',
     'find /var -maxdepth 1 -type d',
-    'find /var/spool/cron -maxdepth 0 -type d',
-    'find /lib/ufw -maxdepth 0 -type d'
+    'find /var/spool/cron -maxdepth 0 -type d'
   ]
 }
 %}
@@ -46,6 +45,7 @@ https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard and good sense used 
 set data_dirs_to_skip = {
   'ubuntu': [
     '/',
+    '/.gem',
     '/bin',
     '/boot',
     '/dev',
@@ -57,13 +57,16 @@ set data_dirs_to_skip = {
     '/media',
     '/mnt',
     '/opt',
-    '/opt/netdata',
+    '/opt/acme',
     '/opt/certbot',
-    '/opt/eff.org',
     '/opt/containerd',
+    '/opt/eff.org',
+    '/opt/netdata',
+    '/opt/sensu-plugins-ruby',
     '/proc',
     '/run',
     '/sbin',
+    '/snap',
     '/sys',
     '/tmp',
     '/usr',
@@ -83,10 +86,13 @@ set data_dirs_to_skip = {
     '/var/cache',
     '/var/lib',
     '/var/local',
+    '/var/crash',
     '/var/lock',
+    '/var/log',
     '/var/mail',
     '/var/opt',
     '/var/run',
+    '/var/snap',
     '/var/spool',
     '/var/tmp'
   ]

@@ -125,8 +125,8 @@ pkg:
                 gitlab_rails['artifacts_enabled'] = true
                 gitlab_rails['artifacts_path'] = "/var/lib/gitlab_artifacts"
                 gitlab_rails['backup_path'] = '/var/backups/gitlab_backups'
-                unicorn['worker_timeout'] = 600
                 gitlab_rails['pipeline_schedule_worker_cron'] = "*/10 * * * *"
+                gitaly['ruby_num_workers'] = 4
       - environ.setenv:
           1:
             - name: EXTERNAL_URL

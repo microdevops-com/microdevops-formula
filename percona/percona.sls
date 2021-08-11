@@ -6,7 +6,7 @@ percona_repo_deb:
     {%- if grains['oscodename'] in ['focal'] %}
       - percona-release: https://repo.percona.com/apt/percona-release_latest.generic_all.deb
     {%- else %}
-      - percona-release: 'salt://percona/files/percona-release_0.1-6.{{ grains['oscodename'] }}_all.deb'
+      - percona-release: https://repo.percona.com/apt/percona-release_latest.{{ grains['oscodename'] }}_all.deb
     {%- endif %}
 
     {%- if pillar['percona']['version'] is defined and pillar['percona']['version']|float >= 8.0 %}

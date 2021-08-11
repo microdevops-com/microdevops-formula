@@ -30,9 +30,9 @@ docker_pip_install:
     - name: docker-py >= 1.10
     - reload_modules: True
 
-docker_purge_apparmor:
-  pkg.purged:
-    - name: apparmor
+#docker_purge_apparmor:
+#  pkg.purged:
+#    - name: apparmor
 
 docker_install_3:
   service.running:
@@ -43,7 +43,7 @@ docker_install_4:
     - name: systemctl restart docker
     - onchanges:
         - file: /etc/docker/daemon.json
-        - pkg: apparmor
+        #- pkg: apparmor
 
 nginx_install:
   pkg.installed:

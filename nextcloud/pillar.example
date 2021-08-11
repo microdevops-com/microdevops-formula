@@ -1,0 +1,27 @@
+nextcloud:
+  docker-ce_version: 5:19.03.13
+  domains:
+    - name: nextcloud.example.com
+      internal_name: prd
+      internal_port: 9000
+      image: nextcloud:fpm
+      default_phone_region: IL
+      onlyoffice: # optional
+        DocumentServerUrl: https://onlyoffice.example.com/
+        DocumentServerInternalUrl: https://onlyoffice.example.com/
+        StorageUrl: https://nextcloud.example.com/
+      env_vars:
+        NEXTCLOUD_ADMIN_USER: admin
+        NEXTCLOUD_ADMIN_PASSWORD: xxxxxxxxxxxxxxxxxxxxx
+        NEXTCLOUD_TRUSTED_DOMAINS: nextcloud.example.com
+        POSTGRES_DB: nextcloud-prd
+        POSTGRES_USER: nextcloud-prd
+        POSTGRES_PASSWORD: xxxxxxxxxxxxxxxxxxxxxx
+        POSTGRES_HOST: pg-srv1.example.com
+        SMTP_HOST: smtp.gmail.com
+        SMTP_PORT: 587
+        SMTP_SECURE: tls
+        SMTP_NAME: nextcloud@example.com
+        SMTP_PASSWORD: xxxxxxxxxxxxxxxxxxxxx
+        MAIL_FROM_ADDRESS: nextcloud
+        MAIL_DOMAIN: example.com

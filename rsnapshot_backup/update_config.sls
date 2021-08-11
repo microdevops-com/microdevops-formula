@@ -7,10 +7,8 @@ update_config_fail:
     - comment: |
          NOTICE: update_config is not for Windows, probably you run rsnapshot_backup pipeline for Windows server - it is wrong.
 
-{% elif pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
+{% elif pillar['rsnapshot_backup'] is defined and 'sources' in pillar['rsnapshot_backup'] %}
 
-# We don't know yet if there will be backups for this host as backup host, but start creating dir and config.
-# This is done to make things simplier and not to accumulate pillars in separate dict.
 rsnapshot_backup_dir:
   file.directory:
     - name: /opt/sysadmws/rsnapshot_backup
@@ -30,7 +28,7 @@ rsnapshot_backup_conf:
     - merge_if_exists: False
     - formatter: json
     - dataset:
-        - enabled: False # The first item in the dataset list is always empty, just to have at least somthing in the list, if no backups found (empty datase produces errors)
+        - enabled: False # The first item in the dataset list is always empty, just to have at least somthing in the list, if no backups found (empty dataset produces errors)
           comment: This file is managed by Salt, local changes will be overwritten.
   # Add negative priority items
   {%- for priority in [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1] %}
@@ -79,4 +77,30 @@ rsnapshot_backup_conf:
     {%- endfor %}
   {%- endfor %}
 
+{% else %}
+rsnapshot_backup_dir:
+  file.directory:
+    - name: /opt/sysadmws/rsnapshot_backup
+    - user: root
+    - group: root
+    - mode: 775
+    - makedirs: True
+
+# Just empty config if not exists - not to overwrite manually created config
+  {%- if not salt['file.file_exists']('/opt/sysadmws/rsnapshot_backup/rsnapshot_backup.conf') %}
+rsnapshot_backup_conf:
+  file.serialize:
+    - name: /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.conf
+    - user: root
+    - group: root
+    - mode: 660
+    - show_changes: True
+    - create: True
+    - merge_if_exists: False
+    - formatter: json
+    - dataset:
+        - enabled: False # The first item in the dataset list is always empty, just to have at least somthing in the list, if no backups found (empty dataset produces errors)
+          comment: This file is managed by Salt, local changes will be overwritten.
+
+  {%- endif %}
 {% endif %}

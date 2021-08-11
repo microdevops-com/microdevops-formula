@@ -1,0 +1,22 @@
+mailcow:
+  docker-ce_version: 5:19.03.13
+  servername: mailcow.example.com
+  acme_account: example.com
+  HTTP_PORT: 8080                 #ONLY PORT
+  HTTP_BIND: 127.0.0.1            #ONLY IP
+  HTTPS_PORT: 8443                #ONLY PORT
+  HTTPS_BIND: 127.0.0.1           #ONLY IP
+  SMTP_PORT: 25                   #PORT OR IP:PORT
+  SMTPS_PORT: 127.0.0.1:465       #PORT OR IP:PORT
+  SUBMISSION_PORT: 127.0.0.1:587  #PORT OR IP:PORT
+  IMAP_PORT: 127.0.0.1:143        #PORT OR IP:PORT
+  IMAPS_PORT: 127.0.0.1:993       #PORT OR IP:PORT
+  POP_PORT: 127.0.0.1:110         #PORT OR IP:PORT
+  POPS_PORT: 127.0.0.1:995        #PORT OR IP:PORT
+  SIEVE_PORT: 127.0.0.1:4190      #PORT OR IP:PORT
+  SKIP_LETS_ENCRYPT: y            #y or n
+  MAILCOW_TZ: Etc/UTC
+  haproxy:                        #REMOVE THIS ENTRY IF HAPROXY IS NOT USED
+    EXTERNAL_IP: 1.2.3.4
+  phishtank_enabled: 'true'
+  drweb_milter_socket: 2.3.4.5:13333

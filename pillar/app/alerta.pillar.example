@@ -39,18 +39,19 @@ set customers = [
 %}
 {%
 set telegram_template = "
-source: [alerta](https://" ~ domain ~ "/)
+source: [alerta](https://" ~ domain ~ "/alert/{{ id }})
 severity: *{{ severity }}*
+previous-severity: *{{ previous_severity }}*
 status: *{{ status }}*
-customer: *{{ customer }}*
-environment: *{{ environment }}*
-service: *{{ service|join(', ') }}*
-resource: *{{ resource }}*
-event: *{{ event }}*
-value: *{{ value }}*
-group: *{{ group }}*
-origin: *{{ origin }}*
-{% for a_key, a_val in attributes.items()|sort %}{{ a_key }}: *{{ a_val }}*
+customer: *{{ customer|replace('_', '-')|replace('*', '-') }}*
+environment: *{{ environment|replace('_', '-')|replace('*', '-') }}*
+service: *{{ service|join(', ')|replace('_', '-')|replace('*', '-') }}*
+resource: *{{ resource|replace('_', '-')|replace('*', '-') }}*
+event: *{{ event|replace('_', '-')|replace('*', '-') }}*
+value: *{{ value|replace('_', '-')|replace('*', '-') }}*
+group: *{{ group|replace('_', '-')|replace('*', '-') }}*
+origin: *{{ origin|replace('_', '-')|replace('*', '-') }}*
+{% for a_key, a_val in attributes.items()|sort %}{{ a_key|replace('_', '-')|replace('*', '-') }}: *{{ a_val|replace('_', '-')|replace('*', '-') }}*
 {% endfor %}
 ```
 {{ text }}
@@ -131,7 +132,8 @@ NOTIFICATION_BLACKOUT = True
 BLACKOUT_ACCEPT = True
 
 TELEGRAM_TEMPLATE = '/opt/alerta/" ~ appname ~ "/telegram_template.jinja'
-TELEGRAM_SOUND_NOTIFICATION_SEVERITY = ['fatal', 'security', 'critical', 'major']
+TELEGRAM_FILTER_NOTIFICATION_SEVERITY = ['fatal', 'security', 'critical']
+TELEGRAM_SOUND_NOTIFICATION_SEVERITY = ['fatal']
 
 TELEGRAM_TOKEN = 'xxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'

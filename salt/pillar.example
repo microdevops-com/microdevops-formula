@@ -1,28 +1,73 @@
 salt:
+
   master:
-    version: 2019.2
+    version: 3001
     config:
-      interface: 0.0.0.0
-      worker_threads: 60
       file_roots:
         base:
           - /srv/salt
           - /srv/files
-    repo: git@gitlab.example.com:salt-master.git # optionally git clone repo if /srv/.git does not exist
-    key: # optionally manage master key (/etc/salt/pki/master/master.pem, /etc/salt/pki/master/master.pub)
-      pem: |
-        -----BEGIN RSA PRIVATE KEY-----
+          - /srv/salt_local
+          - /srv/formulas/_salt
+      interface: 0.0.0.0
+      presence_events: True
+      worker_threads: 4
+      master_sign_pubkey: True
+      publish_port: 4505
+      ret_port: 4506
+      ping_on_rotate: True
+    pki: # optionally manage pki keys
+      master_sign:
+        pem: |
+          -----BEGIN RSA PRIVATE KEY-----
+          ...
+          -----END RSA PRIVATE KEY-----
+        pub: |
+          -----BEGIN PUBLIC KEY-----
+          ...
+          -----END PUBLIC KEY-----
+      master:
+        pem: |
+          -----BEGIN RSA PRIVATE KEY-----
+          ...
+          -----END RSA PRIVATE KEY-----
+        pub: |
+          -----BEGIN PUBLIC KEY-----
+          ...
+          -----END PUBLIC KEY-----
+      minions:
+        minion1.example.com:
+          -----BEGIN PUBLIC KEY-----
+          ...
+          -----END PUBLIC KEY-----
+        minion2.example.com:
+          -----BEGIN PUBLIC KEY-----
+          ...
+          -----END PUBLIC KEY-----
+    root_ed25519: # root ssh key (for accessing gitlab repo)
+      priv: |
+        -----BEGIN OPENSSH PRIVATE KEY-----
         ...
-        -----END RSA PRIVATE KEY-----
+        -----END OPENSSH PRIVATE KEY-----
       pub: |
-        -----BEGIN PUBLIC KEY-----
+        ssh-ed25519 AAAA................................................................ root@saltX.example.com
+    root_rsa: # root ssh key (for accessing gitlab repo)
+      priv: |
+        -----BEGIN OPENSSH PRIVATE KEY-----
         ...
-        -----END PUBLIC KEY-----
+        -----END OPENSSH PRIVATE KEY-----
+      pub: |
+        ssh-ed25519 AAAA................................................................ root@saltX.example.com
+    repo: git@gitlab.example.com:salt-master.git # optionally git clone repo and keep updated /srv/.git
+    gitlab-runner: # optionally istall gitlab-runner and register it in repo
+      gitlab_url: https://gitlab.example.com
+      gitlab_runner_name: salt1.example.com
+      registration_token: xxxxxxxxxxxxxxxxxxxx
 
   minion:
-    version: 2019.2
-    release: 2019.2.5 # optional specific release of version to install (only for windows now)
-    hosts:
+    version: 3001
+    release: 3001.4 # optional specific release of version to install (only for windows)
+    hosts: # add static records for salt masters
       - name: salt1.example.com
         ip: 1.2.3.4
       - name: salt2.example.com
@@ -31,6 +76,33 @@ salt:
       master:
         - salt1.example.com
         - salt2.example.com
+      publish_port: 4505
+      master_port: 4506
+      verify_master_pubkey_sign: True
+      master_type: failover
+      retry_dns: 0
+      random_master: True
+      master_alive_interval: 60
+      master_tries: -1
+      ping_interval: 1
       grains:
         fqdn: {{ grains['fqdn'] }}
     grains_file_rm: True # optionally remove grains file, if grains are managed inside main config
+    pki:
+      minion:
+        pem: |
+          -----BEGIN RSA PRIVATE KEY-----
+          ...
+          -----END RSA PRIVATE KEY-----
+        pub: |
+          -----BEGIN PUBLIC KEY-----
+          ...
+          -----END PUBLIC KEY-----
+      minion_master: | # makes sense only for minions on masters - self selection - makes up faster
+        -----BEGIN PUBLIC KEY-----
+        ...
+        -----END PUBLIC KEY-----
+      master_sign: |
+        -----BEGIN PUBLIC KEY-----
+        ...
+        -----END PUBLIC KEY-----

@@ -1,35 +1,34 @@
-{% if pillar['salt'] is defined and pillar['salt'] is not none and pillar['salt']['minion'] is defined and pillar['salt']['minion'] is not none %}
+{% if pillar["salt"] is defined and 'minion' in pillar["salt"] %}
 
-  {%- for host in pillar['salt']['minion']['hosts'] %}
+  {%- for host in pillar["salt"]["minion"]["hosts"] %}
 salt_master_hosts_{{ loop.index }}:
   host.present:
-    - clean: True
-    - ip: {{ host['ip'] }}
+    - ip: {{ host["ip"] }}
     - names:
-        - {{ host['name'] }}
+        - {{ host["name"] }}
   {%- endfor %}
 
-  {%- if grains['os'] in ['Windows'] %}
-    {%- if pillar['salt']['minion']['version'] == 2019.2 %}
-      {%- set minion_exe = 'Salt-Minion-2019.2.5-Py3-AMD64-Setup.exe' -%}
-    {%- endif %}
+  {%- if grains["os"] in ["Windows"] %}
+    {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+    {%- set minion_exe = 'Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
 
     {%- if 
-           pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string
+           pillar["salt"]["minion"]["version"]|string != grains["saltversioninfo"][0]|string
            or
-           (pillar['salt']['minion']['release'] is defined and pillar['salt']['minion']['release'] is not none and pillar['salt']['minion']['release'] != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string + '.' + grains['saltversioninfo'][2]|string)
+           (pillar["salt"]["minion"]["release"] is defined and pillar["salt"]["minion"]["release"] != grains["saltversioninfo"][0]|string + "." + grains["saltversioninfo"][1]|string)
     %}
 minion_installer_exe:
   file.managed:
-    - name: 'C:\Windows\{{ minion_exe }}'
-    - source: salt://salt/{{ minion_exe }}
+    - name: 'C:\Windows\{{ minion_exe }}' # DO NOT USE "" here - slash \ is treated as escape inside
+    - source: '{{ minion_src }}'
 
 minion_install_silent_cmd:
   cmd.run:
-    - name: 'START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar['salt']['minion']['config']['master']|join(',') }} /minion-name={{ grains['fqdn'] }} /start-minion=1'
+    - name: |
+        START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar["salt"]["minion"]["config"]["master"]|join(",") }} /minion-name={{ grains["fqdn"] }} /start-minion=1
     {%- endif %}
 
-    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] is not none and pillar['salt']['minion']['grains_file_rm'] %}
+    {%- if pillar["salt"]["minion"]["grains_file_rm"] is defined and pillar["salt"]["minion"]["grains_file_rm"] %}
 salt_minion_grains_file_rm:
   file.absent:
     - name: 'C:\salt\conf\grains'
@@ -39,7 +38,7 @@ salt_minion_id:
   file.managed:
     - name: 'C:\salt\conf\minion_id'
     - contents: |
-        {{ grains['fqdn'] }}
+        {{ grains["fqdn"] }}
 
 salt_minion_config:
   file.serialize:
@@ -48,7 +47,7 @@ salt_minion_config:
     - create: True
     - merge_if_exists: False
     - formatter: yaml
-    - dataset: {{ pillar['salt']['minion']['config'] }}
+    - dataset: {{ pillar["salt"]["minion"]["config"] }}
 
 salt_minion_config_restart:
   module.run:
@@ -59,31 +58,25 @@ salt_minion_config_restart:
         - file: 'C:\salt\conf\grains'
         - file: 'C:\salt\conf\minion_id'
 
-  {%- elif grains['os'] in ['Ubuntu', 'Debian', 'CentOS'] %}
-    {%- if grains['os'] in ['Ubuntu', 'Debian'] and grains['oscodename'] in ['bionic', 'xenial', 'trusty', 'jessie', 'stretch'] %}
+  {%- elif grains["os"] in ["Ubuntu", "Debian", "CentOS"] %}
+salt_minion_dirs_1:
+  file.directory:
+    - names:
+      - /etc/salt
+      - /etc/salt/pki
+    - user: root
+    - group: root
+    - mode: 755
 
-salt_minion_repo:
-  pkgrepo.managed:
-    - humanname: SaltStack Repository
-    - name: deb http://repo.saltstack.com/apt/{{ grains['os']|lower }}/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['minion']['version'] }} {{ grains['oscodename'] }} main
-    - file: /etc/apt/sources.list.d/saltstack.list
-    - key_url: https://repo.saltstack.com/apt/{{ grains['os']|lower }}/{{ grains['osrelease'] }}/amd64/{{ pillar['salt']['minion']['version'] }}/SALTSTACK-GPG-KEY.pub
-    - clean_file: True
-    - refresh: True
+salt_minion_dirs_2:
+  file.directory:
+    - names:
+      - /etc/salt/pki/minion
+    - user: root
+    - group: root
+    - mode: 700
 
-      {%- if pillar['salt']['minion']['version']|string != grains['saltversioninfo'][0]|string + '.' + grains['saltversioninfo'][1]|string %}
-salt_minion_update_restart:
-  cmd.run:
-    - name: |
-        exec 0>&- # close stdin
-        exec 1>&- # close stdout
-        exec 2>&- # close stderr
-        nohup /bin/sh -c 'apt-get update; apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install salt-minion={{ pillar['salt']['minion']['version']|string }}* && salt-call --local service.restart salt-minion' &
-      {%- endif %}
-
-    {%- endif %}
-
-    {%- if pillar['salt']['minion']['grains_file_rm'] is defined and pillar['salt']['minion']['grains_file_rm'] is not none and pillar['salt']['minion']['grains_file_rm'] %}
+    {%- if pillar["salt"]["minion"]["grains_file_rm"] is defined and pillar["salt"]["minion"]["grains_file_rm"] %}
 salt_minion_grains_file_rm:
   file.absent:
     - name: /etc/salt/grains
@@ -93,7 +86,7 @@ salt_minion_id:
   file.managed:
     - name: /etc/salt/minion_id
     - contents: |
-        {{ grains['fqdn'] }}
+        {{ grains["fqdn"] }}
 
 salt_minion_config:
   file.serialize:
@@ -105,7 +98,78 @@ salt_minion_config:
     - create: True
     - merge_if_exists: False
     - formatter: yaml
-    - dataset: {{ pillar['salt']['minion']['config'] }}
+    - dataset: {{ pillar["salt"]["minion"]["config"] }}
+
+    {%- if "pki" in pillar["salt"]["minion"] and "minion" in pillar["salt"]["minion"]["pki"] %}
+salt_minion_pki_minion_pem:
+  file.managed:
+    - name: /etc/salt/pki/minion/minion.pem
+    - user: root
+    - group: root
+    - mode: 400
+    - contents: {{ pillar["salt"]["minion"]["pki"]["minion"]["pem"] | yaml_encode }}
+
+salt_minion_pki_minion_pub:
+  file.managed:
+    - name: /etc/salt/pki/minion/minion.pub
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: {{ pillar["salt"]["minion"]["pki"]["minion"]["pub"] | yaml_encode }}
+
+salt_minion_pki_master_sign_pub:
+  file.managed:
+    - name: /etc/salt/pki/minion/master_sign.pub
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: {{ pillar["salt"]["minion"]["pki"]["master_sign"] | yaml_encode }}
+
+      {%- if "minion_master" in pillar["salt"]["minion"]["pki"] %}
+salt_minion_pki_minion_master_pub:
+  file.managed:
+    - name: /etc/salt/pki/minion/minion_master.pub
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: {{ pillar["salt"]["minion"]["pki"]["minion_master"] | yaml_encode }}
+
+      {%- endif %}
+    {%- endif %}
+
+    {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal"] %}
+salt_minion_repo:
+  pkgrepo.managed:
+    - humanname: SaltStack Repository
+      {%- if grains["osarch"] == "arm64" %}
+    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+      {%- else %}
+    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+      {%- endif %}
+    - file: /etc/apt/sources.list.d/saltstack.list
+      {%- if grains["osarch"] == "arm64" %}
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+      {%- else %}
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+      {%- endif %}
+    - clean_file: True
+    - refresh: True
+
+      # We don't check salt version in grains as in salt-ssh it equals version of salt-ssh, and we need to know installed package version
+      {%- set installed_ver = salt["cmd.shell"]("dpkg -s salt-minion 2>/dev/null | grep Version | sed -e 's/^Version: //' -e 's/\..*$//' | grep " + pillar["salt"]["minion"]["version"]|string) %}
+      # Also check if salt-minion is upgradable
+      {%- set minion_upgradable = salt["cmd.shell"]("apt-get upgrade --dry-run 2>/dev/null | grep 'Inst salt-minion' | sed -e 's/ .*//'") %}
+      {%- if pillar["salt"]["minion"]["version"]|string != installed_ver or minion_upgradable == "Inst" %}
+salt_minion_update_restart:
+  cmd.run:
+    - name: |
+        exec 0>&- # close stdin
+        exec 1>&- # close stdout
+        exec 2>&- # close stderr
+        nohup /bin/sh -c 'apt-get update; apt-get -qy -o "DPkg::Options::=--force-confold" -o "DPkg::Options::=--force-confdef" install --allow-downgrades salt-common={{ pillar["salt"]["minion"]["version"]|string }}* salt-minion={{ pillar["salt"]["minion"]["version"]|string }}* && salt-call --local service.restart salt-minion' &
+      {%- endif %}
+
+    {%- endif %}
 
 salt_minion_config_restart:
   cmd.run:
@@ -118,7 +182,22 @@ salt_minion_config_restart:
         - file: /etc/salt/minion
         - file: /etc/salt/grains
         - file: /etc/salt/minion_id
+        - file: /etc/salt/pki/minion/minion.pem
+        - file: /etc/salt/pki/minion/minion.pub
+        - file: /etc/salt/pki/minion/master_sign.pub
+    {%- if "minion_master" in pillar["salt"]["minion"]["pki"] %}
+        - file: /etc/salt/pki/minion/minion_master.pub
+    {%- endif %}
 
   {%- endif %}
+
+{% else %}
+salt_minion_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: This state was not configured, so nothing has been done. But it is OK.
 
 {% endif %}

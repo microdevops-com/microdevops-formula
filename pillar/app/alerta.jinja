@@ -29,11 +29,38 @@ References:
 - http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
 #}
 
+{#
+Migration to yaml based settings:
+Define values in alerta1_example_com_settings.sls as yaml and assign pillar like this:
+{% import_yaml 'app/example/alerta1_example_com_settings.sls' as alerta %}
+{% include 'app/example/alerta.jinja' with context %}
+#}
+{% if alerta is defined %}
+  {%- set appname = alerta['appname'] %}
+  {%- set db_pass = alerta['db_pass'] %}
+  {%- set domain = alerta['domain'] %}
+  {%- set version = alerta['version'] %}
+  {%- set webui_version = alerta['webui_version'] %}
+  {%- set add_pip_install = alerta['add_pip_install'] %}
+  {%- set cli_key_id = alerta['cli_key_id'] %}
+  {%- set cli_key = alerta['cli_key'] %}
+  {%- set telegram_key_id = alerta['telegram_key_id'] %}
+  {%- set telegram_key = alerta['telegram_key'] %}
+  {%- set secret_key = alerta['secret_key'] %}
+  {%- set customers = alerta['customers'] %}
+  {%- set telegram_template = alerta['telegram_template'] %}
+  {%- set conf = alerta['conf'] %}
+{% endif %}
+
 postgres:
   use_upstream_repo: True
   version: '11'
   pkgs_extra:
+  {%- if grains['oscodename'] in ['focal'] %}
+    - postgresql-plpython3-11
+  {%- else %}
     - postgresql-plpython-11
+  {%- endif %}
     - postgresql-server-dev-11
   postgresconf: |-
     listen_addresses = '*'
@@ -41,6 +68,7 @@ postgres:
   acls:
     - ['local', 'all', '{{ appname }}']
     - ['host', 'all', '{{ appname }}', '0/0']
+  config_backup: False # depends on salt-call which is not available in salt-ssh
   users:
     {{ appname }}:
       ensure: present
@@ -191,16 +219,19 @@ pkg:
       - cmd.run:
           1: 
             - name: 'echo "INSERT INTO customers (id, match, customer) VALUES (''{{ customer["id"] }}'', ''{{ customer["match"] }}'', ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET match = ''{{ customer["match"] }}'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
-    {%- for c_key in customer["keys"] %}
+    {%- if "keys" in customer %}
+      {%- for c_key in customer["keys"] %}
       - cmd.run:
           1: 
             - name: 'echo "INSERT INTO keys (id, key, \"user\", scopes, text, expire_time, count, customer) VALUES (''{{ c_key["key_id"] }}'', ''{{ c_key["key"] }}'', ''root'', ''{write:alerts,write:heartbeats}'', ''{{ c_key["name"] }}'', now() + interval ''100 years'', 0, ''{{ customer["name"] }}'') ON CONFLICT (id) DO UPDATE SET key = ''{{ c_key["key"] }}'', \"user\" = ''root'', scopes = ''{write:alerts,write:heartbeats}'', text = ''{{ c_key["name"] }}'', expire_time = now() + interval ''100 years'', customer = ''{{ customer["name"] }}'';" | su -l postgres -c "psql {{ appname }}" | grep "INSERT"'
-    {%- endfor %}
+      {%- endfor %}
+    {%- endif %}
   {%- endfor %}
 {% endif %}
       - cron.present:
           1:
-            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping'
+            # otherwise it will swipe out closed (green) after default 2 hours and info after 12 hours
+            - name: '/opt/alerta/{{ appname }}/venv/bin/alerta housekeeping --expired 24 --info 24'
             - identifier: alerta_housekeeping
             - user: {{ appname }}
             - minute: '*'

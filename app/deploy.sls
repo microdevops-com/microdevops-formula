@@ -1,4 +1,7 @@
 include:
+{% if pillar['acme'] is defined %}
+  - acme
+{% endif %}
   - pkg.before_deploy
   - proftpd.users
 {% if pillar['postgres'] is defined and pillar['postgres'] is not none %}
@@ -8,7 +11,7 @@ include:
   - postgres
   {%- endif %}
 {% endif %}
-  - percona.percona
+  - percona
   - rabbitmq.rabbitmq
   - pyenv.pyenv
 {% if pillar['sentry'] is defined and pillar['sentry'] is not none %}
@@ -19,6 +22,8 @@ include:
   - app.php-fpm_apps
   - app.static_apps
   - app.python_apps
+  - app.python
+  - app.docker
 {% if pillar['java'] is defined and pillar['java'] is not none %}
   - sun-java.opt_dir
   - sun-java

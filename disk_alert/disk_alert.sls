@@ -1,26 +1,31 @@
 {% if pillar["disk_alert"] is defined and "enabled" in pillar["disk_alert"] and pillar["disk_alert"]["enabled"] %}
 
-  {%- if salt["file.directory_exists"]("/opt/sysadmws/disk_alert") %}
-    {%- if "config" in pillar["disk_alert"] %}
-swsu_v1_disk_alert_config_managed:
+  {%- if "config" in pillar["disk_alert"] %}
+disk_alert_dir:
+  file.directory:
+    - name: /opt/sysadmws/disk_alert
+    - user: root
+    - group: root
+    - mode: 0775
+
+disk_alert_config_managed:
   file.managed:
-    - name: "/opt/sysadmws/disk_alert/disk_alert.conf"
+    - name: /opt/sysadmws/disk_alert/disk_alert.conf
     - mode: 0644
     - user: root
     - group: root
     - contents: {{ pillar["disk_alert"]["config"] | yaml_encode }}
-    {%- endif %}
+  {%- endif %}
 
 # 240 = 4 minutes, sleep randomly within cron time frame to flatten load on alerta servers
 # % - is a special char in crontab and should be escaped
-swsu_v1_disk_alert_cron_managed:
+disk_alert_cron_managed:
   cron.present:
     - name:
         bash -c 'sleep $((RANDOM \% 240))' && /opt/sysadmws/disk_alert/disk_alert.sh
     - identifier: disk_alert
     - user: root
     - minute: "*/5"
-  {%- endif %}
 
 {% else %}
 disk_alert_nothing_done_info:

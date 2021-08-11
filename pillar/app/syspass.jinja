@@ -4,7 +4,7 @@ This file should be included in pillar, which sets the following:
 {% set db_root_pass = 'XXX-set-db-root-pass-here-XXX' %}
 {% set db_pass = 'XXX-set-syspass-db-pass-here-XXX' %}
 {% set domain  = 'pass.example.com' %}
-{% set syspass_version = '2.1.15.17101701' %}
+{% set syspass_version = '3.2.1' %}
 
 And then:
 {% include 'app/syspass.jinja' with context %}
@@ -18,7 +18,7 @@ Also you need to set up acme_local.sh beforehand, see sysadmws-formula/pillar/pk
 
 percona:
   enabled: True
-  version: 5.6
+  version: 5.7
   root_password: '{{ db_root_pass }}'
   secure_install: True
   databases:
@@ -37,18 +37,20 @@ nginx:
 
 php-fpm:
   enabled: True
-  version_7_0: True
+  version_7_4: True
   modules:
-    php7.0:
-      - php7.0-mysql
-      - php7.0-curl
-      - php7.0-zip
-      - php7.0-gd
-      - php7.0-mcrypt
-      - php7.0-mbstring
-      - php7.0-xml
-      - php7.0-soap
-      - php7.0-json
+    php7_4:
+      - php7.4-mysql
+      - php7.4-curl
+      - php7.4-json
+      - php7.4-gd
+      - php7.4-xml
+      - php7.4-mbstring
+      - php7.4-mcrypt
+      - php7.4-intl
+      - php7.4-zip
+      - php7.4-soap
+
 
 pkg:
   php_maxlifetime:
@@ -56,7 +58,7 @@ pkg:
     states:
       - file.replace:
           1:
-            - name: '/etc/php/7.0/fpm/php.ini'
+            - name: '/etc/php/7.4/fpm/php.ini'
             - pattern: '^session.gc_maxlifetime = 1440$'
             - repl: 'session.gc_maxlifetime = 86400'
 
@@ -80,7 +82,7 @@ app:
           acme: True
       pool:
         pool_config: 'app/{{ appname }}/pool.conf'
-        php_version: '7.0'
+        php_version: '7.4'
         pm: |
           pm = ondemand
           pm.max_children = 50

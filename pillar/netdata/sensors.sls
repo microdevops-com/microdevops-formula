@@ -1,0 +1,2 @@
+netdata:
+  sensors: True

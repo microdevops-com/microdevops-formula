@@ -1,6 +1,6 @@
 {#
 This file should be included in pillar, which sets the following:
-{% set acme_auth_id = "XXXX" %}
+{% set acme_auth_id = "XXXX" %} or {% set acme_sub_auth_id = "XXXX" %}
 {% set acme_auth_password = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" %}
 
 And then:
@@ -35,7 +35,11 @@ pkg:
       - environ.setenv:
           1:
             - name: CLOUDNS_AUTH_ID
+            {%- if acme_auth_id is defined and acme_auth_id is not none %}
             - value: "{{ acme_auth_id }}"
+            {%- elif acme_sub_auth_id is defined and acme_sub_auth_id is not none %}
+            - value: "{{ acme_sub_auth_id }}"
+            {%- endif %}
             - update_minion: True
           2:
             - name: CLOUDNS_AUTH_PASSWORD
@@ -47,6 +51,10 @@ pkg:
             - mode: 0700
             - contents: |
                 #!/bin/bash
+                {%- if acme_auth_id is defined and acme_auth_id is not none %}
                 export CLOUDNS_AUTH_ID="{{ acme_auth_id }}"
+                {%- elif acme_sub_auth_id is defined and acme_sub_auth_id is not none %}
+                export CLOUDNS_SUB_AUTH_ID="{{ acme_sub_auth_id }}"
+                {%- endif %}
                 export CLOUDNS_AUTH_PASSWORD="{{ acme_auth_password }}"
                 /opt/acme/home/acme.sh --home /opt/acme/home --cert-home /opt/acme/cert --config-home /opt/acme/config --dns dns_cloudns --dnssleep 120 "$@"

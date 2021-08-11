@@ -1,27 +1,28 @@
 {% if pillar["notify_devilry"] is defined %}
-  {%- if "config_file_override" in pillar["notify_devilry"] %}
+notify_devilry_dir:
+  file.directory:
+    - name: /opt/sysadmws/notify_devilry
+    - user: root
+    - group: root
+    - mode: 0775
 
-    {%- if salt["file.directory_exists"]("/opt/sysadmws/notify_devilry") %}
+  {%- if "config_file_override" in pillar["notify_devilry"] %}
 notify_devilry_config_managed:
   file.managed:
-    - name: "/opt/sysadmws/notify_devilry/notify_devilry.yaml"
+    - name: /opt/sysadmws/notify_devilry/notify_devilry.yaml
     - mode: 0600
     - user: root
     - group: root
     - source: {{ pillar["notify_devilry"]["config_file_override"] }}
-    {%- endif %}
 
   {%- elif "config_file" in pillar["notify_devilry"] %}
-
-    {%- if salt["file.directory_exists"]("/opt/sysadmws/notify_devilry") %}
 notify_devilry_config_managed:
   file.managed:
-    - name: "/opt/sysadmws/notify_devilry/notify_devilry.yaml"
+    - name: /opt/sysadmws/notify_devilry/notify_devilry.yaml
     - mode: 0600
     - user: root
     - group: root
     - source: {{ pillar["notify_devilry"]["config_file"] }}
-    {%- endif %}
 
   {%- endif %}
 
