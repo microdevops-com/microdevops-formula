@@ -97,7 +97,7 @@ percona_pmm_container_{{ loop.index }}_{{ i_loop.index }}:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-        - 127.0.0.1:{{ instance['port'] }}:3000/tcp
+        - 127.0.0.1:{{ instance['port'] }}:80/tcp
     - binds:
         - /opt/pmm/{{ domain['name'] }}/{{ instance['name'] }}/etc:/etc/grafana:rw
     - watch:
