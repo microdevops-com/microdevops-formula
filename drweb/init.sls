@@ -25,6 +25,7 @@ drweb_install_01:
         - drweb-vaderetro
         - drweb-httpd
         - drweb-openssl
+        - drweb-netcheck
 
   {% if "license_key" in pillar["drweb"] %}
 drweb_license_key_install:
