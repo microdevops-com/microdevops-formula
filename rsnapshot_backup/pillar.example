@@ -36,6 +36,7 @@ rsnapshot_backup:
         retain_monthly: N # optional, override default value 3
         rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
         connect_user: toor # optional, root by default, user for ssh connect
+        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
       - type: MYSQL_SSH # dump mysql over ssh, then rsync dump folder over ssh
@@ -59,6 +60,7 @@ rsnapshot_backup:
         retain_monthly: N # optional, override default value 3
         rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         connect_user: toor # optional, root by default, user for ssh connect
+        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         mysqldump_args: # optional, pass additional arguments to mysqldump
@@ -87,6 +89,7 @@ rsnapshot_backup:
         retain_monthly: N # optional, override default value 3
         rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         connect_user: toor # optional, root by default, user for ssh connect
+        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump folder over ssh
@@ -110,6 +113,7 @@ rsnapshot_backup:
         rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
         connect_user: toor # optional, root by default, user for ssh connect
+        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
         exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
