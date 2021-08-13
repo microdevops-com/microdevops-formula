@@ -308,6 +308,24 @@ ufw_reload:
       - file: /etc/ufw/user6.rules
   {%- endif %}
 
+  {% if "exec_after_apply" in pillar["ufw"] %}
+exec_after:
+  cmd.run:
+    - name: {{ pillar["ufw"]["exec_after_apply"] }}
+    - onchanges:
+      - file: /etc/ufw/ufw.conf
+      - file: /etc/ufw/sysctl.conf
+      - file: /etc/default/ufw
+      - file: /etc/ufw/before.rules
+    {%- if grains["os"] in ["CentOS"] %}
+      - file: /var/lib/ufw/user.rules
+      - file: /var/lib/ufw/user6.rules
+    {%- else %}
+      - file: /etc/ufw/user.rules
+      - file: /etc/ufw/user6.rules
+    {%- endif %}
+  {% endif %}
+
 {% else %}
 ufw_nothing_done_info:
   test.configurable_test_state:
