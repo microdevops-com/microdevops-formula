@@ -308,6 +308,12 @@ ufw_reload:
       - file: /etc/ufw/user6.rules
   {%- endif %}
 
+  {% if "exec_after_apply" in pillar["ufw"] %}
+exec_after:
+  cmd.run:
+    - name: {{ pillar["ufw"]["exec_after_apply"] }}
+  {% endif %}
+
 {% else %}
 ufw_nothing_done_info:
   test.configurable_test_state:
