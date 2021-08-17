@@ -89,4 +89,50 @@ drweb_configure_12:
   cmd.run:
     - name: drweb-ctl cfset Antispam.Log /var/log/drweb/antispam.log
 
+  {% if "MilterHook" in pillar["drweb"] %}
+drweb_create_file_milter_hook_lua:
+  file.managed:
+    - name: /etc/opt/drweb.com/milter_hook.lua
+      source: 'salt://{{ pillar["drweb"]["MilterHook"] }}'
+      user: root
+      group: root
+      mode: 0644
+
+    {% if "whitelist_send_to" in pillar["drweb"]["MilterHook"] %}
+drweb_create_file_whitelist_send_to:
+  file.managed:
+    - name: /etc/opt/drweb.com/lists/whitemails_to.txt
+      source: 'salt://{{ pillar["drweb"]["MilterHook"]["whitelist_send_to"] }}'
+      user: root
+      group: root
+      mode: 0644
+      makedirs: True
+    {% endif %}
+    {% if "whitelist_send_from" in pillar["drweb"]["MilterHook"] %}
+drweb_create_file_whitelist_send_from_file:
+  file.managed:
+    - name: /etc/opt/drweb.com/lists/whitemails.txt
+      source: 'salt://{{ pillar["drweb"]["MilterHook"]["whitelist_send_from"] }}'
+      user: root
+      group: root
+      mode: 0644
+      makedirs: True
+    {% endif %}
+    {% if "blacklist_send_from" in pillar["drweb"]["MilterHook"] %}
+drweb_create_file_blacklist_send_from_file:
+  file.managed:
+    - name: /etc/opt/drweb.com/lists/blackmails.txt
+      source: 'salt://{{ pillar["drweb"]["MilterHook"]["blacklist_send_from"] }}'
+      user: root
+      group: root
+      mode: 0644
+      makedirs: True
+    {% endif %}
+
+drweb_load_milter_hook_lua_file:
+  cmd.run:
+    - name: drweb-ctl cfset MailD.MilterHook /etc/opt/drweb.com/milter_hook.lua
+
+  {% endif %}
+
 {% endif %}
