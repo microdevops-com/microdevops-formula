@@ -10,3 +10,7 @@ drweb:
   MailD_MilterDebugIpc: 'Yes'
   MailD_MilterTraceContent: 'Yes'
   license_key: path/to/drweb/license.key
+  MailD_MilterHook: path/to/drweb/milter_hook.lua
+  MailD_whitelist_send_to: path/to/drweb/whitemails_to.txt
+  MailD_whitelist_send_from: path/to/drweb/whitemails.txt
+  MailD_blacklist_send_from: path/to/drweb/blackemails.txt
