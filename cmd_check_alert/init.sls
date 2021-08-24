@@ -88,6 +88,7 @@ sensu-plugins_pkg:
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
     - name: {% if grains["osarch"] in ["arm64"] %}source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/bin/{% endif %}sensu-install -p {{ plugin }}
+    - shell: /bin/bash
 
         {%- if plugin == "disk-checks" %}
 sensu-plugins_install_{{ loop.index }}_patch_smart_1:
