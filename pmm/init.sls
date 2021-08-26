@@ -304,7 +304,7 @@ percona_pmm_container_{{ loop.index }}_{{ i_loop.index }}:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-        - 443:443/tcp
+        - 0.0.0.0:443:443/tcp
     - binds:
         - /opt/pmm/{{ domain['name'] }}/{{ instance['name'] }}/etc:/etc/grafana:rw
         - /opt/pmm/{{ domain['name'] }}/pmm.conf:/etc/nginx/conf.d/pmm.conf:rw
