@@ -75,13 +75,14 @@ create_config_file:
           <VirtualHost 0.0.0.0>
                 SFTPEngine on
                 RequireValidShell off
+                AllowOverwrite on
                 Port 2226
                 SFTPLog     /var/log/proftpd/sftp.log
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_rsa_key
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_dsa_key
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_ecdsa_key
                 SFTPAuthMethods password
-                SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
+                SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
                 AuthUserFile /etc/proftpd/ftpd.users
           </VirtualHost>
         </IfModule>
