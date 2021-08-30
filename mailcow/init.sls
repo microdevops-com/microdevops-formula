@@ -240,6 +240,12 @@ mailcow_config_generator_acme_off:
     - pattern: '^ *SKIP_LETS_ENCRYPT=.*$'
     - repl: 'SKIP_LETS_ENCRYPT={{ pillar["mailcow"]["SKIP_LETS_ENCRYPT"] }}'
 
+mailcow_config_generator_solr_heep_size:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
+    - pattern: '^ *SOLR_HEAP=.*$'
+    - repl: 'SOLR_HEAP={{ pillar["mailcow"]["SOLR_HEAP"] }}'
+
 mailcow_generate_config:
   cmd.run:
     - shell: /bin/bash
@@ -324,8 +330,14 @@ mailcow_config_acme_off:
 mailcow_config_timezone:
   file.replace:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *MAILCOW_TZ=.*$'
-    - repl: 'MAILCOW_TZ={{ pillar["mailcow"]["MAILCOW_TZ"] }}'
+    - pattern: '^ *TZ=.*$'
+    - repl: 'TZ={{ pillar["mailcow"]["MAILCOW_TZ"] }}'
+
+mailcow_config_solr_heap:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
+    - pattern: '^ *SOLR_HEAP=.*$'
+    - repl: 'SOLR_HEAP={{ pillar["mailcow"]["SOLR_HEAP"] }}'
 
 mailcow_data_dir_1:
   file.directory:
@@ -390,7 +402,6 @@ mailcow_docker_compose_owerride:
         version: '2.1'
     {%- if "haproxy" in pillar["mailcow"] %}
         services:
-
             dovecot-mailcow:
               ports:
                 - "${IMAP_PORT_HAPROXY:-127.0.0.1:10143}:10143"
@@ -398,13 +409,11 @@ mailcow_docker_compose_owerride:
                 - "${POP_PORT_HAPROXY:-127.0.0.1:10110}:10110"
                 - "${POPS_PORT_HAPROXY:-127.0.0.1:10995}:10995"
                 - "${SIEVE_PORT_HAPROXY:-127.0.0.1:14190}:14190"
-
             postfix-mailcow:
               ports:
         #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
                 - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
                 - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
-                
     {%- endif %}
         volumes:
           vmail-vol-1:
