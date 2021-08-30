@@ -15,6 +15,7 @@ mailcow:
   POPS_PORT: 127.0.0.1:995        #PORT OR IP:PORT
   SIEVE_PORT: 127.0.0.1:4190      #PORT OR IP:PORT
   SKIP_LETS_ENCRYPT: y            #y or n
+  SOLR_HEAP: 6144                 #2048MB memory for one million objects
   MAILCOW_TZ: Etc/UTC
   haproxy:                        #REMOVE THIS ENTRY IF HAPROXY IS NOT USED
     EXTERNAL_IP: 1.2.3.4
