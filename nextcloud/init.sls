@@ -267,6 +267,10 @@ nextcloud_config_default_phone_region_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'sleep 10; export PHP_MEMORY_LIMIT=512M; php occ config:system:set default_phone_region --value="{{ domain["default_phone_region"] }}"'
 
+nextcloud_config_overwrite_cli_url_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php /var/www/html/occ --no-warnings config:system:set overwrite.cli.url --value="{{ domain["overwrite_cli_url"] }}"'
+
 nextcloud_cron_{{ loop.index }}:
   cron.present:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} php -f /var/www/html/cron.php
