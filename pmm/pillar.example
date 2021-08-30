@@ -6,7 +6,6 @@ pmm:
     - name: pmm.example.com
       instances:
         - name: pmm-server
-          port: 8080
           image: percona/pmm-server:2
           config: |
             [server]
