@@ -101,11 +101,32 @@ nginx_cert_{{ loop.index }}:
     - shell: /bin/bash
     - name: "openssl verify -CAfile /opt/acme/cert/keycloak_{{ domain["name"] }}_ca.cer /opt/acme/cert/keycloak_{{ domain["name"] }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/keycloak_{{ domain["name"] }}_cert.cer --key-file /opt/acme/cert/keycloak_{{ domain["name"] }}_key.key --ca-file /opt/acme/cert/keycloak_{{ domain["name"] }}_ca.cer --fullchain-file /opt/acme/cert/keycloak_{{ domain["name"] }}_fullchain.cer --issue -d {{ domain["name"] }} || true"
 
-keycloak_data_dir_{{ loop.index }}:
+keycloak_backup_dir_{{ loop.index }}:
   file.directory:
-    - name: /opt/keycloak/{{ domain["name"] }}/standalone
+    - name: /opt/keycloak/{{ domain["name"] }}/backup
+    - mode: 755
+
+keycloak_export_config_add_{{ loop.index }}:
+  file.managed:
+    - name: /opt/keycloak/{{ domain["name"] }}/export_configurations-add.txt
     - mode: 755
     - makedirs: True
+    - contents: |
+       embed-server --server-config=standalone-ha.xml
+       /system-property=keycloak.migration.action/:add(value=export)
+       /system-property=keycloak.migration.provider/:add(value=dir)
+       /system-property=keycloak.migration.dir/:add(value=/opt/jboss/backup
+
+keycloak_export_config_remove_{{ loop.index }}:
+  file.managed:
+    - name: /opt/keycloak/{{ domain["name"] }}/export_configurations-remove.txt
+     - mode: 755
+     - makedirs: True
+    - contents: |
+       embed-server --server-config=standalone-ha.xml
+       /system-property=keycloak.migration.action/:remove
+       /system-property=keycloak.migration.provider/:remove
+       /system-property=keycloak.migration.dir/:remove
 
 keycloak_image_{{ loop.index }}:
   cmd.run:
@@ -120,10 +141,26 @@ keycloak_container_{{ loop.index }}:
     - restart_policy: unless-stopped
     - publish:
         - 127.0.0.1:{{ domain["internal_port"] }}:8080/tcp
+    - binds:
+        - /opt/keycloak/{{ domain["name"] }}/backup:/opt/jboss/backup:rw
+        - /opt/keycloak/{{ domain["name"] }}/export_configurations-add.txt:/opt/jboss/export_configurations-add.txt:rw
+        - /opt/keycloak/{{ domain["name"] }}/export_configurations-remove.txt:/opt/jboss/export_configurations-remove.txt:rw
     - environment:
     {%- for var_key, var_val in domain["env_vars"].items() %}
         - {{ var_key }}: {{ var_val }}
     {%- endfor %}
+
+keycloak_export_configuration_remove_{{ loop.index }}:
+  cmd.run:
+    - name: sleep 30; docker exec keycloak-{{ domain["name"] }} bash -c '/opt/jboss/keycloak/bin/jboss-cli.sh --file=/opt/jboss/export_configurations-remove.txt || true'
+
+keycloak_export_configuration_add_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec keycloak-{{ domain["name"] }} bash -c '/opt/jboss/keycloak/bin/jboss-cli.sh --file=/opt/jboss/export_configurations-add.txt'
+
+keycloak_restart_{{ loop.index }}:
+  cmd.run:
+    - name: docker restart keycloak-{{ domain["name"] }}
   {%- endfor %}
 
 nginx_reload:
