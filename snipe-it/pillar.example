@@ -1,0 +1,31 @@
+snipe-it:
+  docker-ce_version: 5:19.03.13
+  domains:
+    - name: snipe-it.example.com
+      acme_account: example.com
+      internal_name: prd
+      internal_port: 8080
+      image: snipe/snipe-it
+      env_vars:
+        MYSQL_PORT_3306_TCP_ADDR: snipe-it.example.com
+        MYSQL_PORT_3306_TCP_PORT: 3306
+        MYSQL_DATABASE: snipe_it
+        MYSQL_USER: snipe_it
+        MYSQL_PASSWORD: # # MYSQL PASSWORD
+        APP_ENV: production
+        APP_DEBUG: debug
+        APP_KEY: # # FOR GET APP_KEY run "docker run --rm snipe/snipe-it"
+        APP_URL: https://snipe-it.example.com/
+        APP_TIMEZONE: Etc/UTC
+        APP_LOCALE: en
+        APP_TRUSTED_PROXIES: 172.16.0.1
+        MAIL_PORT_587_TCP_ADDR: smtp.gmail.com
+        MAIL_PORT_587_TCP_PORT: 587
+        # # the default from address, and from name for emails
+        MAIL_ENV_FROM_ADDR: snipe-it@example.com
+        MAIL_ENV_FROM_NAME: Snipe-IT
+        # # - pick 'tls' for SMTP-over-SSL, 'tcp' for unencrypted
+        MAIL_ENV_ENCRYPTION: tls
+        # # SMTP username and password
+        MAIL_ENV_USERNAME: snipe-it@example.com
+        MAIL_ENV_PASSWORD: # # MAIL PASSWORD
