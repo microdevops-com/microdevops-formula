@@ -45,6 +45,7 @@ nginx_install:
     - pkgs:
       - nginx
 
+nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
     - contents: |
@@ -106,6 +107,7 @@ snipe-it_data_dir_{{ loop.index }}:
 snipe-it_image_{{ loop.index }}:
   cmd.run:
     - name: docker pull {{ domain["image"] }}
+
 snipe-it_container_{{ loop.index }}:
   docker_container.running:
     - name: snipe-it-{{ domain["name"] }}
