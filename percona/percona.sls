@@ -208,7 +208,11 @@ mysql_user_{{ name }}_{{ user['host'] }}:
 mysql_grant_{{ name }}_{{ user['host'] }}_{{ loop.index0 }}:
   mysql_grants.present:
     - grant: '{{db['grant']|join(",")}}'
+    {%- if db['unescape_db_name'] is defined and db['unescape_db_name'] %}
+    - database: '{{ db['database'] }}.*'
+    {%- else %}
     - database: '`{{ db['database'] }}`.*'
+    {%- endif %}
     - escape: False
     - user: {{ name }}
     - host: '{{ user["host"] }}'

@@ -23,7 +23,7 @@ docker_install_2:
     - reload_modules: True
     - pkgs: 
         - docker-ce: '{{ pillar['grafana']['docker-ce_version'] }}*'
-        - python-pip
+        - python3-pip
         # xenial has 1.9 package, it is not sufficiant for docker networks, so we need installing pip manually
         #- python-docker
                 

@@ -1,11 +1,11 @@
 {%-    if pillar['percona'] is defined and
           pillar['percona'] is not none
 %}
-include:
     {%-    if pillar['percona']['databases'] is defined and
               pillar['percona']['databases'] is not none and
               pillar['percona']['databases'] is mapping
     %}
+include:
   - .next
     {%- elif  pillar['percona']['databases'] is defined and
               pillar['percona']['databases'] is not none and
@@ -13,6 +13,7 @@ include:
               pillar['percona']['databases'] is not string and
               pillar['percona']['databases'] is not mapping
     %}
+include:
   - .percona
     {%- endif %}
 {%- endif %}
