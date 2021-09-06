@@ -1,5 +1,6 @@
 grafana:
-  docker-ce_version: 18.06.1
+  docker-ce_version: 5:20.10.8*
+  acme_account: oxtech.org
   domains:
     - name: grafana.example.com
       instances:
