@@ -118,8 +118,8 @@ nginx_files_1:
                 server_name {{ domain['name'] }};
                 root /opt/elasticsearch/{{ domain['name'] }};
                 index index.html;
-                ssl_certificate /opt/acme/cert/elasticsearch_{{ domain["name"] }}_fullchain.cer;
-                ssl_certificate_key /opt/acme/cert/elasticsearch_{{ domain["name"] }}_key.key;
+                ssl_certificate /opt/acme/cert/elasticsearch_{{ domain['name'] }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/elasticsearch_{{ domain['name'] }}_key.key;
       {%- for cluster in domain['clusters'] %}
                 location /{{ cluster['name'] }}/ {
         {%- if cluster['auth'] is defined and cluster['auth'] is not none %}
