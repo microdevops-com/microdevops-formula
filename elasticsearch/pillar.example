@@ -35,7 +35,8 @@ ufw_simple:
       to_port: '{% for ip in node_transport_ports %}{{ ip }}{% if not loop.last %},{% endif %}{% endfor %}'
 
 elasticsearch:
-  docker-ce_version: 18.06.1
+  docker-ce_version: 5:20.10.8
+  java_opts: '-Xms4096m -Xmx4096m'
   nodes:
     master:
       - elasticsearch1.example.com
@@ -57,7 +58,7 @@ elasticsearch:
           ports:
             http: 9200
             transport: 9300
-          image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
           config: |
             # additional common settings if needed
           auth:
@@ -70,7 +71,7 @@ elasticsearch:
           ports:
             http: 10200
             transport: 10300
-          image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
           config: |
             # additional common settings if needed
           auth:
