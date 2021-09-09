@@ -1,49 +1,57 @@
 {% if pillar['elasticsearch'] is defined and pillar['elasticsearch'] is not none %}
-docker_install_00:
+set_vm.max_map_count:
+  cmd.run:
+    - shell: /bin/bash
+    - name: sysctl -w vm.max_map_count=262144
+
+save_vm.max_map_count:
+  file.replace:
+    - name: '/etc/sysctl.conf'
+    - pattern: '^ *vm.max_map_count=.*$'
+    - repl: 'vm.max_map_count=262144'
+    - append_if_not_found: True
+
+docker_install_1:
   file.directory:
     - name: /etc/docker
     - mode: 700
 
-docker_install_01:
+docker_install_2:
   file.managed:
     - name: /etc/docker/daemon.json
     - contents: |
-        {"iptables": false}
+        { "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
 
-docker_install_1:
+docker_install_3:
   pkgrepo.managed:
     - humanname: Docker CE Repository
     - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains['os']|lower }} {{ grains['oscodename'] }} stable
     - file: /etc/apt/sources.list.d/docker-ce.list
     - key_url: https://download.docker.com/linux/{{ grains['os']|lower }}/gpg
 
-docker_install_2:
+docker_install_4:
   pkg.installed:
     - refresh: True
     - reload_modules: True
     - pkgs: 
         - docker-ce: '{{ pillar['elasticsearch']['docker-ce_version'] }}*'
-        - python-pip
+        - python3-pip
                 
 docker_pip_install:
   pip.installed:
     - name: docker-py >= 1.10
     - reload_modules: True
 
-#docker_purge_apparmor:
-#  pkg.purged:
-#    - name: apparmor
 
-docker_install_3:
+docker_install_5:
   service.running:
     - name: docker
 
-docker_install_4:
+docker_install_6:
   cmd.run:
     - name: systemctl restart docker
     - onchanges:
         - file: /etc/docker/daemon.json
-        #- pkg: apparmor
 
   {%- for node_name, node_ip in pillar['elasticsearch']['nodes']['ips'].items() %}
     {# No need to make self link #}
@@ -129,8 +137,7 @@ nginx_files_2:
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: 'openssl verify -CAfile /opt/acme/cert/elasticsearch_{{ domain['name'] }}_ca.cer /opt/acme/cert/elasticsearch_{{ domain['name'] }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_cert.cer --key-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_key.key --ca-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_ca.cer --fullchain-file /opt/acme/cert/elasticsearch_{{ domain['name'] }}_fullchain.cer --issue -d {{ domain['name'] }} || true'
-
+    - name: "/opt/acme/home/{{ domain["acme_account"] }}/verify_and_issue.sh elasticsearch {{ domain['name'] }}"
     {%- endfor %}
 
 nginx_reload:
@@ -220,7 +227,7 @@ elasticsearch_container_{{ loop.index }}_{{ i_loop.index }}:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-        - 127.0.0.1:{{ cluster['ports']['http'] }}:{{ cluster['ports']['http'] }}/tcp
+        - 0.0.0.0:{{ cluster['ports']['http'] }}:{{ cluster['ports']['http'] }}/tcp
         - 0.0.0.0:{{ cluster['ports']['transport'] }}:{{ cluster['ports']['transport'] }}/tcp
     - binds:
         - /opt/elasticsearch/{{ domain['name'] }}/{{ cluster['name'] }}/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
@@ -228,7 +235,7 @@ elasticsearch_container_{{ loop.index }}_{{ i_loop.index }}:
     - watch:
         - /opt/elasticsearch/{{ domain['name'] }}/{{ cluster['name'] }}/config/elasticsearch.yml
     - environment:
-        - ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+        - ES_JAVA_OPTS: {{ pillar['elasticsearch']['java_opts'] }}
     - ulimits:
         - memlock=-1:-1
         - nofile=65535:65535
