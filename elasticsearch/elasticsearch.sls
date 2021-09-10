@@ -104,7 +104,7 @@ elasticsearch_config:
         network.publish_host: {{ pillar['elasticsearch']['nodes']['ips'][grains['fqdn']] }}
         http.port: {{ pillar['elasticsearch']['ports']['http'] }}
         transport.port: {{ pillar['elasticsearch']['ports']['transport'] }}
-        xpack.security.enabled: true
+        #xpack.security.enabled: true
         xpack.security.transport.ssl.enabled: true
         xpack.security.transport.ssl.verification_mode: certificate
         xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
@@ -138,6 +138,7 @@ elasticsearch_container:
     - binds:
         - /opt/elasticsearch/{{ pillar['elasticsearch']['cluster'] }}/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
         - /opt/elasticsearch/{{ pillar['elasticsearch']['cluster'] }}/data:/usr/share/elasticsearch/data:rw
+        - /opt/acme/cert:/usr/share/elasticsearch/config/certs:rw
     - watch:
         - /opt/elasticsearch/{{ pillar['elasticsearch']['cluster'] }}/config/elasticsearch.yml
     - environment:
@@ -150,4 +151,10 @@ elasticsearch_container:
           {% if grains['fqdn'] != node_name %}- {{ node_name }}:{{ node_ip }}{% endif %}
           {% if grains['fqdn'] == node_name %}- {{ node_name }}:127.0.0.1{% endif %}
         {%- endfor %}
+cert_permissions_cron:
+  cron.present:
+    - name: chown -R 1000:0 /opt/acme/cert/
+    - identifier: Set permissions to certificates
+    - user: root
+    - minute: 0
 {% endif %}
