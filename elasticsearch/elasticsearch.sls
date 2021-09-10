@@ -104,7 +104,22 @@ elasticsearch_config:
         network.publish_host: {{ pillar['elasticsearch']['nodes']['ips'][grains['fqdn']] }}
         http.port: {{ pillar['elasticsearch']['ports']['http'] }}
         transport.port: {{ pillar['elasticsearch']['ports']['transport'] }}
+        xpack.security.enabled: true
+        xpack.security.transport.ssl.enabled: true
+        xpack.security.transport.ssl.verification_mode: certificate
+        xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
+        xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_fullchain.cer
+        xpack.security.transport.ssl.certificate_authorities: [ "/usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_ca.cer" ]
+        xpack.security.http.ssl.enabled: true
+        xpack.security.http.ssl.verification_mode: certificate
+        xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
+        xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_fullchain.cer
         {{ pillar['elasticsearch']['config'] }}
+
+elasticsearch_cert:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar['elasticsearch']['acme_account'] }}/verify_and_issue.sh elasticsearch {{ grains['fqdn'] }}; chown -R 1000:0 /opt/acme/cert/"
 
 elasticsearch_image:
   cmd.run:

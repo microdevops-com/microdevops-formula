@@ -29,6 +29,7 @@ elasticsearch:
   docker-ce_version: 5:20.10.8
   image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
   cluster: elasticsearch.example.com
+  acme_account: example.com
   java_opts: '-Xms4096m -Xmx4096m'
   config: |
       # additional common settings if needed
