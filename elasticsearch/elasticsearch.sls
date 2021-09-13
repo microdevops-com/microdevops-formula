@@ -151,10 +151,4 @@ elasticsearch_container:
           {% if grains['fqdn'] != node_name %}- {{ node_name }}:{{ node_ip }}{% endif %}
           {% if grains['fqdn'] == node_name %}- {{ node_name }}:127.0.0.1{% endif %}
         {%- endfor %}
-cert_permissions_cron:
-  cron.present:
-    - name: chown -R 1000:0 /opt/acme/cert/
-    - identifier: Set permissions to certificates
-    - user: root
-    - minute: 0
 {% endif %}
