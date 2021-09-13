@@ -105,11 +105,11 @@ elasticsearch_config:
         http.port: {{ pillar['elasticsearch']['ports']['http'] }}
         transport.port: {{ pillar['elasticsearch']['ports']['transport'] }}
         #xpack.security.enabled: true
-        xpack.security.transport.ssl.enabled: true
-        xpack.security.transport.ssl.verification_mode: certificate
-        xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
-        xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_fullchain.cer
-        xpack.security.transport.ssl.certificate_authorities: [ "/usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_ca.cer" ]
+        #xpack.security.transport.ssl.enabled: true
+        #xpack.security.transport.ssl.verification_mode: certificate
+        #xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
+        #xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_fullchain.cer
+        #xpack.security.transport.ssl.certificate_authorities: [ "/usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_ca.cer" ]
         xpack.security.http.ssl.enabled: true
         xpack.security.http.ssl.verification_mode: certificate
         xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
