@@ -119,7 +119,7 @@ elasticsearch_config:
 elasticsearch_cert:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar['elasticsearch']['acme_account'] }}/verify_and_issue.sh elasticsearch {{ grains['fqdn'] }}; chown -R 1000:0 /opt/acme/cert/"
+    - name: "/opt/acme/home/{{ pillar['elasticsearch']['acme_account'] }}/verify_and_issue.sh elasticsearch {{ grains['fqdn'] }}"
 
 elasticsearch_image:
   cmd.run:
