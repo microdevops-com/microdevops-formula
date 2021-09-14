@@ -37,15 +37,14 @@ elasticsearch:
     http: 9200
     transport: {{ node_transport_port }}
   nodes:
+    roles:
+      elasticsearch1.example.com: [ master, data, data_content, data_hot, data_warm, data_cold, data_frozen, ingest, ml, remote_cluster_client, transform ]
+      elasticsearch1.example.com: [ master, data, data_content, data_hot, data_warm, data_cold, data_frozen, ingest, ml, remote_cluster_client, transform ]
+      elasticsearch1.example.com: [ master, data, data_content, data_hot, data_warm, data_cold, data_frozen, ingest, ml, remote_cluster_client, transform ]
     master:
       - elasticsearch1.example.com
       - elasticsearch2.example.com
       - elasticsearch3.example.com
-    data:
-      - elasticsearch2.example.com
-      - elasticsearch3.example.com
-    ingest:
-      - elasticsearch1.example.com
     # Use as is
     ips:
       {% for key, val in node_ips.items() %}{{ key }}: {{ val }}
