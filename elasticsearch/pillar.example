@@ -2,6 +2,7 @@
 - Set node_ips, node_transport_port for ufw_simple purposes
 - Apply salt elasticsearch*.example.com state.apply ufw_simple.ufw_simple
 - Apply salt elasticsearch*.example.com state.apply elasticsearch.elasticsearch
+- on every node set users passwords `docker exec -it elasticsearch-elastic.example.com bash -c '/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive'`
 #}
 
 {% from 'ufw_simple/vars.jinja' import vars with context %}
