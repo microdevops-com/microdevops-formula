@@ -1,4 +1,5 @@
 {#
+- prepare acme
 - Set node_ips, node_transport_port for ufw_simple purposes
 - Apply salt elasticsearch*.example.com state.apply ufw_simple.ufw_simple
 - Apply salt elasticsearch*.example.com state.apply elasticsearch.elasticsearch
