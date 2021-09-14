@@ -106,6 +106,14 @@ sensu-plugins_install_{{ loop.index }}_patch_smart_1:
       {%- endfor %}
     {%- endif %}
 
+    {%- if grains["osarch"] not in ["arm64"] %}
+      # On arm64 this is not needed as cacert is ok on rvm. Needed only for embedded.
+sensu-plugins_update_cacert:
+  file.managed:
+    - name: /opt/sensu-plugins-ruby/embedded/ssl/certs/cacert.pem
+    - source: salt://cmd_check_alert/files/cacert.pem
+    {%- endif %}
+
   {%- endif %}
 
   {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() %}
