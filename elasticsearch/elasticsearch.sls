@@ -86,15 +86,7 @@ elasticsearch_config:
     - group: 0
     - mode: 644
     - contents: |
-        {% if grains['fqdn'] in pillar['elasticsearch']['nodes']['master'] %}node.master: true{% else %}node.master: false{% endif %}
-        {% if grains['fqdn'] in pillar['elasticsearch']['nodes']['data'] %}node.data: true{% else %}node.data: false{% endif %}
-        {%- if pillar['elasticsearch']['nodes']['ingest'] is defined and pillar['elasticsearch']['nodes']['ingest'] is not none %}
-          {% if grains['fqdn'] in pillar['elasticsearch']['nodes']['ingest'] %}node.ingest: true{% else %}node.ingest: false{% endif %}
-        {% endif %}
-        node.voting_only: false
-        node.ml: false
-        xpack.ml.enabled: false
-        cluster.remote.connect: true
+        {%- for node_name, node_roles in pillar['elasticsearch']['nodes']['roles'].items() %}{%- if grains['fqdn'] = node_name %}node.roles: {{ node_roles }}{%- endif %}{%- endfor %}
         node.name: {{ grains['fqdn'] }}
         cluster.name: {{ pillar['elasticsearch']['cluster'] }}
         discovery.seed_hosts: "{% for master in pillar['elasticsearch']['nodes']['master'] %}{% if master != grains['fqdn'] %}{{ master }}:{{ pillar['elasticsearch']['ports']['transport'] }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %}"
