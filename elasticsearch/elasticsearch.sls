@@ -87,6 +87,7 @@ elasticsearch_config:
     - mode: 644
     - contents: |
         {% for node_name, node_roles in pillar['elasticsearch']['nodes']['roles'].items() %}{% if grains['fqdn'] == node_name %}node.roles: {{ node_roles }}{% endif %}{% endfor %}
+        xpack.ml.enabled: false
         node.name: {{ grains['fqdn'] }}
         cluster.name: {{ pillar['elasticsearch']['cluster'] }}
         discovery.seed_hosts: "{% for master in pillar['elasticsearch']['nodes']['master'] %}{% if master != grains['fqdn'] %}{{ master }}:{{ pillar['elasticsearch']['ports']['transport'] }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %}"
