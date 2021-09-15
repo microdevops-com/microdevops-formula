@@ -30,18 +30,22 @@ docker_pip_install:
   pip.installed:
     - name: docker-py >= 1.10
     - reload_modules: True
+
 docker_install_3:
   service.running:
     - name: docker
+
 docker_install_4:
   cmd.run:
     - name: 'systemctl restart docker'
     - onchanges:
         - file: /etc/docker/daemon.json
+
 nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
+
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
@@ -72,10 +76,12 @@ nginx_files_1:
   {%- endfor %}
             }
         }
+
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
   {%- for domain in pillar['grafana']['domains'] %}
+
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
@@ -83,16 +89,19 @@ nginx_cert_{{ loop.index }}:
     
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
+
 grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc
     - mode: 755
     - makedirs: True
+
 grafana_data_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data
     - mode: 755
     - makedirs: True
+
 grafana_config_{{ loop.index }}_{{ i_loop.index }}:
   file.managed:
     - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/grafana.ini
@@ -100,9 +109,11 @@ grafana_config_{{ loop.index }}_{{ i_loop.index }}:
     - group: root
     - mode: 644
     - contents: {{ instance['config'] | yaml_encode }}
+
 grafana_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['image'] }}
+
 grafana_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: grafana-{{ domain['name'] }}-{{ instance['name'] }}
@@ -153,7 +164,6 @@ nginx_domain_index:
 
 
 nginx_reload:
-
   cmd.run:
     - runas: root
     - name: service nginx configtest && service nginx restart
@@ -165,4 +175,5 @@ nginx_reload_cron:
     - user: root
     - minute: 15
     - hour: 6
+
 {% endif %}
