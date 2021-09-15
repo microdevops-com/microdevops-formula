@@ -1,6 +1,7 @@
 grafana:
   docker-ce_version: 5:20.10.8*
   acme_account: oxtech.org
+  default_domain: all_to_prod #[use: "all_to_prod" or "all_to_html"]
   domains:
     - name: grafana.example.com
       instances:

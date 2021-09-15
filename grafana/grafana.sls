@@ -9,7 +9,6 @@ docker_install_01:
     - name: /etc/docker/daemon.json
     - contents: |
         {"iptables": false}
-
 docker_install_1:
   pkgrepo.managed:
     - humanname: Docker CE Repository
@@ -31,33 +30,27 @@ docker_pip_install:
   pip.installed:
     - name: docker-py >= 1.10
     - reload_modules: True
-
 docker_install_3:
   service.running:
     - name: docker
-
 docker_install_4:
   cmd.run:
     - name: 'systemctl restart docker'
     - onchanges:
         - file: /etc/docker/daemon.json
-
 nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
-
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
     - contents: |
         worker_processes 4;
         worker_rlimit_nofile 40000;
-
         events {
             worker_connections 8192;
         }
-
         http {
             server {
                 listen 80;
@@ -79,11 +72,9 @@ nginx_files_1:
   {%- endfor %}
             }
         }
-
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
-
   {%- for domain in pillar['grafana']['domains'] %}
 nginx_cert_{{ loop.index }}:
   cmd.run:
@@ -97,13 +88,11 @@ grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
     - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc
     - mode: 755
     - makedirs: True
-
 grafana_data_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data
     - mode: 755
     - makedirs: True
-
 grafana_config_{{ loop.index }}_{{ i_loop.index }}:
   file.managed:
     - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/grafana.ini
@@ -111,11 +100,9 @@ grafana_config_{{ loop.index }}_{{ i_loop.index }}:
     - group: root
     - mode: 644
     - contents: {{ instance['config'] | yaml_encode }}
-
 grafana_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['image'] }}
-
 grafana_container_{{ loop.index }}_{{ i_loop.index }}:
   docker_container.running:
     - name: grafana-{{ domain['name'] }}-{{ instance['name'] }}
@@ -135,10 +122,10 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
       {%- if instance['install_plugins'] is defined and instance['install_plugins'] is not none %}
         - GF_INSTALL_PLUGINS: {{ instance['install_plugins'] }}
       {%- endif %}
-
     {%- endfor %}
   {%- endfor %}
 
+{% if "all_to_html" in pillar['grafana']['default_domain'] %}
   {%- for domain in pillar['grafana']['domains'] %}
 nginx_domain_index_{{ loop.index }}:
   file.managed:
@@ -149,7 +136,24 @@ nginx_domain_index_{{ loop.index }}:
     {%- endfor %}
   {%- endfor %}
 
+{% elif "all_to_prod" in pillar['grafana']['default_domain']  %}
+ {%- for domain in pillar['grafana']['domains'] %}
+nginx_domain_index:
+  file.managed:
+    - name: /opt/grafana/{{ domain['name'] }}/index.html
+    - contents: |
+    {%- for instance in domain['instances'] %}
+      {% if "prod" in instance['name'] %}
+        <meta http-equiv="refresh" content="0; url='https://{{ domain['name'] }}/{{ instance['name'] }}'" />
+      {% endif %}
+    {%- endfor %}
+  {%- endfor %}
+
+{% endif %}
+
+
 nginx_reload:
+
   cmd.run:
     - runas: root
     - name: service nginx configtest && service nginx restart
@@ -161,5 +165,4 @@ nginx_reload_cron:
     - user: root
     - minute: 15
     - hour: 6
-
 {% endif %}
