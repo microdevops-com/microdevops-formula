@@ -1,0 +1,11 @@
+promtail:
+  image: grafana/promtail:2.3.0
+  name: server1.example.com
+  loki_url: http://loki.example.com:3100
+  scrape_configs: |
+    - job_name: nginx
+      static_configs:
+      - labels:
+          job: nginx
+          host: server1.example.com
+          __path__: /var/log/nginx/*log
