@@ -40,7 +40,7 @@ promtail_container:
     - publish:
         - 0.0.0.0:9080:9080/tcp
     - binds:
-        - /opt/promtail/etc:/etc/promtail/promtail.yaml
+        - /opt/promtail/etc/promtail.yaml:/etc/promtail/promtail.yaml
   {%- for bind in pillar['promtail']['docker']['binds'] %}
         - {{ bind['bind'] }}
   {%- endfor %}
@@ -69,7 +69,7 @@ promtail_systemd_1:
     - name: /opt/promtail/etc/systemd/promtail.service
     - user: 1000
     - group: 0
-    - mode: 755
+    - mode: 644
     - contents: |
         [Unit]
         Description=Promtail Service
