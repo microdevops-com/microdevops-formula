@@ -1,11 +1,15 @@
 {%- set host = "server1.example.com" -%}
 promtail:
   image: grafana/promtail:2.3.0
-  name: {{ host }}
   loki_url: http://loki.example.com:3100
-  binds:
-    - bind: /var/log:/var/log
-    - bind: /opt/app-1/log:/var/log/app-1/log
+  binary:
+    link: https://github.com/grafana/loki/releases/download/v2.3.0/promtail-linux-amd64.zip
+    hash: 48968d6299ebc24d1b4eee7b9b55c5c1
+  docker:
+    enabled: false
+    binds:
+      - bind: /var/log:/var/log
+      - bind: /opt/app-1/log:/var/log/app-1/log
   scrape_configs: |
     - job_name: nginx
       static_configs:
