@@ -150,6 +150,7 @@ nginx_domain_index_{{ loop.index }}:
       {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
       {%- endfor %}
+    {%- endif %}
 
   {%- endfor %}
 
