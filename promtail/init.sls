@@ -34,9 +34,13 @@ promtail_container:
     - image: {{ pillar['promtail']['image'] }}
     - detach: True
     - restart_policy: unless-stopped
+    - publish:
+        - 0.0.0.0:9080:9080/tcp
     - binds:
         - /opt/promtail/{{ pillar['promtail']['name'] }}/config/config.yaml:/etc/promtail/config.yaml
-        - /var/log:/var/log
+  {%- for bind in pillar['promtail']['binds'] %}
+        - {{ bind['bind'] }}
+  {%- endfor %}
     - watch:
         - /opt/promtail/{{ pillar['promtail']['name'] }}/config/config.yaml
     - command: -config.file=/etc/promtail/config.yaml
