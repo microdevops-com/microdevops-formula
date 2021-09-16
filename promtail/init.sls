@@ -20,7 +20,7 @@ promtail_config:
           - job_name: system
             static_configs:
             - labels:
-                 job: varlogs
+                job: varlogs
                 __path__: /var/log/*log
 
 promtail_image:
