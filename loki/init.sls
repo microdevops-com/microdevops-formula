@@ -43,16 +43,13 @@ docker_install_6:
 loki_data_dir:
   file.directory:
     - names:
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/config
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/chunks
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/wal
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-active
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-cache
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-compactor
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/rules
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/rules-temp
-      - name: /opt/loki/{{ pillar['loki']['name'] }}/
-      
+      - /opt/loki/{{ pillar['loki']['name'] }}/chunks
+      - /opt/loki/{{ pillar['loki']['name'] }}/rules
+      - /opt/loki/{{ pillar['loki']['name'] }}/rules-temp
+      - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-active
+      - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-cache
+      - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-compactor
+      - /opt/loki/{{ pillar['loki']['name'] }}/wal
     - mode: 755
     - user: 1000
     - group: 0
@@ -60,7 +57,7 @@ loki_data_dir:
 
 loki_config:
   file.managed:
-    - name: /opt/loki/{{ pillar['loki']['name'] }}/config/config.yaml
+    - name: /opt/loki/{{ pillar['loki']['name'] }}/config.yaml
     #- source: https://raw.githubusercontent.com/grafana/loki/v2.3.0/cmd/loki/loki-local-config.yaml
     #- source_hash: d4d430ebd8aa53b67a750140c4a2a2a5
     - user: 1000
@@ -74,7 +71,7 @@ loki_config:
         ingester:
           wal:
             enabled: true
-            dir: /tmp/wal
+            dir: /tmp/loki/wal
           lifecycler:
             address: 127.0.0.1
             ring:
@@ -147,15 +144,8 @@ loki_container:
     - publish:
         - 0.0.0.0:{{ pillar['loki']['port'] }}:{{ pillar['loki']['port'] }}/tcp
     - binds:
-        - /opt/loki/{{ pillar['loki']['name'] }}/config/config.yaml:/etc/loki/config.yaml
-        - /opt/loki/{{ pillar['loki']['name'] }}/chunks:/tmp/loki/chunks
-        - /opt/loki/{{ pillar['loki']['name'] }}/rules:/tmp/loki/rules
-        - /opt/loki/{{ pillar['loki']['name'] }}/rules-temp:/tmp/loki/rules-temp
-        - /opt/loki/{{ pillar['loki']['name'] }}/wal:/tmp/wal
-        - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-active:/tmp/loki/boltdb-shipper-active
-        - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-cache:/tmp/loki/boltdb-shipper-cache
-        - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-compactor:/tmp/loki/boltdb-shipper-compactor
+        - /opt/loki/{{ pillar['loki']['name'] }}:/tmp/loki
     - watch:
-        - /opt/loki/{{ pillar['loki']['name'] }}/config/config.yaml
-    - command: -config.file=/etc/loki/config.yaml
+        - /opt/loki/{{ pillar['loki']['name'] }}/config.yaml
+    - command: -config.file=/tmp/loki/config.yaml
 {% endif %}
