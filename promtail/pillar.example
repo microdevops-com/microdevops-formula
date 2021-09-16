@@ -1,6 +1,7 @@
+{%- set host = "server1.example.com" -%}
 promtail:
   image: grafana/promtail:2.3.0
-  name: server1.example.com
+  name: {{ host }}
   loki_url: http://loki.example.com:3100
   binds:
     - bind: /var/log:/var/log
@@ -10,11 +11,11 @@ promtail:
       static_configs:
       - labels:
           job: nginx
-          host: server1.example.com
+          host: {{ host }}
           __path__: /var/log/nginx/*log
     - job_name: app-1
       static_configs:
       - labels:
           job: app-1
-          host: server1.example.com
+          host: {{ host }}
           __path__: /var/log/app-1/*log
