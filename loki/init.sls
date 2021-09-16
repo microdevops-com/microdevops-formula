@@ -30,7 +30,6 @@ docker_pip_install:
     - name: docker-py >= 1.10
     - reload_modules: True
 
-
 docker_install_5:
   service.running:
     - name: docker
