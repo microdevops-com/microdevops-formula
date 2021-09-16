@@ -144,9 +144,13 @@ nginx_domain_index_{{ loop.index }}:
   file.managed:
     - name: /opt/grafana/{{ domain['name'] }}/index.html
     - contents: |
-    {%- for instance in domain['instances'] %}
+    {%- if 'default_instance' in domain %}
+        <meta http-equiv="refresh" content="0; url='https://{{ domain['name'] }}/{{ domain['default_instance'] }}'" />
+    {%- else %}
+      {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
-    {%- endfor %}
+      {%- endfor %}
+
   {%- endfor %}
 
 nginx_reload:
