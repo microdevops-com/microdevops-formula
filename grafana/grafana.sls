@@ -9,6 +9,7 @@ docker_install_01:
     - name: /etc/docker/daemon.json
     - contents: |
         {"iptables": false}
+
 docker_install_1:
   pkgrepo.managed:
     - humanname: Docker CE Repository
@@ -52,14 +53,17 @@ nginx_files_1:
     - contents: |
         worker_processes 4;
         worker_rlimit_nofile 40000;
+
         events {
             worker_connections 8192;
         }
+
         http {
             server {
                 listen 80;
                 return 301 https://$host$request_uri;
             }
+
   {%- for domain in pillar['grafana']['domains'] %}
             server {
                 listen 443 ssl;
@@ -80,8 +84,8 @@ nginx_files_1:
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
-  {%- for domain in pillar['grafana']['domains'] %}
 
+  {%- for domain in pillar['grafana']['domains'] %}
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
@@ -138,6 +142,7 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
 
 {% if "all_to_html" in pillar['grafana']['default_domain'] %}
   {%- for domain in pillar['grafana']['domains'] %}
+
 nginx_domain_index_{{ loop.index }}:
   file.managed:
     - name: /opt/grafana/{{ domain['name'] }}/index.html
@@ -149,6 +154,7 @@ nginx_domain_index_{{ loop.index }}:
 
 {% elif "all_to_prod" in pillar['grafana']['default_domain']  %}
  {%- for domain in pillar['grafana']['domains'] %}
+
 nginx_domain_index:
   file.managed:
     - name: /opt/grafana/{{ domain['name'] }}/index.html
