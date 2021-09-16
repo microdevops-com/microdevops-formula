@@ -23,13 +23,6 @@ promtail_config:
                  job: varlogs
                 __path__: /var/log/*log
 
-{#
-promtail_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar['promtail']['acme_account'] }}/verify_and_issue.sh promtail {{ pillar['promtail']['name'] }}"
-#}
-
 promtail_image:
   cmd.run:
     - name: docker pull {{ pillar['promtail']['image'] }}

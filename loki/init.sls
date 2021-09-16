@@ -58,8 +58,6 @@ loki_data_dir:
 loki_config:
   file.managed:
     - name: /opt/loki/{{ pillar['loki']['name'] }}/config.yaml
-    #- source: https://raw.githubusercontent.com/grafana/loki/v2.3.0/cmd/loki/loki-local-config.yaml
-    #- source_hash: d4d430ebd8aa53b67a750140c4a2a2a5
     - user: 1000
     - group: 0
     - mode: 644
