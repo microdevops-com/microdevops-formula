@@ -100,7 +100,7 @@ promtail_systemd_3:
 
 promtail_systemd_4:
   cmd.run:
-    - name: systemctl restart promtail
+    - name: systemctl reload promtail
     - onchanges:
       - file: /opt/promtail/etc/systemd/promtail.service
 
