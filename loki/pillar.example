@@ -1,0 +1,6 @@
+loki:
+  docker-ce_version: 5:20.10.8
+# acme_account: oxtech.org
+  image: grafana/loki:2.3.0
+  name: loki.oxtech.org
+  port: 3100
