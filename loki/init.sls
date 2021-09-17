@@ -116,14 +116,14 @@ loki_data_dir:
       - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-compactor
       - /opt/loki/{{ pillar['loki']['name'] }}/wal
     - mode: 755
-    - user: 1000
+    - user: 0
     - group: 0
     - makedirs: True
 
 loki_config:
   file.managed:
     - name: /opt/loki/{{ pillar['loki']['name'] }}/config.yaml
-    - user: 1000
+    - user: 0
     - group: 0
     - mode: 644
     - contents: |
