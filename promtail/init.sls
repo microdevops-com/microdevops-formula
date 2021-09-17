@@ -38,7 +38,7 @@ promtail_container:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-        - 0.0.0.0:9080:9080/tcp
+        - 127.0.0.1:9080:9080/tcp
     - binds:
         - /opt/promtail/etc/promtail.yaml:/etc/promtail/promtail.yaml
   {%- for bind in pillar['promtail']['docker']['binds'] %}
@@ -48,6 +48,13 @@ promtail_container:
         - /opt/promtail/etc/promtail.yaml
     - command: -config.file=/etc/promtail/promtail.yaml
   {% else %}
+
+{#
+nginx_cert:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar["promtail"]["acme_account"] }}/verify_and_issue.sh promtail {{ host }}"
+#}
 
 promtail_binary_1:
   archive.extracted:
@@ -100,9 +107,9 @@ promtail_systemd_3:
 
 promtail_systemd_4:
   cmd.run:
-    - name: systemctl reload promtail
+    - name: systemctl restart promtail
     - onchanges:
       - file: /opt/promtail/etc/systemd/promtail.service
-
+      - file: /opt/promtail/etc/promtail.yaml
   {% endif %}
 {% endif %}
