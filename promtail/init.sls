@@ -5,7 +5,7 @@ promtail_data_dirs:
       - /opt/promtail/etc/systemd
       - /opt/promtail/bin
     - mode: 755
-    - user: 1000
+    - user: 0
     - group: 0
     - makedirs: True
 
@@ -13,7 +13,7 @@ promtail_config:
   file.managed:
     - name: /opt/promtail/etc/promtail.yaml
     - source: salt://promtail/files/config.jinja
-    - user: 1000
+    - user: 0
     - group: 0
     - mode: 644
     - template: jinja
@@ -74,7 +74,7 @@ promtail_binary_2:
 promtail_systemd_1:
   file.managed:
     - name: /opt/promtail/etc/systemd/promtail.service
-    - user: 1000
+    - user: 0
     - group: 0
     - mode: 644
     - contents: |
