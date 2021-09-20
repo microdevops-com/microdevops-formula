@@ -25,7 +25,7 @@ promtail_config:
                 job: varlogs
                 __path__: /var/log/*log
 
-  {% if pillar['promtail']['docker']['enabled'] == true %}
+  {% if 'docker' in pillar['promtail']['docker'] %}
 promtail_image:
   cmd.run:
     - name: docker pull {{ pillar['promtail']['image'] }}
