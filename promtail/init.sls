@@ -28,13 +28,13 @@ promtail_config:
   {% if 'docker' in pillar['promtail']['docker'] %}
 promtail_image:
   cmd.run:
-    - name: docker pull {{ pillar['promtail']['image'] }}
+    - name: docker pull {{ pillar['promtail']['docker']['image'] }}
 
 promtail_container:
   docker_container.running:
     - name: promtail-{{ host }}
     - user: root
-    - image: {{ pillar['promtail']['image'] }}
+    - image: {{ pillar['promtail']['docker']['image'] }}
     - detach: True
     - restart_policy: unless-stopped
     - publish:
