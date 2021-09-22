@@ -285,7 +285,7 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
         server_name_301: '{{ server_name_301 }}'
         nginx_root: {{ app_params['nginx']['root'] }}
         access_log: {{ app_params['nginx']['access_log'] }}
@@ -368,7 +368,7 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
         server_name_301: '{{ server_name_301 }}'
         nginx_root: {{ app_params['nginx']['root'] }}
         access_log: {{ app_params['nginx']['access_log'] }}
@@ -443,7 +443,7 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
           {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
         server_name_301: '{{ app_params['nginx']['server_name_301'] }}'
           {%- else %}
@@ -511,7 +511,7 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
         server_name_301: '{{ server_name_301 }}'
         nginx_root: {{ app_params['nginx']['root'] }}
         access_log: {{ app_params['nginx']['access_log'] }}

@@ -1,0 +1,9 @@
+loki:
+  docker-ce_version: 5:20.10.8
+  acme_account: example.com
+  image: grafana/loki:2.3.0
+  name: loki.example.com
+  port: 3100
+  auth_basic:
+    username: <user>
+    password: <password>
