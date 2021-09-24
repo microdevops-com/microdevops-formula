@@ -543,7 +543,7 @@ create_cron_rebind_ssl_for_services_in_docker:
 
 create_cron_dovecot_full_text_serach_rescan:
   cron.present:
-    - name: bash -c 'cd /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/; docker-compose exec dovecot-mailcow doveadm fts rescan -A'
+    - name: bash -c 'docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml exec dovecot-mailcow doveadm fts rescan -A'
     - identifier: dovecot_full_text_search_rescan
     - user: root
     - minute: 30
