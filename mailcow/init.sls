@@ -488,7 +488,7 @@ create_script_rebind_ssl_for_services_in_docker:
         umount /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
         mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_fullchain.cer /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
         mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_key.key /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
-        cd /opt/mailcow/{{ pillar["mailcow"]["servername"] }} && docker-compose restart
+        docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml restart
   {% endif %}
   {% if "haproxy" in pillar["mailcow"] %}
 
