@@ -15,9 +15,9 @@ OUT_FILE="$(mktemp -p /dev/shm/)"
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
-if [[ -d /.salt-python ]]; then
-	if [[ -r /.salt-python/${SALT_TARGET} ]]; then
-		source /.salt-python/${SALT_TARGET}
+if [[ -d /.salt-ssh-hooks ]]; then
+	if [[ -r /.salt-ssh-hooks/${SALT_TARGET} ]]; then
+		source /.salt-ssh-hooks/${SALT_TARGET}
 	fi
 fi
 
