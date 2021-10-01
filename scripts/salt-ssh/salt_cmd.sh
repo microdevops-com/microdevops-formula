@@ -15,7 +15,13 @@ OUT_FILE="$(mktemp -p /dev/shm/)"
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
-( set -x ; stdbuf -oL -eL  bash -c "salt-ssh --wipe --force-color ${SALT_TARGET} ${SALT_CMD}" ) || GRAND_EXIT=1
+if [[ -d /.salt-python ]]; then
+	if [[ -r /.salt-python/${SALT_TARGET} ]]; then
+		source /.salt-python/${SALT_TARGET}
+	fi
+fi
+
+( set -x ; stdbuf -oL -eL  bash -c "salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} ${SALT_CMD}" ) || GRAND_EXIT=1
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
