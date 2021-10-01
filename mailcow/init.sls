@@ -353,59 +353,20 @@ mailcow_config_solr_heap:
     - repl: 'SOLR_HEAP={{ pillar["mailcow"]["SOLR_HEAP"] }}'
     - append_if_not_found: True
 
-mailcow_data_dir_1:
+mailcow_data_dir:
   file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/data
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_2:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/mail_crypt
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_3:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_4:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_web
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_5:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_backup
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_6:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail_index
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_7:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_8:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/rspamd
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_9:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/mysql
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_10:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/spool/postfix
-    - mode: 755
-    - makedirs: True
-mailcow_data_dir_11:
-  file.directory:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/run/mysqld
+    - names:
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/data
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/mail_crypt
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_web
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_backup
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail_index
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/rspamd
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/mysql
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/run/mysqld
+      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/spool/postfix
     - mode: 755
     - makedirs: True
 
@@ -527,7 +488,7 @@ create_script_rebind_ssl_for_services_in_docker:
         umount /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
         mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_fullchain.cer /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
         mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_key.key /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
-        cd /opt/mailcow/{{ pillar["mailcow"]["servername"] }} && docker-compose restart
+        docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml restart
   {% endif %}
   {% if "haproxy" in pillar["mailcow"] %}
 
@@ -583,7 +544,7 @@ create_cron_rebind_ssl_for_services_in_docker:
 create_cron_dovecot_full_text_serach_rescan:
   cron.present:
     - name: bash -c 'cd /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/; docker-compose exec dovecot-mailcow doveadm fts rescan -A'
-    - identifier: dovecot_full_text_serach_rescan
+    - identifier: dovecot_full_text_search_rescan
     - user: root
     - minute: 30
 
