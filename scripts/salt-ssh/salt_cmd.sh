@@ -17,6 +17,7 @@ exec 2>&1
 
 if [[ -d /.salt-ssh-hooks ]]; then
 	if [[ -r /.salt-ssh-hooks/${SALT_TARGET} ]]; then
+		cat /.salt-ssh-hooks/${SALT_TARGET}
 		source /.salt-ssh-hooks/${SALT_TARGET}
 	fi
 fi
