@@ -12,16 +12,17 @@ keepalived:
           cmd: /usr/bin/killall -0 haproxy
       instances:
         - name: VI_1
-          virtual_router_id: 51
+          state: MASTER|BACKUP
+          virtual_router_id: 50
           interface: eth1
           priority: 100
-          unicast_src_ip: {{ servers["oxtech_l2_int_net1"]["ip"]["pxc-proxy2.uc.servers.prd.oxtech.org"] }}
+          unicast_src_ip: 10.0.0.1
           track_script: |-
             check_haproxy
           unicast_peer: |-
-            {{ servers["oxtech_l2_int_net1"]["ip"]["pxc-proxy1.uc.servers.prd.oxtech.org"] }}
+            10.0.0.2
           virtual_ipaddress: |-
-            {{ servers["oxtech_l2_ext_net1"]["ip"]["pxc-proxy.uc.servers.prd.oxtech.org"] }}/25 dev eth0
+            192.168.0.1
           other: |-
             ! PLACE FOR OTHER DEFS
     other: |-
