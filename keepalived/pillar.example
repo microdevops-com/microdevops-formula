@@ -1,0 +1,28 @@
+{% import_yaml "ip/servers.sls" as servers %}
+
+keepalived:
+  config:
+    template: keepalived/keepalived.conf.j2
+    global_defs: |-
+      enable_script_security
+        script_user root
+    vrrp:
+      scripts:
+        - name: check_haproxy
+          cmd: /usr/bin/killall -0 haproxy
+      instances:
+        - name: VI_1
+          virtual_router_id: 51
+          interface: eth1
+          priority: 100
+          unicast_src_ip: {{ servers["oxtech_l2_int_net1"]["ip"]["pxc-proxy2.uc.servers.prd.oxtech.org"] }}
+          track_script: |-
+            check_haproxy
+          unicast_peer: |-
+            {{ servers["oxtech_l2_int_net1"]["ip"]["pxc-proxy1.uc.servers.prd.oxtech.org"] }}
+          virtual_ipaddress: |-
+            {{ servers["oxtech_l2_ext_net1"]["ip"]["pxc-proxy.uc.servers.prd.oxtech.org"] }}/25 dev eth0
+          other: |-
+            ! PLACE FOR OTHER DEFS
+    other: |-
+      ! PLACE FOR OTHER DEFS
