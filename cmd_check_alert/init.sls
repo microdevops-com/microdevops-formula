@@ -32,6 +32,14 @@ cmd_check_alert_common_cron_absent:
   {%- endfor %}
 
   {%- if sensu_plugins_needed|length > 0 %}
+sensu-plugins_ssl_certs_dir:
+  file.directory:
+    - name: /opt/sensu-plugins-ruby/embedded/ssl/certs
+    - user: root
+    - group: root
+    - mode: 0755
+    - makedirs: True
+
     {%- if grains["os_family"] == "Debian" %}
       # Sensu Plugins embedded doesn't work on arm64, but can be installed manually, see below
       {%- if grains["oscodename"] not in ["precise"] and grains["osarch"] not in ["arm64"] %}
