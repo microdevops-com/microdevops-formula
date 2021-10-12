@@ -146,6 +146,7 @@ app:
           #certbot_email: admin@example.com
         #ssl: # acme.sh example
           #acme: True
+          #acme_account: example
           #acme_run_ready: True
       virtualenv: # python_apps only
         pyenv_version: 3.6.7
