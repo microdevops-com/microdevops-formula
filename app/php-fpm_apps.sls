@@ -268,6 +268,7 @@ php-fpm_apps_app_nginx_ssl_dir_{{ loop.index }}:
                (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none) and
                (app_params['nginx']['ssl']['ssl_chain'] is defined) and (app_params['nginx']['ssl']['ssl_chain'] is not none)
         %}
+          {%- if app_params['nginx']['ssl']['certs_dir'] != "NONE" %}
 php-fpm_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
   file.recurse:
     - name: '/etc/nginx/ssl/{{ phpfpm_app }}'
@@ -276,6 +277,7 @@ php-fpm_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
     - group: root
     - dir_mode: 700
     - file_mode: 600
+           {% endif %}
 
 php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
   file.managed:
