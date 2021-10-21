@@ -115,6 +115,8 @@ metabase_container_{{ loop.index }}_{{ i_loop.index }}:
     - image: {{ instance['image'] }}
     - detach: True
     - restart_policy: unless-stopped
+    - binds:
+        - /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar:/plugins/clickhouse.metabase-driver.jar
     - publish:
         - 127.0.0.1:{{ instance['port'] }}:3000/tcp
     - environment:
