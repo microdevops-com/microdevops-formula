@@ -7,7 +7,7 @@ metabase:
         - name: prod
           port: 3000
           image: metabase/metabase
-          plugins: #use for install plugin clickhouse
+          plugins: # use to install clickhouse plugin
             clickhouse: 0.7.5
           java_timezone: UTC
           db:
@@ -20,7 +20,7 @@ metabase:
         - name: dev
           port: 3001
           image: metabase/metabase
-          plugins: #use for install plugin clickhouse
+          plugins: # use to install clickhouse plugin
             clickhouse: 0.7.5
           java_timezone: UTC
           db:
