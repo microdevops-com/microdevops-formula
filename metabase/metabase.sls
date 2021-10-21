@@ -94,9 +94,15 @@ nginx_cert_{{ loop.index }}:
     {%- for instance in domain['instances'] %}
 metabase_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
-    - name: /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}
+    - name: /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins
     - mode: 755
     - makedirs: True
+
+    {% if instance['plugins'] is defined %}
+metabase_download_clickhouse_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: wget https://github.com/enqueue/metabase-clickhouse-driver/releases/download/{{ instance['plugins']['clickhouse'] }}/clickhouse.metabase-driver.jar -O  /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar && chmod 2000 /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar
+    {%endif%}
 
 metabase_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
