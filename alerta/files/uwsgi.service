@@ -1,0 +1,8 @@
+[Unit]
+Description=uWSGI service for app alerta
+
+[Service]
+ExecStart=/opt/alerta/alerta/venv/bin/uwsgi --ini /etc/uwsgi/sites/alerta.ini
+
+[Install]
+WantedBy=multi-user.target
