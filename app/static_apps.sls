@@ -263,11 +263,11 @@ static_apps_app_nginx_ssl_dir_{{ loop.index }}:
         {%- set server_name_301 = app_params['nginx'].get('server_name_301', static_app ~ '.example.com') %}
         {%- if
                (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
-               (app_params['nginx']['ssl']['certs_dir'] is defined) and (app_params['nginx']['ssl']['certs_dir'] is not none) and
                (app_params['nginx']['ssl']['ssl_cert'] is defined) and (app_params['nginx']['ssl']['ssl_cert'] is not none) and
-               (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none) and
-               (app_params['nginx']['ssl']['ssl_chain'] is defined) and (app_params['nginx']['ssl']['ssl_chain'] is not none)
+               (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none)
         %}
+
+           {%- if app_params['nginx']['ssl']['certs_dir'] is defined and app_params['nginx']['ssl']['certs_dir'] is not none %}
 static_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
   file.recurse:
     - name: '/etc/nginx/ssl/{{ static_app }}'
@@ -276,6 +276,7 @@ static_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
     - group: root
     - dir_mode: 700
     - file_mode: 600
+           {% endif %}
 
 static_apps_app_nginx_vhost_config_{{ loop.index }}:
   file.managed:
@@ -294,10 +295,10 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
         app_root: {{ app_params['app_root'] }}
         ssl_cert: {{ app_params['nginx']['ssl']['ssl_cert'] }}
         ssl_key: {{ app_params['nginx']['ssl']['ssl_key'] }}
-        ssl_chain: {{ app_params['nginx']['ssl']['ssl_chain'] }}
         ssl_cert_301: '/etc/nginx/ssl/{{ static_app }}/301_fullchain.pem'
         ssl_key_301: '/etc/nginx/ssl/{{ static_app }}/301_privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+        ssl_chain: {{ app_params['nginx']['ssl'].get('ssl_chain', '') }}
           {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
             {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
         {{ def_key }}: {{ def_val }}
