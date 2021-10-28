@@ -1,10 +1,12 @@
-# TODO: align with new state, outdated
+pyenv:
+  versions:
+    python-3.7.8: True
 
 postgres:
   use_upstream_repo: True
-  version: '11'
+  version: 11
   pkgs_extra:
-  {%- if grains['oscodename'] in ['focal'] %}
+  {%- if grains["oscodename"] in ["focal'] %}
     - postgresql-plpython3-11
   {%- else %}
     - postgresql-plpython-11
@@ -14,179 +16,165 @@ postgres:
     listen_addresses = '*'
   pg_hba.conf: salt://postgres/templates/pg_hba.conf.j2
   acls:
-    - ['local', 'all', '{{ appname }}']
-    - ['host', 'all', '{{ appname }}', '0/0']
+    - ["local", "all", "alerta"]
+    - ["host", "all", "alerta", "0/0"]
   config_backup: False # depends on salt-call which is not available in salt-ssh
   users:
-    {{ appname }}:
+    alerta:
       ensure: present
-      password: '{{ db_pass }}'
+      password: xxxxxxxxxxxxx
       createdb: False
       createroles: False
       inherit: True
       replication: False
   databases:
-    {{ appname }}:
-      owner: '{{ appname }}'
-      template: 'template0'
-      lc_ctype: 'en_US.UTF-8'
-      lc_collate: 'en_US.UTF-8'
+    alerta:
+      owner: alerta
+      template: template0
+      lc_ctype: en_US.UTF-8
+      lc_collate: en_US.UTF-8
   extensions:
     uuid-ossp:
-      maintenance_db: {{ appname }}
+      maintenance_db: alerta
 
-nginx:
-  enabled: True
-  configs: 'nginx/app_hosting'
+alerta:
+  domain: alerta.example.com
+  version: v8.6.0
+  webui_version: v8.5.0
+  db:
+    user: alerta
+    pass: xxxxxxxxxxxxxxxx
+    host: localhost
+    name: alerta
+  secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+  cli_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1
+  acme_account: example.com
+  uwsgi:
+    processes: 30
+    listen: 1500
 
-pyenv:
-  versions:
-    python-3.7.8: True
+  customers:
+    - id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # apt-get install uuid-runtime; uuidgen
+      match: example # Use login, Keycloak role, GitHub org, GitLab group or email domain
+      customer: Example
 
-{% set appname = 'alerta' %}
-{% set db_pass = 'XXX-set-alerta-db-pass-here-XXX' %}
-{% set domain  = 'alerta.example.com' %}
-{% set version = 'v8.0.3' %}
-{% set webui_version = 'v8.0.1' %}
-{% set add_pip_install = "git+https://github.com/sysadmws/alerta-telegram.git" %}
-{% set cli_key_id = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' %} # apt-get install uuid-runtime; uuidgen
-{% set cli_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %} # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1
-{% set telegram_key_id = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' %}
-{% set telegram_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %}
-{% set secret_key = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' %} # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
-{%
-set customers = [
-  {
-    'id': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', # uuidgen
-    'match': 'customer1', # Use login, Keycloak role, GitHub org, GitLab group or email domain
-    'name': 'Customer1',
-    'keys': [
-      {
-        'name': 'mon',
-        'key_id': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        'key': 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-      },
-    ],
-  },
-  {
-    'id': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-    'match': 'customer2',
-    'name': 'Customer2',
-    'keys': [
-      {
-        'name': 'mon',
-        'key_id': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        'key': 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-      },
-    ],
-  },
-]
-%}
-{%
-set telegram_template = "
-source: [alerta](https://" ~ domain ~ "/alert/{{ id }})
-severity: *{{ severity }}*
-previous-severity: *{{ previous_severity }}*
-status: *{{ status }}*
-customer: *{{ customer|replace('_', '-')|replace('*', '-') }}*
-environment: *{{ environment|replace('_', '-')|replace('*', '-') }}*
-service: *{{ service|join(', ')|replace('_', '-')|replace('*', '-') }}*
-resource: *{{ resource|replace('_', '-')|replace('*', '-') }}*
-event: *{{ event|replace('_', '-')|replace('*', '-') }}*
-value: *{{ value|replace('_', '-')|replace('*', '-') }}*
-group: *{{ group|replace('_', '-')|replace('*', '-') }}*
-origin: *{{ origin|replace('_', '-')|replace('*', '-') }}*
-{% for a_key, a_val in attributes.items()|sort %}{{ a_key|replace('_', '-')|replace('*', '-') }}: *{{ a_val|replace('_', '-')|replace('*', '-') }}*
-{% endfor %}
-```
-{{ text }}
-```
-"
-%}
-{%
-set conf = "
-DASHBOARD_URL = 'https://" ~ domain ~ "/'
+  keys:
+    # global
+    - text: cli
+      id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      scopes: "{admin,read,write}"
+    - text: telegram
+      id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      scopes: "{write:webhooks}"
+    # customers
+    - text: mon
+      id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      scopes: "{write:alerts,write:heartbeats}"
+      customer: Example
 
-AUTH_REQUIRED = True
-ADMIN_USERS = ['root']
-SIGNUP_ENABLED = False
-AUTH_PROVIDER = 'gitlab'
-GITLAB_URL = 'https://gitlab.example.com'
-ALLOWED_GITLAB_GROUPS = ['group1/subgroup2', 'group1/subgroup3']
-OAUTH2_CLIENT_ID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-OAUTH2_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-CUSTOMER_VIEWS = True
+  telegram_template: |{% raw %}
+    source: [alerta](https://alerta.example.com/alert/{{ id }})
+    severity: *{{ severity }}*
+    previous-severity: *{{ previous_severity }}*
+    status: *{{ status }}*
+    customer: *{{ customer|replace('_', '-')|replace('*', '-') }}*
+    environment: *{{ environment|replace('_', '-')|replace('*', '-') }}*
+    service: *{{ service|join(', ')|replace('_', '-')|replace('*', '-') }}*
+    resource: *{{ resource|replace('_', '-')|replace('*', '-') }}*
+    event: *{{ event|replace('_', '-')|replace('*', '-') }}*
+    value: *{{ value|replace('_', '-')|replace('*', '-') }}*
+    group: *{{ group|replace('_', '-')|replace('*', '-') }}*
+    origin: *{{ origin|replace('_', '-')|replace('*', '-') }}*
+    {% for a_key, a_val in attributes.items()|sort %}{{ a_key|replace('_', '-')|replace('*', '-') }}: *{{ a_val|replace('_', '-')|replace('*', '-') }}*
+    {% endfor %}
+    ```
+    {{ text }}
+    ```
+{% endraw %}
 
-SITE_LOGO_URL = 'https://gitlab.example.com/uploads/-/system/appearance/header_logo/1/company.png'
-DATE_FORMAT_LONG_DATE = 'yyyy-MM-dd HH:mm:ss.sss'
-DEFAULT_AUDIO_FILE = '/audio/alert_high-intensity.ogg'
+  config: |
+    DASHBOARD_URL = 'https://alerta.example.com/'
 
-API_KEY_EXPIRE_DAYS = 36500 # 100 years
+    AUTH_REQUIRED = True
+    ADMIN_USERS = ['root','admin']
+    SIGNUP_ENABLED = False
+    AUTH_PROVIDER = 'gitlab'
+    GITLAB_URL = 'https://gitlab.example.com'
+    ALLOWED_GITLAB_GROUPS = ['group1/subgroup2', 'group1/subgroup3']
+    OAUTH2_CLIENT_ID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    OAUTH2_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    CUSTOMER_VIEWS = True
 
-ALERT_TIMEOUT = 86400
-HEARTBEAT_TIMEOUT = 86400
-DEFAULT_EXPIRED_DELETE_HRS = 12
-DEFAULT_INFO_DELETE_HRS = 0  # do not delete info alerts
+    SITE_LOGO_URL = 'https://example.com/uploads/example.png'
+    DATE_FORMAT_LONG_DATE = 'yyyy-MM-dd HH:mm:ss.sss'
+    DEFAULT_AUDIO_FILE = '/audio/alert_high-intensity.ogg'
 
-SEVERITY_MAP = {
-    'fatal': 0,
-    'security': 0,
-    'critical': 1,
-    'major': 2,
-    'minor': 3,
-    'warning': 4,
-    'ok': 5,
-    'normal': 5,
-    'cleared': 5,
-    'indeterminate': 5,
-    'informational': 6,
-    'debug': 7,
-    'trace': 8,
-    'unknown': 9
-}
+    API_KEY_EXPIRE_DAYS = 36500 # 100 years
 
-COLOR_MAP = {
-    'severity': {
-        'fatal': 'blue',
-        'security': 'blue',
-        'critical': 'red',
-        'major': 'orange',
-        'minor': 'yellow',
-        'warning': 'dodgerblue',
-        'ok': '#00CC00',
-        'normal': '#00CC00',
-        'cleared': '#00CC00',
-        'indeterminate': 'lightblue',
-        'informational': '#00CC00',
-        'debug': '#9D006D',
-        'trace': '#7554BF',
-        'unknown': 'silver'
-    },
-    'text': 'black',
-    'highlight': 'skyblue'
-}
+    ALERT_TIMEOUT = 86400
+    HEARTBEAT_TIMEOUT = 86400
+    DEFAULT_EXPIRED_DELETE_HRS = 12
+    DEFAULT_INFO_DELETE_HRS = 0  # do not delete info alerts
 
-DEFAULT_NORMAL_SEVERITY = 'ok'
-DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
+    SEVERITY_MAP = {
+        'fatal': 0,
+        'security': 0,
+        'critical': 1,
+        'major': 2,
+        'minor': 3,
+        'warning': 4,
+        'ok': 5,
+        'normal': 5,
+        'cleared': 5,
+        'indeterminate': 5,
+        'informational': 6,
+        'debug': 7,
+        'trace': 8,
+        'unknown': 9
+    }
 
-PLUGINS = ['blackout','telegram']
-PLUGINS_RAISE_ON_ERROR = True
+    COLOR_MAP = {
+        'severity': {
+            'fatal': 'blue',
+            'security': 'blue',
+            'critical': 'red',
+            'major': 'orange',
+            'minor': 'yellow',
+            'warning': 'dodgerblue',
+            'ok': '#00CC00',
+            'normal': '#00CC00',
+            'cleared': '#00CC00',
+            'indeterminate': 'lightblue',
+            'informational': '#00CC00',
+            'debug': '#9D006D',
+            'trace': '#7554BF',
+            'unknown': 'silver'
+        },
+        'text': 'black',
+        'highlight': 'skyblue'
+    }
 
-BLACKOUT_DURATION = 3600
-NOTIFICATION_BLACKOUT = True
-BLACKOUT_ACCEPT = True
+    DEFAULT_NORMAL_SEVERITY = 'ok'
+    DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
 
-TELEGRAM_TEMPLATE = '/opt/alerta/" ~ appname ~ "/telegram_template.jinja'
-TELEGRAM_FILTER_NOTIFICATION_SEVERITY = ['fatal', 'security', 'critical']
-TELEGRAM_SOUND_NOTIFICATION_SEVERITY = ['fatal']
+    PLUGINS = ['blackout','telegram']
+    PLUGINS_RAISE_ON_ERROR = True
 
-TELEGRAM_TOKEN = 'xxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'
-TELEGRAM_WEBHOOK_URL = 'https://" ~ domain ~ "/api/webhooks/telegram?api-key=" ~ telegram_key ~ "'
+    BLACKOUT_DURATION = 3600
+    NOTIFICATION_BLACKOUT = True
+    BLACKOUT_ACCEPT = True
 
-TELEGRAM_CHAT_ID_PER_CUSTOMER = {
-    'Customer1': '-xxxxxxxxxxxxx',
-}
-"
-%}
-{% include 'app/alerta.jinja' with context %}
+    TELEGRAM_TEMPLATE = '/opt/alerta/alerta/telegram_template.jinja'
+    TELEGRAM_FILTER_NOTIFICATION_SEVERITY = ['fatal', 'security', 'critical']
+    TELEGRAM_SOUND_NOTIFICATION_SEVERITY = ['fatal']
+
+    TELEGRAM_TOKEN = 'xxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    TELEGRAM_CHAT_ID = '-xxxxxxxxxxxxx'
+    TELEGRAM_WEBHOOK_URL = 'https://alerta.example.com/api/webhooks/telegram?api-key=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
+    TELEGRAM_CHAT_ID_PER_CUSTOMER = {
+        'Example': '-xxxxxxxxxxxxx',
+    }
