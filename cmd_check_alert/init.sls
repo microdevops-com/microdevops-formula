@@ -112,6 +112,19 @@ sensu-plugins_install_{{ loop.index }}_patch_smart_1:
     - show_changes: True
 
         {%- endif %}
+        {%- if plugin == "http" %}
+sensu-plugins_install_{{ loop.index }}_patch_http_1:
+  file.managed:
+          {%- if grains["osarch"] not in ["arm64"] %}
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-http-6.1.0/bin/check-http.rb
+          {%- else %}
+    - name: /usr/local/rvm/gems/ruby-2.4.0/gems/sensu-plugins-http-6.1.0/bin/check-http.rb
+          {%- endif %}
+    - source: salt://cmd_check_alert/files/check-http.rb
+    - create: False
+    - show_changes: True
+
+        {%- endif %}
       {%- endfor %}
     {%- endif %}
 
