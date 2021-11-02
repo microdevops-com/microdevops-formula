@@ -356,17 +356,17 @@ mailcow_config_solr_heap:
 mailcow_data_dir:
   file.directory:
     - names:
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/data
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/mail_crypt
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_web
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_backup
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail_index
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/rspamd
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/mysql
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/run/mysqld
-      - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/spool/postfix
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/data
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/mail_crypt
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_web
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_backup
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail_index
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/rspamd
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/mysql
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/run/mysqld
+      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/spool/postfix
     - mode: 755
     - makedirs: True
 

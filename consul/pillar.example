@@ -1,0 +1,63 @@
+{%
+set server_nodes = {
+  'consul1.example.com': '1.2.3.4',
+  'consul2.example.com': '2.3.4.5',
+  'consul3.example.com': '3.4.5.6'
+}
+%}
+{%
+set client_nodes = {
+  'vault1.example.com': '4.5.6.7',
+  'vault2.example.com': '5.6.7.8'
+}
+%}
+{% set all_nodes = dict() %}
+{% set _ = all_nodes.update(server_nodes) %}
+{% set _ = all_nodes.update(client_nodes) %}
+
+ufw:
+  import_ufw_simple: True
+  allow:
+    cluster_consul_tcp:
+      proto: 'tcp'
+      from:
+        {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
+        {{ key }}: {{ val }}
+        {%- endif %}{%- endfor %}
+      to_port: '8300,8301,8302,8500,8501,8600'
+    cluster_consul_udp:
+      proto: 'udp'
+      from:
+        {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
+        {{ key }}: {{ val }}
+        {%- endif %}{%- endfor %}
+      to_port: '8301,8302,8600'
+
+consul:
+  name: {{ grains['fqdn'] }}
+  acme_account: example.com
+  docker-ce_version: 5:20.10.9
+  image: consul
+  command: agent
+  env_vars:
+  config: |
+    {
+      {%- for key, val in server_nodes.items() %}{%- if grains['fqdn'] == key %}
+      "server": true,
+      "bootstrap_expect": 2,
+      "ui": true,
+      "connect": {
+        "enabled": true
+      },{% endif %}{% endfor %}
+      {%- for key, val in client_nodes.items() %}{%- if grains['fqdn'] == key %}
+      "server": false,{% endif %}{% endfor %}
+      "node_name": "{{ grains['fqdn'] }}",
+      "datacenter": "hetzner",
+      "bind_addr": "0.0.0.0",
+      "client_addr": "0.0.0.0",
+      {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] == key %}
+      "advertise_addr": "{{ val }}",{% endif %}{% endfor %}
+      "retry_join": [{%- for key, val in server_nodes.items() %}{%- if grains['fqdn'] != key %}"{{ key }}", {% endif %}{%- endfor %}],
+      "log_level": "DEBUG"
+    }
+
