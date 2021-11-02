@@ -37,7 +37,10 @@
   {%- if host_backups_item['connect_password'] is defined and host_backups_item['connect_password'] is not none %}
           connect_password: {{ host_backups_item['connect_password'] }}
   {%- endif %}
-  {%- if host_backups_item['before_backup_check'] is defined and host_backups_item['before_backup_check'] is not none %}
+  {# per backup host item is higher priority than per backup item #}
+  {%- if "before_backup_check" in backup %}
+          before_backup_check: {{ backup['before_backup_check'] }}
+  {%- elif "before_backup_check" in host_backups_item %}
           before_backup_check: {{ host_backups_item['before_backup_check'] }}
   {%- endif %}
   {%- if host_backups_item['exec_before_rsync'] is defined and host_backups_item['exec_before_rsync'] is not none %}

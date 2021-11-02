@@ -263,11 +263,11 @@ static_apps_app_nginx_ssl_dir_{{ loop.index }}:
         {%- set server_name_301 = app_params['nginx'].get('server_name_301', static_app ~ '.example.com') %}
         {%- if
                (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
-               (app_params['nginx']['ssl']['certs_dir'] is defined) and (app_params['nginx']['ssl']['certs_dir'] is not none) and
                (app_params['nginx']['ssl']['ssl_cert'] is defined) and (app_params['nginx']['ssl']['ssl_cert'] is not none) and
-               (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none) and
-               (app_params['nginx']['ssl']['ssl_chain'] is defined) and (app_params['nginx']['ssl']['ssl_chain'] is not none)
+               (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none)
         %}
+
+           {%- if app_params['nginx']['ssl']['certs_dir'] is defined and app_params['nginx']['ssl']['certs_dir'] is not none %}
 static_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
   file.recurse:
     - name: '/etc/nginx/ssl/{{ static_app }}'
@@ -276,6 +276,7 @@ static_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
     - group: root
     - dir_mode: 700
     - file_mode: 600
+           {% endif %}
 
 static_apps_app_nginx_vhost_config_{{ loop.index }}:
   file.managed:
@@ -294,10 +295,10 @@ static_apps_app_nginx_vhost_config_{{ loop.index }}:
         app_root: {{ app_params['app_root'] }}
         ssl_cert: {{ app_params['nginx']['ssl']['ssl_cert'] }}
         ssl_key: {{ app_params['nginx']['ssl']['ssl_key'] }}
-        ssl_chain: {{ app_params['nginx']['ssl']['ssl_chain'] }}
         ssl_cert_301: '/etc/nginx/ssl/{{ static_app }}/301_fullchain.pem'
         ssl_key_301: '/etc/nginx/ssl/{{ static_app }}/301_privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+        ssl_chain: {{ app_params['nginx']['ssl'].get('ssl_chain', '') }}
           {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
             {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
         {{ def_key }}: {{ def_val }}
@@ -485,10 +486,10 @@ static_apps_app_acme_run_{{ loop.index }}:
     - shell: '/bin/bash'
             {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
     - name: |
-        openssl verify -CAfile /opt/acme/cert/{{ static_app }}_ca.cer /opt/acme/cert/{{ static_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ static_app }}_cert.cer --key-file /opt/acme/cert/{{ static_app }}_key.key --ca-file /opt/acme/cert/{{ static_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ static_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
+        openssl verify -CAfile /opt/acme/cert/{{ static_app }}_ca.cer /opt/acme/cert/{{ static_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/{{ app_params['nginx']['ssl']['acme_account'] }}/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ static_app }}_cert.cer --key-file /opt/acme/cert/{{ static_app }}_key.key --ca-file /opt/acme/cert/{{ static_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ static_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
             {%- else %}
     - name: |
-        openssl verify -CAfile /opt/acme/cert/{{ static_app }}_ca.cer /opt/acme/cert/{{ static_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ static_app }}_cert.cer --key-file /opt/acme/cert/{{ static_app }}_key.key --ca-file /opt/acme/cert/{{ static_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ static_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
+        openssl verify -CAfile /opt/acme/cert/{{ static_app }}_ca.cer /opt/acme/cert/{{ static_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/{{ app_params['nginx']['ssl']['acme_account'] }}/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ static_app }}_cert.cer --key-file /opt/acme/cert/{{ static_app }}_key.key --ca-file /opt/acme/cert/{{ static_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ static_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
             {%- endif %}
 
 static_apps_app_acme_replace_symlink_1_{{ loop.index }}:

@@ -29,6 +29,7 @@ rsnapshot_backup:
             path: /var/backups/srv1.domain.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
             priority: -1 # optional, priority (order) of this backup in json config on the end server, -10 priority first, then -9 .. -1, then no priority, then 1 .. 10
+            before_backup_check: # optional, the same as below but overrides before_backup_check per backup host
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
         retain_daily: N # optional, override default value 7
