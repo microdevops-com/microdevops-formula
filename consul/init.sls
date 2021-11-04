@@ -40,7 +40,6 @@ docker_install_4:
     - onchanges:
         - file: /etc/docker/daemon.json
 
-{#
 consul_cert:
   cmd.run:
     - shell: /bin/bash
@@ -49,7 +48,6 @@ consul_cert:
 cert_permissions:
   cmd.run:
     - name: /usr/bin/chown 100:1000  /opt/acme/cert/*
-#}
 
 consul_data_dir:
   file.directory:
@@ -99,12 +97,12 @@ consul_container:
       - /opt/consul/{{ pillar["consul"]["name"] }}/config/:/consul/config:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/data/:/consul/data:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/logs/:/consul/logs:rw
-{#      - /opt/acme/cert:/consul/certs:rw #}
+      - /opt/acme/cert:/consul/certs:rw 
     - command: {{ pillar["consul"]["command"] }}
 
 docker_container_restart:
   cmd.run:
-    - name: docker exec -t consul-{{ pillar["consul"]["name"] }} consul reload
+    - name: docker restart consul-{{ pillar["consul"]["name"] }}
     - onchanges:
       - file: /opt/consul/{{ pillar["consul"]["name"] }}/config/config.json
 

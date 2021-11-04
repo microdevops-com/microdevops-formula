@@ -68,7 +68,7 @@ vault_data_dir:
       - /opt/vault/{{ pillar["vault"]["name"] }}/config
       - /opt/vault/{{ pillar["vault"]["name"] }}/logs
     - mode: 755
-    - user: 100
+    - user: 100 
     - group: 1000
     - makedirs: True
 
@@ -118,5 +118,11 @@ cert_permissions_cron:
     - user: root
     - minute: 0
     - hour: 1
+
+container_restart:
+  cmd.run:
+    - name: sleep 5; docker restart vault-{{ pillar["vault"]["name"] }}
+    - onchanges:
+        - file: /opt/vault/{{ pillar["vault"]["name"] }}/config/config.hcl
 
 {% endif %}
