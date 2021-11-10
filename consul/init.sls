@@ -40,21 +40,13 @@ docker_install_4:
     - onchanges:
         - file: /etc/docker/daemon.json
 
-consul_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["consul"]["acme_account"] }}/verify_and_issue.sh consul {{ pillar["consul"]["name"] }}"
-
-cert_permissions:
-  cmd.run:
-    - name: /usr/bin/chown 100:1000  /opt/acme/cert/*
-
 consul_data_dir:
   file.directory:
     - names:
       - /opt/consul/{{ pillar["consul"]["name"] }}/data
       - /opt/consul/{{ pillar["consul"]["name"] }}/config
       - /opt/consul/{{ pillar["consul"]["name"] }}/logs
+      - /opt/consul/{{ pillar["consul"]["name"] }}/certs
     - mode: 755
     - user: 100 
     - group: 1000
@@ -72,6 +64,40 @@ consul_config_2:
     - pattern: '(^ *"retry_join": \[.*), \],$'
     - repl: '\1],'
 
+cacert:
+  file.managed:
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/ca.crt
+    - source: {{ pillar["consul"]["tls_dir"] }}/ca.crt
+    - user: 100
+    - group: 1000
+{%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
+server_cert:
+  file.managed:
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/{{ grains['fqdn'] }}.crt
+    - source: {{ pillar["consul"]["tls_dir"] }}/{{ grains['fqdn'] }}.crt
+    - user: 100
+    - group: 1000
+server_key:
+  file.managed:
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/{{ grains['fqdn'] }}.key
+    - source: {{ pillar["consul"]["tls_dir"] }}/{{ grains['fqdn'] }}.key
+    - user: 100
+    - group: 1000
+{%- endif %}{%- endfor %}
+{%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
+client_cert:
+  file.managed:
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/agent-client.crt
+    - source: {{ pillar["consul"]["tls_dir"] }}/agent-client.crt
+    - user: 100
+    - group: 1000
+client_key:
+  file.managed:
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/agent-client.key
+    - source: {{ pillar["consul"]["tls_dir"] }}/agent-client.key
+    - user: 100
+    - group: 1000
+{%- endif %}{%- endfor %}
 consul_image:
   cmd.run:
     - name: docker pull {{ pillar["consul"]["image"] }}
@@ -97,20 +123,21 @@ consul_container:
       - /opt/consul/{{ pillar["consul"]["name"] }}/config/:/consul/config:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/data/:/consul/data:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/logs/:/consul/logs:rw
-      - /opt/acme/cert:/consul/certs:rw 
+      - /opt/consul/{{ pillar["consul"]["name"] }}/certs/:/consul/certs:rw
     - command: {{ pillar["consul"]["command"] }}
+    - environment:
+        - CONSUL_HTTP_ADDR: 'https://127.0.0.1:8501'
+        - CONSUL_CACERT: /consul/certs/ca.crt
+    {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
+        - CONSUL_CLIENT_CERT: /consul/certs/agent-client.crt
+        - CONSUL_CLIENT_KEY: /consul/certs/agent-client.key{%- endif %}{%- endfor %}
+    {%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
+        - CONSUL_CLIENT_CERT: /consul/certs/{{ grains['fqdn'] }}.crt
+        - CONSUL_CLIENT_KEY: /consul/certs/{{ grains['fqdn'] }}.key{%- endif %}{%- endfor %}
 
 docker_container_restart:
   cmd.run:
     - name: docker restart consul-{{ pillar["consul"]["name"] }}
     - onchanges:
       - file: /opt/consul/{{ pillar["consul"]["name"] }}/config/config.json
-
-cert_permissions_cron:
-  cron.present:
-    - name: /usr/bin/chown 100:1000 -R /opt/acme/cert/*
-    - identifier: set permissions for consul certificate
-    - user: root
-    - minute: 0
-    - hour: 1
 {% endif %}
