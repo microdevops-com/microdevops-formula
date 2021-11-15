@@ -94,7 +94,13 @@ nginx_cert_{{ loop.index }}:
     {%- for instance in domain['instances'] %}
 grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
-    - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc
+    - names:
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/dashboards
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/datasources
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/notifiers
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/plugins
     - mode: 755
     - makedirs: True
 
@@ -111,6 +117,20 @@ grafana_config_{{ loop.index }}_{{ i_loop.index }}:
     - group: root
     - mode: 644
     - contents: {{ instance['config'] | yaml_encode }}
+
+      {%- if instance['datasources'] is defined and instance['datasources'] is not none %}
+grafana_datasources_{{ loop.index }}_{{ i_loop.index }}:
+  file.serialize:
+    - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/datasources/datasources.yaml
+    - user: root
+    - group: root
+    - mode: 644
+    - show_changes: True
+    - create: True
+    - merge_if_exists: False
+    - formatter: yaml
+    - dataset: {{ instance['datasources'] }}
+      {%- endif %}
 
 grafana_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
@@ -145,7 +165,7 @@ nginx_domain_index_{{ loop.index }}:
     - name: /opt/grafana/{{ domain['name'] }}/index.html
     - contents: |
     {%- if 'default_instance' in domain %}
-        <meta http-equiv="refresh" content="0; url='https://{{ domain['name'] }}/{{ domain['default_instance'] }}'" />
+        <meta http-equiv="refresh" content="0; url='https://{{ domain['name'] }}/{{ domain['default_instance'] }}/login'" />
     {%- else %}
       {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
