@@ -1,8 +1,9 @@
 acme:
   example.com: # account name for settings separation into dirs
-    rev: 2.9.0
+    rev: master # optional, the remote branch, tag, or revision ID to checkout after clone, master by default
     vars: # vars to set in account
       CF_Token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       CF_Account_ID: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       CF_Zone_ID: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     args: "--dns dns_cf" # agrs to use with acme.sh
+    ca_server: letsencrypt # optional, could be one of zerossl, letsencrypt, letsencrypttest, buypass, buypasstest, sslcom. Take a look at https://github.com/acmesh-official/acme.sh/search?q=CA_NAMES
