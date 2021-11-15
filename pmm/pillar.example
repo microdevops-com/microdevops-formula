@@ -1,3 +1,5 @@
+# https://github.com/percona/pmm-doc/blob/main/docs/_images/PMM_Architecture_Client_Server.jpg
+
 pmm:
   docker-ce_version: 5:20.10.8*
   acme_account: example.com

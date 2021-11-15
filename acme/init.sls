@@ -22,11 +22,16 @@ acme_git_{{ loop.index }}:
     - target: /opt/acme/git/{{ acme_acc }}
     - force_reset: True
     - force_fetch: True
-    - rev: {{ acme_params["rev"] }}
+    - rev: {{ acme_params.get("rev", "master") }}
 
 acme_install_{{ loop.index }}:
   cmd.run:
     - name: /opt/acme/git/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} --install
+    - cwd: /opt/acme/git/{{ acme_acc }}
+
+acme_set_ca_server_{{ loop.index }}:
+  cmd.run:
+    - name: /opt/acme/git/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} --set-default-ca  --server {{ acme_params.get("ca_server","letsencrypt") }}
     - cwd: /opt/acme/git/{{ acme_acc }}
 
 acme_local_{{ loop.index }}:
