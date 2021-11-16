@@ -364,6 +364,9 @@ nginx_domain_index_{{ loop.index }}:
   file.managed:
     - name: /opt/prometheus/{{ domain['name'] }}/index.html
     - contents: |
+    {%- if 'default_instance' in domain %}
+        <meta http-equiv="refresh" content="0; url='https://{{ domain['name'] }}/{{ domain['default_instance'] }}/targets'" />
+    {%- endif %}
     {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
       {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
