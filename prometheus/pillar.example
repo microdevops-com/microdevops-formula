@@ -1,5 +1,5 @@
 prometheus:
-  docker-ce_version: 18.06.1
+  docker-ce_version: 5:20.10.9
   domains:
     - name: prometheus.example.com # for nginx proxy and its ssl on https://prometheus.example.com/prod
       acme_account: example.com
