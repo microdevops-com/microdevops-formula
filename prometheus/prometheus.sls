@@ -354,7 +354,9 @@ prometheus_pagespeed-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
         - 127.0.0.1:{{ instance['pagespeed-exporter']['port'] }}:9271/tcp
+        {%- if 'apikey' in instance['pagespeed-exporter'] %}
     - command: -api-key {{ instance['pagespeed-exporter']['apikey'] }}
+        {%- endif %}
       {%- endif %}
     {%- endfor %}
   {%- endfor %}
