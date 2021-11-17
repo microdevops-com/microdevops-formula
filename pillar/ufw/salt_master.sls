@@ -1,6 +1,6 @@
 {% from "ufw/vars.jinja" import vars with context %}
 
-ufw_simple:
+ufw:
   allow:
     salt_master:
       proto: tcp

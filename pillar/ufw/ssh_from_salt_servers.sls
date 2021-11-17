@@ -1,6 +1,6 @@
 {% from "ufw/vars.jinja" import vars with context %}
 
-ufw_simple:
+ufw:
   allow:
     ssh_from_salt_servers:
       proto: tcp
