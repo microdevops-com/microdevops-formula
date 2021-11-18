@@ -101,6 +101,7 @@ grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/datasources
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/notifiers
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/plugins
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/log
     - mode: 755
     - makedirs: True
 
@@ -148,6 +149,7 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
     - binds:
         - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc:/etc/grafana:rw
         - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data:/var/lib/grafana:rw
+        - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/log:/var/log/grafana:rw
     - watch:
         - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/grafana.ini
     - environment:
@@ -155,7 +157,10 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
       {%- if instance['install_plugins'] is defined and instance['install_plugins'] is not none %}
         - GF_INSTALL_PLUGINS: {{ instance['install_plugins'] }}
       {%- endif %}
-
+      {%- if instance['docker_logging'] is defined and instance['docker_logging'] is not none %}
+    - log_driver: {{ instance['docker_logging']['driver'] }}
+    - log_opt: {{ instance['docker_logging']['options'] }}
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 
