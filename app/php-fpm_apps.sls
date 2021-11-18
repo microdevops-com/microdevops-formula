@@ -180,6 +180,9 @@ php-fpm_apps_app_checkout_{{ loop.index }}:
     - branch: {{ app_params['source']['branch'] }}
     - force_reset: True
     - force_fetch: True
+            {%- if pillar['force_checkout'] is defined and pillar['force_checkout'] %}
+    - force_checkout: True
+            {%- endif %}
     - user: {{ app_params['user'] }}
           {%- elif (app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none)  %}
   hg.latest:
