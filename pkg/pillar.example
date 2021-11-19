@@ -22,7 +22,7 @@ pkg:
       - file.directory: # just another example
           '/var/www/.well-known/':
             - makedirs: True
-      - cmd_run:
+      - cmd.run:
           1: # keys are sorted before execution
             - name: 'compile /etc/package1/main.conf'
             - runas: 'root'
@@ -32,19 +32,19 @@ pkg:
   postfix: # change exim to postfix for debian example
     when: 'PKG_PKG'
     states:
-      - pkg_installed:
+      - pkg.installed:
           1:
             - pkgs:
                 - postfix
                 - bsd-mailx
                 - heirloom-mailx
-      - pkg_purged:
+      - pkg.purged:
           1:
             - pkgs:
                 - exim4
                 - exim4-base
                 - exim4-config
                 - exim4-daemon-light
-      - cmd_run:
+      - cmd.run:
           'dpkg --purge exim4 exim4-base exim4-config exim4-daemon-light':
             - runas: root
