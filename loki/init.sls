@@ -176,6 +176,7 @@ loki_config:
         limits_config:
           reject_old_samples: true
           reject_old_samples_max_age: 168h
+          ingestion_rate_mb: 8
         chunk_store_config:
           max_look_back_period: 0s
         table_manager:
