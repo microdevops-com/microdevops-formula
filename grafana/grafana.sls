@@ -53,12 +53,14 @@ nginx_files_1:
     - contents: |
         worker_processes 4;
         worker_rlimit_nofile 40000;
-
         events {
             worker_connections 8192;
         }
-
         http {
+            map $http_upgrade $connection_upgrade {
+                default upgrade;
+                '' close;
+            }
             server {
                 listen 80;
                 return 301 https://$host$request_uri;
@@ -73,6 +75,13 @@ nginx_files_1:
                 ssl_certificate_key /opt/acme/cert/grafana_{{ domain['name'] }}_key.key;
     {%- for instance in domain['instances'] %}
                 location /{{ instance['name'] }}/ {
+                    proxy_http_version 1.1;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_set_header X-Forwarded-For $remote_addr;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "Upgrade";
+                    proxy_set_header Host $http_host;
                     proxy_pass http://localhost:{{ instance['port'] }}/;
                 }
     {%- endfor %}
