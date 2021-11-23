@@ -64,6 +64,10 @@ nginx_files_1:
             multi_accept on;
         }
         http {
+            map $http_upgrade $connection_upgrade {
+                default upgrade;
+                '' close;
+            }
             include /etc/nginx/mime.types;
             default_type application/octet-stream;
             sendfile on;
@@ -79,19 +83,21 @@ nginx_files_1:
                 listen 80;
                 return 301 https://$host$request_uri;
             }
-
             server {
                 listen 443 ssl;
                 server_name {{ pillar["loki"]["name"] }};
                 ssl_certificate /opt/acme/cert/loki_{{ pillar["loki"]["name"] }}_fullchain.cer;
                 ssl_certificate_key /opt/acme/cert/loki_{{ pillar["loki"]["name"] }}_key.key;
-
-                auth_basic           "Administrator’s Area";
+                auth_basic "Administrator’s Area";
                 auth_basic_user_file /etc/nginx/htpasswd;
-
                 location / {
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_set_header X-Forwarded-For $remote_addr;
+                    proxy_set_header Host $http_host;
+                    proxy_set_header Upgrade websocket;
+                    proxy_set_header Connection Upgrade;
                     proxy_pass http://localhost:{{ pillar["loki"]["port"] }}/;
-                    include    proxy_params;
                 }
             }
         }
