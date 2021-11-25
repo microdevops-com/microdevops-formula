@@ -47,19 +47,6 @@ ufw_pkg_latest:
     - pkgs:
         - ufw
 
-  # Manage /etc/ufw/ufw.conf
-ufw_conf_managed:
-  file.managed:
-    - name: /etc/ufw/ufw.conf
-    - source: salt://ufw/files/etc_ufw_ufw.conf
-    - mode: 0644
-    - template: jinja
-    - defaults:
-  {%- if "loglevel" in pillar["ufw"] %}
-        LOGLEVEL: {{ pillar["ufw"]["loglevel"] }}
-  {%- else %}
-        LOGLEVEL: "off"
-  {%- endif %}
 
   # Enable ip forwarding if nat or custom nat rules
 ufw_ip_fwd_managed_file_1:
@@ -290,6 +277,16 @@ ufw_user6_rules_managed:
     - onchanges:
       - file: /etc/ufw/user.rules.src
       - file: /etc/ufw/user.rules.py
+
+  # Manage /etc/ufw/ufw.conf
+ufw_conf_managed:
+  file.managed:
+    - name: /etc/ufw/ufw.conf
+    - source: salt://ufw/files/etc_ufw_ufw.conf
+    - mode: 0644
+    - template: jinja
+    - defaults:
+        LOGLEVEL: {{ pillar["ufw"].get("loglevel", "'off'") }}
 
   # Reload ufw on any file change
 ufw_reload:
