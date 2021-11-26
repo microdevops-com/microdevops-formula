@@ -94,13 +94,7 @@ pkg_latest:
 full_hostname:
   cmd.run:
     - name: |
-{% if "hostname" in pillar["bootstrap"] %}
         echo "{{ pillar["bootstrap"]["hostname"] }}" > /etc/hostname && hostname $(cat /etc/hostname)
-{% else %}
-        cat /etc/hostname | grep -q {{ pillar["bootstrap"]["network"]["domain"] }} && \
-        echo 'hostname is already full' || \
-        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar["bootstrap"]["network"]["domain"] }} > /etc/hostname && hostname $(cat /etc/hostname) )
-{% endif %}
 
 {% if grains["virtual"] == "physical" %}
 swapiness:
