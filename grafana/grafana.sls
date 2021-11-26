@@ -97,7 +97,7 @@ nginx_files_2:
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["grafana"]["acme_account"] }}/verify_and_issue.sh grafana {{ domain['name'] }}"
+    - name: "/opt/acme/home/{{ pillar["grafana"]["acme_account"] }}/verify_and_issue.sh grafana {{ domain['name'] }} || true"
     
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
@@ -170,6 +170,10 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
     - log_driver: {{ instance['docker_logging']['driver'] }}
     - log_opt: {{ instance['docker_logging']['options'] }}
       {%- endif %}
+
+install_grafana_image_render_components_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker exec -t grafana-{{ domain['name'] }}-{{ instance['name'] }} bash -c 'apt update && apt install libnss3 libgbm1 libappindicator3-1 libxshmfence-dev libasound2 -y'
     {%- endfor %}
   {%- endfor %}
 
@@ -185,7 +189,6 @@ nginx_domain_index_{{ loop.index }}:
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
       {%- endfor %}
     {%- endif %}
-
   {%- endfor %}
 
 nginx_reload:
