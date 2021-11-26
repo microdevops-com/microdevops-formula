@@ -178,9 +178,15 @@ static_apps_app_checkout_{{ loop.index }}:
     - rev: {{ app_params['source']['rev'] }}
     - target: {{ app_params['source']['target'] }}
     - branch: {{ app_params['source']['branch'] }}
+            {%- if pillar['force_reset'] is defined %}
+    - force_reset: {{ pillar['force_reset'] }}
+            {%- elif app_params['source']['force_reset'] is defined %}
+    - force_reset: {{ app_params['source']['force_reset'] }}
+            {%- else %}
     - force_reset: True
+            {%- endif %}
     - force_fetch: True
-            {%- if pillar['force_checkout'] is defined and pillar['force_checkout'] %}
+            {%- if (pillar['force_checkout'] is defined and pillar['force_checkout']) or (app_params['source']['force_checkout'] is defined and app_params['source']['force_checkout']) %}
     - force_checkout: True
             {%- endif %}
     - user: {{ app_params['user'] }}

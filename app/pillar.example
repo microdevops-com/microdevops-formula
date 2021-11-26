@@ -178,6 +178,8 @@ app:
       source:
         enabled: True
         git: ssh://git@bitbucket.org/myorg/app_1
+        #force_reset: False # optional, True by default
+        #force_checkout: True # optional, not added by default
         #hg: ssh://hg@bitbucket.org/myorg/app_1 # do not use simultaneously git and hg
         rev: master # Remote repo branch or revision or tag to clone, like origin/{{ rev }}
         target: /var/www/app_1/src
