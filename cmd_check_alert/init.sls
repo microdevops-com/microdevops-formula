@@ -42,7 +42,7 @@ sensu-plugins_ssl_certs_dir:
 
     {%- if grains["os_family"] == "Debian" %}
       # Sensu Plugins embedded doesn't work on arm64, but can be installed manually, see below
-      {%- if grains["oscodename"] not in ["precise"] and grains["osarch"] not in ["arm64"] %}
+      {%- if grains["oscodename"] not in ["precise", "bullseye"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
@@ -65,6 +65,14 @@ sensu-plugins_mkdir_fix:
   cmd.run:
     - name: |
         bash -c 'if [[ ! -e /usr/bin/mkdir ]]; then ln -vs /bin/mkdir /usr/bin/mkdir; else echo /usr/bin/mkdir exists; fi'
+
+    {%- elif grains["oscodename"] == "bullseye" %}
+sensu-plugins_repo:
+  file.managed:
+    - name: /etc/apt/sources.list.d/sensu.list
+    - contents: |
+        deb [signed-by=/usr/share/keyrings/sensu_community-archive-keyring.gpg] https://packagecloud.io/sensu/community/debian/ buster main
+        deb-src [signed-by=/usr/share/keyrings/sensu_community-archive-keyring.gpg] https://packagecloud.io/sensu/community/debian/ buster main
 
     {%- elif grains["os_family"] == "RedHat" %}
 sensu-plugins_repo:
