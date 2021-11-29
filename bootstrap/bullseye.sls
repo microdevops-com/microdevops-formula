@@ -1,4 +1,4 @@
-uptodate:                                                                                                                                                                                                                     [120/94559]
+uptodate:
   pkg.uptodate:
     - refresh: True
 
@@ -58,7 +58,7 @@ pkg_latest:
       - nload
       - lsof
       - dnsutils
-            - psmisc                                                                                                                                                                                                                 [60/94559]
+            - psmisc
       - telnet
       - strace
       - whois
