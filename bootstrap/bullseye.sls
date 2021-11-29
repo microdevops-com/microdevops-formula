@@ -58,7 +58,7 @@ pkg_latest:
       - nload
       - lsof
       - dnsutils
-            - psmisc
+      - psmisc
       - telnet
       - strace
       - whois
