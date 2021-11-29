@@ -50,6 +50,13 @@ sensu-plugins_repo:
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
+      {%- elif grains["oscodename"] == "bullseye" %}
+sensu-plugins_repo:
+  file.managed:
+    - name: /etc/apt/sources.list.d/sensu.list
+    - contents: |
+        deb [signed-by=/usr/share/keyrings/sensu_community-archive-keyring.gpg] https://packagecloud.io/sensu/community/debian/ buster main
+        deb-src [signed-by=/usr/share/keyrings/sensu_community-archive-keyring.gpg] https://packagecloud.io/sensu/community/debian/ buster main
       {%- endif %}
 
       {%- if grains["oscodename"] not in ["precise"] %}
@@ -65,14 +72,6 @@ sensu-plugins_mkdir_fix:
   cmd.run:
     - name: |
         bash -c 'if [[ ! -e /usr/bin/mkdir ]]; then ln -vs /bin/mkdir /usr/bin/mkdir; else echo /usr/bin/mkdir exists; fi'
-
-    {%- elif grains["oscodename"] == "bullseye" %}
-sensu-plugins_repo:
-  file.managed:
-    - name: /etc/apt/sources.list.d/sensu.list
-    - contents: |
-        deb [signed-by=/usr/share/keyrings/sensu_community-archive-keyring.gpg] https://packagecloud.io/sensu/community/debian/ buster main
-        deb-src [signed-by=/usr/share/keyrings/sensu_community-archive-keyring.gpg] https://packagecloud.io/sensu/community/debian/ buster main
 
     {%- elif grains["os_family"] == "RedHat" %}
 sensu-plugins_repo:
