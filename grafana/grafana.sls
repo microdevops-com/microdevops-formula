@@ -97,7 +97,7 @@ nginx_files_2:
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["grafana"]["acme_account"] }}/verify_and_issue.sh grafana {{ domain['name'] }} || true"
+    - name: "/opt/acme/home/{{ pillar["grafana"]["acme_account"] }}/verify_and_issue.sh grafana {{ domain['name'] }}"
     
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
