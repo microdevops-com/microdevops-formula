@@ -129,7 +129,6 @@ mdadm_reconfigure:
     - onchanges:
       - debconf: mdadm_debconf
 
-  {% if 'br_netfilter' not in salt['cmd.shell']('grep br_netfilter /lib/modules/$(uname -r)/modules.builtin') %}
 br_netfilter_module:
   file.line:
     - name: /etc/modules-load.d/modules.conf
@@ -140,7 +139,6 @@ br_netfilter_module:
 br_netfilter_modprobe:
   cmd.run:
     - name: modprobe br_netfilter
-  {% endif %}
 
 net.bridge.bridge-nf-call-arptables:
   sysctl.present:
