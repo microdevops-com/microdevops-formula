@@ -50,7 +50,7 @@ mdadm_test:
 br_netfilter_test:
   cmd.run:
     - name: |
-        {% if grains["oscodename"] != "bullseye" %}lsmod | grep br_netfilter && \ {% endif %}
+        lsmod | grep br_netfilter || grep br_netfilter /lib/modules/$(uname -r)/modules.builtin && \
         grep 0 /proc/sys/net/bridge/bridge-nf-call-arptables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-call-ip6tables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-call-iptables && \
