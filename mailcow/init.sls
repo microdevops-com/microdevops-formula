@@ -375,20 +375,169 @@ mailcow_docker_compose_owerride:
     - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.override.yml
     - contents: |
         version: '2.1'
-    {%- if "haproxy" in pillar["mailcow"] %}
+    {%- if 'docker_logging' in pillar['mailcow'] %}
         services:
-            dovecot-mailcow:
-              ports:
-                - "${IMAP_PORT_HAPROXY:-127.0.0.1:10143}:10143"
-                - "${IMAPS_PORT_HAPROXY:-127.0.0.1:10993}:10993"
-                - "${POP_PORT_HAPROXY:-127.0.0.1:10110}:10110"
-                - "${POPS_PORT_HAPROXY:-127.0.0.1:10995}:10995"
-                - "${SIEVE_PORT_HAPROXY:-127.0.0.1:14190}:14190"
-            postfix-mailcow:
-              ports:
-        #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
-                - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
-                - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
+          unbound-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          mysql-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          redis-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          clamd-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          rspamd-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          php-fpm-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          sogo-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          dovecot-mailcow:
+      {%- if "haproxy" in pillar["mailcow"] %}
+            ports:
+              - "${IMAP_PORT_HAPROXY:-127.0.0.1:10143}:10143"
+              - "${IMAPS_PORT_HAPROXY:-127.0.0.1:10993}:10993"
+              - "${POP_PORT_HAPROXY:-127.0.0.1:10110}:10110"
+              - "${POPS_PORT_HAPROXY:-127.0.0.1:10995}:10995"
+              - "${SIEVE_PORT_HAPROXY:-127.0.0.1:14190}:14190"
+      {%- endif %}
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          postfix-mailcow:
+      {%- if "haproxy" in pillar["mailcow"] %}
+            ports:
+      #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
+              - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
+              - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
+      {%- endif %}
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          memcached-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          nginx-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          acme-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          netfilter-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          watchdog-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          dockerapi-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          solr-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          olefy-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          ofelia-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+          ipv6nat-mailcow:
+            logging:
+              driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
+              options:
+      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+                {{ var_key }}: "{{ var_val }}"
+      {%- endfor %}
+    {%- elif "haproxy" in pillar["mailcow"] %}
+        services:
+          dovecot-mailcow:
+            ports:
+              - "${IMAP_PORT_HAPROXY:-127.0.0.1:10143}:10143"
+              - "${IMAPS_PORT_HAPROXY:-127.0.0.1:10993}:10993"
+              - "${POP_PORT_HAPROXY:-127.0.0.1:10110}:10110"
+              - "${POPS_PORT_HAPROXY:-127.0.0.1:10995}:10995"
+              - "${SIEVE_PORT_HAPROXY:-127.0.0.1:14190}:14190"
+          postfix-mailcow:
+            ports:
+      #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
+              - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
+              - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
     {%- endif %}
         volumes:
           vmail-vol-1:
@@ -525,6 +674,17 @@ postfix_non_smtpd_milters_drweb:
     - pattern: '^ *non_smtpd_milters.*$'
     - repl: 'non_smtpd_milters = $smtpd_milters'
     - append_if_not_found: True
+  {% endif %}
+
+  {% if "clamd_conf" in pillar["mailcow"] %}
+    {%- for var_key, var_val in pillar["mailcow"]["clamd_conf"].items() %}
+clamd_conf_{{ loop.index }}:
+  file.replace:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/clamav/clamd.conf
+    - pattern: '^ *{{ var_key }} .*$'
+    - repl: '{{ var_key }} {{ var_val }}'
+    - append_if_not_found: True
+    {%- endfor %}
   {% endif %}
 
 mailcow_docker_compose_up:
