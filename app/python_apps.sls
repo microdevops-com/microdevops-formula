@@ -170,6 +170,9 @@ python_apps_app_checkout_{{ loop.index }}:
             {%- if (pillar['force_checkout'] is defined and pillar['force_checkout']) or (app_params['source']['force_checkout'] is defined and app_params['source']['force_checkout']) %}
     - force_checkout: True
             {%- endif %}
+            {%- if (pillar['force_clone'] is defined and pillar['force_clone']) or (app_params['source']['force_clone'] is defined and app_params['source']['force_clone']) %}
+    - force_clone: True
+            {%- endif %}
     - user: {{ app_params['user'] }}
           {%- elif (app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none)  %}
   hg.latest:
