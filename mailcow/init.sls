@@ -639,9 +639,9 @@ create_script_rebind_ssl_for_services_in_docker:
         mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_key.key /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
         docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml restart
   {% endif %}
-  {% if "haproxy" in pillar["mailcow"] %}
 
-dovecote_extra_conf:
+  {% if "haproxy" in pillar["mailcow"] %}
+dovecote_extra_conf_haproxy_trusted_networks:
   file.managed:
     - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/dovecot/extra.conf
     - mode: 0644
@@ -654,35 +654,35 @@ haproxy_reload:
     - name: service haproxy reload
   {% endif %}
 
-rspamd_fishing_tank_enabled:
+  {% if pillar["mailcow"]["rspamd"] is defined and "phishing_conf" in pillar["mailcow"]["rspamd"] %}
+    {%- for var_key, var_val in pillar["mailcow"]["rspamd"]["phishing_conf"].items() %}
+rspamd_phishing_conf_{{ loop.index }}:
   file.replace:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/rspamd/local.d/phishing.conf'
-    - pattern: '^ *phishtank_enabled = .*$'
-    - repl: 'phishtank_enabled = {{ pillar["mailcow"]["phishtank_enabled"] }};'
-
-  {% if "drweb_milter_socket" in pillar["mailcow"] %}
-postfix_smtpd_milters_drweb:
-  file.replace:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/postfix/extra.cf
-    - pattern: '^ *smtpd_milters.*$'
-    - repl: 'smtpd_milters = inet:rspamd:9900, inet:{{ pillar["mailcow"]["drweb_milter_socket"] }}'
+    - pattern: '^ *{{ var_key }}.*$'
+    - repl: '{{ var_key }} = {{ var_val }};'
     - append_if_not_found: True
+    {%- endfor %}
+   {% endif %}
 
-postfix_non_smtpd_milters_drweb:
-  file.replace:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/postfix/extra.cf
-    - pattern: '^ *non_smtpd_milters.*$'
-    - repl: 'non_smtpd_milters = $smtpd_milters'
-    - append_if_not_found: True
-  {% endif %}
-
-  {% if "clamd_conf" in pillar["mailcow"] %}
-    {%- for var_key, var_val in pillar["mailcow"]["clamd_conf"].items() %}
+  {% if pillar["mailcow"]["clamd"] is defined and "clamd_conf" in pillar["mailcow"]["clamd"] %}
+    {%- for var_key, var_val in pillar["mailcow"]["clamd"]["clamd_conf"].items() %}
 clamd_conf_{{ loop.index }}:
   file.replace:
     - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/clamav/clamd.conf
-    - pattern: '^ *{{ var_key }} .*$'
+    - pattern: '^ *{{ var_key }}.*$'
     - repl: '{{ var_key }} {{ var_val }}'
+    - append_if_not_found: True
+    {%- endfor %}
+  {% endif %}
+
+  {% if pillar["mailcow"]["postfix"] is defined and "extra_cf" in pillar["mailcow"]["postfix"] %}
+    {%- for var_key, var_val in pillar["mailcow"]["postfix"]["extra_cf"].items() %}
+postfix_extra_cf_{{ loop.index }}:
+  file.replace:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/postfix/extra.cf
+    - pattern: '^ *{{ var_key }}.*$'
+    - repl: '{{ var_key }} = {{ var_val }}'
     - append_if_not_found: True
     {%- endfor %}
   {% endif %}
