@@ -22,7 +22,8 @@ mailcow:
   SOLR_HEAP: 6144                 #2048MB memory for one million objects
   MAILCOW_TZ: Etc/UTC
   haproxy:                        #REMOVE THIS ENTRY IF HAPROXY IS NOT USED
-    EXTERNAL_IP: 1.2.3.4  rspamd:
+    EXTERNAL_IP: 1.2.3.4
+  rspamd:
     phishing_conf:
       phishtank_enabled: 'true'
   clamd:
