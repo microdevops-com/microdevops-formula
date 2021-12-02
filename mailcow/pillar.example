@@ -30,6 +30,8 @@ mailcow:
     clamd_conf:
       DetectPUA: 'no'
       OLE2BlockMacros: 'no'
+    whitelist_ign2:
+      Sanesecurity: 'Junk.41567'
   postfix:
     extra_cf:
       smtpd_milters: "inet:rspamd:9900, inet:2.3.4.5:13333"

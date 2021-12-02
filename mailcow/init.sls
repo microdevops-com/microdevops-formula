@@ -3,17 +3,20 @@ docker_install_00:
   file.directory:
     - name: /etc/docker
     - mode: 700
+
 docker_install_01:
   file.managed:
     - name: /etc/docker/daemon.json
     - contents: |
         { "iptables": true, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
+
 docker_install_02:
   pkgrepo.managed:
     - humanname: Docker CE Repository
     - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains["os"]|lower }} {{ grains["oscodename"] }} stable
     - file: /etc/apt/sources.list.d/docker-ce.list
     - key_url: https://download.docker.com/linux/{{ grains["os"]|lower }}/gpg
+
 docker_install_03:
   pkg.installed:
     - refresh: True
@@ -21,26 +24,32 @@ docker_install_03:
     - pkgs:
         - docker-ce: "{{ pillar["mailcow"]["docker-ce_version"] }}*"
         - python3-pip
+
 docker_pip_install:
   pip.installed:
     - name: docker-py >= 1.10
     - reload_modules: True
+
 docker_install_3:
   service.running:
     - name: docker
+
 docker_install_4:
   cmd.run:
     - name: systemctl restart docker
     - onchanges:
         - file: /etc/docker/daemon.json
+
 postfix_stop_and_disable:
   service.dead:
     - name: postfix
       enable: False
+
 nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
+
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
@@ -91,16 +100,17 @@ nginx_files_1:
                 }
             }
         }
+
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
   {% if "haproxy" in pillar["mailcow"] %}
-
 haproxy_install:
   pkg.installed:
     - pkgs:
       - haproxy
+
 haproxy_config:
   file.managed:
     - name: /etc/haproxy/haproxy.conf
@@ -133,7 +143,6 @@ haproxy_config:
                 errorfile 502 /etc/haproxy/errors/502.http
                 errorfile 503 /etc/haproxy/errors/503.http
                 errorfile 504 /etc/haproxy/errors/504.http
-
         listen imap
                 bind {{ pillar["mailcow"]["haproxy"]["EXTERNAL_IP"] }}:143
                 server imap 127.0.0.1:10143 send-proxy
@@ -156,7 +165,6 @@ haproxy_config:
                 bind {{ pillar["mailcow"]["haproxy"]["EXTERNAL_IP"] }}:465
                 server smtps 127.0.0.1:10465 send-proxy
   {% endif %}
-
 
 nginx_cert:
   cmd.run:
@@ -444,7 +452,7 @@ mailcow_docker_compose_owerride:
           postfix-mailcow:
       {%- if "haproxy" in pillar["mailcow"] %}
             ports:
-      #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
+            {#- "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"#}
               - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
               - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
       {%- endif %}
@@ -608,7 +616,6 @@ mailcow_docker_compose_owerride:
                 device: './volumes/sogo_backup'
 
   {% if pillar["mailcow"]["SKIP_LETS_ENCRYPT"] == 'y' %}
-
 bind_ssl_certificate_for_services_in_docker:
   mount.mounted:
     - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
@@ -663,18 +670,30 @@ rspamd_phishing_conf_{{ loop.index }}:
     - repl: '{{ var_key }} = {{ var_val }};'
     - append_if_not_found: True
     {%- endfor %}
-   {% endif %}
+  {% endif %}
 
-  {% if pillar["mailcow"]["clamd"] is defined and "clamd_conf" in pillar["mailcow"]["clamd"] %}
-    {%- for var_key, var_val in pillar["mailcow"]["clamd"]["clamd_conf"].items() %}
+  {% if pillar["mailcow"]["clamd"] is defined %}
+    {% if "clamd_conf" in pillar["mailcow"]["clamd"] %}
+      {%- for var_key, var_val in pillar["mailcow"]["clamd"]["clamd_conf"].items() %}
 clamd_conf_{{ loop.index }}:
   file.replace:
     - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/clamav/clamd.conf
     - pattern: '^ *{{ var_key }}.*$'
     - repl: '{{ var_key }} {{ var_val }}'
     - append_if_not_found: True
-    {%- endfor %}
-  {% endif %}
+      {%- endfor %}
+    {% endif %}
+
+    {% if "whitelist_ign2" in pillar["mailcow"]["clamd"] %}
+      {%- for var_key, var_val in pillar["mailcow"]["clamd"]["whitelist_ign2"].items() %}
+clamd_whitelist_ign2_{{ loop.index }}:
+  file.replace:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/clamav/whitelist.ign2
+    - pattern: '^ *{{ var_key }}\.{{ var_val }}.*$'
+    - repl: '{{ var_key }}.{{ var_val }}'
+    - append_if_not_found: True
+      {%- endfor %}
+    {% endif %}
 
   {% if pillar["mailcow"]["postfix"] is defined and "extra_cf" in pillar["mailcow"]["postfix"] %}
     {%- for var_key, var_val in pillar["mailcow"]["postfix"]["extra_cf"].items() %}
