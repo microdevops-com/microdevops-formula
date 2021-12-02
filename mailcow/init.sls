@@ -694,6 +694,7 @@ clamd_whitelist_ign2_{{ loop.index }}:
     - append_if_not_found: True
       {%- endfor %}
     {% endif %}
+  {% endif %}
 
   {% if pillar["mailcow"]["postfix"] is defined and "extra_cf" in pillar["mailcow"]["postfix"] %}
     {%- for var_key, var_val in pillar["mailcow"]["postfix"]["extra_cf"].items() %}
