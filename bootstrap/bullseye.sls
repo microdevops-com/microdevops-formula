@@ -177,7 +177,6 @@ net.bridge.bridge-nf-filter-vlan-tagged:
 net.bridge.bridge-nf-pass-vlan-input-dev:
   sysctl.present:
     - value: 1
-    {#{% elif 'firewall_bridge_filter' not in pillar["bootstrap"] or pillar["bootstrap"]['firewall_bridge_filter'] is not True %}#}
   {% else %}
 net.bridge.bridge-nf-call-arptables:
     sysctl.present:
