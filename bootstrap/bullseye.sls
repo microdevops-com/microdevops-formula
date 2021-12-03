@@ -153,28 +153,54 @@ br_netfilter_modprobe:
     - name: modprobe br_netfilter
   {% endif %}
 
+  {% if 'firewall_bridge_filter' in pillar["bootstrap"] and pillar["bootstrap"]['firewall_bridge_filter'] %}
 net.bridge.bridge-nf-call-arptables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-call-ip6tables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-call-iptables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-filter-pppoe-tagged:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-filter-vlan-tagged:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-pass-vlan-input-dev:
   sysctl.present:
-    - value: 0
+    - value: 1
+    {#{% elif 'firewall_bridge_filter' not in pillar["bootstrap"] or pillar["bootstrap"]['firewall_bridge_filter'] is not True %}#}
+  {% else %}
+net.bridge.bridge-nf-call-arptables:
+    sysctl.present:
+          - value: 0
 
+net.bridge.bridge-nf-call-ip6tables:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-call-iptables:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-filter-pppoe-tagged:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-filter-vlan-tagged:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-pass-vlan-input-dev:
+    sysctl.present:
+          - value: 0
+  {% endif %}
 {% endif %}
