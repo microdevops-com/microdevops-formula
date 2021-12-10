@@ -1,5 +1,9 @@
 mailcow:
   docker-ce_version: 5:19.03.13
+  docker_logging:
+    driver: "json-file"
+    options:
+      tag: "{% raw -%}{{.ImageName}}|{{.Name}}|tst{%- endraw %}"
   servername: mailcow.example.com
   acme_account: example.com
   HTTP_PORT: 8080                 #ONLY PORT
@@ -19,5 +23,17 @@ mailcow:
   MAILCOW_TZ: Etc/UTC
   haproxy:                        #REMOVE THIS ENTRY IF HAPROXY IS NOT USED
     EXTERNAL_IP: 1.2.3.4
-  phishtank_enabled: 'true'
-  drweb_milter_socket: 2.3.4.5:13333
+  rspamd:
+    phishing_conf:
+      phishtank_enabled: 'true'
+  clamd:
+    clamd_conf:
+      DetectPUA: 'no'
+      OLE2BlockMacros: 'no'
+    whitelist_ign2:
+      Sanesecurity: 'Junk.41567'
+  postfix:
+    extra_cf:
+      smtpd_milters: "inet:rspamd:9900, inet:2.3.4.5:13333"
+      non_smtpd_milters: '$smtpd_milters'
+      postscreen_dnsbl_action: 'ignore'

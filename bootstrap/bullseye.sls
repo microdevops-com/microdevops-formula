@@ -140,28 +140,66 @@ mdadm_reconfigure:
     - onchanges:
       - debconf: mdadm_debconf
 
+  {% if 'br_netfilter' not in salt['cmd.shell']('grep br_netfilter /lib/modules/$(uname -r)/modules.builtin') %}
+br_netfilter_module:
+  file.line:
+    - name: /etc/modules-load.d/modules.conf
+    - content: br_netfilter
+    - mode: ensure
+    - after: '^#$'
+
+br_netfilter_modprobe:
+  cmd.run:
+    - name: modprobe br_netfilter
+  {% endif %}
+
+  {% if 'firewall_bridge_filter' in pillar["bootstrap"] and pillar["bootstrap"]['firewall_bridge_filter'] %}
 net.bridge.bridge-nf-call-arptables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-call-ip6tables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-call-iptables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-filter-pppoe-tagged:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-filter-vlan-tagged:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-pass-vlan-input-dev:
   sysctl.present:
-    - value: 0
+    - value: 1
+  {% else %}
+net.bridge.bridge-nf-call-arptables:
+    sysctl.present:
+          - value: 0
 
+net.bridge.bridge-nf-call-ip6tables:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-call-iptables:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-filter-pppoe-tagged:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-filter-vlan-tagged:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-pass-vlan-input-dev:
+    sysctl.present:
+          - value: 0
+  {% endif %}
 {% endif %}

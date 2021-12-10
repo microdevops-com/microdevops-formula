@@ -50,12 +50,20 @@ mdadm_test:
 br_netfilter_test:
   cmd.run:
     - name: |
-        {% if grains["oscodename"] != "bullseye" %}lsmod | grep br_netfilter && \ {% endif %}
+        lsmod | grep br_netfilter || grep br_netfilter /lib/modules/$(uname -r)/modules.builtin && \
+  {% if 'firewall_bridge_filter' in pillar["bootstrap"] and pillar["bootstrap"]['firewall_bridge_filter'] %}
+        grep 1 /proc/sys/net/bridge/bridge-nf-call-arptables && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-call-ip6tables && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-call-iptables && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-filter-pppoe-tagged && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-filter-vlan-tagged && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-pass-vlan-input-dev
+  {% else %}
         grep 0 /proc/sys/net/bridge/bridge-nf-call-arptables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-call-ip6tables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-call-iptables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-filter-pppoe-tagged && \
         grep 0 /proc/sys/net/bridge/bridge-nf-filter-vlan-tagged && \
         grep 0 /proc/sys/net/bridge/bridge-nf-pass-vlan-input-dev
-
+  {% endif %}
 {% endif %}
