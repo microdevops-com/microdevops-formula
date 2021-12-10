@@ -1,4 +1,4 @@
-{% if pillar["ufw"] is defined %}
+{% if pillar["ufw"] is defined and pillar["_errors"] is not defined %}
 
   # Import deprecated ufw_simple rules if enabled
   {%- if "import_ufw_simple" in pillar["ufw"] and pillar["ufw"]["import_ufw_simple"] and pillar["ufw_simple"] is defined %}
@@ -324,6 +324,16 @@ exec_after:
   {% endif %}
 
 {% else %}
+  {%- if pillar["_errors"] is defined %}
+ufw_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        ERROR: There are pillar errors, so nothing has been done.
+
+  {%- else %}
 ufw_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
@@ -332,4 +342,5 @@ ufw_nothing_done_info:
     - comment: |
         INFO: This state was not configured with pillar, so nothing has been done. But it is OK.
 
+  {%- endif %}
 {% endif %}
