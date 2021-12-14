@@ -95,7 +95,7 @@ dump_db_cron:
 
 dump_files_cron:
   cron.present:
-    - name: docker cp percona-{{ domain['name'] }}:/srv /var/pmm_backup/ > /var/log/cron.log 2>&1
+    - name: docker cp percona-{{ domain['name'] }}:/srv /var/pmm_backup/ > /var/log/pmm_backup.log 2>&1
     - user: root
     - minute: 0
     - hour: 3
