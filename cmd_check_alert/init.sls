@@ -32,9 +32,17 @@ cmd_check_alert_common_cron_absent:
   {%- endfor %}
 
   {%- if sensu_plugins_needed|length > 0 %}
+sensu-plugins_ssl_certs_dir:
+  file.directory:
+    - name: /opt/sensu-plugins-ruby/embedded/ssl/certs
+    - user: root
+    - group: root
+    - mode: 0755
+    - makedirs: True
+
     {%- if grains["os_family"] == "Debian" %}
       # Sensu Plugins embedded doesn't work on arm64, but can be installed manually, see below
-      {%- if grains["oscodename"] not in ["precise"] and grains["osarch"] not in ["arm64"] %}
+      {%- if grains["oscodename"] not in ["precise", "buster", "bullseye"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
@@ -42,15 +50,24 @@ sensu-plugins_repo:
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
-
+      {%- elif grains["oscodename"] in ["buster", "bullseye"] %}
+sensu-plugins_repo:
+  pkgrepo.managed:
+    - humanname: Sensu Plugins
+    - name: deb https://packagecloud.io/sensu/community/{{ grains["os"]|lower }}/ buster main
+    - file: /etc/apt/sources.list.d/sensu_community.list
+    - key_url: https://packagecloud.io/sensu/community/gpgkey
+    - clean_file: True
       {%- endif %}
 
+      {%- if grains["oscodename"] not in ["precise"] %}
 sensu-plugins_libc_dep:
   pkg.installed:
     - pkgs:
         - libc6-dev
         - python3-pip
         - python3-setuptools
+      {%- endif %}
 
 sensu-plugins_mkdir_fix:
   cmd.run:
@@ -99,6 +116,19 @@ sensu-plugins_install_{{ loop.index }}_patch_smart_1:
     - name: /usr/local/rvm/gems/ruby-2.4.0/gems/sensu-plugins-disk-checks-5.1.4/bin/check-smart.rb
           {%- endif %}
     - source: salt://cmd_check_alert/files/check-smart.rb
+    - create: False
+    - show_changes: True
+
+        {%- endif %}
+        {%- if plugin == "http" %}
+sensu-plugins_install_{{ loop.index }}_patch_http_1:
+  file.managed:
+          {%- if grains["osarch"] not in ["arm64"] %}
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-http-6.1.0/bin/check-http.rb
+          {%- else %}
+    - name: /usr/local/rvm/gems/ruby-2.4.0/gems/sensu-plugins-http-6.1.0/bin/check-http.rb
+          {%- endif %}
+    - source: salt://cmd_check_alert/files/check-http.rb
     - create: False
     - show_changes: True
 

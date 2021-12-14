@@ -1,4 +1,4 @@
-{% if pillar["ufw"] is defined %}
+{% if pillar["ufw"] is defined and pillar["_errors"] is not defined %}
 
   # Import deprecated ufw_simple rules if enabled
   {%- if "import_ufw_simple" in pillar["ufw"] and pillar["ufw"]["import_ufw_simple"] and pillar["ufw_simple"] is defined %}
@@ -47,19 +47,6 @@ ufw_pkg_latest:
     - pkgs:
         - ufw
 
-  # Manage /etc/ufw/ufw.conf
-ufw_conf_managed:
-  file.managed:
-    - name: /etc/ufw/ufw.conf
-    - source: salt://ufw/files/etc_ufw_ufw.conf
-    - mode: 0644
-    - template: jinja
-    - defaults:
-  {%- if "loglevel" in pillar["ufw"] %}
-        LOGLEVEL: {{ pillar["ufw"]["loglevel"] }}
-  {%- else %}
-        LOGLEVEL: "off"
-  {%- endif %}
 
   # Enable ip forwarding if nat or custom nat rules
 ufw_ip_fwd_managed_file_1:
@@ -291,6 +278,16 @@ ufw_user6_rules_managed:
       - file: /etc/ufw/user.rules.src
       - file: /etc/ufw/user.rules.py
 
+  # Manage /etc/ufw/ufw.conf
+ufw_conf_managed:
+  file.managed:
+    - name: /etc/ufw/ufw.conf
+    - source: salt://ufw/files/etc_ufw_ufw.conf
+    - mode: 0644
+    - template: jinja
+    - defaults:
+        LOGLEVEL: {{ pillar["ufw"].get("loglevel", "'off'") }}
+
   # Reload ufw on any file change
 ufw_reload:
   cmd.run:
@@ -327,6 +324,16 @@ exec_after:
   {% endif %}
 
 {% else %}
+  {%- if pillar["_errors"] is defined %}
+ufw_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        ERROR: There are pillar errors, so nothing has been done.
+
+  {%- else %}
 ufw_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
@@ -335,4 +342,5 @@ ufw_nothing_done_info:
     - comment: |
         INFO: This state was not configured with pillar, so nothing has been done. But it is OK.
 
+  {%- endif %}
 {% endif %}

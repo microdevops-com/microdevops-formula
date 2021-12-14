@@ -94,13 +94,7 @@ pkg_latest:
 full_hostname:
   cmd.run:
     - name: |
-{% if "hostname" in pillar["bootstrap"] %}
         echo "{{ pillar["bootstrap"]["hostname"] }}" > /etc/hostname && hostname $(cat /etc/hostname)
-{% else %}
-        cat /etc/hostname | grep -q {{ pillar["bootstrap"]["network"]["domain"] }} && \
-        echo 'hostname is already full' || \
-        ( echo $(cat /etc/hostname | tr -d '\n').{{ pillar["bootstrap"]["network"]["domain"] }} > /etc/hostname && hostname $(cat /etc/hostname) )
-{% endif %}
 
 {% if grains["virtual"] == "physical" %}
 swapiness:
@@ -146,28 +140,53 @@ br_netfilter_modprobe:
   cmd.run:
     - name: modprobe br_netfilter
 
+  {% if 'firewall_bridge_filter' in pillar["bootstrap"] and pillar["bootstrap"]['firewall_bridge_filter'] %}
 net.bridge.bridge-nf-call-arptables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-call-ip6tables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-call-iptables:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-filter-pppoe-tagged:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-filter-vlan-tagged:
   sysctl.present:
-    - value: 0
+    - value: 1
 
 net.bridge.bridge-nf-pass-vlan-input-dev:
   sysctl.present:
-    - value: 0
+    - value: 1
+  {% else %}
+net.bridge.bridge-nf-call-arptables:
+    sysctl.present:
+          - value: 0
 
+net.bridge.bridge-nf-call-ip6tables:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-call-iptables:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-filter-pppoe-tagged:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-filter-vlan-tagged:
+    sysctl.present:
+          - value: 0
+
+net.bridge.bridge-nf-pass-vlan-input-dev:
+    sysctl.present:
+          - value: 0
+  {% endif %}
 {% endif %}

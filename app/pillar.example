@@ -135,10 +135,10 @@ app:
           rotate_count: 10 # 31 by default
           rotate_when: weekly # daily by default
         ssl: # commercial cert example
-          certs_dir: app/example_php-fpm_app_1/ssl # those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
-          ssl_cert: ssl/app_1/app_1.crt # mandatory, in terms of nginx, e.g. as for files abobe, or you can use absolute path
+          certs_dir: app/example_php-fpm_app_1/ssl # optional, those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
+          ssl_cert: ssl/app_1/app_1.crt # mandatory, in terms of nginx, e.g. as for files above, or you can use absolute path
           ssl_key: ssl/app_1/app_1.key # mandatory
-          ssl_chain: ssl/app_1/gd_bundle-g2-g1.crt # mandatory
+          ssl_chain: ssl/app_1/gd_bundle-g2-g1.crt # optional
           certbot_for_301: True
           certbot_email: admin@example.com
         #ssl: # certbot example
@@ -146,6 +146,7 @@ app:
           #certbot_email: admin@example.com
         #ssl: # acme.sh example
           #acme: True
+          #acme_account: example
           #acme_run_ready: True
       virtualenv: # python_apps only
         pyenv_version: 3.6.7
@@ -177,6 +178,9 @@ app:
       source:
         enabled: True
         git: ssh://git@bitbucket.org/myorg/app_1
+        #force_reset: False # optional, True by default
+        #force_checkout: True # optional, not added by default
+        #force_clone: True # optional, not added by default
         #hg: ssh://hg@bitbucket.org/myorg/app_1 # do not use simultaneously git and hg
         rev: master # Remote repo branch or revision or tag to clone, like origin/{{ rev }}
         target: /var/www/app_1/src

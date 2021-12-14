@@ -1,0 +1,109 @@
+# To create the initial bootstrap token, use the acl bootstrap command on one of the servers.
+# https://learn.hashicorp.com/tutorials/consul/access-control-setup-production
+#
+# To enable gossip encryption, you need to use an encryption key when starting the Consul agent
+# https://learn.hashicorp.com/tutorials/consul/gossip-encryption-secure?in=consul/security
+#
+# use certgenerator.sh to generate TLS certificates and keys
+
+{%
+set client_nodes = {
+  'vault1.example.com': 1.2.3.4,
+  'vault2.example.com': 2.3.4.5
+}
+%}
+{%
+set server_nodes = {
+  'consul1.example.com': 3.4.5.6,
+  'consul2.example.com': 4.5.6.7,
+  'consul3.example.com': 5.6.7.8
+}
+%}
+{% set all_nodes = dict() %}
+{% set _ = all_nodes.update(server_nodes) %}
+{% set _ = all_nodes.update(client_nodes) %}
+
+ufw:
+  import_ufw_simple: True
+  allow:
+    cluster_consul_tcp:
+      proto: 'tcp'
+      from:
+        {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
+        {{ key }}: {{ val }}
+        {%- endif %}{%- endfor %}
+      to_port: '8300,8301,8302,8500,8501,8600'
+    cluster_consul_udp:
+      proto: 'udp'
+      from:
+        {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
+        {{ key }}: {{ val }}
+        {%- endif %}{%- endfor %}
+      to_port: '8301,8302,8600'
+
+consul:
+  name: {{ grains['fqdn'] }}
+  tls_dir: 'salt://consul/tls/consul.example.com'
+  docker-ce_version: 5:20.10.9
+  image: consul
+  command: agent
+  agents:
+    servers: {{ server_nodes }}
+    clients: {{ client_nodes }}
+  config: |
+    {
+      "node_name": "{{ grains['host'] }}",
+      "bind_addr": "0.0.0.0",
+      "datacenter": "dc1",
+      "domain": "consul",
+      {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] == key %}
+      "advertise_addr": "{{ val }}",{% endif %}{% endfor %}
+      "client_addr": "0.0.0.0",
+      "ports": {
+        "http": -1,
+        "https": 8501
+      },
+      "connect": { "enabled": true },
+      "retry_join": [{%- for key, val in server_nodes.items() %}{%- if grains['fqdn'] != key %}"{{ key }}", {% endif %}{%- endfor %}],
+      "telemetry": { "disable_compat_1.9": true },
+      {%- for key, val in server_nodes.items() %}{%- if grains['fqdn'] == key %}
+      "addresses": {
+        "grpc": "{{ val }}",
+        "http": "0.0.0.0",
+        "https": "0.0.0.0"
+      },      
+      "server": true,
+      "ui_config": { "enabled": true },
+      "bootstrap_expect": 2,
+      "enable_script_checks": false,
+      "disable_remote_exec": true,
+      "acl": {
+        "enabled": true,
+        "default_policy": "allow",
+        "enable_token_persistence": true
+      },
+      "auto_encrypt": { "allow_tls": true },
+      "cert_file": "/consul/certs/{{ grains['fqdn'] }}.crt",
+      "key_file": "/consul/certs/{{ grains['fqdn'] }}.key",{% endif %}{% endfor %}
+      {%- for key, val in client_nodes.items() %}{%- if grains['fqdn'] == key %}
+      "server": false,
+      "acl": {
+        "enabled": true,
+        "default_policy": "allow",
+        "enable_token_persistence": true,
+        "tokens": {
+          "default": "92f75289-31a6-7fcd-584a-d98f41ac96c6"
+        }
+      },
+      "auto_encrypt": { "tls": true },
+      "cert_file": "/consul/certs/agent-client.crt",
+      "key_file": "/consul/certs/agent-client.key",{% endif %}{% endfor %}
+      "ca_file": "/consul/certs/ca.crt",
+      "encrypt": "MY2dfsdfgfrtherhnbyunmftjmfyeZDiJBLR5WRvnx8=",
+      "verify_incoming": false,
+      "verify_incoming_rpc": true,
+      "verify_outgoing": true,
+      "verify_server_hostname": true,
+      "log_level": "DEBUG",
+      "log_file": "/consul/logs/consul.log"
+    }

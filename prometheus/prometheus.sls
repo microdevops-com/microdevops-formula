@@ -8,7 +8,7 @@ docker_install_01:
   file.managed:
     - name: /etc/docker/daemon.json
     - contents: |
-        {"iptables": false}
+        { "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
 
 docker_install_1:
   pkgrepo.managed:
@@ -23,8 +23,7 @@ docker_install_2:
     - reload_modules: True
     - pkgs:
         - docker-ce: '{{ pillar['prometheus']['docker-ce_version'] }}*'
-        - python-pip
-        - curl
+        - python3-pip
         # xenial has 1.9 package, it is not sufficiant for docker networks, so we need installing pip manually
         #- python-docker
                 
@@ -128,6 +127,31 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['statsd-exporter']['port'] }}/;
                 }
       {%- endif %}
+      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+                location /{{ instance['name'] }}/blackbox-exporter/ {
+        {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus {{ instance['name'] }}";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+        {%- endif %}
+                    # web route is not even planned for blackbox-exporter, using nginx sub_filter
+                    sub_filter_once off;
+                    sub_filter 'href="/metrics' 'href="/{{ instance['name'] }}/blackbox-exporter/metrics';
+                    proxy_pass http://localhost:{{ instance['blackbox-exporter']['port'] }}/;
+                }
+      {%- endif %}
+      {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
+                location /{{ instance['name'] }}/pagespeed-exporter/ {
+        {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus {{ instance['name'] }}";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+        {%- endif %}
+                    # web route is not even planned for pagespeed-exporter, using nginx sub_filter
+                    sub_filter_once off;
+                    sub_filter 'href="/probe' 'href="/{{ instance['name'] }}/pagespeed-exporter/probe';
+                    sub_filter 'href="/metrics' 'href="/{{ instance['name'] }}/pagespeed-exporter/metrics';
+                    proxy_pass http://localhost:{{ instance['pagespeed-exporter']['port'] }}/;
+                }
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
             }
@@ -141,7 +165,7 @@ nginx_files_2:
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: 'openssl verify -CAfile /opt/acme/cert/prometheus_{{ domain['name'] }}_ca.cer /opt/acme/cert/prometheus_{{ domain['name'] }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/prometheus_{{ domain['name'] }}_cert.cer --key-file /opt/acme/cert/prometheus_{{ domain['name'] }}_key.key --ca-file /opt/acme/cert/prometheus_{{ domain['name'] }}_ca.cer --fullchain-file /opt/acme/cert/prometheus_{{ domain['name'] }}_fullchain.cer --issue -d {{ domain['name'] }} || true'
+    - name: "/opt/acme/home/{{ domain['acme_account'] }}/verify_and_issue.sh prometheus {{ domain['name'] }} || true"
 
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
@@ -177,6 +201,26 @@ prometheus_statsd-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
     - merge_if_exists: False
     - formatter: yaml
     - dataset: {{ instance['statsd-exporter']['mapping-config'] }}
+      {%- endif %}
+
+      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+prometheus_blackbox-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
+  file.directory:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-blackbox-exporter
+    - mode: 755
+    - makedirs: True
+
+prometheus_blackbox-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
+  file.serialize:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-blackbox-exporter/config.yml
+    - user: root
+    - group: root
+    - mode: 644
+    - show_changes: True
+    - create: True
+    - merge_if_exists: False
+    - formatter: yaml
+    - dataset: {{ instance['blackbox-exporter']['config'] }}
       {%- endif %}
 
 prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
@@ -274,7 +318,46 @@ prometheus_statsd-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter:/statsd-exporter-data:rw
     - command: --statsd.mapping-config=/statsd-exporter-data/statsd_mapping.yml
       {%- endif %}
+      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+prometheus_blackbox-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['blackbox-exporter']['image'] }}
 
+prometheus_blackbox-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: blackbox-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - user: root
+    - image: {{ instance['blackbox-exporter']['image'] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - publish:
+        - 127.0.0.1:{{ instance['blackbox-exporter']['port'] }}:9115/tcp
+    - binds:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-blackbox-exporter/config.yml:/blackbox-exporter/config.yml:rw
+    - command: --config.file=/blackbox-exporter/config.yml
+      {%- endif %}
+      {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
+prometheus_pagespeed-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['pagespeed-exporter']['image'] }}
+
+prometheus_pagespeed-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: pagespeed-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - user: root
+    - image: {{ instance['pagespeed-exporter']['image'] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - publish:
+        - 127.0.0.1:{{ instance['pagespeed-exporter']['port'] }}:9271/tcp
+        {%- if 'apikey' in instance['pagespeed-exporter'] %}
+    - command: -api-key {{ instance['pagespeed-exporter']['apikey'] }}
+        {%- endif %}
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 
@@ -283,6 +366,9 @@ nginx_domain_index_{{ loop.index }}:
   file.managed:
     - name: /opt/prometheus/{{ domain['name'] }}/index.html
     - contents: |
+    {%- if 'default_instance' in domain %}
+        <meta http-equiv="refresh" content="0; url='https://{{ domain['name'] }}/{{ domain['default_instance'] }}/targets'" />
+    {%- endif %}
     {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
       {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
@@ -290,6 +376,12 @@ nginx_domain_index_{{ loop.index }}:
       {%- endif %}
       {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
         <a href="{{ instance['name'] }}/statsd-exporter/">{{ instance['name'] }}/statsd-exporter</a><br>
+      {%- endif %}
+      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+        <a href="{{ instance['name'] }}/blackbox-exporter/">{{ instance['name'] }}/blackbox-exporter</a><br>
+      {%- endif %}
+      {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
+        <a href="{{ instance['name'] }}/pagespeed-exporter/">{{ instance['name'] }}/pagespeed-exporter</a><br>
       {%- endif %}
     {%- endfor %}
   {%- endfor %}

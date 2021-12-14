@@ -178,8 +178,20 @@ php-fpm_apps_app_checkout_{{ loop.index }}:
     - rev: {{ app_params['source']['rev'] }}
     - target: {{ app_params['source']['target'] }}
     - branch: {{ app_params['source']['branch'] }}
+            {%- if pillar['force_reset'] is defined %}
+    - force_reset: {{ pillar['force_reset'] }}
+            {%- elif app_params['source']['force_reset'] is defined %}
+    - force_reset: {{ app_params['source']['force_reset'] }}
+            {%- else %}
     - force_reset: True
+            {%- endif %}
     - force_fetch: True
+            {%- if (pillar['force_checkout'] is defined and pillar['force_checkout']) or (app_params['source']['force_checkout'] is defined and app_params['source']['force_checkout']) %}
+    - force_checkout: True
+            {%- endif %}
+            {%- if (pillar['force_clone'] is defined and pillar['force_clone']) or (app_params['source']['force_clone'] is defined and app_params['source']['force_clone']) %}
+    - force_clone: True
+            {%- endif %}
     - user: {{ app_params['user'] }}
           {%- elif (app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none)  %}
   hg.latest:
@@ -263,11 +275,11 @@ php-fpm_apps_app_nginx_ssl_dir_{{ loop.index }}:
         {%- set server_name_301 = app_params['nginx'].get('server_name_301', phpfpm_app ~ '.example.com') %}
         {%- if
                (app_params['nginx']['ssl'] is defined) and (app_params['nginx']['ssl'] is not none) and
-               (app_params['nginx']['ssl']['certs_dir'] is defined) and (app_params['nginx']['ssl']['certs_dir'] is not none) and
                (app_params['nginx']['ssl']['ssl_cert'] is defined) and (app_params['nginx']['ssl']['ssl_cert'] is not none) and
-               (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none) and
-               (app_params['nginx']['ssl']['ssl_chain'] is defined) and (app_params['nginx']['ssl']['ssl_chain'] is not none)
+               (app_params['nginx']['ssl']['ssl_key'] is defined) and (app_params['nginx']['ssl']['ssl_key'] is not none)
         %}
+
+           {%- if app_params['nginx']['ssl']['certs_dir'] is defined and app_params['nginx']['ssl']['certs_dir'] is not none %}
 php-fpm_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
   file.recurse:
     - name: '/etc/nginx/ssl/{{ phpfpm_app }}'
@@ -276,6 +288,7 @@ php-fpm_apps_app_nginx_ssl_certs_copy_{{ loop.index }}:
     - group: root
     - dir_mode: 700
     - file_mode: 600
+           {%- endif %}
 
 php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
   file.managed:
@@ -285,7 +298,7 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
         server_name_301: '{{ server_name_301 }}'
         nginx_root: {{ app_params['nginx']['root'] }}
         access_log: {{ app_params['nginx']['access_log'] }}
@@ -295,10 +308,15 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
         app_root: {{ app_params['app_root'] }}
         ssl_cert: {{ app_params['nginx']['ssl']['ssl_cert'] }}
         ssl_key: {{ app_params['nginx']['ssl']['ssl_key'] }}
-        ssl_chain: {{ app_params['nginx']['ssl']['ssl_chain'] }}
         ssl_cert_301: '/etc/nginx/ssl/{{ phpfpm_app }}/301_fullchain.pem'
         ssl_key_301: '/etc/nginx/ssl/{{ phpfpm_app }}/301_privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+        ssl_chain: {{ app_params['nginx']['ssl'].get('ssl_chain', '') }}
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
 
           {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ phpfpm_app ~ '/301_fullchain.pem') %}
 php-fpm_apps_app_nginx_ssl_link_1_{{ loop.index }}:
@@ -364,7 +382,7 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
         server_name_301: '{{ server_name_301 }}'
         nginx_root: {{ app_params['nginx']['root'] }}
         access_log: {{ app_params['nginx']['access_log'] }}
@@ -375,6 +393,11 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
         ssl_cert: '/etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem'
         ssl_key: '/etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
 
           {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ phpfpm_app ~ '/fullchain.pem') %}
 php-fpm_apps_app_nginx_ssl_link_1_{{ loop.index }}:
@@ -439,7 +462,7 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
           {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
         server_name_301: '{{ app_params['nginx']['server_name_301'] }}'
           {%- else %}
@@ -454,6 +477,11 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
         ssl_cert: '/etc/nginx/ssl/{{ phpfpm_app }}/fullchain.pem'
         ssl_key: '/etc/nginx/ssl/{{ phpfpm_app }}/privkey.pem'
         auth_basic_block: '{{ auth_basic_block }}'
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
 
           {# at least we have snakeoil, if cert req fails #}
           {%- if not salt['file.file_exists']('/etc/nginx/ssl/' ~ phpfpm_app ~ '/fullchain.pem') %}
@@ -477,10 +505,10 @@ php-fpm_apps_app_acme_run_{{ loop.index }}:
     - shell: '/bin/bash'
             {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
     - name: |
-        openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
+        openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/{{ app_params['nginx']['ssl']['acme_account'] }}/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
             {%- else %}
     - name: |
-        openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
+        openssl verify -CAfile /opt/acme/cert/{{ phpfpm_app }}_ca.cer /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/{{ app_params['nginx']['ssl']['acme_account'] }}/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ phpfpm_app }}_cert.cer --key-file /opt/acme/cert/{{ phpfpm_app }}_key.key --ca-file /opt/acme/cert/{{ phpfpm_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ phpfpm_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
             {%- endif %}
 
 php-fpm_apps_app_acme_replace_symlink_1_{{ loop.index }}:
@@ -503,7 +531,7 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
     - source: 'salt://{{ app_params['nginx']['vhost_config'] }}'
     - template: jinja
     - defaults:
-        server_name: {{ app_params['nginx']['server_name'] }}
+        server_name: '{{ app_params['nginx']['server_name'] }}'
         server_name_301: '{{ server_name_301 }}'
         nginx_root: {{ app_params['nginx']['root'] }}
         access_log: {{ app_params['nginx']['access_log'] }}
@@ -512,6 +540,11 @@ php-fpm_apps_app_nginx_vhost_config_{{ loop.index }}:
         app_name: {{ phpfpm_app }}
         app_root: {{ app_params['app_root'] }}
         auth_basic_block: '{{ auth_basic_block }}'
+          {%- if app_params['nginx']['vhost_defaults'] is defined and app_params['nginx']['vhost_defaults'] is not none %}
+            {%- for def_key, def_val in app_params['nginx']['vhost_defaults'].items() %}
+        {{ def_key }}: {{ def_val }}
+            {%- endfor %}
+          {%- endif %}
         {%- endif %}
 
         {%- set php_admin = app_params['pool'].get('php_admin', '; no other admin vals') %}

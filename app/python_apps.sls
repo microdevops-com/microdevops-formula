@@ -159,8 +159,20 @@ python_apps_app_checkout_{{ loop.index }}:
     - rev: {{ app_params['source']['rev'] }}
     - target: {{ app_params['source']['target'] }}
     - branch: {{ app_params['source']['branch'] }}
+            {%- if pillar['force_reset'] is defined %}
+    - force_reset: {{ pillar['force_reset'] }}
+            {%- elif app_params['source']['force_reset'] is defined %}
+    - force_reset: {{ app_params['source']['force_reset'] }}
+            {%- else %}
     - force_reset: True
+            {%- endif %}
     - force_fetch: True
+            {%- if (pillar['force_checkout'] is defined and pillar['force_checkout']) or (app_params['source']['force_checkout'] is defined and app_params['source']['force_checkout']) %}
+    - force_checkout: True
+            {%- endif %}
+            {%- if (pillar['force_clone'] is defined and pillar['force_clone']) or (app_params['source']['force_clone'] is defined and app_params['source']['force_clone']) %}
+    - force_clone: True
+            {%- endif %}
     - user: {{ app_params['user'] }}
           {%- elif (app_params['source']['hg'] is defined) and (app_params['source']['hg'] is not none)  %}
   hg.latest:
@@ -521,10 +533,10 @@ python_apps_app_acme_run_{{ loop.index }}:
     - shell: '/bin/bash'
             {%- if (app_params['nginx']['server_name_301'] is defined) and (app_params['nginx']['server_name_301'] is not none) %}
     - name: |
-        openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
+        openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/{{ app_params['nginx']['ssl']['acme_account'] }}/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} -d {{ app_params['nginx']['server_name_301']|replace(" ", " -d ") }} || true
             {%- else %}
     - name: |
-        openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
+        openssl verify -CAfile /opt/acme/cert/{{ python_app }}_ca.cer /opt/acme/cert/{{ python_app }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/{{ app_params['nginx']['ssl']['acme_account'] }}/acme_local.sh {{ acme_custom_params }} {{ acme_staging }} {{ acme_force_renewal }} --cert-file /opt/acme/cert/{{ python_app }}_cert.cer --key-file /opt/acme/cert/{{ python_app }}_key.key --ca-file /opt/acme/cert/{{ python_app }}_ca.cer --fullchain-file /opt/acme/cert/{{ python_app }}_fullchain.cer --issue -d {{ app_params['nginx']['server_name']|replace(" ", " -d ") }} || true
             {%- endif %}
 
 python_apps_app_acme_replace_symlink_1_{{ loop.index }}:

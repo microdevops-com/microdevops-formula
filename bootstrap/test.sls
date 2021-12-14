@@ -5,6 +5,8 @@ resolvers_test:
         grep "nameserver 8.8.8.8" /run/systemd/resolve/resolv.conf && \
         grep "nameserver 8.8.4.4" /run/systemd/resolve/resolv.conf && \
         grep "nameserver 1.1.1.1" /run/systemd/resolve/resolv.conf
+{% elif grains["oscodename"] == "bullseye" %}
+        grep "nameserver 1.1.1.1" /etc/resolv.conf
 {% elif grains["osfinger"] == "CentOS Linux-7" %}
         grep "nameserver 8.8.8.8" /etc/resolv.conf && \
         grep "nameserver 8.8.4.4" /etc/resolv.conf && \
@@ -48,12 +50,20 @@ mdadm_test:
 br_netfilter_test:
   cmd.run:
     - name: |
-        lsmod | grep br_netfilter && \
+        lsmod | grep br_netfilter || grep br_netfilter /lib/modules/$(uname -r)/modules.builtin && \
+  {% if 'firewall_bridge_filter' in pillar["bootstrap"] and pillar["bootstrap"]['firewall_bridge_filter'] %}
+        grep 1 /proc/sys/net/bridge/bridge-nf-call-arptables && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-call-ip6tables && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-call-iptables && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-filter-pppoe-tagged && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-filter-vlan-tagged && \
+        grep 1 /proc/sys/net/bridge/bridge-nf-pass-vlan-input-dev
+  {% else %}
         grep 0 /proc/sys/net/bridge/bridge-nf-call-arptables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-call-ip6tables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-call-iptables && \
         grep 0 /proc/sys/net/bridge/bridge-nf-filter-pppoe-tagged && \
         grep 0 /proc/sys/net/bridge/bridge-nf-filter-vlan-tagged && \
         grep 0 /proc/sys/net/bridge/bridge-nf-pass-vlan-input-dev
-
+  {% endif %}
 {% endif %}

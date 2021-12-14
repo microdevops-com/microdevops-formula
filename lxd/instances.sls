@@ -57,7 +57,7 @@ lxd_start_{{ loop.index }}:
 lxd_wait_{{ loop.index }}:
   cmd.run:
     - prepend_path: /snap/bin
-    - name: timeout -v 30s bash -c "until lxc exec {{ instance_name }} true; do sleep 1; done"
+    - name: timeout 30s bash -c "until lxc exec {{ instance_name }} true; do sleep 1; done"
       {%- endif %}
 
       {%- if "bootstrap" in instance_val %}

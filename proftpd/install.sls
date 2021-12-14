@@ -84,6 +84,7 @@ create_config_file:
                 SFTPAuthMethods password
                 SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
                 AuthUserFile /etc/proftpd/ftpd.users
+                DefaultRoot ~
           </VirtualHost>
         </IfModule>
     - require:

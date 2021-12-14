@@ -33,10 +33,17 @@ OUT_FILE="$(mktemp -p /dev/shm/)"
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
+if [[ -d /.salt-ssh-hooks ]]; then
+	if [[ -r /.salt-ssh-hooks/${TARGET} ]]; then
+		cat /.salt-ssh-hooks/${TARGET}
+		source /.salt-ssh-hooks/${TARGET}
+	fi
+fi
+
 if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
 	( set -x ; set -o pipefail && stdbuf -oL -eL ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A ) || GRAND_EXIT=1
 elif [ "${RSNAPSHOT_BACKUP_TYPE}" = "SALT" ]; then
-	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --wipe --force-color ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A ) || GRAND_EXIT=1
+	( set -x ; set -o pipefail && stdbuf -oL -eL salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run "bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A ) || GRAND_EXIT=1
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
