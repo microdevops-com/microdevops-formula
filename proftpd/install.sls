@@ -21,7 +21,7 @@ ensure_proftpd_ftpd-users_file_exists:
     - name: /etc/proftpd/ftpd.users
     - user: proftpd
     - group: root
-    - dir_mode: 0600
+    - mode: 0600
     - require:
       - pkg: install_proftpd
       - file: ensure_proftpd_config_dir_exists
