@@ -16,10 +16,10 @@ resolvers_test:
 full_hostname:
   cmd.run:
     - name: |
-        grep {{ grains["fqdn"] }} /etc/hostname && \
-        grep {{ grains["fqdn"] }} /etc/hosts && \
-        hostname | grep {{ grains["fqdn"] }} && \
-        hostname -f | grep {{ grains["fqdn"] }} && \
+        grep {{ grains["id"] }} /etc/hostname && \
+        grep {{ grains["id"] }} /etc/hosts && \
+        hostname | grep {{ grains["id"] }} && \
+        hostname -f | grep {{ grains["id"] }} && \
         grep "search {{ pillar["bootstrap"]["network"]["domain"] }}" /etc/resolv.conf
 
 memory_accounting:

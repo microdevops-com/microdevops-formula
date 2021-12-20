@@ -25,7 +25,7 @@ minion_installer_exe:
 minion_install_silent_cmd:
   cmd.run:
     - name: |
-        START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar["salt"]["minion"]["config"]["master"]|join(",") }} /minion-name={{ grains["fqdn"] }} /start-minion=1
+        START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar["salt"]["minion"]["config"]["master"]|join(",") }} /minion-name={{ grains["id"] }} /start-minion=1
     {%- endif %}
 
     {%- if pillar["salt"]["minion"]["grains_file_rm"] is defined and pillar["salt"]["minion"]["grains_file_rm"] %}
@@ -38,7 +38,7 @@ salt_minion_id:
   file.managed:
     - name: 'C:\salt\conf\minion_id'
     - contents: |
-        {{ grains["fqdn"] }}
+        {{ grains["id"] }}
 
 salt_minion_config:
   file.serialize:
@@ -86,7 +86,7 @@ salt_minion_id:
   file.managed:
     - name: /etc/salt/minion_id
     - contents: |
-        {{ grains["fqdn"] }}
+        {{ grains["id"] }}
 
 salt_minion_config:
   file.serialize:
