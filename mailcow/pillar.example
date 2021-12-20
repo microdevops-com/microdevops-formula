@@ -26,6 +26,10 @@ mailcow:
   rspamd:
     phishing_conf:
       phishtank_enabled: 'true'
+    global_smtp_from_whitelist_map: |
+      # /.+example\.com/i
+    global_rcpt_whitelist_map: |
+      # /.+example\.com/i
   clamd:
     clamd_conf:
       DetectPUA: 'no'
