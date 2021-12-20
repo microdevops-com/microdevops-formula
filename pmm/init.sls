@@ -86,9 +86,16 @@ percona_pmm_container_{{ loop.index }}_{{ i_loop.index }}:
     - watch:
         - /opt/pmm/{{ domain['name'] }}/{{ instance['name'] }}/etc/grafana.ini
 
-dump_pmm_cron:
+dump_db_cron:
   cron.present:
     - name: docker exec -i percona-{{ domain['name'] }} /bin/bash -c "pg_dump --username postgres pmm-managed" > /var/pmm_backup/pmm-managed.sql
+    - user: root
+    - minute: 0
+    - hour: 3
+
+dump_files_cron:
+  cron.present:
+    - name: docker cp percona-{{ domain['name'] }}:/srv /var/pmm_backup/ > /var/log/pmm_backup.log 2>&1
     - user: root
     - minute: 0
     - hour: 3
