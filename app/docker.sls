@@ -87,7 +87,7 @@ docker_app_docker_pull_{{ loop.index }}:
 docker_app_container_{{ loop.index }}:
   docker_container.running:
     - name: app-{{ app_name }}
-    - user: root
+    - user: {{ app.get("user", "root") }}
     - image: {{ app["image"] }}
     - detach: True
     - restart_policy: unless-stopped
