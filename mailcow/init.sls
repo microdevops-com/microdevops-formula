@@ -671,6 +671,18 @@ rspamd_phishing_conf_{{ loop.index }}:
     - append_if_not_found: True
     {%- endfor %}
   {% endif %}
+  {% if pillar["mailcow"]["rspamd"] is defined and "global_smtp_from_whitelist_map" in pillar["mailcow"]["rspamd"] %}
+global_smtp_from_whitelist_map:
+  file.managed:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/rspamd/custom/global_smtp_from_whitelist.map'
+    - contents: {{ pillar["mailcow"]["rspamd"]["global_smtp_from_whitelist_map"] | yaml_encode }}
+  {% endif %}
+  {% if pillar["mailcow"]["rspamd"] is defined and "global_rcpt_whitelist_map" in pillar["mailcow"]["rspamd"] %}
+global_rcpt_whitelist_map:
+  file.managed:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/rspamd/custom/global_rcpt_whitelist.map'
+    - contents: {{ pillar["mailcow"]["rspamd"]["global_rcpt_whitelist_map"] | yaml_encode }}
+  {% endif %}
 
   {% if pillar["mailcow"]["clamd"] is defined %}
     {% if "clamd_conf" in pillar["mailcow"]["clamd"] %}
