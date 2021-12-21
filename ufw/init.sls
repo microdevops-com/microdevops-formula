@@ -332,6 +332,7 @@ ufw_nothing_done_info:
     - result: False
     - comment: |
         ERROR: There are pillar errors, so nothing has been done.
+        {{ pillar["_errors"] | json() }}
 
   {%- else %}
 ufw_nothing_done_info:
