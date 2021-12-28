@@ -254,6 +254,13 @@ mailcow_config_generator_solr_heep_size:
     - pattern: '^ *SOLR_HEAP=.*$'
     - repl: 'SOLR_HEAP={{ pillar["mailcow"]["SOLR_HEAP"] }}'
 
+mailcow_config_generator_allow_admin_email_login:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
+    - pattern: '^ *ALLOW_ADMIN_EMAIL_LOGIN=.*$'
+    - repl: 'ALLOW_ADMIN_EMAIL_LOGIN={{ pillar["mailcow"]["ALLOW_ADMIN_EMAIL_LOGIN"] }}'
+    - append_if_not_found: True
+
 mailcow_generate_config:
   cmd.run:
     - shell: /bin/bash
@@ -359,6 +366,13 @@ mailcow_config_solr_heap:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
     - pattern: '^ *SOLR_HEAP=.*$'
     - repl: 'SOLR_HEAP={{ pillar["mailcow"]["SOLR_HEAP"] }}'
+    - append_if_not_found: True
+
+mailcow_config_allow_admin_email_login:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
+    - pattern: '^ *ALLOW_ADMIN_EMAIL_LOGIN=.*$'
+    - repl: 'ALLOW_ADMIN_EMAIL_LOGIN={{ pillar["mailcow"]["ALLOW_ADMIN_EMAIL_LOGIN"] }}'
     - append_if_not_found: True
 
 mailcow_data_dir:
