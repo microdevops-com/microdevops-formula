@@ -47,7 +47,6 @@ ufw_pkg_latest:
     - pkgs:
         - ufw
 
-
   # Enable ip forwarding if nat or custom nat rules
 ufw_ip_fwd_managed_file_1:
   file.managed:
@@ -259,6 +258,9 @@ ufw_user_rules_managed:
     - source: /etc/ufw/user.rules.tmp
     - mode: 0640
     - keep_source: False
+    - onlyif:
+      - fun: file.file_exists
+        path: /etc/ufw/user.rules.tmp
     - onchanges:
       - file: /etc/ufw/user.rules.src
       - file: /etc/ufw/user.rules.py
@@ -274,6 +276,9 @@ ufw_user6_rules_managed:
     - source: /etc/ufw/user6.rules.tmp
     - mode: 0640
     - keep_source: False
+    - onlyif:
+      - fun: file.file_exists
+        path: /etc/ufw/user6.rules.tmp
     - onchanges:
       - file: /etc/ufw/user.rules.src
       - file: /etc/ufw/user.rules.py
@@ -332,6 +337,7 @@ ufw_nothing_done_info:
     - result: False
     - comment: |
         ERROR: There are pillar errors, so nothing has been done.
+        {{ pillar["_errors"] | json() }}
 
   {%- else %}
 ufw_nothing_done_info:
