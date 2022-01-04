@@ -32,9 +32,9 @@ rsnapshot_backup:
             before_backup_check: # optional, the same as below but overrides before_backup_check per backup host
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7
-        retain_weekly: N # optional, override default value 4
-        retain_monthly: N # optional, override default value 3
+        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
+        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
+        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
         connect_user: toor # optional, root by default, user for ssh connect
         before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
@@ -56,9 +56,9 @@ rsnapshot_backup:
         mysql_noevents: True # optional, remove --events from dump cmd
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7
-        retain_weekly: N # optional, override default value 4
-        retain_monthly: N # optional, override default value 3
+        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
+        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
+        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         connect_user: toor # optional, root by default, user for ssh connect
         before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
@@ -85,9 +85,9 @@ rsnapshot_backup:
         postgresql_noclean: False # add --clean by default to pg dump
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7
-        retain_weekly: N # optional, override default value 4
-        retain_monthly: N # optional, override default value 3
+        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
+        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
+        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         connect_user: toor # optional, root by default, user for ssh connect
         before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
@@ -108,9 +108,9 @@ rsnapshot_backup:
             priority: -1 # optional, priority
         validate_hostname: False # optional, disable remote ssh hostname check
         retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7
-        retain_weekly: N # optional, override default value 4
-        retain_monthly: N # optional, override default value 3
+        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
+        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
+        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
         mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
         connect_user: toor # optional, root by default, user for ssh connect
@@ -186,9 +186,9 @@ rsnapshot_backup:
         native_txt_check: True # optional, check for .backup text file in the root of source, useful if you want to ensure the data is present and not sync empty folder if removable disk gone for example
         native_10h_limit: True # optional, limit time for the execution of rsync to 10 hours
         retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7
-        retain_weekly: N # optional, override default value 4
-        retain_monthly: N # optional, override default value 3
+        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
+        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
+        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
 
 # multi backup server example
