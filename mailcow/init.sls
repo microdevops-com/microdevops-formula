@@ -45,6 +45,7 @@ postfix_stop_and_disable:
     - name: postfix
       enable: False
 
+  {% if pillar["mailcow"]["SKIP_LETS_ENCRYPT"] == 'y' %}
 nginx_install:
   pkg.installed:
     - pkgs:
@@ -105,7 +106,7 @@ nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
-  {% if "haproxy" in pillar["mailcow"] %}
+    {% if "haproxy" in pillar["mailcow"] %}
 haproxy_install:
   pkg.installed:
     - pkgs:
@@ -164,12 +165,13 @@ haproxy_config:
         listen smtps
                 bind {{ pillar["mailcow"]["haproxy"]["EXTERNAL_IP"] }}:465
                 server smtps 127.0.0.1:10465 send-proxy
-  {% endif %}
+    {% endif %}
 
 nginx_cert:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["mailcow"]["acme_account"] }}/verify_and_issue.sh mailcow {{ pillar["mailcow"]["servername"] }}"
+  {% endif %}
 
 mailcow_clone_fom_git:
   git.cloned:
@@ -739,6 +741,14 @@ mailcow_docker_compose_up:
     - cwd: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}
     - name: cd /opt/mailcow/{{ pillar["mailcow"]["servername"] }} && docker-compose up -d
 
+create_cron_dovecot_full_text_serach_rescan:
+  cron.present:
+    - name: bash -c 'docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml exec dovecot-mailcow doveadm fts rescan -A'
+    - identifier: dovecot_full_text_search_rescan
+    - user: root
+    - minute: 30
+
+  {% if pillar["mailcow"]["SKIP_LETS_ENCRYPT"] == 'y' %}
 create_cron_rebind_ssl_for_services_in_docker:
   cron.present:
     - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/rebind-ssl-for-services.sh
@@ -746,13 +756,6 @@ create_cron_rebind_ssl_for_services_in_docker:
     - user: root
     - minute: 0
     - hour: 4
-
-create_cron_dovecot_full_text_serach_rescan:
-  cron.present:
-    - name: bash -c 'docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml exec dovecot-mailcow doveadm fts rescan -A'
-    - identifier: dovecot_full_text_search_rescan
-    - user: root
-    - minute: 30
 
 nginx_reload:
   cmd.run:
@@ -765,4 +768,5 @@ nginx_reload_cron:
     - user: root
     - minute: 15
     - hour: 6
+  {% endif %}
 {% endif %}
