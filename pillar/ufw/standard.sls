@@ -2,16 +2,11 @@
 
 ufw:
   allow:
-    standard_netdata:
+    standard_allow_ports:
       proto: tcp
       from:
         {{ vars["Office_And_VPN"] }}
-      to_port: 19999
-    standard_ssh_office_and_vpn:
-      proto: tcp
-      from:
-        {{ vars["Office_And_VPN"] }}
-      to_port: 22
+      to_port: 22,80,443,19999
     standard_ssh_backup_servers:
       proto: tcp
       from:
