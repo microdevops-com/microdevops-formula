@@ -509,7 +509,7 @@ mailcow_nginx_redirect.conf:
         }
   {% endif %}
 
-  {% if "haproxy" in pillar["mailcow"] %}
+  {% if "haproxy" in pillar["mailcow"] and pillar["mailcow"]["mailcow_conf"]["SKIP_LETS_ENCRYPT"] == 'y' %}
 dovecote_extra_conf_haproxy_trusted_networks:
   file.managed:
     - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/dovecot/extra.conf
