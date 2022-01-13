@@ -45,7 +45,7 @@ postfix_stop_and_disable:
     - name: postfix
       enable: False
 
-  {% if pillar["mailcow"]["SKIP_LETS_ENCRYPT"] == 'y' %}
+  {% if pillar["mailcow"]["mailcow_conf"]["SKIP_LETS_ENCRYPT"] == 'y' %}
 nginx_install:
   pkg.installed:
     - pkgs:
@@ -84,13 +84,13 @@ nginx_files_1:
 
             server {
                 listen 443 ssl;
-                server_name {{ pillar["mailcow"]["servername"] }};
-                access_log /var/log/nginx/{{ pillar["mailcow"]["servername"] }}-access.log main;
-                error_log /var/log/nginx/{{ pillar["mailcow"]["servername"] }}-error.log;
-                ssl_certificate /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_fullchain.cer;
-                ssl_certificate_key /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_key.key;
+                server_name {{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }};
+                access_log /var/log/nginx/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}-access.log main;
+                error_log /var/log/nginx/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}-error.log;
+                ssl_certificate /opt/acme/cert/mailcow_{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/mailcow_{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}_key.key;
                 location / {
-                    proxy_pass http://localhost:{{ pillar["mailcow"]["HTTP_PORT"] }};
+                    proxy_pass http://localhost:{{ pillar["mailcow"]["mailcow_conf"]["HTTP_PORT"] }};
                     include    proxy_params;
                     proxy_set_header    X-Real-IP          $remote_addr;
                     proxy_set_header    X-Forwarded-For    $proxy_add_x_forwarded_for;
@@ -167,236 +167,62 @@ haproxy_config:
                 server smtps 127.0.0.1:10465 send-proxy
     {% endif %}
 
+    {% if "acme_account" in pillar["mailcow"] %}
 nginx_cert:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["mailcow"]["acme_account"] }}/verify_and_issue.sh mailcow {{ pillar["mailcow"]["servername"] }}"
+    - name: "/opt/acme/home/{{ pillar["mailcow"]["acme_account"] }}/verify_and_issue.sh mailcow {{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}"
+    {% endif %}
   {% endif %}
 
 mailcow_clone_fom_git:
   git.cloned:
     - name: https://github.com/mailcow/mailcow-dockerized
-    - target: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}
-
-mailcow_config_generator_http_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *HTTP_PORT=.*$'
-    - repl: 'HTTP_PORT={{ pillar["mailcow"]["HTTP_PORT"] }}'
-
-mailcow_config_generator_http_bind:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *HTTP_BIND=.*$'
-    - repl: 'HTTP_BIND={{ pillar["mailcow"]["HTTP_BIND"] }}'
-
-mailcow_config_generator_https_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *HTTPS_PORT=.*$'
-    - repl: 'HTTPS_PORT={{ pillar["mailcow"]["HTTPS_PORT"] }}'
-
-mailcow_config_generator_https_bind:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *HTTPS_BIND=.*$'
-    - repl: 'HTTPS_BIND={{ pillar["mailcow"]["HTTPS_BIND"] }}'
-
-mailcow_config_generator_smtp_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *SMTP_PORT=.*$'
-    - repl: 'SMTP_PORT={{ pillar["mailcow"]["SMTP_PORT"] }}'
-
-mailcow_config_generator_smtps_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *SMTPS_PORT=.*$'
-    - repl: 'SMTPS_PORT={{ pillar["mailcow"]["SMTPS_PORT"] }}'
-
-mailcow_config_generator_imap_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *IMAP_PORT=.*$'
-    - repl: 'IMAP_PORT={{ pillar["mailcow"]["IMAP_PORT"] }}'
-
-mailcow_config_generator_imaps_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *IMAPS_PORT=.*$'
-    - repl: 'IMAPS_PORT={{ pillar["mailcow"]["IMAPS_PORT"] }}'
-
-mailcow_config_generator_pop_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *POP_PORT=.*$'
-    - repl: 'POP_PORT={{ pillar["mailcow"]["POP_PORT"] }}'
-
-mailcow_config_generator_pops_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *POPS_PORT=.*$'
-    - repl: 'POPS_PORT={{ pillar["mailcow"]["POPS_PORT"] }}'
-
-mailcow_config_generator_submission_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *SUBMISSION_PORT=.*$'
-    - repl: 'SUBMISSION_PORT={{ pillar["mailcow"]["SUBMISSION_PORT"] }}'
-
-mailcow_config_generator_acme_off:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *SKIP_LETS_ENCRYPT=.*$'
-    - repl: 'SKIP_LETS_ENCRYPT={{ pillar["mailcow"]["SKIP_LETS_ENCRYPT"] }}'
-
-mailcow_config_generator_solr_heep_size:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *SOLR_HEAP=.*$'
-    - repl: 'SOLR_HEAP={{ pillar["mailcow"]["SOLR_HEAP"] }}'
-
-mailcow_config_generator_allow_admin_email_login:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh'
-    - pattern: '^ *ALLOW_ADMIN_EMAIL_LOGIN=.*$'
-    - repl: 'ALLOW_ADMIN_EMAIL_LOGIN={{ pillar["mailcow"]["ALLOW_ADMIN_EMAIL_LOGIN"] }}'
-    - append_if_not_found: True
+    - target: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}
 
 mailcow_generate_config:
   cmd.run:
     - shell: /bin/bash
-    - name: if [[ ! -e /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf ]]; then /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/generate_config.sh; fi
-    - cwd: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/
+    - name: if [[ ! -e /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/mailcow.conf ]]; then /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/generate_config.sh; fi
+    - cwd: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/
     - env:
-      - MAILCOW_HOSTNAME: {{ pillar["mailcow"]["servername"] }}
-      - MAILCOW_TZ: {{ pillar["mailcow"]["MAILCOW_TZ"] }}
+      - MAILCOW_HOSTNAME: {{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}
+      - MAILCOW_TZ: {{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_TZ"] }}
 
-mailcow_config_http_port:
+  {%- for var_key, var_val in pillar["mailcow"]["mailcow_conf"].items() %}
+mailcow_config_{{ var_key }}:
   file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *HTTP_PORT=.*$'
-    - repl: 'HTTP_PORT={{ pillar["mailcow"]["HTTP_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_http_bind:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *HTTP_BIND=.*$'
-    - repl: 'HTTP_BIND={{ pillar["mailcow"]["HTTP_BIND"] }}'
-    - append_if_not_found: True
-
-mailcow_config_https_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *HTTPS_PORT=.*$'
-    - repl: 'HTTPS_PORT={{ pillar["mailcow"]["HTTPS_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_https_bind:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *HTTPS_BIND=.*$'
-    - repl: 'HTTPS_BIND={{ pillar["mailcow"]["HTTPS_BIND"] }}'
-    - append_if_not_found: True
-
-mailcow_config_smtp_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *SMTP_PORT=.*$'
-    - repl: 'SMTP_PORT={{ pillar["mailcow"]["SMTP_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_smtps_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *SMTPS_PORT=.*$'
-    - repl: 'SMTPS_PORT={{ pillar["mailcow"]["SMTPS_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_imap_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *IMAP_PORT=.*$'
-    - repl: 'IMAP_PORT={{ pillar["mailcow"]["IMAP_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_imaps_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *IMAPS_PORT=.*$'
-    - repl: 'IMAPS_PORT={{ pillar["mailcow"]["IMAPS_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_pop_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *POP_PORT=.*$'
-    - repl: 'POP_PORT={{ pillar["mailcow"]["POP_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_pops_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *POPS_PORT=.*$'
-    - repl: 'POPS_PORT={{ pillar["mailcow"]["POPS_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_submission_local_port:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *SUBMISSION_PORT=.*$'
-    - repl: 'SUBMISSION_PORT={{ pillar["mailcow"]["SUBMISSION_PORT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_acme_off:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *SKIP_LETS_ENCRYPT=.*$'
-    - repl: 'SKIP_LETS_ENCRYPT={{ pillar["mailcow"]["SKIP_LETS_ENCRYPT"] }}'
-    - append_if_not_found: True
-
-mailcow_config_timezone:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/mailcow.conf'
+    {%- if var_key == 'MAILCOW_TZ' %}
     - pattern: '^ *TZ=.*$'
-    - repl: 'TZ={{ pillar["mailcow"]["MAILCOW_TZ"] }}'
+    - repl: 'TZ={{ var_val }}'
+    {%- else %}
+    - pattern: '^ *{{ var_key }}=.*$'
+    - repl: '{{ var_key }}={{ var_val }}'
+    {%- endif %}
     - append_if_not_found: True
-
-mailcow_config_solr_heap:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *SOLR_HEAP=.*$'
-    - repl: 'SOLR_HEAP={{ pillar["mailcow"]["SOLR_HEAP"] }}'
-    - append_if_not_found: True
-
-mailcow_config_allow_admin_email_login:
-  file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/mailcow.conf'
-    - pattern: '^ *ALLOW_ADMIN_EMAIL_LOGIN=.*$'
-    - repl: 'ALLOW_ADMIN_EMAIL_LOGIN={{ pillar["mailcow"]["ALLOW_ADMIN_EMAIL_LOGIN"] }}'
-    - append_if_not_found: True
+  {%- endfor %}
 
 mailcow_data_dir:
   file.directory:
     - names:
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/data
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/mail_crypt
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_web
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/sogo_backup
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail_index
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/vmail
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/rspamd
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/lib/mysql
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/run/mysqld
-      - /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/volumes/var/spool/postfix
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/data
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/mail_crypt
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/sogo_web
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/sogo_backup
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/var/vmail_index
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/var/vmail
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/var/lib/rspamd
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/var/lib/mysql
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/var/run/mysqld
+      - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/var/spool/postfix
     - mode: 755
     - makedirs: True
 
 mailcow_docker_compose_owerride:
   file.managed:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.override.yml
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/docker-compose.override.yml
     - contents: |
         version: '2.1'
     {%- if 'docker_logging' in pillar['mailcow'] %}
@@ -559,7 +385,7 @@ mailcow_docker_compose_owerride:
               - "${SIEVE_PORT_HAPROXY:-127.0.0.1:14190}:14190"
           postfix-mailcow:
             ports:
-      #        - "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"
+            {#- "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"#}
               - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
               - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
     {%- endif %}
@@ -631,11 +457,11 @@ mailcow_docker_compose_owerride:
                 o: 'bind'
                 device: './volumes/sogo_backup'
 
-  {% if pillar["mailcow"]["SKIP_LETS_ENCRYPT"] == 'y' %}
+  {% if pillar["mailcow"]["mailcow_conf"]["SKIP_LETS_ENCRYPT"] == 'y' %}
 bind_ssl_certificate_for_services_in_docker:
   mount.mounted:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
-    - device: /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_fullchain.cer
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/assets/ssl/cert.pem
+    - device: /opt/acme/cert/mailcow_{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}_fullchain.cer
     - mkmnt: True
     - persist: True
     - fstype: none
@@ -643,8 +469,8 @@ bind_ssl_certificate_for_services_in_docker:
 
 bind_ssl_key_for_services_in_docker:
   mount.mounted:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
-    - device: /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_key.key
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/assets/ssl/key.pem
+    - device: /opt/acme/cert/mailcow_{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}_key.key
     - mkmnt: True
     - persist: True
     - fstype: none
@@ -652,21 +478,41 @@ bind_ssl_key_for_services_in_docker:
 
 create_script_rebind_ssl_for_services_in_docker:
   file.managed:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/rebind-ssl-for-services.sh
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/rebind-ssl-for-services.sh
     - mode: 0744
     - contents: |
         #!/bin/bash
-        umount /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
-        umount /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
-        mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_fullchain.cer /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/cert.pem
-        mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["servername"] }}_key.key /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/assets/ssl/key.pem
-        docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml restart
+        umount /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/assets/ssl/cert.pem
+        umount /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/assets/ssl/key.pem
+        mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}_fullchain.cer /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/assets/ssl/cert.pem
+        mount --bind /opt/acme/cert/mailcow_{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}_key.key /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/assets/ssl/key.pem
+        docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/docker-compose.yml restart
+  {% else %}
+mailcow_nginx_redirect.conf:
+  file.managed:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/nginx/redirect.conf
+    - mode: 0644
+    - contents: |
+        server {
+          root /web;
+          listen 80 default_server;
+          listen [::]:80 default_server;
+          include /etc/nginx/conf.d/server_name.active;
+          if ( $request_uri ~* "%0A|%0D" ) { return 403; }
+          location ^~ /.well-known/acme-challenge/ {
+            allow all;
+            default_type "text/plain";
+          }
+          location / {
+            return 301 https://$host$uri$is_args$args;
+          }
+        }
   {% endif %}
 
   {% if "haproxy" in pillar["mailcow"] %}
 dovecote_extra_conf_haproxy_trusted_networks:
   file.managed:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/dovecot/extra.conf
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/dovecot/extra.conf
     - mode: 0644
     - contents: |
         haproxy_trusted_networks = 172.22.1.1
@@ -681,7 +527,7 @@ haproxy_reload:
     {%- for var_key, var_val in pillar["mailcow"]["rspamd"]["phishing_conf"].items() %}
 rspamd_phishing_conf_{{ loop.index }}:
   file.replace:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/rspamd/local.d/phishing.conf'
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/rspamd/local.d/phishing.conf'
     - pattern: '^ *{{ var_key }}.*$'
     - repl: '{{ var_key }} = {{ var_val }};'
     - append_if_not_found: True
@@ -690,13 +536,13 @@ rspamd_phishing_conf_{{ loop.index }}:
   {% if pillar["mailcow"]["rspamd"] is defined and "global_smtp_from_whitelist_map" in pillar["mailcow"]["rspamd"] %}
 global_smtp_from_whitelist_map:
   file.managed:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/rspamd/custom/global_smtp_from_whitelist.map'
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/rspamd/custom/global_smtp_from_whitelist.map'
     - contents: {{ pillar["mailcow"]["rspamd"]["global_smtp_from_whitelist_map"] | yaml_encode }}
   {% endif %}
   {% if pillar["mailcow"]["rspamd"] is defined and "global_rcpt_whitelist_map" in pillar["mailcow"]["rspamd"] %}
 global_rcpt_whitelist_map:
   file.managed:
-    - name: '/opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/rspamd/custom/global_rcpt_whitelist.map'
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/rspamd/custom/global_rcpt_whitelist.map'
     - contents: {{ pillar["mailcow"]["rspamd"]["global_rcpt_whitelist_map"] | yaml_encode }}
   {% endif %}
 
@@ -705,7 +551,7 @@ global_rcpt_whitelist_map:
       {%- for var_key, var_val in pillar["mailcow"]["clamd"]["clamd_conf"].items() %}
 clamd_conf_{{ loop.index }}:
   file.replace:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/clamav/clamd.conf
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/clamav/clamd.conf
     - pattern: '^ *{{ var_key }}.*$'
     - repl: '{{ var_key }} {{ var_val }}'
     - append_if_not_found: True
@@ -716,7 +562,7 @@ clamd_conf_{{ loop.index }}:
       {%- for var_key, var_val in pillar["mailcow"]["clamd"]["whitelist_ign2"].items() %}
 clamd_whitelist_ign2_{{ loop.index }}:
   file.replace:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/clamav/whitelist.ign2
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/clamav/whitelist.ign2
     - pattern: '^ *{{ var_key }}\.{{ var_val }}.*$'
     - repl: '{{ var_key }}.{{ var_val }}'
     - append_if_not_found: True
@@ -728,7 +574,7 @@ clamd_whitelist_ign2_{{ loop.index }}:
     {%- for var_key, var_val in pillar["mailcow"]["postfix"]["extra_cf"].items() %}
 postfix_extra_cf_{{ loop.index }}:
   file.replace:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/data/conf/postfix/extra.cf
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/extra.cf
     - pattern: '^ *{{ var_key }}.*$'
     - repl: '{{ var_key }} = {{ var_val }}'
     - append_if_not_found: True
@@ -738,20 +584,20 @@ postfix_extra_cf_{{ loop.index }}:
 mailcow_docker_compose_up:
   cmd.run:
     - shell: /bin/bash
-    - cwd: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}
-    - name: cd /opt/mailcow/{{ pillar["mailcow"]["servername"] }} && docker-compose up -d
+    - cwd: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}
+    - name: cd /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }} && docker-compose up -d
 
 create_cron_dovecot_full_text_serach_rescan:
   cron.present:
-    - name: bash -c 'docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/docker-compose.yml exec dovecot-mailcow doveadm fts rescan -A'
+    - name: bash -c 'docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/docker-compose.yml exec dovecot-mailcow doveadm fts rescan -A'
     - identifier: dovecot_full_text_search_rescan
     - user: root
     - minute: 30
 
-  {% if pillar["mailcow"]["SKIP_LETS_ENCRYPT"] == 'y' %}
+  {% if pillar["mailcow"]["mailcow_conf"]["SKIP_LETS_ENCRYPT"] == 'y' %}
 create_cron_rebind_ssl_for_services_in_docker:
   cron.present:
-    - name: /opt/mailcow/{{ pillar["mailcow"]["servername"] }}/rebind-ssl-for-services.sh
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/rebind-ssl-for-services.sh
     - identifier: rebind_ssl_certificates_for_services_in_docker
     - user: root
     - minute: 0
