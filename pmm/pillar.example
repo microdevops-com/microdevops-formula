@@ -8,6 +8,7 @@ pmm:
     - name: pmm.example.com
       instances:
         - name: pmm-server
+          plugins: grafana-image-renderer
           image: percona/pmm-server:2
           config: |
             [server]
