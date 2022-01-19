@@ -94,6 +94,10 @@ install_pmm_image_plugins{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker exec -t percona-{{ domain['name'] }} bash -c 'grafana-cli plugins install {{ instance['plugins'] }}'
 
+restart_pmm_image:
+  cmd.run:
+    - name: docker restart percona-{{ domain['name'] }}
+
 dump_db_cron:
   cron.present:
     - name: docker exec -i percona-{{ domain['name'] }} /bin/bash -c "pg_dump --username postgres pmm-managed" > /var/pmm_backup/pmm-managed.sql
