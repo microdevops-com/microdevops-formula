@@ -417,6 +417,37 @@ php-fpm_8_0_modules_installed:
       {%- endif %}
     {%- endif %}
 
+    {%- if (pillar['php-fpm']['version_8_1'] is defined) and (pillar['php-fpm']['version_8_1'] is not none) and (pillar['php-fpm']['version_8_1']) %}
+php-fpm_repo_deb_8_1:
+  pkgrepo.managed:
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: E5267A6C
+    - refresh: True
+
+php-fpm_8_1_installed:
+  pkg.installed:
+    - pkgs:
+      - php8.1-cli
+      - php8.1-fpm
+
+      {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
+        {%- if (pillar['php-fpm']['modules']['php8_1'] is defined) and (pillar['php-fpm']['modules']['php8_1'] is not none) %}
+php-fpm_8_1_modules_installed:
+  pkg.installed:
+    - pkgs:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php8_1'] %}
+            {%- if (pkg_name != 'php8.1-ioncube') %} # TODO: now (2022-01-19 12:41) there is no ionCube for php8.1
+      - {{ pkg_name }}
+            {%- endif %}
+          {%- endfor %}
+
+        {%- endif %}
+      {%- endif %}
+    {%- endif %}
+
     {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
       {%- for k, v in pillar['php-fpm']['tz'].items() %}
         {%- set phpversion = k.replace('_','.').split('php')[1] %}
