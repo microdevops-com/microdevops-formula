@@ -1,4 +1,4 @@
-ufw_simple:
+ufw:
   nat:
     masquerade:
       nat_masquerade_enp5s0:
