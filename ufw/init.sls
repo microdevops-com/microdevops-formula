@@ -208,11 +208,17 @@ ufw_user_rules_src_managed:
           {%- set rule_to_port = "" %}
         {%- endif %}
 
+        {%- if "direction" in rule_params %}
+          {%- set rule_direction = " " ~ rule_params["direction"] ~ " " %}
+        {%- else %}
+          {%- set rule_direction = " " %}
+        {%- endif %}
+
         {%- set i_loop = loop %}
         {%- for i_from in rule_from %}
           {%- set j_loop = loop %}
           {%- for i_to in rule_to %}
-        ufw {{ rule_insert }} {{ rule_action }} {{ rule_proto }} from {{ rule_from[i_from] }} to {{ rule_to[i_to] }} {{ rule_to_port }} comment "{{ rule_name }} from {{ i_from }} to {{ i_to }}"
+        ufw {{ rule_insert }} {{ rule_action }}{{ rule_direction }}{{ rule_proto }} from {{ rule_from[i_from] }} to {{ rule_to[i_to] }} {{ rule_to_port }} comment "{{ rule_name }} from {{ i_from }} to {{ i_to }}"
           {%- endfor %}
         {%- endfor %}
       {%- endfor %}
@@ -235,9 +241,6 @@ ufw_user_rules_gen_tmp:
   cmd.run:
     - name: |
         /etc/ufw/user.rules.py v4 > /etc/ufw/user.rules.tmp
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
 
 ufw_user6_rules_gen_tmp:
   cmd.run:
@@ -247,9 +250,6 @@ ufw_user6_rules_gen_tmp:
           | sed -e 's/### RULES ###/:ufw6-user-limit - [0:0]\n:ufw6-user-limit-accept - [0:0]\n### RULES ###/' \
           | sed -e 's/COMMIT/\n### RATE LIMITING ###\n-A ufw6-user-limit -j REJECT\n-A ufw6-user-limit-accept -j ACCEPT\n### END RATE LIMITING ###\nCOMMIT/' \
           > /etc/ufw/user6.rules.tmp
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
 
   # Manage /etc/ufw/user.rules
 ufw_user_rules_managed:
@@ -265,9 +265,6 @@ ufw_user_rules_managed:
     - onlyif:
       - fun: file.file_exists
         path: /etc/ufw/user.rules.tmp
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
 
   # Manage /etc/ufw/user6.rules
 ufw_user6_rules_managed:
@@ -283,9 +280,6 @@ ufw_user6_rules_managed:
     - onlyif:
       - fun: file.file_exists
         path: /etc/ufw/user6.rules.tmp
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
 
   # Manage /etc/ufw/ufw.conf
 ufw_conf_managed:

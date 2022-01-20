@@ -1,6 +1,38 @@
 ufw:
   loglevel: "off" # off by default, do not remove quotes - otherwise Salt will make False instead of off
   import_ufw_simple: False # import deprecated ufw_simple state pillar
+  allow: # allow/deny/reject/limit
+    rule_1: # from list to list with to port
+      proto: tcp
+      from:
+        hostname_1: 1.2.3.4
+        hostname_2: 4.3.2.1
+      to:
+        hostname_3: 2.3.4.5
+        hostname_4: 5.4.3.2
+      to_port: 8080,8090,6000:6100
+    rule_2: # from any to any with to port
+      proto: tcp
+      to_port: 3306
+      insert: 1 # rules with insert key are sorted and added before other rules
+    rule_3: # from list to list any traffic
+      from: # any if empty
+        hostname_1: 1.2.3.4
+        hostname_2: 4.3.2.1
+      to: # any if empty
+        hostname_3: 2.3.4.5
+        hostname_4: 5.4.3.2
+  deny:
+    rule_1:
+      proto: tcp
+      from:
+        bad_host_1: 3.4.5.6
+      to_port: 80
+      insert: 1 
+    rule_2:
+      to:
+        bad_host_2: 4.5.6.7
+      direction: out # optional
   nat:
     masquerade:
       rule_1:
@@ -9,6 +41,8 @@ ufw:
       rule_2:
         source: 192.168.0.0/24
         out: br0
+      rule_3:
+        out: br2
     dnat:
       rule_1:
         daddr: 22.33.44.55
@@ -45,34 +79,6 @@ ufw:
   custom: # directly paste custom iptables rules to before.rules
     nat: | # nat table
       -A POSTROUTING -s 10.0.10.0/24 -o br0 -j MASQUERADE
-    filter: | # filter table
-      -A FORWARD -s 10.0.0.10/32 -j ACCEPT
-      -A FORWARD -d 10.0.0.10/32 -j ACCEPT
-  allow: # allow/deny/reject/limit
-    rule_1: # from list to list with to port
-      proto: tcp
-      from:
-        hostname_1: 1.2.3.4
-        hostname_2: 4.3.2.1
-      to:
-        hostname_3: 2.3.4.5
-        hostname_4: 5.4.3.2
-      to_port: 8080,8090,6000:6100
-    rule_2: # from any to any with to port
-      proto: tcp
-      to_port: 3306
-      insert: 1 
-    rule_3: # from list to list any traffic
-      from: # any if empty
-        hostname_1: 1.2.3.4
-        hostname_2: 4.3.2.1
-      to: # any if empty
-        hostname_3: 2.3.4.5
-        hostname_4: 5.4.3.2
-  deny:
-    rule_1:
-      proto: tcp
-      from:
-        bad_host_1: 3.4.5.6
-      to_port: 80
-      insert: 1 # optionally add insert NUM key
+    filter: | # filter table, filter table is not flused, use ufw chains ufw-before-forward, ufw-before-input, ufw-before-output etc otherwise rules will duplicate on apply
+      -A ufw-before-forward -s 10.0.0.10/32 -j ACCEPT
+      -A ufw-before-forward -d 10.0.0.10/32 -j ACCEPT
