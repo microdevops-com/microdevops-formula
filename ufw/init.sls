@@ -95,7 +95,11 @@ ufw_before_rules_managed:
         masquerade: |
     {%- for m_key, m_val in pillar["ufw"]["nat"]["masquerade"].items()|sort %}
           # {{ m_key }}
+      {%- if "source" in m_val %}
           -A POSTROUTING -s {{ m_val["source"] }} -o {{ m_val["out"] }} -j MASQUERADE
+      {%- else %}
+          -A POSTROUTING -o {{ m_val["out"] }} -j MASQUERADE
+      {%- endif %}
     {%- endfor %}
   {%- else %}
         masquerade: "# empty"
