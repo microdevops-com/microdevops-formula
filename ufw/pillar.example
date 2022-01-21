@@ -10,7 +10,7 @@ ufw:
       to:
         hostname_3: 2.3.4.5
         hostname_4: 5.4.3.2
-      to_port: 8080,8090,6000:6100
+      to_port: 8080,8090,6000:6100 # always set proto if you need to_port
     rule_2: # from any to any with to port
       proto: tcp
       to_port: 3306
