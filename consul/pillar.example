@@ -40,7 +40,13 @@
 #    "enable_token_persistence": true
 #  },
 #
-# 3. salt-ssh-roster-def-build consul*.example.com state.apply consul ; salt-ssh-roster-def vault*.example.com state.apply consul ; salt-ssh-roster-def vault*.example.com state.apply vault
+# 3. Apply salt states for servers and clients:
+#
+# salt consul*.example.com state.apply ufw
+# salt consul*.example.com state.apply consul
+# salt vault*.example.com state.apply ufw
+# salt vault*.example.com state.apply consul
+#
 #
 # 4. To create the initial bootstrap token "SecretID", use the acl bootstrap command on one of the servers.
 #    https://learn.hashicorp.com/tutorials/consul/access-control-setup-production
@@ -86,14 +92,9 @@
 #  "encrypt_verify_incoming": true,
 #  "encrypt_verify_outgoing": true,
 #
-# 6. Apply salt states for servers:
+# 6. Apply salt states for servers and clients:
 #
-# salt consul*.example.com state.apply ufw
 # salt consul*.example.com state.apply consul
-#
-#    And for clients:
-#
-# salt vault*.example.com state.apply ufw
 # salt vault*.example.com state.apply consul
 #
 ###########################################################
