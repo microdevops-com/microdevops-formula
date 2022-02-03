@@ -37,7 +37,6 @@
 #  "acl": {
 #    "enabled": true,
 #    "default_policy": "allow",
-#    "enable_token_persistence": true
 #  },
 #
 # 3. Apply salt states for servers and clients:
@@ -62,15 +61,21 @@
 #    00000000-0000-0000-0000-000000000001 - global-management
 #
 # 
-#     Then setup ACL default_policy to deny, and set SecretID like acl token for Consul CLIENTS, via pillar:
+#     Then setup ACL default_policy to deny, and set SecretID like acl token for Consul CLIENTS:
 #
 #   "acl": {
 #     "enabled": true,
 #     "default_policy": "deny",
-#     "enable_token_persistence": true
 #     "tokens": {
 #       "default": "aa48f8a4-6cc9-28ee-1e1b-9677d17fd383"
 #     }
+#   },
+#
+#     And setup ACL default_policy to deny for Consul SERVERS:
+#
+#   "acl": {
+#     "enabled": true,
+#     "default_policy": "deny",
 #   },
 #
 #    For each client, you need to generate your own token with the necessary policies.
@@ -181,7 +186,7 @@ consul:
       "disable_remote_exec": true,
       "acl": {
         "enabled": false,
-        "default_policy": "deny",
+        "default_policy": "allow",
         "enable_token_persistence": true
       },
       "auto_encrypt": { "allow_tls": true },
