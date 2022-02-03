@@ -128,10 +128,10 @@ consul_container:
     - environment:
         - CONSUL_HTTP_ADDR: 'https://127.0.0.1:8501'
         - CONSUL_CACERT: /consul/certs/ca.crt
-    {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
+    {%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
         - CONSUL_CLIENT_CERT: /consul/certs/agent-client.crt
         - CONSUL_CLIENT_KEY: /consul/certs/agent-client.key{%- endif %}{%- endfor %}
-    {%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
+    {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
         - CONSUL_CLIENT_CERT: /consul/certs/{{ grains['fqdn'] }}.crt
         - CONSUL_CLIENT_KEY: /consul/certs/{{ grains['fqdn'] }}.key{%- endif %}{%- endfor %}
 
