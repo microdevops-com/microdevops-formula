@@ -3,6 +3,7 @@
   {%- for host in pillar["salt"]["minion"]["hosts"] %}
 salt_master_hosts_{{ loop.index }}:
   host.present:
+    - clean: True
     - ip: {{ host["ip"] }}
     - names:
         - {{ host["name"] }}

@@ -21,9 +21,24 @@ backend.rules6 = []
 # Remember errors in loop
 errors = False
 
+# Init empty rules lists
+rules_with_insert = []
+rules_other = []
+rules = []
 # Read rules src file and append rules in backend object
 with open("/etc/ufw/user.rules.src") as rules_file:
     for rule in rules_file:
+        if "ufw insert " in rule:
+            rules_with_insert.append(rule)
+        else:
+            rules_other.append(rule)
+    # First add rules with insert key sorted
+    rules_with_insert.sort()
+    rules.extend(rules_with_insert)
+    # Then add other rules
+    rules.extend(rules_other)
+
+    for rule in rules:
         # Bad src rules shouldn't break whole firewall
         try:
             parser = parse_command(shlex.split(rule.strip()))

@@ -3,11 +3,14 @@
 # php-fpm
 php-fpm:
   enabled: True
-  version_5_5: True # php 5.5, system repo, ubuntu 14 is required
-  version_5_6: True # php 5.6, ondrej repo
-  version_7_0: True # php 7.0, ondrej repo
-  version_7_1: True # php 7.1, ondrej repo
-  version_7_2: True # php 7.2, ondrej repo
+  version_5_6: True
+  version_7_0: True
+  version_7_1: True
+  version_7_2: True
+  version_7_3: True
+  version_7_3: True
+  version_8_0: True
+  version_8_1: True
   tz:
     php5_5: 'Etc/UTC'
   modules:
