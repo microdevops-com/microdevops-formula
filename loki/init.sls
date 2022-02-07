@@ -97,7 +97,7 @@ nginx_files_1:
                     proxy_set_header Host $http_host;
                     proxy_set_header Upgrade websocket;
                     proxy_set_header Connection Upgrade;
-                    proxy_pass http://localhost:{{ pillar["loki"]["config"]["http_listen_port"] }}/;
+                    proxy_pass http://localhost:{{ pillar["loki"]["config"]["server"]["http_listen_port"] }}/;
                 }
             }
         }
@@ -149,7 +149,7 @@ loki_container:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-        - 127.0.0.1:{{ pillar['loki']['config']['http_listen_port'] }}:{{ pillar['loki']['config']['http_listen_port'] }}/tcp
+        - 127.0.0.1:{{ pillar['loki']['config']['server']['http_listen_port'] }}:{{ pillar['loki']['config']['server']['http_listen_port'] }}/tcp
     - binds:
         - /opt/loki/{{ pillar['loki']['name'] }}:/tmp/loki
     - watch:
