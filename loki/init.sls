@@ -97,7 +97,7 @@ nginx_files_1:
                     proxy_set_header Host $http_host;
                     proxy_set_header Upgrade websocket;
                     proxy_set_header Connection Upgrade;
-                    proxy_pass http://localhost:{{ pillar["loki"]["port"] }}/;
+                    proxy_pass http://localhost:{{ pillar["loki"]["config"]["http_listen_port"] }}/;
                 }
             }
         }
@@ -127,13 +127,15 @@ loki_data_dir:
     - makedirs: True
 
 loki_config:
-  file.managed:
+  file.serialize:
     - name: /opt/loki/{{ pillar['loki']['name'] }}/config.yaml
     - user: 0
     - group: 0
     - mode: 644
-    - contents: |
-        {{ pillar['loki']['config'] | indent(8) }}
+    - serializer: yaml
+    - dataset_pillar: loki:config
+    - serializer_opts:
+      - sort_keys: False
  
 loki_image:
   cmd.run:
@@ -147,7 +149,7 @@ loki_container:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-        - 127.0.0.1:{{ pillar['loki']['port'] }}:{{ pillar['loki']['port'] }}/tcp
+        - 127.0.0.1:{{ pillar['loki']['config']['http_listen_port'] }}:{{ pillar['loki']['config']['http_listen_port'] }}/tcp
     - binds:
         - /opt/loki/{{ pillar['loki']['name'] }}:/tmp/loki
     - watch:
