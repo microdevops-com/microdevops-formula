@@ -25,7 +25,7 @@
       {%- set acme_force_renewal = " " %}
     {%- endif %}
 
-    {%- set acme_custom_params = "--reloadcmd 'nginx -t 2>/dev/null && nginx -s reload'" %}
+    {%- set acme_custom_params = "--reloadcmd 'nginx -t -q && nginx -s reload'" %}
 
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}
