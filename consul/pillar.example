@@ -1,10 +1,110 @@
-# To create the initial bootstrap token, use the acl bootstrap command on one of the servers.
-# https://learn.hashicorp.com/tutorials/consul/access-control-setup-production
+############################################################
 #
-# To enable gossip encryption, you need to use an encryption key when starting the Consul agent
-# https://learn.hashicorp.com/tutorials/consul/gossip-encryption-secure?in=consul/security
+#          Vault High Availability with Consul
 #
-# use certgenerator.sh to generate TLS certificates and keys
+#  https://learn.hashicorp.com/tutorials/vault/ha-with-consul
+#
+############################################################
+# 1. Generate mTLS for Consul with script salt://files/consul/tls/certgenerator.sh
+#    The value of "CONSUL_DOMAIN" in the script must match the value of "domain" in the pillar, by default it is "consul"
+#    The value of "CONSUL_DC" in the script must match the value of "datacenter" in the pillar, by default it is "DC1"
+#
+# ./certgenerator.sh consul.example.com server consul1.example.com
+# ./certgenerator.sh consul.example.com server consul2.example.com
+# ./certgenerator.sh consul.example.com server consul3.example.com
+# ./certgenerator.sh consul.example.com client
+#
+#
+#    If mTLS is not required
+#    set:
+#      "ports": {
+#        "http": 8500,
+#      },
+#      "auto_encrypt": { "tls": false },
+#      "verify_incoming": false,
+#      "verify_incoming_rpc": false,
+#      "verify_outgoing": false,
+#      "verify_server_hostname": false,
+#
+#    and delete strings:
+#      "cert_file": "/consul/certs/....crt",
+#      "key_file": "/consul/certs/....key",
+#      "ca_file": "/consul/certs/ca.crt",
+#
+# 2. Before ACL bootstrapping and Gossip encryption enabling
+#    setup in pillar for Consul SERVERS and CLIENTS:
+#
+#  "acl": {
+#    "enabled": true,
+#    "default_policy": "allow",
+#  },
+#
+# 3. Apply salt states for servers and clients:
+#
+# salt consul*.example.com state.apply ufw
+# salt consul*.example.com state.apply consul
+# salt vault*.example.com state.apply ufw
+# salt vault*.example.com state.apply consul
+#
+#
+# 4. To create the initial bootstrap token "SecretID", use the acl bootstrap command on one of the servers.
+#    https://learn.hashicorp.com/tutorials/consul/access-control-setup-production
+#
+# docker exec -it consul-consul1.example.com consul acl bootstrap
+#
+#  AccessorID:       9a1196a5-d727-1beb-acd4-b5329f463edf
+#  SecretID:         aa48f8a4-6cc9-28ee-1e1b-9677d17fd383
+#  Description:      Bootstrap Token (Global Management)
+#  Local:            false
+#  Create Time:      2022-02-02 21:08:03.288192254 +0000 UTC
+#  Policies:
+#    00000000-0000-0000-0000-000000000001 - global-management
+#
+# 
+#     Then setup ACL default_policy to deny, and set SecretID like acl token for Consul CLIENTS:
+#
+#   "acl": {
+#     "enabled": true,
+#     "default_policy": "deny",
+#     "tokens": {
+#       "default": "aa48f8a4-6cc9-28ee-1e1b-9677d17fd383"
+#     }
+#   },
+#
+#     And setup ACL default_policy to deny for Consul SERVERS:
+#
+#   "acl": {
+#     "enabled": true,
+#     "default_policy": "deny",
+#   },
+#
+#    For each client, you need to generate your own token with the necessary policies.
+#    By default, Consul assigns the global-management policy to the bootstrap token, which has unrestricted privileges.
+#    It is important to have one token with unrestricted privileges in case of emergencies; 
+#    however you should only give a small number of administrators access to it. 
+#    The SecretID is a UUID that you will use to identify the token when using the Consul CLI or HTTP API.
+#
+# 5. To enable gossip encryption, you need to use an encryption key when starting the Consul agent
+#    https://learn.hashicorp.com/tutorials/consul/gossip-encryption-secure?in=consul/security
+#
+# docker exec -it consul-consul1.example.com consul keygen
+#
+#  6a5Y1I2Fj86sCbFBaRcVXcVLqsg9VLAKr+J5N9/qZd4=
+#
+#  And setup in pillar:
+#
+#  "encrypt": "6a5Y1I2Fj86sCbFBaRcVXcVLqsg9VLAKr+J5N9/qZd4=",
+#  "encrypt_verify_incoming": true,
+#  "encrypt_verify_outgoing": true,
+#
+# 6. Apply salt states for servers and clients:
+#
+# salt consul*.example.com state.apply consul
+# salt vault*.example.com state.apply consul
+#
+###########################################################
+
+{% from 'ufw_simple/vars.jinja' import vars with context %}
 
 {%
 set client_nodes = {
@@ -16,7 +116,7 @@ set client_nodes = {
 set server_nodes = {
   'consul1.example.com': 3.4.5.6,
   'consul2.example.com': 4.5.6.7,
-  'consul3.example.com': 5.6.7.8
+  'consul3.example.com': 5.6.7.8 
 }
 %}
 {% set all_nodes = dict() %}
@@ -32,14 +132,20 @@ ufw:
         {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
         {{ key }}: {{ val }}
         {%- endif %}{%- endfor %}
-      to_port: '8300,8301,8302,8500,8501,8600'
+      to_port: '8300,8301,8302,8500,8501'
     cluster_consul_udp:
       proto: 'udp'
       from:
         {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
         {{ key }}: {{ val }}
         {%- endif %}{%- endfor %}
-      to_port: '8301,8302,8600'
+      to_port: '8301,8302'
+    consul_dns_tcp:
+      proto: 'tcp'
+      to_port: 8600
+    consul_dns_udp:
+      proto: 'udp'
+      to_port: 8600
 
 consul:
   name: {{ grains['fqdn'] }}
@@ -70,7 +176,8 @@ consul:
       "addresses": {
         "grpc": "{{ val }}",
         "http": "0.0.0.0",
-        "https": "0.0.0.0"
+        "https": "0.0.0.0",
+        "dns": "0.0.0.0"
       },      
       "server": true,
       "ui_config": { "enabled": true },
@@ -78,7 +185,7 @@ consul:
       "enable_script_checks": false,
       "disable_remote_exec": true,
       "acl": {
-        "enabled": true,
+        "enabled": false,
         "default_policy": "allow",
         "enable_token_persistence": true
       },
@@ -88,18 +195,20 @@ consul:
       {%- for key, val in client_nodes.items() %}{%- if grains['fqdn'] == key %}
       "server": false,
       "acl": {
-        "enabled": true,
+        "enabled": false,
         "default_policy": "allow",
         "enable_token_persistence": true,
         "tokens": {
-          "default": "92f75289-31a6-7fcd-584a-d98f41ac96c6"
+          "default": "aa48f8a4-6cc9-28ee-1e1b-9677d17fd383"
         }
       },
       "auto_encrypt": { "tls": true },
       "cert_file": "/consul/certs/agent-client.crt",
       "key_file": "/consul/certs/agent-client.key",{% endif %}{% endfor %}
       "ca_file": "/consul/certs/ca.crt",
-      "encrypt": "MY2dfsdfgfrtherhnbyunmftjmfyeZDiJBLR5WRvnx8=",
+      "encrypt": "6a5Y1I2Fj86sCbFBaRcVXcVLqsg9VLAKr+J5N9/qZd4=",
+      "encrypt_verify_incoming": false,
+      "encrypt_verify_outgoing": false,
       "verify_incoming": false,
       "verify_incoming_rpc": true,
       "verify_outgoing": true,

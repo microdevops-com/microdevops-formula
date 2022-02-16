@@ -53,16 +53,10 @@ consul_data_dir:
     - makedirs: True
 
 consul_config:
-  file.managed:
+  file.serialize:
     - name: /opt/consul/{{ pillar["consul"]["name"] }}/config/config.json
-    - contents: |
-        {{ pillar["consul"]["config"] | indent(8) }}
-
-consul_config_2:
-  file.replace:
-    - name: /opt/consul/{{ pillar["consul"]["name"] }}/config/config.json
-    - pattern: '(^ *"retry_join": \[.*), \],$'
-    - repl: '\1],'
+    - dataset: {{ pillar["consul"]["config"] | json }}
+    - formatter: json
 
 cacert:
   file.managed:
@@ -115,25 +109,44 @@ consul_container:
       - 0.0.0.0:8302:8302/tcp
       - 0.0.0.0:8500:8500/tcp
       - 0.0.0.0:8501:8501/tcp
-      - 0.0.0.0:8600:8600/tcp
+      - 0.0.0.0:8600:{{ pillar["consul"]["config"]["ports"]["dns"] }}/tcp
       - 0.0.0.0:8301:8301/udp
       - 0.0.0.0:8302:8302/udp
-      - 0.0.0.0:8600:8600/udp
+      - 0.0.0.0:8600:{{ pillar["consul"]["config"]["ports"]["dns"] }}/udp
     - binds:
       - /opt/consul/{{ pillar["consul"]["name"] }}/config/:/consul/config:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/data/:/consul/data:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/logs/:/consul/logs:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/certs/:/consul/certs:rw
     - command: {{ pillar["consul"]["command"] }}
+    - cap_add:
+      - NET_BIND_SERVICE
     - environment:
-        - CONSUL_HTTP_ADDR: 'https://127.0.0.1:8501'
+        - CONSUL_ALLOW_PRIVILEGED_PORTS: yes
+        - CONSUL_HTTP_ADDR: 'https://127.0.0.1:{{ pillar["consul"]["config"]["ports"]["https"] }}'
         - CONSUL_CACERT: /consul/certs/ca.crt
-    {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
+    {%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
         - CONSUL_CLIENT_CERT: /consul/certs/agent-client.crt
         - CONSUL_CLIENT_KEY: /consul/certs/agent-client.key{%- endif %}{%- endfor %}
-    {%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
+    {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
         - CONSUL_CLIENT_CERT: /consul/certs/{{ grains['fqdn'] }}.crt
         - CONSUL_CLIENT_KEY: /consul/certs/{{ grains['fqdn'] }}.key{%- endif %}{%- endfor %}
+
+systemd-resolved_consul_conf:
+  file.managed:
+    - name: /etc/systemd/resolved.conf.d/consul.conf
+    - makedirs: True
+    - contents: |
+        [Resolve]
+        DNS=127.0.0.1
+        DNSSEC=false
+        Domains=~consul
+
+systemd-resolved_restart:
+  cmd.run:
+    - name: systemctl restart systemd-resolved
+    - onchanges:
+      - file: /etc/systemd/resolved.conf.d/consul.conf
 
 docker_container_restart:
   cmd.run:
