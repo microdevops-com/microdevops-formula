@@ -89,6 +89,7 @@ pkg_latest:
       - memtester
       - bonnie++
       - stress
+      - bmon
 {% endif %}
 
 full_hostname:
