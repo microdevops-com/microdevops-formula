@@ -65,6 +65,7 @@ pkg_latest:
       - whois
       - net-tools
       - iputils-ping
+      - bmon
       # build
       - build-essential
       - git
@@ -89,7 +90,6 @@ pkg_latest:
       - memtester
       - bonnie++
       - stress
-      - bmon
 {% endif %}
 
 full_hostname:
