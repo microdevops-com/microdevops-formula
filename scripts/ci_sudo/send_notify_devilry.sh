@@ -13,6 +13,9 @@ if [[ -n "$RSNAPSHOT_BACKUP_TYPE" ]]; then
 	# Failed sync stage (has allow_failure: True) - send critical disregarding other stages
 	if [[ "$RSNAPSHOT_BACKUP_SYNC" == "failed" ]]; then
 
+		echo XXX
+		echo RSNAPSHOT_BACKUP_SYNC = $RSNAPSHOT_BACKUP_SYNC
+
 		NOTIFY_SEVERITY=critical
 		NOTIFY_SEND=1
 		NOTIFY_EVENT=pipeline_rsnapshot_backup_failed
