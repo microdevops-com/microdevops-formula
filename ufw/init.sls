@@ -119,7 +119,12 @@ ufw_before_rules_managed:
       {%- else %}
         {%- set daddr_block = " " %}
       {%- endif %}
-          -A PREROUTING -i {{ d_val["in"] }} {{ src_block }} -p {{ d_val["proto"] }} {{ daddr_block }} --dport {{ d_val["dport"] }} -j DNAT --to-destination {{ d_val["to"] }}
+      {%- if "in" in d_val %}
+        {%- set in_block = "-i " ~ d_val["in"] %}
+      {%- else %}
+        {%- set in_block = " " %}
+      {%- endif %}
+          -A PREROUTING {{ in_block }} {{ src_block }} -p {{ d_val["proto"] }} {{ daddr_block }} --dport {{ d_val["dport"] }} -j DNAT --to-destination {{ d_val["to"] }}
     {%- endfor %}
   {%- else %}
         dnat: "# empty"
