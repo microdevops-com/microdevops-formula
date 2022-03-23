@@ -29,6 +29,7 @@ lxd:
       image: ubuntu/focal/amd64 # empty or remove for empty image and install from iso
       #image: ubuntu/focal/amd64/vm # use alias of vm image for virtual machines
       #init_flags: --empty -c security.secureboot=false # for windows install from iso
+      #skip_wait_exec_true: True # do not wait for successful exec of /bin/true for windows install from iso
       devices:
         root:
           type: disk
