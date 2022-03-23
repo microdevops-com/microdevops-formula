@@ -1,3 +1,25 @@
+# Notes on Windows:
+# If you delete VM and try to create the same, it may fail on "invalid main GPT header". You can fix this with just changing the disk size for 1 Gb.
+# Agent notes: https://discuss.linuxcontainers.org/t/running-windows-vm-in-lxd-is-there-an-lxd-agent-for-winodws/11792
+# How to setup Windows: https://discuss.linuxcontainers.org/t/how-to-run-a-windows-virtual-machine-on-lxd-on-linux/10397
+# Console attach: https://discuss.linuxcontainers.org/t/vga-console-connect/8814/6?u=jetman80
+#
+# Notes on VMs and Ubuntu:
+# In case Instance is Virtual-Machine you need to grow internal root partition size:
+# lxc stop ...
+# lvchange --setactivationskip n /dev/vg_md2/virtual-machines_...block
+# lvchange --activate y /dev/vg_md2/virtual-machines_...block
+# parted /dev/vg_md2/virtual-machines_...block
+#   resizepart 2
+#   100%
+#   q
+# kpartx -a /dev/vg_md2/virtual-machines_...block
+# e2fsck -f  /dev/mapper/vg_md2-virtual--machines_...block2
+# resize2fs /dev/mapper/vg_md2-virtual--machines_...block2
+# kpartx -d /dev/vg_md2/virtual-machines_test.block
+# lxc start ...
+
+
 lxd:
   password: randompassword
   images: # optional, images to predownload on server, no images are preloaded by default
