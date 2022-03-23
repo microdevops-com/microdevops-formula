@@ -26,8 +26,9 @@ lxd:
     # actual lxd names are dots to dashes converted
     instance1.example.com: # with eth0 with mac and eth1 in br1
       # vm: True # add --vm to lxc init
-      image: ubuntu/focal/amd64
+      image: ubuntu/focal/amd64 # empty or remove for empty image and install from iso
       #image: ubuntu/focal/amd64/vm # use alias of vm image for virtual machines
+      #init_flags: --empty -c security.secureboot=false # for windows install from iso
       devices:
         root:
           type: disk

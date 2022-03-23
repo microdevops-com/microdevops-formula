@@ -6,7 +6,7 @@
 lxd_init_{{ loop.index }}:
   cmd.run:
     - prepend_path: /snap/bin
-    - name: lxc list | grep -q -e "| {{ instance_name }} *|" || lxc init {{ instance_val["image"] }} {{ instance_name }} {% if "vm" in instance_val and instance_val["vm"] %}--vm{% endif %}
+    - name: lxc list | grep -q -e "| {{ instance_name }} *|" || lxc init {% if "image" in instance_val %}{{ instance_val["image"] }}{% endif %} {{ instance_name }} {% if "vm" in instance_val and instance_val["vm"] %}--vm{% endif %} {% if "init_flags" in instance_val %}{{ instance_val["init_flags"] }}{% endif %}
 
       {%- if "allow_stop_start" in pillar["lxd"] and pillar["lxd"]["allow_stop_start"] %}
 lxd_stop_{{ loop.index }}:
