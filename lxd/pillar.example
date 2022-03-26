@@ -1,8 +1,17 @@
 # Notes on Windows:
-# If you delete VM and try to create the same, it may fail on "invalid main GPT header". You can fix this with just changing the disk size for 1 Gb.
-# Agent notes: https://discuss.linuxcontainers.org/t/running-windows-vm-in-lxd-is-there-an-lxd-agent-for-winodws/11792
-# How to setup Windows: https://discuss.linuxcontainers.org/t/how-to-run-a-windows-virtual-machine-on-lxd-on-linux/10397
-# Console attach: https://discuss.linuxcontainers.org/t/vga-console-connect/8814/6?u=jetman80
+# - If you delete VM and try to create the same, it may fail on "invalid main GPT header".
+#   You can fix this with just changing the disk size for 1 Gb. With thin provisioning in storage this bug is not reproduced.
+# - You need to catch with `lxc console xxx --type=vga` the first seconds of start to push any key to load from iso.
+# - Useful docs:
+#   Agent notes: https://discuss.linuxcontainers.org/t/running-windows-vm-in-lxd-is-there-an-lxd-agent-for-winodws/11792
+#   How to setup Windows: https://discuss.linuxcontainers.org/t/how-to-run-a-windows-virtual-machine-on-lxd-on-linux/10397
+#   Console attach: https://discuss.linuxcontainers.org/t/vga-console-connect/8814/6
+# - TPM device (needed for Windows 11):
+#   https://discuss.linuxcontainers.org/t/lxd-4-8-has-been-released/9458
+#   and maybe (not sure) https://getlabsdone.com/how-to-enable-tpm-and-secure-boot-on-kvm/
+# - Youtube tutorial on Windows 11: https://www.youtube.com/watch?v=3PDMGwbbk48
+# - Make sure you have limits.cpu set for Windows 11, it will not allow setup with unlimited CPU.
+# - ISO with Windows drivers: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/
 #
 # Notes on VMs and Ubuntu:
 # In case Instance is Virtual-Machine you need to grow internal root partition size:
@@ -50,7 +59,8 @@ lxd:
       # vm: True # add --vm to lxc init
       image: ubuntu/focal/amd64 # empty or remove for empty image and install from iso
       #image: ubuntu/focal/amd64/vm # use alias of vm image for virtual machines
-      #init_flags: --empty -c security.secureboot=false # for windows install from iso
+      #init_flags: --empty -c security.secureboot=false # for Windows install from iso
+      #init_flags: --empty # Windows 11 requires secureboot
       #skip_wait_exec_true: True # do not wait for successful exec of /bin/true for windows install from iso
       devices:
         root:
@@ -63,6 +73,15 @@ lxd:
           nictype: bridged
           parent: br0
           hwaddr: aa:aa:aa:aa:aa:aa
+        #tpm: # needed for windows 11
+        #  type: tpm
+        #iso1:
+        #  type: disk
+        #  source: /media/disk/ISO/Win11_English_x64v1-distrobuilder.iso
+        #  boot.priority: 10
+        #iso2:
+        #  type: disk
+        #  source: /media/disk/ISO/virtio-win-0.1.215.iso
       #config: # optional config values to apply https://lxd.readthedocs.io/en/latest/instances/
       #  limits.cpu: 1
       #  limits.memory: 1024MB
