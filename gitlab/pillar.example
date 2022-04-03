@@ -4,6 +4,9 @@ gitlab:
   distribution: ce # ce or ee, see https://about.gitlab.com/handbook/marketing/strategic-marketing/tiers/#history-of-ce-and-ee-distributions
   domain: gitlab.example.com
   acme_account: example.com
+  #redirect: # optional, add custom nginx config with redirect from other domain
+  #  domain: gitlab.old-example.com
+  #  acme_account: old-example.com
   gitaly_ruby_num_workers: 4
   google_oauth2:
     app_id: xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com

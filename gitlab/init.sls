@@ -41,6 +41,29 @@ gitlab_dirs:
       - /etc/gitlab
       - /etc/gitlab/nginx/conf.d
 
+  {%- if "redirect" in pillar["gitlab"] %}
+gitlab_redirect_acme_run:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar["gitlab"]["redirect"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["redirect"]["domain"] }}"
+
+gitlab_nginx_redirect:
+  file.managed:
+    - name: etc/gitlab/nginx/conf.d/redirect.conf
+    - contents: |
+        server {
+          listen 80;
+          listen 443 ssl;
+          server_name {{ pillar["gitlab"]["redirect"]["domain"] }};
+          ssl_certificate /opt/acme/cert/gitlab_{{ pillar["gitlab"]["redirect"]["domain"] }}_fullchain.cer;
+          ssl_certificate_key /opt/acme/cert/gitlab_{{ pillar["gitlab"]["redirect"]["domain"] }}_key.key;
+          return 301 https://{{ pillar["gitlab"]["domain"] }}$request_uri;
+        }
+    - require:
+      - cmd: gitlab_redirect_acme_run
+
+  {%- endif %}
+
 gitlab_config:
   file.managed:
     - name: /etc/gitlab/gitlab.rb
