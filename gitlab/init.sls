@@ -159,6 +159,18 @@ gitlab_reconfigure:
       - cmd: gitlab_acme_run
       - pkg: gitlab_pkg
 
+gitlab_reconfigure:
+  cmd.run:
+    - name: gitlab-ctl restart
+    - onchanges:
+      - file: /etc/gitlab/gitlab.rb
+  {%- if "redirect" in pillar["gitlab"] %}
+      - file: /etc/gitlab/nginx/conf.d/redirect.conf
+  {%- endif %}
+    - require:
+      - cmd: gitlab_acme_run
+      - pkg: gitlab_pkg
+
 gitlab_cron_gitlab_backup:
   cron.present:
     - identifier: gitlab_backup
