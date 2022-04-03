@@ -159,7 +159,7 @@ gitlab_reconfigure:
       - cmd: gitlab_acme_run
       - pkg: gitlab_pkg
 
-gitlab_reconfigure:
+gitlab_restart:
   cmd.run:
     - name: gitlab-ctl restart
     - onchanges:
