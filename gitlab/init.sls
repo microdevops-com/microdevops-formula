@@ -104,7 +104,8 @@ gitlab_fix_clean_install_with_ext_url:
     - name: |
         until dpkg-query -s gitlab-{{ pillar["gitlab"]["distribution"] }} | grep -q "Status: install ok installed"; do systemctl start gitlab-runsvdir.service; sleep 10; done
     - bg: True
-    - timeout: 180
+    - require:
+      - cmd: gitlab_acme_run
 
 gitlab_pkg:
   {%- if pillar["gitlab"]["version"] == "latest" %}
@@ -112,11 +113,15 @@ gitlab_pkg:
     - refresh: True
     - pkgs:
       - gitlab-{{ pillar["gitlab"]["distribution"] }}
+    - require:
+      - cmd: gitlab_acme_run
   {%- else %}
   pkg.installed:
     - refresh: True
     - pkgs:
       - gitlab-{{ pillar["gitlab"]["distribution"] }}: '{{ pillar["gitlab"]["version"] }}*'
+    - require:
+      - cmd: gitlab_acme_run
   {%- endif %}
 
 gitlab_reconfigure:
@@ -124,6 +129,9 @@ gitlab_reconfigure:
     - name: gitlab-ctl reconfigure
     - onchanges:
       - file: /etc/gitlab/gitlab.rb
+    - require:
+      - cmd: gitlab_acme_run
+      - pkg: gitlab_pkg
 
 gitlab_cron_gitlab_backup:
   cron.present:
