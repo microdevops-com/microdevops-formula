@@ -39,6 +39,7 @@ gitlab_dirs:
       - /var/backups/gitlab_backups
       - /var/backups/gitlab_backups
       - /etc/gitlab
+      - /etc/gitlab/nginx/conf.d
 
 gitlab_config:
   file.managed:
@@ -48,6 +49,7 @@ gitlab_config:
         nginx['redirect_http_to_https'] = true
         nginx['ssl_certificate'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_fullchain.cer"
         nginx['ssl_certificate_key'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_key.key"
+        nginx['custom_nginx_config'] = "include /etc/gitlab/nginx/conf.d/*.conf;"
         postgresql['listen_address'] = '*'
         postgresql['port'] = 5432
         postgresql['md5_auth_cidr_addresses'] = %w({{ pillar["gitlab"]["postgresql"]["md5_auth_cidr_addresses"] }})
