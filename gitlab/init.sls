@@ -102,7 +102,7 @@ gitlab_config:
 gitlab_fix_clean_install_with_ext_url:
   cmd.run:
     - name: |
-        until dpkg-query -s gitlab-{{ pillar["gitlab"]["distribution"] }} | grep -q "Status: install ok installed"; do systemctl start gitlab-runsvdir.service; sleep 10; done
+        timeout 180s bash -c 'until dpkg-query -s gitlab-{{ pillar["gitlab"]["distribution"] }} | grep -q "Status: install ok installed"; do systemctl start gitlab-runsvdir.service; sleep 10; done'
     - bg: True
     - require:
       - cmd: gitlab_acme_run
