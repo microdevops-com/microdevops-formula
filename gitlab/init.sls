@@ -49,7 +49,7 @@ gitlab_redirect_acme_run:
 
 gitlab_nginx_redirect:
   file.managed:
-    - name: etc/gitlab/nginx/conf.d/redirect.conf
+    - name: /etc/gitlab/nginx/conf.d/redirect.conf
     - contents: |
         server {
           listen 80;
