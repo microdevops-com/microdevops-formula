@@ -152,6 +152,9 @@ gitlab_reconfigure:
     - name: gitlab-ctl reconfigure
     - onchanges:
       - file: /etc/gitlab/gitlab.rb
+  {%- if "redirect" in pillar["gitlab"] %}
+      - file: /etc/gitlab/nginx/conf.d/redirect.conf
+  {%- endif %}
     - require:
       - cmd: gitlab_acme_run
       - pkg: gitlab_pkg
