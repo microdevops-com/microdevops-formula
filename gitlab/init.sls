@@ -102,7 +102,10 @@ gitlab_config:
 gitlab_fix_clean_install_with_ext_url:
   cmd.run:
     - name: |
-        until dpkg-query -s gitlab-{{ pillar["gitlab"]["distribution"] }} | grep -q "Status: install ok installed"; do systemctl start gitlab-runsvdir.service; sleep 10; done
+        GITLAB_INSTALL_RETRIES=1
+        GITLAB_INSTALL_RETRIES_MAX=18
+        until dpkg-query -s gitlab-{{ pillar["gitlab"]["distribution"] }} | grep -q "Status: install ok installed" || (( GITLAB_INSTALL_RETRIES == GITLAB_INSTALL_RETRIES_MAX )); do systemctl start gitlab-runsvdir.service; let "GITLAB_INSTALL_RETRIES++"; sleep 10; done
+        if [[ ${GITLAB_INSTALL_RETRIES} -eq ${GITLAB_INSTALL_RETRIES_MAX} ]]; then echo ERROR: waiting for successful gitlab install failed; false; fi
     - bg: True
 
 gitlab_pkg:
