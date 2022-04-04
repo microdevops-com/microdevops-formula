@@ -151,6 +151,7 @@ alerta_uwsgi_ini:
     - replace: True
     - template: jinja
     - defaults:
+        base_url: "https://{{ pillar["alerta"]["domain"] }}/api"
         processes: {{ pillar["alerta"]["uwsgi"]["processes"] }}
         listen: {{ pillar["alerta"]["uwsgi"]["listen"] }}
 
@@ -171,6 +172,7 @@ alerta_config:
     - replace: True
     - template: jinja
     - defaults:
+        base_url: "https://{{ pillar["alerta"]["domain"] }}/api"
         secret_key: {{ pillar["alerta"]["secret_key"] }}
         db_user: {{ pillar["alerta"]["db"]["user"] }}
         db_pass: {{ pillar["alerta"]["db"]["pass"] }}
@@ -233,7 +235,7 @@ alerta_install_webui_config:
     - group: alerta
     - mode: 0644
     - contents: |
-        {"endpoint": "/api"}
+        {"endpoint": "https://{{ pillar['alerta']['domain'] }}/api"}
 
 alerta_main_nginx:
   file.managed:
