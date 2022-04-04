@@ -1,45 +1,4 @@
-{% if pillar["consul"] is defined %}
-docker_install_00:
-  file.directory:
-    - name: /etc/docker
-    - mode: 700
-
-docker_install_01:
-  file.managed:
-    - name: /etc/docker/daemon.json
-    - contents: |
-        { "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
-
-docker_install_1:
-  pkgrepo.managed:
-    - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains["os"]|lower }} {{ grains["oscodename"] }} stable
-    - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/{{ grains["os"]|lower }}/gpg
-
-pkgs_install:
-  pkg.installed:
-    - refresh: True
-    - reload_modules: True
-    - pkgs:
-        - docker-ce: "{{ pillar["consul"]["docker-ce_version"] }}*"
-        - python3-pip
-
-docker_pip_install:
-  pip.installed:
-    - name: docker-py >= 1.10
-    - reload_modules: True
-
-docker_install_3:
-  service.running:
-    - name: docker
-
-docker_install_4:
-  cmd.run:
-    - name: systemctl restart docker
-    - onchanges:
-        - file: /etc/docker/daemon.json
-
+{%- if pillar["consul"] is defined %}
 consul_data_dir:
   file.directory:
     - names:
@@ -57,6 +16,20 @@ consul_config:
     - name: /opt/consul/{{ pillar["consul"]["name"] }}/config/config.json
     - dataset: {{ pillar["consul"]["config"] | json }}
     - formatter: json
+
+{%-   if 'node_services' in pillar["consul"]  %}
+{%-     for node in pillar["consul"]["node_services"] %}
+{%-       if node["node_name"] == grains["fqdn"] %}
+{%-         for service in node["services"] %}
+consul serivce {{ service["config"]["service"]["name"] }} config on {{ node["node_name"] }}:
+  file.serialize:
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/config/{{ service["config"]["service"]["name"] }}.json
+    - dataset: {{ service["config"] }}
+    - formatter: json
+{%-         endfor %}
+{%-       endif %}
+{%-     endfor %}
+{%-   endif %}
 
 cacert:
   file.managed:
@@ -109,10 +82,10 @@ consul_container:
       - 0.0.0.0:8302:8302/tcp
       - 0.0.0.0:8500:8500/tcp
       - 0.0.0.0:8501:8501/tcp
-      - 0.0.0.0:8600:{{ pillar["consul"]["config"]["ports"]["dns"] }}/tcp
+      - 127.0.0.1:53:{{ pillar["consul"]["config"]["ports"]["dns"] }}/tcp
       - 0.0.0.0:8301:8301/udp
       - 0.0.0.0:8302:8302/udp
-      - 0.0.0.0:8600:{{ pillar["consul"]["config"]["ports"]["dns"] }}/udp
+      - 127.0.0.1:53:{{ pillar["consul"]["config"]["ports"]["dns"] }}/udp
     - binds:
       - /opt/consul/{{ pillar["consul"]["name"] }}/config/:/consul/config:rw
       - /opt/consul/{{ pillar["consul"]["name"] }}/data/:/consul/data:rw
@@ -131,6 +104,13 @@ consul_container:
     {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
         - CONSUL_CLIENT_CERT: /consul/certs/{{ grains['fqdn'] }}.crt
         - CONSUL_CLIENT_KEY: /consul/certs/{{ grains['fqdn'] }}.key{%- endif %}{%- endfor %}
+
+resolv_conf:
+  file.replace:
+    - name: /etc/resolv.conf
+    - pattern: '^ *nameserver 127.0.0.53.*$'
+    - repl: 'nameserver 127.0.0.53'
+    - prepend_if_not_found: True
 
 systemd-resolved_consul_conf:
   file.managed:
