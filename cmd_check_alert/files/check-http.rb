@@ -380,7 +380,7 @@ class CheckHttp < Sensu::Plugin::Check::CLI
              "\n" + res.body.to_s
            else
              body = if config[:response_bytes] # rubocop:disable Lint/UselessAssignment
-                      "\n" + res.body[0..config[:response_bytes]]
+                      "\n" + res.body[0..config[:response_bytes]].tr('<>', '')
                     else
                       ''
                     end
@@ -412,11 +412,11 @@ class CheckHttp < Sensu::Plugin::Check::CLI
         if res.body =~ /#{config[:pattern]}/
           ok "#{res.code}, found /#{config[:pattern]}/ in #{size} bytes" + body
         else
-          critical "#{res.code}, did not find /#{config[:pattern]}/ in #{size} bytes: #{res.body[0...200]}..."
+          critical "#{res.code}, did not find /#{config[:pattern]}/ in #{size} bytes: #{res.body[0...200].tr('<>', '')}..."
         end
       elsif config[:negpattern]
         if res.body =~ /#{config[:negpattern]}/
-          critical "#{res.code}, found /#{config[:negpattern]}/ in #{size} bytes: #{res.body[0...200]}..."
+          critical "#{res.code}, found /#{config[:negpattern]}/ in #{size} bytes: #{res.body[0...200].tr('<>', '')}..."
         else
           ok "#{res.code}, did not find /#{config[:negpattern]}/ in #{size} bytes" + body
         end
@@ -424,7 +424,7 @@ class CheckHttp < Sensu::Plugin::Check::CLI
         if Digest::SHA256.hexdigest(res.body).eql? config[:sha256checksum]
           ok "#{res.code}, checksum match #{config[:sha256checksum]} in #{size} bytes" + body
         else
-          critical "#{res.code}, checksum did not match #{config[:sha256checksum]} in #{size} bytes: #{res.body[0...200]}..."
+          critical "#{res.code}, checksum did not match #{config[:sha256checksum]} in #{size} bytes: #{res.body[0...200].tr('<>', '')}..."
         end
       else
         ok("#{res.code}, #{size} bytes" + body) unless config[:response_code]
