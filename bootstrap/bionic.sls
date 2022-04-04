@@ -65,6 +65,7 @@ pkg_latest:
       - whois
       - net-tools
       - iputils-ping
+      - bmon
       # build
       - build-essential
       - git

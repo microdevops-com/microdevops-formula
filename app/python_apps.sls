@@ -29,7 +29,7 @@ Salt minion 3001+ with python3-pip deb package required for virtualenv.managed t
       {%- set acme_force_renewal = " " %}
     {%- endif %}
 
-    {%- set acme_custom_params = "--reloadcmd 'nginx -t && nginx -s reload'" %}
+    {%- set acme_custom_params = "--reloadcmd 'nginx -t -q && nginx -s reload'" %}
 
     {%- if (pillar['app_only_one'] is defined) and (pillar['app_only_one'] is not none) %}
       {%- set app_selector = pillar['app_only_one'] %}

@@ -1,0 +1,55 @@
+gitlab:
+  version: latest # latest or version like 14.8.3
+  root_password: xxxxxxxxxxxxxxxxxxx
+  distribution: ce # ce or ee, see https://about.gitlab.com/handbook/marketing/strategic-marketing/tiers/#history-of-ce-and-ee-distributions
+  domain: gitlab.example.com
+  acme_account: example.com
+  #redirect: # optional, add custom nginx config with redirect from other domain
+  #  domain: gitlab.old-example.com
+  #  acme_account: old-example.com
+  gitaly_ruby_num_workers: 4
+  google_oauth2:
+    app_id: xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
+    app_secret: xxxxxxxxxxxxxxxxxxxxxxxx
+  smtp:
+    address: smtp.gmail.com
+    port: 587
+    user_name: gitlab@example.com
+    password: xxxxxxxxxxxxxxxxxxxxx
+    domain: smtp.gmail.com
+  incoming_email:
+    address: gitlab+%{key}@example.com
+    email: gitlab@example.com
+    password: xxxxxxxxxxxxxxxxxxxxx
+    host: imap.gmail.com
+    port: 993
+    mailbox_name: inbox
+  postgresql:
+    md5_auth_cidr_addresses: "1.2.3.4/32 2.3.4.5/32"
+    sql_user_password: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  cron:
+    backup_cmd: "find /var/backups/gitlab_backups -name '*_gitlab_backup.tar' -delete >/dev/null; gitlab-rake gitlab:backup:create SKIP=registry >/dev/null"
+    registry_garbage_collect_cmd: "gitlab-ctl registry-garbage-collect -m >/dev/null"
+    # double \\ is for salt escape of escape
+    clean_job_artifacts_cmd: 'find /var/lib/gitlab_artifacts -type f \\( -name job.log -o -name artifacts.zip -o -name metadata.gz \\) -mtime +30 -delete -exec sleep 0.001 \\; >/dev/null; find /var/lib/gitlab_artifacts -mindepth 1 -type d -empty -delete -exec sleep 0.001 \\; >/dev/null'
+
+# example for rsnapshot_backup
+rsnapshot_backup:
+  sources:
+    gitlab1.example.com:
+      - type: RSYNC_SSH
+        data:
+          - UBUNTU
+          - /opt/gitlab
+          - /var/opt/gitlab
+          - /opt/acme
+          - /var/backups/gitlab_backups
+          #- /var/lib/gitlab_docker_registry
+          #- /var/lib/gitlab_artifacts
+        checks:
+          - type: .backup
+        backups:
+          - host: gitlab1.example.com
+            path: /var/backups/gitlab1.example.com
+          - host: backup1.example.com
+            path: /var/backups/gitlab1.example.com

@@ -129,9 +129,9 @@ salt_master_root_rsa_pub:
 salt_master_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-    - name: deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }} {{ grains["oscodename"] }} main
+    - name: deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }} {{ grains["oscodename"] }} main
     - file: /etc/apt/sources.list.d/saltstack.list
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
     - clean_file: True
 
   {%- endif %}
@@ -151,12 +151,12 @@ salt_master_service:
 salt_master_deploy_repo:
   cmd.run:
     - name: |
-        [ -d /srv/.git ] || ( cd /srv && git init . && ln -s ../../.githooks/post-merge .git/hooks/post-merge && git remote add origin {{ pillar["salt"]["master"]["repo"] }} && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull origin master && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update --recursive -f --checkout && git branch --set-upstream-to=origin/master master && .git/hooks/post-merge )
+        [ -d /srv/.git ] || ( cd /srv && git init . && ln -s ../../.githooks/post-merge .git/hooks/post-merge && git remote add origin {{ pillar["salt"]["master"]["repo"] }} && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull --no-tags origin master && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update --recursive -f --checkout && git branch --set-upstream-to=origin/master master && .git/hooks/post-merge )
 
 salt_master_update_repo:
   cmd.run:
     - name: |
-        [ -d /srv/.git ] && ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git fetch --prune origin +refs/tags/*:refs/tags/* && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update -f --checkout && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule foreach "git checkout master && git pull && git fetch --prune origin +refs/tags/*:refs/tags/*" )
+        [ -d /srv/.git ] && ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull --no-tags && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update -f --checkout && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule foreach "git checkout master && git pull --no-tags" )
   {%- endif %}
   
   {%- if pillar["salt"]["master"]["gitlab-runner"] %}

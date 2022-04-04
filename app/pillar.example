@@ -148,6 +148,9 @@ app:
           #acme: True
           #acme_account: example
           #acme_run_ready: True
+        vhost_defaults:
+          key1: value1 # defaults for vhost config template
+          key2: value2
       virtualenv: # python_apps only
         pyenv_version: 3.6.7
         target: /opt/alerta/app_1/venv
