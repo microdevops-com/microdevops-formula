@@ -178,6 +178,12 @@ salt_master_gitlab-runner_repo:
     - key_url: https://packages.gitlab.com/gpg.key
     - clean_file: True
 
+# The following signatures were invalid: EXPKEYSIG 3F01618A51312F3F GitLab B.V. (package repository signing key) <packages@gitlab.com>
+# even with previous state -> some bug workaround
+salt_master_gitlab-runner_repo_key_hack:
+  cmd.run:
+    - name: "curl -s https://packages.gitlab.com/gpg.key | sudo apt-key add -"
+
 salt_master_gitlab-runner_config_dir:
   file.directory:
     - name: /etc/gitlab-runner
