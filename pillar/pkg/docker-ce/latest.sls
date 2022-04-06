@@ -31,11 +31,7 @@ pkg:
             - refresh: True
             - pkgs:
               - docker-ce
-{%- if grains["os"] == "CentOS" %}
               - python3-docker
-{%- else %}
-              - python-docker
-{%- endif %}
       - service.running:
           1:
             - name: docker
