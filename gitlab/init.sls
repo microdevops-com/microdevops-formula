@@ -64,6 +64,14 @@ gitlab_nginx_redirect:
 
   {%- endif %}
 
+  {%- if "mattermost" in pillar["gitlab"] %}
+gitlab_mattermost_acme_run:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar["gitlab"]["mattermost"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["mattermost"]["domain"] }}"
+
+  {%- endif %}
+
 gitlab_config:
   file.managed:
     - name: /etc/gitlab/gitlab.rb
@@ -122,6 +130,12 @@ gitlab_config:
         gitlab_rails['backup_path'] = '/var/backups/gitlab_backups'
         gitlab_rails['pipeline_schedule_worker_cron'] = "*/10 * * * *"
         gitaly['ruby_num_workers'] = {{ pillar["gitlab"]["gitaly_ruby_num_workers"] }}
+  {%- if "mattermost" in pillar["gitlab"] %}
+        mattermost_external_url 'https://{{ pillar["gitlab"]["mattermost"]["domain"] }}'
+        mattermost_nginx['redirect_http_to_https'] = true
+        mattermost_nginx['ssl_certificate'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["mattermost"]["domain"] }}_fullchain.cer"
+        mattermost_nginx['ssl_certificate_key'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["mattermost"]["domain"] }}_key.key"
+  {%- endif %}
 
 # Fix the issue when doing clean install with EXTERNAL_URL set - it will wait indefinately for service to start
 gitlab_fix_clean_install_with_ext_url:

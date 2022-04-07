@@ -7,6 +7,9 @@ gitlab:
   #redirect: # optional, add custom nginx config with redirect from other domain
   #  domain: gitlab.old-example.com
   #  acme_account: old-example.com
+  mattermost: # optional, enable bundled mattermost instance
+    domain: mattermost.example.com
+    acme_account: example.com
   gitaly_ruby_num_workers: 4
   google_oauth2:
     app_id: xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
