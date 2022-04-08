@@ -15,7 +15,7 @@
     {%- if "nat" in pillar["ufw_simple"] %}
       {%- if "nat" not in pillar["ufw"] %}
         {%- do pillar["ufw"].update({ "nat": {} }) %}
-        {%- set pillar["ufw"]["nat"]["management_disabled"] = pillar["ufw_simple"]["nat"]["management_disabled"] %}
+        {%- do pillar["ufw"]["nat"].update({ "management_disabled": pillar["ufw_simple"]["nat"]["management_disabled"] }) %}
       {%- endif %}
       # masquerade, dnat, snat, redirect
       {%- for nat_action in ["masquerade", "dnat", "snat", "redirect"] %}
