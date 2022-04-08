@@ -81,6 +81,7 @@ gitlab_config:
         nginx['ssl_certificate'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_fullchain.cer"
         nginx['ssl_certificate_key'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_key.key"
         nginx['custom_nginx_config'] = "include /etc/gitlab/nginx/conf.d/*.conf;"
+  {%- if "postgresql" in pillar["gitlab"] %}
         postgresql['listen_address'] = '*'
         postgresql['port'] = 5432
         postgresql['md5_auth_cidr_addresses'] = %w({{ pillar["gitlab"]["postgresql"]["md5_auth_cidr_addresses"] }})
@@ -88,6 +89,8 @@ gitlab_config:
         postgresql['sql_user'] = "gitlab"
         postgresql['sql_user_password'] = Digest::MD5.hexdigest "{{ pillar["gitlab"]["postgresql"]["sql_user_password"] }}" << postgresql['sql_user']
         gitlab_rails['db_host'] = '/var/opt/gitlab/postgresql/'
+  {%- endif %}
+  {%- if "google_oauth2" in pillar["gitlab"] %}
         gitlab_rails['omniauth_enabled'] = true
         gitlab_rails['omniauth_allow_single_sign_on'] = ['google_oauth2']
         gitlab_rails['omniauth_block_auto_created_users'] = true
@@ -99,6 +102,8 @@ gitlab_config:
             "args" => { "access_type" => "offline", "approval_prompt" => '' }
           }
         ]
+  {%- endif %}
+  {%- if "smtp" in pillar["gitlab"] %}
         gitlab_rails['smtp_enable'] = true
         gitlab_rails['smtp_address'] = "{{ pillar['gitlab']['smtp']['address'] }}"
         gitlab_rails['smtp_port'] = {{ pillar['gitlab']['smtp']['port'] }}
@@ -109,6 +114,8 @@ gitlab_config:
         gitlab_rails['smtp_enable_starttls_auto'] = true
         gitlab_rails['smtp_tls'] = false
         gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
+  {%- endif %}
+  {%- if "incoming_email" in pillar["gitlab"] %}
         gitlab_rails['incoming_email_enabled'] = true
         gitlab_rails['incoming_email_address'] = "{{ pillar['gitlab']['incoming_email']['address'] }}"
         gitlab_rails['incoming_email_email'] = "{{ pillar['gitlab']['incoming_email']['email'] }}"
@@ -119,6 +126,7 @@ gitlab_config:
         gitlab_rails['incoming_email_start_tls'] = false
         gitlab_rails['incoming_email_mailbox_name'] = "{{ pillar['gitlab']['incoming_email']['mailbox_name'] }}"
         gitlab_rails['incoming_email_idle_timeout'] = 60
+  {%- endif %}
         registry['enable'] = true
         registry_external_url 'https://{{ pillar["gitlab"]["domain"] }}:5001'
         registry['registry_http_addr'] = "localhost:5000"
@@ -185,6 +193,7 @@ gitlab_restart:
       - cmd: gitlab_acme_run
       - pkg: gitlab_pkg
 
+  {%- if "cron" in pillar["gitlab"] %}
 gitlab_cron_gitlab_backup:
   cron.present:
     - identifier: gitlab_backup
@@ -208,6 +217,8 @@ gitlab_cron_clean_job_artifacts:
     - minute: 30
     - hour: 16
     - name: "{{ pillar["gitlab"]["cron"]["clean_job_artifacts_cmd"] }}"
+
+  {%- endif %}
 
 # Fast lookup of authorized SSH keys in the database
 # https://docs.gitlab.com/ee/administration/operations/fast_ssh_key_lookup.html
