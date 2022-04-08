@@ -44,11 +44,11 @@ rsnapshot_backup:
         data:
           - UBUNTU
           - /opt/gitlab
-          - /var/opt/gitlab
           - /opt/acme
           - /var/backups/gitlab_backups
           #- /var/lib/gitlab_docker_registry
           #- /var/lib/gitlab_artifacts
+          #- /var/opt/gitlab/mattermost
         checks:
           - type: .backup
         backups:
