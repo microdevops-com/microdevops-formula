@@ -41,3 +41,6 @@ include:
   - atlassian-confluence
 {% endif %}
   - pkg.after_deploy
+{% if pillar['logrotate'] is defined %}
+  - logrotate
+{% endif %}
