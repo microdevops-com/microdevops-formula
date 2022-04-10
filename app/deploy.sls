@@ -18,7 +18,7 @@ include:
   - sentry.sentry
 {% endif %}
   - php-fpm.php-fpm
-  - nginx.nginx
+  - nginx
   - app.php-fpm_apps
   - app.static_apps
   - app.python_apps
