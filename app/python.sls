@@ -10,7 +10,7 @@
 
       {%- set app_type = "python" %}
       {%- set loop_index = loop.index %}
-      {%- include "app/user_and_source.sls" with context %}
+      {%- include "app/_user_and_source.sls" with context %}
 
       {%- if "virtualenv" in app %}
 app_python_app_virtualenv_dir_{{ loop.index }}:
@@ -60,7 +60,7 @@ app_python_app_virtualenv_{{ loop.index }}:
 
       {%- endif %}
 
-      {%- include "app/setup_scripts.sls" with context %}
+      {%- include "app/_setup_scripts.sls" with context %}
 
     {%- endif %}
   {%- endfor %}
