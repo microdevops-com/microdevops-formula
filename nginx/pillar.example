@@ -1,21 +1,2 @@
-# vi: set ft=yaml:
-
-# nginx
 nginx:
-  enabled: True
-  configs: 'nginx/app_hosting'
-
-# nginx proxy to apps
-nginx:
-  enabled: True
-  reload: True
-  configs: 'nginx/app_proxy'
-  forward:
-    site_one:
-      enabled: True
-      server_name: 'site_one.domain.com'
-      proxy_to: '10.10.0.5:80'
-      access_log: '/var/www/nginx/site_one_access.log'
-      error_log: '/var/www/nginx/site_one_error.log'
-      ssl:
-        acme: True
+  configs: nginx/app_hosting
