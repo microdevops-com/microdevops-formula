@@ -1,4 +1,8 @@
-{% if pillar["php-fpm"] is defined and "versions" in pillar["php-fpm"] %}
+{% if pillar["php-fpm"] is defined %}
+  {%- set php_fpm = pillar["php-fpm"] %}
+{% endif %}
+
+{% if php_fpm is defined and "versions" in php_fpm %}
 php-fpm_repo_deb:
   pkgrepo.managed:
     - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains["oscodename"] }} main
@@ -8,7 +12,7 @@ php-fpm_repo_deb:
     - keyid: E5267A6C
     - refresh: True
 
-  {%- for version, params in pillar["php-fpm"]["versions"].items() %}
+  {%- for version, params in php_fpm["versions"].items() %}
 php-fpm_installed_{{ loop.index }}:
   pkg.installed:
     - pkgs:
