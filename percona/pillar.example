@@ -22,7 +22,7 @@
 # percona
 percona:
   version: 8.0 # mandatory
-  root_password: 'cooldnpassword' # mandatory
+  root_password: cooldnpassword # mandatory
   databases:
     db0:
       character_set: utf8mb4 # optional, utf8mb4 is used by default, you cannot change this param if db is already created
@@ -31,7 +31,7 @@ percona:
   users:
     db:
       host: localhost
-      password: 'userpass'
+      password: userpass
       databases:
         - database: db
           grant: ['all privileges']
