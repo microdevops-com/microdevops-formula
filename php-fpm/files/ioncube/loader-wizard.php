@@ -5,7 +5,7 @@
  *
  * ionCube is a registered trademark of ionCube Ltd. 
  *
- * Copyright (c) ionCube Ltd. 2002-2019
+ * Copyright (c) ionCube Ltd. 2002-2020
  */
 
 
@@ -61,23 +61,23 @@ define ('IONCUBE_IP_ADDRESS',
 define  ('IONCUBE_ACCESS_ADDRESS',
 			'lwaccess.ioncube.com');
 define ('LOADERS_PAGE',
-            'http://loaders.ioncube.com/'); 
+            'https://loaders.ioncube.com/'); 
 define ('SUPPORT_SITE',
-            'http://support.ioncube.com/');                                 
+            'https://support.ioncube.com/');                                 
 define ('WIZARD_SUPPORT_TICKET_DEPARTMENT',
 			'3');
 define ('LOADER_FORUM_URL',
-            'http://forum.ioncube.com/viewforum.php?f=4');                  
+            'https://forum.ioncube.com/viewforum.php?f=4');                  
 define ('LOADERS_FAQ_URL',
-            'http://www.ioncube.com/faqs/loaders.php');                     
+            'https://www.ioncube.com/faqs/loaders.php');                     
 define ('UNIX_ERRORS_URL',
-            'http://www.ioncube.com/loaders/unix_startup_errors.php');      
+            'https://www.ioncube.com/loaders/unix_startup_errors.php');      
 define ('LOADER_WIZARD_URL',
             LOADERS_PAGE);                                                  
 define ('ENCODER_URL',
-            'http://www.ioncube.com/sa_encoder.php');                       
+            'https://www.ioncube.com/sa_encoder.php');                       
 define ('LOADER_VERSION_URL',
-            'http://www.ioncube.com/feeds/product_info/versions.php');    
+            'https://www.ioncube.com/feeds/product_info/versions.php');    
 define ('WIZARD_LATEST_VERSION_URL',
             LOADER_VERSION_URL . '?item=loader-wizard'); 
 define ('PHP_COMPILERS_URL',
@@ -89,9 +89,9 @@ define ('LOADER_LATEST_VERSIONS_URL',
 define ('LOADER_PHP_VERSION_URL',
             LOADER_VERSION_URL . '?item=loader-php-support'); 
 define ('WIZARD_STATS_URL',
-            'http://www.ioncube.com/feeds/stats/wizard.php');    
+            'https://www.ioncube.com/feeds/stats/wizard.php');    
 define ('IONCUBE_DOWNLOADS_SERVER',
-            'http://downloads3.ioncube.com/loader_downloads');          
+            'https://downloads.ioncube.com/loader_downloads');          
 define ('IONCUBE24_URL',
 			'https://ioncube24.com');
 define ('IONCUBE_CONNECT_TIMEOUT',4);
@@ -133,7 +133,7 @@ function php4_http_build_query($formdata, $numeric_prefix = null, $key = null ) 
 
 function script_version()
 {
-    return "2.62";
+    return "2.69";
 }
 
 function retrieve_latest_wizard_version()
@@ -675,8 +675,10 @@ function required_loader($unamestr = '')
     }
     $os_ver_parts = preg_split('@\.@',$os_ver);
 
+    $os_code_h = ($os_code == 'dar' ? 'mac' : $os_code);
+
     $loader_sfix = (($os_code == 'win') ? 'dll' : 'so');
-    $file = "ioncube_loader_${os_code}_${php_major_version}.${loader_sfix}";
+    $file = "ioncube_loader_${os_code_h}_${php_major_version}.${loader_sfix}";
 
     if ($os_code == 'win') {
         $os_name = 'Windows';
@@ -692,13 +694,14 @@ function required_loader($unamestr = '')
             $os_name = $os_names[0];
             $os_name_qual = $os_name;
         }
-        $file_ts = "ioncube_loader_${os_code}_${php_major_version}_ts.${loader_sfix}";
+        $file_ts = "ioncube_loader_${os_code_h}_${php_major_version}_ts.${loader_sfix}";
     }
 
     return array(
            'uname'      =>  $un,
            'arch'       =>  $arch,
            'oscode'     =>  $os_code,
+           'oscode_h'   =>  $os_code_h,
            'osname'     =>  $os_name,
            'osnamequal' =>  $os_name_qual,
            'osvariants' =>  $os_variants,
@@ -715,6 +718,7 @@ function ic_system_info()
     $thread_safe = null;
     $debug_build = null;
     $cgi_cli = false;
+	$is_fpm = false;
     $is_cgi = false;
     $is_cli = false;
     $php_ini_path = '';
@@ -764,16 +768,25 @@ function ic_system_info()
             $is_supported_compiler = preg_match("/($supported_match)/i",$line);
             if (preg_match("/(VC[0-9]+)/i",$line,$match)) {
                 $php_compiler = strtoupper($match[1]);
-            } else {
+            } elseif (preg_match("/Visual C\+\+ 2017/i",$line)) {
+				$php_compiler = "VC15";
+				$is_supported_compiler = true;
+			} else {
                 $php_compiler = '';
             }
         }
     }
     $is_cgi = strpos(php_sapi_name(),'cgi') !== false;
     $is_cli = strpos(php_sapi_name(),'cli') !== false;
+	$is_fpm = strpos(php_sapi_name(),'fpm-fcgi') !== false;
     $cgi_cli = $is_cgi || $is_cli;
 
     $ss = server_software_info();
+	
+	if ($is_fpm) {
+		$ss['short'] = 'PHP-FPM';
+		$ss['full'] = 'PHP-FPM ' . $ss['full'];
+	}
 
     if (!$php_ini_path && function_exists('php_ini_loaded_file')) {
         $php_ini_path = php_ini_loaded_file();
@@ -801,6 +814,7 @@ function ic_system_info()
            'CGI_CLI'            => $cgi_cli,
            'IS_CGI'             => $is_cgi,
            'IS_CLI'             => $is_cli,
+		   'IS_FPM'				=> $is_fpm,
            'PHP_COMPILER'       => $php_compiler,
            'SUPPORTED_COMPILER' => $is_supported_compiler,
            'FULL_SS'            => $ss['full'],
@@ -1058,13 +1072,15 @@ function get_loader_name()
     $u = uname();
     $sys = get_sysinfo();
     $os = substr($u,0,strpos($u,' '));
-    $os_key = strtolower(substr($u,0,3));
+    $os_code = strtolower(substr($u,0,3));
+
+    $os_code_h = ($os_code == 'dar' ? 'mac' : $os_code);
 
     $php_version = phpversion();
     $php_family = substr($php_version,0,3);
 
-    $loader_sfix = (($os_key == 'win') ? '.dll' : (($sys['THREAD_SAFE'])?'_ts.so':'.so'));
-    $loader_name="ioncube_loader_${os_key}_${php_family}${loader_sfix}";
+    $loader_sfix = (($os_code == 'win') ? '.dll' : (($sys['THREAD_SAFE'])?'_ts.so':'.so'));
+    $loader_name="ioncube_loader_${os_code_h}_${php_family}${loader_sfix}";
 
     return $loader_name;
 }
@@ -1639,9 +1655,9 @@ function loader_download_instructions()
         } else {
             echo '<li>Download one of the following archives of Loaders for ' . $loader['osnamequal'] . ' ' . $loader['arch'] . ':'; 
             if (SERVER_SHARED == find_server_type()) {
-                $archives = array('zip','tar.gz','tar.bz2');
+                $archives = array('zip','tar.gz');
             } else {
-                $archives = array('tar.gz','tar.bz2');
+                $archives = array('tar.gz','zip');
             }
             echo make_archive_list($basename,$archives);
             echo "</p>";
@@ -1926,14 +1942,20 @@ function server_restart_instructions()
     $base = get_base_address();
 
     if ($sysinfo['SS']) {
-        echo "<li>Restart the ${sysinfo['SS']} server software.</li>";
+		if ($sysinfo['SS'] == 'PHP-FPM') {
+			echo "<li>Restart PHP-FPM.</li>";
+		} else {
+			echo "<li>Restart the ${sysinfo['SS']} server software.</li>";
+		}
     } else {
         echo "<li>Restart the server software.</li>";
     }
 
     echo "<li>When the server software has restarted, <a href=\"$base&amp;page=loader_check\" onclick=\"showOverlay();\">click here to test the Loader</a>.</li>";
 
-    if ($sysinfo['SS'] == 'Apache' && !is_ms_windows()) {
+	if ($sysinfo['SS'] && $sysinfo['SS'] == 'PHP-FPM') {
+		echo '<li>If the Loader installation failed, check the PHP-FPM error log file for errors.</li>';
+    } elseif ($sysinfo['SS'] == 'Apache' && !is_ms_windows()) {
         echo '<li>If the Loader installation failed, check the Apache error log file for errors and see our guide to <a target="unix_errors" href="'. UNIX_ERRORS_URL . '">Unix related errors</a>.</li>';
     }
 }
@@ -2454,7 +2476,9 @@ function loader_compatibility_test($loader_location)
         $execute_error .= "<br>Please check that it exists and is readable.";
         $execute_error .= "<br>Please also check the permissions of the containing ";
         $execute_error .= (is_ms_windows()?'folder':'directory') . '.';
-        if (($sysinfo['SS'] == 'IIS') || !($sysinfo['IS_CGI'] || $sysinfo['IS_CLI'])) {
+		if ($sysinfo['SS'] == 'PHP-FPM') {
+			$execute_error .= "<br>Please also check that PHP-FPM has been restarted.";
+        } elseif (($sysinfo['SS'] == 'IIS') || !($sysinfo['IS_CGI'] || $sysinfo['IS_CLI'])) {
             $execute_error .= "<br>Please also check that the web server has been restarted.";
         }
         $execute_error .= ".";
@@ -2487,16 +2511,21 @@ function loader_compatibility_test($loader_location)
                 $server_php =  $phpv['major'] . "." .  $phpv['minor'];
                 $errors[ERROR_LOADER_WIN_PHP_MISMATCH] = "The installed loader is for PHP $loader_php but your server is running PHP $server_php.";
             }
-			
-			if ($version_matches[1]== 7 && $version_matches[2] >= 2) {
-				$loader_compiler = 'VC15'; 
-			} else if ($version_matches[1]== 7) {
-				$loader_compiler = 'VC14'; 
-			} elseif ($version_matches[1]== 5 && $version_matches[2] >= 5) {
-				$loader_compiler = 'VC11'; 
-            } elseif (preg_match("/assemblyIdentity.*version=\"([^.]+)\./",$loader_strs,$compiler_matches)) {
+                        
+            if ($version_matches[1] == 7 && $version_matches[2] >= 2) {
+                $loader_compiler = 'VC15'; 
+            } 
+            elseif ($version_matches[1] == 7) {
+                $loader_compiler = 'VC14'; 
+            } 
+            elseif ($version_matches[1] == 5 && $version_matches[2] >= 5) {
+                $loader_compiler = 'VC11'; 
+            } 
+            elseif (preg_match("/assemblyIdentity.*version=\"([^.]+)\./",$loader_strs,$compiler_matches)) {
                 $loader_compiler = "VC" . strtoupper($compiler_matches[1]);
-            } else {
+            } 
+            else 
+            {
                 $loader_compiler = 'VC6';
             }
             if ($loader_compiler != $sysinfo['PHP_COMPILER']) {
@@ -2950,19 +2979,21 @@ function ioncube_24_is_enabled()
 
 function ioncube_24_information()
 {
-	if (ioncube_24_is_available() && !ioncube_24_is_enabled()) {
-		$self = get_self();
-		echo '<div class="ic24">';
-		echo '<div class="ic24graphic">';
-		echo "<a target=\"_blank\" href=\"" . IONCUBE24_URL . "\"><img id=\"ic24logo\"  src=\"$self?page=ic24logo\" alt=\"ionCube24 logo\"></a>";
-		echo '</div>';
-		echo '<div id="ic24info">';
-		echo "<p>The version 5 and above ionCube Loaders can also provide a <strong>real-time intrusion protection system</strong> called <a target=\"_blank\" href=\"" . IONCUBE24_URL .  "\"><strong>ionCube24</strong></a>.</p>";
-		echo "<p>ionCube24 stops attackers from launching malware on your site.</p>";
-		echo '<p><strong><a target="_blank" href="' . IONCUBE24_URL . '">Visit ionCube24.com</a></strong> to find out more.</p>';
-		echo "</div>";
-		echo "</div>";
-	}
+    if (ioncube_24_is_available() && !ioncube_24_is_enabled()) {
+        $self = get_self();
+        echo '<div class="ic24">';
+        echo '<div class="ic24graphic">';
+        echo '<a target="_blank" href="' . IONCUBE24_URL . '"><img id="ic24logo" src="' . $self . '?page=ic24logo" alt="ionCube24 logo"></a>';
+        echo '</div>';
+        echo '<div id="ic24info">';
+        echo '<p><strong>Bonus Features!</strong> The ionCube Loader can also give ';
+        echo '<strong>real-time intrusion protection</strong> to protect against malware and <strong>PHP error reporting</strong> ';
+        echo 'to alert when things go wrong on your website.</p>';
+        echo '<p>These features are disabled by default but easily activated. ';
+        echo '<strong><a target="_blank" href="' . IONCUBE24_URL . '">visit ioncube24.com</a></strong> to find out more.</p>';
+        echo '</div>';
+        echo '</div>';
+    }
 }
 
 function cli_install_instructions()
@@ -3173,7 +3204,7 @@ function loader_not_installed()
     } elseif (!$sysinfo['SUPPORTED_COMPILER']) {
         $supported_compilers = supported_win_compilers();
         $supported_compiler_string = join('/',$supported_compilers);
-        echo '<p>At the current time the ionCube Loader requires PHP to be built with ' . $supported_compiler_string . '. Your PHP software has been built using ' . $sysinfo['PHP_COMPILER'] . '. Supported builds of PHP are available from <a href="http://windows.php.net/download/">PHP.net</a>.';
+        echo '<p>At the current time the ionCube Loader requires PHP to be built with ' . $supported_compiler_string . '. Your PHP software has been built using ' . $sysinfo['PHP_COMPILER'] . '. Supported builds of PHP are available from <a href="https://windows.php.net/download/">PHP.net</a>.';
     } else {
         switch ($host_type) {
             case SERVER_SHARED:
@@ -3229,16 +3260,16 @@ function server_selection_form()
                     alert("Please enter both a hosting provider name and their URL.");
                     return false;
                 }
-                if (hostprovider.length < 4) {
-                    alert("The hosting provider name should be at least 4 characters in length.");
+                if (hostprovider.length < 1) {
+                    alert("The hosting provider name should be at least 1 character in length.");
                     return false;
                 }
                 if (!hosturl.match(/[A-Za-z0-9-_]+\.[A-Za-z0-9-_%&\?\/.=]+/)) {
                     alert("The hosting provider URL is invalid.");
                     return false;
                 }
-                if (hosturl.length < 5) {
-                    alert("The hosting provider URL should be at least 5 characters in length.");
+                if (hosturl.length < 4) {
+                    alert("The hosting provider URL should be at least 4 characters in length.");
                     return false;
                 }
             }
@@ -3393,7 +3424,7 @@ function correct_loader_wrong_location()
 {
     $loader_location_pair = array();
     $loader_location = find_loader_filesystem();
-    if (is_string($loader_location)) {
+    if (is_string($loader_location) && !empty($loader_location)) {
         $loader_errors = loader_compatibility_test($loader_location);
         if (empty($loader_errors)) {
             $ini_loader = scan_inis_for_loader();
@@ -3481,7 +3512,7 @@ function ini_loader_warnings()
         if (!empty($loader_dir_pair)) {
             $advice = "The correct loader for your system has been found at <code>${loader_dir_pair['loader']}</code>."; 
             if ($loader_dir_pair['loader'] != $loader_dir_pair['newloc']) {
-                $advice .= " You may wish to copy the loader from <code>${loader_dir_pair['loader']}</code> to <code>${loader_dir_pair['newloc']}</code>.";
+                $advice .= " Please copy the loader from <code>${loader_dir_pair['loader']}</code> to <code>${loader_dir_pair['newloc']}</code>.";
             }
             $warnings[] = $advice;
         }
@@ -3534,13 +3565,15 @@ function list_loader_errors($errors = array(),$warnings = array(),$suggest_resta
             echo "<p>Please contact your server administrator about installing the ionCube Loader.</p>";
         } else {
             if (selinux_is_enabled()) {
-                echo "<p>It appears that SELinux is enabled on your server. This might be solved by running the command <code>restorecon [full path to loader file]</code> as root. If that does not solve the problem then please follow the instructions at <a target=\"_blank\" href=\"http://www.cuteshift.com/57/install-ioncube-loader-while-selinux-enabled/\">http://www.cuteshift.com/57/install-ioncube-loader-while-selinux-enabled/</a> for installing the ionCube Loader when SELinux is enabled.</p>";
+                echo "<p>It appears that SELinux is enabled on your server. This might be solved by running the command <code>restorecon [full path to loader file]</code> as root.</p>";
             } elseif (grsecurity_is_enabled()) {
                 echo "<p>It appears that grsecurity is enabled on your server. Please run the command, <code>execstack -c [full path to loader file]</code> and then restart your web server.</p>";
             } else {
                 $sysinfo = get_sysinfo();
                 $ss = $sysinfo['SS'];
-                if (!$sysinfo['CGI_CLI'] || is_ms_windows()) {
+				if ($ss == 'PHP-FPM') {
+					echo "<p>Please check that PHP-FPM has been restarted.</p>";
+                } elseif (!$sysinfo['CGI_CLI'] || is_ms_windows()) {
                     echo "<p>Please check that the $ss web server software has been restarted.</p>";
                 } 
             }
@@ -3709,7 +3742,7 @@ function GoDaddy_windows_instructions()
 {
     $instr = "It appears that you are hosted on a Windows server at GoDaddy.<br/>";
     $instr .= "Please change to a Linux hosting plan at GoDaddy.<br />";
-    $instr .=  "If you <a href=\"http://help.godaddy.com/\">contact their support team</a> they should be able to switch you to a Linux server.";
+    $instr .=  "If you <a href=\"https://help.godaddy.com/\">contact their support team</a> they should be able to switch you to a Linux server.";
 
     echo $instr;
 }
@@ -3745,7 +3778,7 @@ function GoDaddy_page()
     heading();
 
         $inst_str = '<h4>GoDaddy Installation Instructions</h4>';
-        $inst_str .= '<p>It appears that you are hosted with GoDaddy (<a target="_blank" href="http://www.godaddy.com/">www.godaddy.com</a>). ';
+        $inst_str .= '<p>It appears that you are hosted with GoDaddy (<a target="_blank" href="https://www.godaddy.com/">www.godaddy.com</a>). ';
         $inst_str .= "If that is <b>not</b> the case then please <a href=\"$base&amp;page=default&amp;host=ngd\">click here to go to the main page of this installation wizard</a>.</p>";
         $inst_str .= "<p>If you have already installed the loader then please <a href=\"$base&amp;page=loader_check\" onclick=\"showOverlay();\">click here to test the loader</a>.</p>";
 
@@ -3800,7 +3833,7 @@ function make_list($list_items,$list_type='ol')
 function make_archive_list($basename,$archives_list = array(),$download_server = IONCUBE_DOWNLOADS_SERVER)
 {
     if (empty($archives_list)) {
-        $archives_list = array('tar.gz','tar.bz2','zip');
+        $archives_list = array('tar.gz','zip');
     }
 
     foreach ($archives_list as $a) {

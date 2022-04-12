@@ -15,6 +15,9 @@
     {%- if "nat" in pillar["ufw_simple"] %}
       {%- if "nat" not in pillar["ufw"] %}
         {%- do pillar["ufw"].update({ "nat": {} }) %}
+        {%- if "management_disabled" in pillar["ufw_simple"]["nat"] %}
+          {%- do pillar["ufw"]["nat"].update({ "management_disabled": pillar["ufw_simple"]["nat"]["management_disabled"] }) %}
+        {%- endif %}
       {%- endif %}
       # masquerade, dnat, snat, redirect
       {%- for nat_action in ["masquerade", "dnat", "snat", "redirect"] %}
@@ -40,6 +43,12 @@
         {%- do pillar["ufw"]["custom"].update({ "filter": pillar["ufw_simple"]["custom"]["filter"] }) %}
       {%- endif %}
     {%- endif %}
+  {%- endif %}
+  
+  {%- if "nat" in pillar["ufw"] and "management_disabled" in pillar["ufw"]["nat"] and pillar["ufw"]["nat"]["management_disabled"] %}
+    {%- set manage_nat = False %}
+  {%- else %}
+    {%- set manage_nat = True %}
   {%- endif %}
 
 ufw_pkg_latest:
@@ -90,8 +99,14 @@ ufw_before_rules_managed:
     - mode: 0640
     - template: jinja
     - defaults:
+    # nat_flush
+  {%- if manage_nat %}
+        nat_flush: "-F"
+  {%- else %}
+        nat_flush: "# management disabled"
+  {%- endif %}
     # masquerade
-  {%- if "nat" in pillar["ufw"] and "masquerade" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "masquerade" in pillar["ufw"]["nat"] and manage_nat %}
         masquerade: |
     {%- for m_key, m_val in pillar["ufw"]["nat"]["masquerade"].items()|sort %}
           # {{ m_key }}
@@ -105,7 +120,7 @@ ufw_before_rules_managed:
         masquerade: "# empty"
   {%- endif %}
     # dnat
-  {%- if "nat" in pillar["ufw"] and "dnat" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "dnat" in pillar["ufw"]["nat"] and manage_nat %}
         dnat: |
     {%- for d_key, d_val in pillar["ufw"]["nat"]["dnat"].items()|sort %}
           # {{ d_key }}
@@ -130,7 +145,7 @@ ufw_before_rules_managed:
         dnat: "# empty"
   {%- endif %}
     # snat
-  {%- if "nat" in pillar["ufw"] and "snat" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "snat" in pillar["ufw"]["nat"] and manage_nat %}
         snat: |
     {%- for s_key, s_val in pillar["ufw"]["nat"]["snat"].items()|sort %}
           # {{ s_key }}
@@ -145,7 +160,7 @@ ufw_before_rules_managed:
         snat: "# empty"
   {%- endif %}
     # redirect
-  {%- if "nat" in pillar["ufw"] and "redirect" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "redirect" in pillar["ufw"]["nat"] and manage_nat %}
         redirect: |
     {%- for r_key, r_val in pillar["ufw"]["nat"]["redirect"].items()|sort %}
           # {{ r_key }}
@@ -165,7 +180,7 @@ ufw_before_rules_managed:
         redirect: "# empty"
   {%- endif %}
     # custom_nat
-  {%- if "custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"] %}
+  {%- if "custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"] and manage_nat %}
         custom_nat: {{ pillar["ufw"]["custom"]["nat"] | yaml_encode }}
   {%- else %}
         custom_nat: "# empty"

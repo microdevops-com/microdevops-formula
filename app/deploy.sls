@@ -13,16 +13,30 @@ include:
 {% endif %}
   - percona
   - rabbitmq.rabbitmq
-  - pyenv.pyenv
+  - pyenv
 {% if pillar['sentry'] is defined and pillar['sentry'] is not none %}
   - sentry.sentry
 {% endif %}
   - php-fpm.php-fpm
-  - nginx.nginx
+  - nginx
+{% if pillar["app"] is defined and "php-fpm_apps" in pillar["app"] %}
   - app.php-fpm_apps
-  - app.static_apps
+{% endif %}
+{% if pillar["app"] is defined and "python_apps" in pillar["app"] %}
   - app.python_apps
+{% endif %}
+{% if pillar["app"] is defined and "static_apps" in pillar["app"] %}
+  - app.static_apps
+{% endif %}
+{% if pillar["app"] is defined and "python" in pillar["app"] %}
   - app.python
+{% endif %}
+{% if pillar["app"] is defined and "php-fpm" in pillar["app"] %}
+  - app.php-fpm
+{% endif %}
+{% if pillar["app"] is defined and "static" in pillar["app"] %}
+  - app.static
+{% endif %}
   - app.docker
 {% if pillar['java'] is defined and pillar['java'] is not none %}
   - sun-java.opt_dir
@@ -41,3 +55,6 @@ include:
   - atlassian-confluence
 {% endif %}
   - pkg.after_deploy
+{% if pillar['logrotate'] is defined %}
+  - logrotate
+{% endif %}

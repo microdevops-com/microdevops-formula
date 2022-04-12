@@ -1,52 +1,157 @@
 # vi: set ft=yaml:
 
 app:
-  python:
-    pyenv:
+  #python|php-fpm|static: # choose one of app types
+    # only for python
+    pyenv: # to include pyenv state
       versions:
         python-3.8.8: True
+    # only for php-fpm
+    versions: # to include php-fpm state
+      7.4:
+        modules:
+          - php7.4-zip
+    # common for all app types
     apps:
-      pythoapp:
-        user: pythoapp
-        group: pythoapp
-        pass: '!'
-        app_root: /opt/pythoapp
-        shell: /bin/bash
+      someapp: # you can use __APP_NAME__ to substitute to app name in some of values here
+        # only for python
         virtualenv:
           pyenv_version: 3.8.8
-          target: /opt/pythoapp/venv
+          target: /opt/__APP_NAME__/venv
+        # only for php-fpm
+        pool:
+          pool_config: salt://app/files/.../pool.conf
+          reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
+          log: # optional pool log params
+            dir: /var/www/__APP_NAME__/log/php # by default pool logs are in /var/log/php
+            dir_user: someapp
+            dir_group: someapp
+            dir_mode: 755
+            log_user: someapp
+            log_group: someapp
+            log_mode: 644
+            rotate_count: 31
+            rotate_when: weekly
+          php_version: 7.4
+          pm: |
+            pm = dynamic
+            pm.max_children = 50
+            pm.start_servers = 20
+            pm.min_spare_servers = 10
+            pm.max_spare_servers = 40
+          php_admin: |
+            php_admin_flag[html_errors] = off
+            php_admin_value[post_max_size] = 25M
+            php_admin_value[upload_max_filesize] = 25M
+          #pool_contents: | # optional, instead of pool_config+pm+php_admin you can set this pillar for the complete contents
+          #  [__APP_NAME__]
+          #  user = __APP_NAME__
+          #  group = __APP_NAME__
+          #  listen = /run/php/php7.4-fpm-__APP_NAME__.sock
+          #  listen.owner = www-data
+          #  listen.group = www-data
+          #  listen.mode = 0660
+          #  pm = ondemand
+          #  pm.max_children = 50
+          #  pm.process_idle_timeout = 10s
+          #  pm.max_requests = 500
+          #  php_admin_value[error_log] = /var/log/php/7.4-fpm/__APP_NAME__.error.log
+          #  php_admin_flag[log_errors] = on
+          #  php_admin_flag[html_errors] = off
+          #  php_admin_value[post_max_size] = 25M
+          #  php_admin_value[upload_max_filesize] = 25M
+        # common for all app types
+        user: __APP_NAME__
+        group: __APP_NAME__
+        pass: '!'
+        #enforce_password: False # optional, do not change pass if it was changed by user
+        app_root: /opt/__APP_NAME__ # /var/www/someapp, whatever
+        #user_home: /var/www/user # optional, e.g. to host several apps under one user
+        #keep_user: True # optional, turns off user management, intended to use with existing user on server
+        #app_auth_keys: # optinal, ensure ssh keys for user
+        #  - ssh-rsa AAAA...== rsa-key-19700101
+        #mkdir: # mkdir -p dirs under app_root, e.g. for certbot
+        #  - certbot
+        #  - /var/__APP_NAME__/data
+        shell: /bin/bash
         source:
           git: git@github.com:myorg/app.git
+          #force_reset: False # optional, True by default
+          #force_checkout: True # optional, not added by default
+          #force_clone: True # optional, not added by default
           rev: master
-          target: /opt/pythoapp/src
+          target: /opt/__APP_NAME__/src
           branch: master
-          repo_key: |
-            -----BEGIN OPENSSH PRIVATE KEY-----
-            ...
-            -----END OPENSSH PRIVATE KEY-----
-          repo_key_pub: ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx app@example.com
+          #repo_key: | # optional, put key as .ssh/id_repo
+          #  -----BEGIN OPENSSH PRIVATE KEY-----
+          #  ...
+          #  -----END OPENSSH PRIVATE KEY-----
+          #repo_key_pub: ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx app@example.com
+          #ssh_config: | # optional, to activate key to repo
+          #  Host bitbucket.org
+          #    User git
+          #    Identityfile ~/.ssh/id_repo
         files:
-          src: app/pythoapp
-          dst: /opt/pythoapp
+          src: salt://app/__APP_NAME__
+          dst: /opt/__APP_NAME__
         setup_script_root:
-          cwd: /opt/pythoapp
+          cwd: /opt/__APP_NAME__
           name: |
             set -e
-            loginctl enable-linger pythoapp
-            loginctl show-user pythoapp
+            loginctl enable-linger someapp
+            loginctl show-user someapp
         setup_script_app_user:
-          cwd: /opt/pythoapp
+          cwd: /opt/__APP_NAME__
           name: |
             set -e
             cd src
             ~/venv/bin/python setup.py develop
             cd ..
             mkdir -p ~/.config/systemd/user
-            cp -f pythoapp.service ~/.config/systemd/user
-            export XDG_RUNTIME_DIR=/run/user/$(id -u pythoapp)
+            cp -f someapp.service ~/.config/systemd/user
+            export XDG_RUNTIME_DIR=/run/user/$(id -u someapp)
             systemctl --user daemon-reload
-            systemctl --user enable --now pythoapp.service
-            systemctl --user status pythoapp.service
+            systemctl --user enable --now someapp.service
+            systemctl --user status someapp.service
+        nginx:
+          domain: example.com
+          ssl: # optional
+            acme_account: example.com
+          #ssl: # standalone cert example
+          #  cert: ssl/someapp/someapp.crt # mandatory, in terms of nginx, e.g. as for files above, or you can use absolute path
+          #  key: ssl/someapp/someapp.key # mandatory
+          #  chain: ssl/someapp/gd_bundle-g2-g1.crt # optional
+          link_sites-enabled: True
+          reload: False # Usually restarting nginx on each app is not recommended, but it is ok for one app server setup flow
+          auth_basic: # optional basic auth
+            #omit_options: True # optionally disable auth for OPTIONS request method
+            auth:
+            - user: basicuser
+              pass: basicpassword
+          vhost_config: salt://app/files/.../vhost.conf
+          vhost_defaults: # optional, defaults for vhost config template
+            php_version: 7.4 # e.g. for php-fpm apps
+            key1: value1
+            key2: value2
+          root: /var/www/__APP_NAME__/src/public
+          redirects: # optional
+            - domain: www.example.com
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: example.com
+          log:
+            access_log: /var/log/nginx/__APP_NAME__.access.log
+            error_log: /var/log/nginx/__APP_NAME__.error.log
+            # all below are optional
+            dir: /var/www/__APP_NAME__/log/nginx # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
+            dir_mode: 755
+            log_mode: 640
+            dir_user: root
+            dir_group: adm
+            log_user: someapp
+            log_group: someapp
+            rotate_count: 10
+            rotate_when: weekly
   docker:
     docker-ce_version: 18.06.1
     networks:

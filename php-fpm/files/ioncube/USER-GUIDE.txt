@@ -1,4 +1,4 @@
-ionCube Loader 10 User Guide
+ionCube Loader 11 User Guide
 ============================
 
 This document describes the available php.ini configuration options of the
@@ -327,4 +327,4 @@ Example:
 
 ic24.phperr.ignore = E_NOTICE | E_DEPRECATED
 
-(c) ionCube Ltd. 2019
+(c) ionCube Ltd. 2021

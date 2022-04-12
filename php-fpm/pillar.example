@@ -1,6 +1,21 @@
-# vi: set ft=yaml:
+php-fpm:
+  versions:
+    7.4:
+      modules:
+        - php74-zip
+        - php74-intl
+        - php74-mbstring
+        - php74-mysql
+        - php74-soap
+        - php74-xml
+        - php74-bcmath
+        - php74-curl
+        - php74-gd
+        - php74-sqlite3
+        - php74-ioncube # in case of ioncube - module will we copied from ioncube distribution, php 8+ is not yet supported by ioncube
+      tz: Etc/UTC
 
-# php-fpm
+# legacy (php-fpm.php-fpm state)
 php-fpm:
   enabled: True
   version_5_6: True

@@ -48,10 +48,12 @@ acme_local_{{ loop.index }}:
     - mode: 0700
     - contents: |
         #!/bin/bash
-    {%- for var_key, var_val in acme_params["vars"].items() %}
+    {%- if "vars" in acme_params %}
+      {%- for var_key, var_val in acme_params["vars"].items() %}
         export {{ var_key }}="{{ var_val }}"
-    {%- endfor %}
-        /opt/acme/home/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} {{ acme_params["args"] }} "$@"
+      {%- endfor %}
+    {%- endif %}
+        /opt/acme/home/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} {{ acme_params["args"]|default("") }} "$@"
 
 acme_verify_and_issue_{{ loop.index }}:
   file.managed:

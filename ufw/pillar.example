@@ -34,6 +34,7 @@ ufw:
         bad_host_2: 4.5.6.7
       direction: out # optional
   nat:
+    #management_disabled: True # optional, do not modify and flush nat table at all
     masquerade:
       rule_1:
         source: 10.0.0.0/16
