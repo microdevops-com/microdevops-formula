@@ -6,10 +6,12 @@ freeipa_data_dir:
     - mode: 755
     - makedirs: True
 
+  {%- if 'ipa_server_install_options' in pillar["freeipa"] %}
 ipa_server_install_options:
   file.managed:
     - name: /opt/freeipa/{{ pillar["freeipa"]["hostname"] }}/data/ipa-server-install-options
     - contents_pillar: freeipa:ipa_server_install_options
+  {%- endif %}
 
 freeipa_image:
   cmd.run:
