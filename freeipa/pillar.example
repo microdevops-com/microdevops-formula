@@ -7,9 +7,13 @@
 
 freeipa:
   hostname: ipa.example.com
+  ip: < server_ip >
+  domain: example.com
   image: freeipa/freeipa-server:centos-8-stream
   sysctl: net.ipv6.conf.all.disable_ipv6=0
 {#command: ipa-server-install -U --setup-dns --auto-forwarders --no-ntp #}
+  extra_hosts:
+    - ipa2.example.com:< ipa2_server_ip >
   ipa_server_install_options: |
     --ds-password=Secret123
     --admin-password=Secret123
