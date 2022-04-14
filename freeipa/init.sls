@@ -25,7 +25,12 @@ freeipa_container:
     - detach: True
     - restart_policy: unless-stopped
     - hostname: {{ pillar["freeipa"]["hostname"] }}
-    - sysctl: {{ pillar["freeipa"]["sysctl"] }}
+    {%- if 'sysctls' in pillar["freeipa"] %}
+    - sysctls:
+      {%- for sysctl in pillar["freeipa"]["sysctls"] %}
+        - {{ sysctl }}
+      {%- endfor %}
+    {%- endif %}
     - tmpfs:
       - /run: rw,noexec,nosuid,size=65536k
       - /tmp: rw,noexec,nosuid,size=65536k
