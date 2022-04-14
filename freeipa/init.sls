@@ -30,20 +30,32 @@ freeipa_container:
       - /run: rw,noexec,nosuid,size=65536k
       - /tmp: rw,noexec,nosuid,size=65536k
     - cap_add: SYS_TIME
+    {%- if 'extra_hosts' in pillar["freeipa"] %}
+    - extra_hosts:
+      {%- for extra_host in pillar["freeipa"]["extra_hosts"] %}
+        - {{ extra_host }}
+      {%- endfor %}
+    {%- endif %}
     - publish:
-        - 0.0.0.0:53:53
-        - 0.0.0.0:53:53/udp
-        - 0.0.0.0:80:80
-        - 0.0.0.0:88:88
-        - 0.0.0.0:88:88/udp
-        - 0.0.0.0:123:123/udp
-        - 0.0.0.0:389:389
-        - 0.0.0.0:443:443
-        - 0.0.0.0:464:464
-        - 0.0.0.0:464:464/udp
-        - 0.0.0.0:636:636
+        - {{ pillar["freeipa"]["ip"] }}:53:53
+        - {{ pillar["freeipa"]["ip"] }}:53:53/udp
+        - {{ pillar["freeipa"]["ip"] }}:80:80
+        - {{ pillar["freeipa"]["ip"] }}:88:88
+        - {{ pillar["freeipa"]["ip"] }}:88:88/udp
+        - {{ pillar["freeipa"]["ip"] }}:123:123/udp
+        - {{ pillar["freeipa"]["ip"] }}:389:389
+        - {{ pillar["freeipa"]["ip"] }}:443:443
+        - {{ pillar["freeipa"]["ip"] }}:464:464
+        - {{ pillar["freeipa"]["ip"] }}:464:464/udp
+        - {{ pillar["freeipa"]["ip"] }}:636:636
     {%- if 'command' in pillar["freeipa"] %}
     - command: {{ pillar["freeipa"]["command"] }}
+    {%- endif %}
+    {%- if 'dns' in pillar["freeipa"] %}
+    - dns:
+      {%- for address in pillar["freeipa"]["dns"] %}
+        - {{ address }}
+      {%- endfor %}
     {%- endif %}
     - binds:
         - /opt/freeipa/{{ pillar["freeipa"]["hostname"] }}/data:/data:rw
@@ -54,4 +66,19 @@ freeipa_container:
         - {{ var_key }}: {{ var_val }}
     {%- endfor %}
   {%- endif %}
+
+systemd-resolved drop-in:
+  file.managed:
+    - name: /etc/systemd/resolved.conf.d/freeipa.conf
+    - makedirs: true
+    - contents: |
+        [Resolve]
+        DNS={{ pillar["freeipa"]["ip"] }}
+        Domains=~{{ pillar["freeipa"]["domain"] }}
+
+systemd-resolved reload:
+  cmd.run:
+    - name: systemctl daemon-reload && systemctl restart systemd-resolved
+    - onchanges:
+      - file: /etc/systemd/resolved.conf.d/freeipa.conf
 {%- endif %}
