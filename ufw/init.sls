@@ -200,7 +200,7 @@ ufw_user_rules_src_managed:
     - contents: |
   {%- for rule_action in ["allow", "deny", "reject", "limit"] %}
     {%- if rule_action in pillar["ufw"] %}
-      {%- for rule_name, rule_params in pillar["ufw"][rule_action].items() %}
+      {%- for rule_name, rule_params in pillar["ufw"][rule_action].items()|sort %}
 
         {%- if "insert" in rule_params %}
           {%- set rule_insert = "insert " ~ rule_params["insert"]|string %}
