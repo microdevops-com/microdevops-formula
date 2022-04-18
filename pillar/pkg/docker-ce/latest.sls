@@ -18,6 +18,12 @@ pkg:
             - source:
               - https://download.docker.com/linux/centos/docker-ce.repo
             - skip_verify: True
+      - pkg.latest:
+          1:
+            - refresh: True
+            - pkgs:
+              - docker-ce
+              - python36-docker
 {%- else %}
       - pkgrepo.managed:
           1:
@@ -25,13 +31,13 @@ pkg:
             - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
             - file: /etc/apt/sources.list.d/docker-ce.list
             - key_url: https://download.docker.com/linux/ubuntu/gpg
-{%- endif %}
       - pkg.latest:
           1:
             - refresh: True
             - pkgs:
               - docker-ce
               - python3-docker
+{%- endif %}
       - service.running:
           1:
             - name: docker
