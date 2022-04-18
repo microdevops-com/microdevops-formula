@@ -151,7 +151,7 @@ app_{{ app_type }}_nginx_link_sites_enabled_redirect_{{ loop_index }}_{{ loop.in
         {%- if (pillar["nginx_reload"] is defined and pillar["nginx_reload"]) or ("reload" in app["nginx"] and app["nginx"]["reload"]) %}
 app_{{ app_type }}_nginx_reload_{{ loop_index }}:
   cmd.run:
-    - name: "/usr/bin/env nginx -t && /usr/bin/env nginx -s reload"
+    - name: "/usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
 
         {%- endif %}
 
@@ -161,6 +161,6 @@ app_{{ app_type }}_nginx_reload_cron_{{ loop_index }}:
     - user: root
     - minute: 30
     - hour: 10
-    - name: "nginx -t -q && nginx -s reload"
+    - name: "/usr/sbin/nginx -t -q && /usr/sbin/nginx -s reload"
 
       {%- endif %}
