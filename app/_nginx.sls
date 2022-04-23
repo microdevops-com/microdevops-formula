@@ -1,5 +1,8 @@
       {%- if "nginx" in app %}
 
+        {%- set _nginx_sites_available_dir = app["nginx"].get("sites_available_dir", "/etc/nginx/sites-available") %}
+        {%- set _nginx_sites_enabled_dir = app["nginx"].get("sites_enabled_dir", "/etc/nginx/sites-enabled") %}
+
         {%- set _app_nginx_root = app["nginx"]["root"]|replace("__APP_NAME__", app_name) %}
         {%- set _app_nginx_access_log = app["nginx"]["log"]["access_log"]|replace("__APP_NAME__", app_name) %}
         {%- set _app_nginx_error_log = app["nginx"]["log"]["error_log"]|replace("__APP_NAME__", app_name) %}
@@ -41,8 +44,9 @@ app_{{ app_type }}_acme_run_{{ loop_index }}:
 
 app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
   file.managed:
-    - name: /etc/nginx/sites-available/{{ app_name }}.conf
-    - source: {{ app["nginx"]["vhost_config"] }}
+    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
+    {%- set _nginx_vhost_config = app["nginx"]["vhost_config"]|replace("__APP_NAME__", app_name) %}
+    - source: {{ _nginx_vhost_config }}
     - template: jinja
     - defaults:
         app_name: {{ app_name }}
@@ -81,8 +85,9 @@ app_{{ app_type }}_acme_run_redirect_{{ loop_index }}_{{ loop.index }}:
 
 app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ loop.index }}:
   file.managed:
-    - name: /etc/nginx/sites-available/{{ app_name }}_redirect_{{ loop.index }}.conf
-    - source: {{ redirect["vhost_config"] }}
+    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}_redirect_{{ loop.index }}.conf
+    {%- set _redirect_vhost_config = redirect["vhost_config"]|replace("__APP_NAME__", app_name) %}
+    - source: {{ _redirect_vhost_config }}
     - template: jinja
     - defaults:
         domain: {{ app["nginx"]["domain"] }}
@@ -133,15 +138,15 @@ app_{{ app_type }}_nginx_logrotate_file_{{ loop_index }}:
         {%- if "link_sites-enabled" in app["nginx"] and app["nginx"]["link_sites-enabled"] %}
 app_{{ app_type }}_nginx_link_sites_enabled_{{ loop_index }}:
   file.symlink:
-    - name: /etc/nginx/sites-enabled/{{ app_name }}.conf
-    - target: /etc/nginx/sites-available/{{ app_name }}.conf
+    - name: {{ _nginx_sites_enabled_dir }}/{{ app_name }}.conf
+    - target: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
 
           {%- if "redirects" in app["nginx"] %}
             {%- for redirect in app["nginx"]["redirects"] %}
 app_{{ app_type }}_nginx_link_sites_enabled_redirect_{{ loop_index }}_{{ loop.index }}:
   file.symlink:
-    - name: /etc/nginx/sites-enabled/{{ app_name }}_redirect_{{ loop.index }}.conf
-    - target: /etc/nginx/sites-available/{{ app_name }}_redirect_{{ loop.index }}.conf
+    - name: {{ _nginx_sites_enabled_dir }}/{{ app_name }}_redirect_{{ loop.index }}.conf
+    - target: {{ _nginx_sites_available_dir }}/{{ app_name }}_redirect_{{ loop.index }}.conf
 
             {%- endfor %}
           {%- endif %}

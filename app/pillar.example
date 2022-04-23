@@ -128,7 +128,7 @@ app:
             auth:
             - user: basicuser
               pass: basicpassword
-          vhost_config: salt://app/files/.../vhost.conf
+          vhost_config: salt://app/files/__APP_NAME__/.../vhost.conf
           vhost_defaults: # optional, defaults for vhost config template
             php_version: 7.4 # e.g. for php-fpm apps
             key1: value1
@@ -152,6 +152,9 @@ app:
             log_group: someapp
             rotate_count: 10
             rotate_when: weekly
+          #sites_available_dir: /etc/nginx/sites-available
+          #sites_enabled_dir: /etc/nginx/sites-enabled
+
   docker:
     docker-ce_version: 18.06.1
     networks:
