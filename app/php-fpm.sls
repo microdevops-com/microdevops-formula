@@ -29,13 +29,7 @@ app_php-fpm_app_pool_config_{{ loop.index }}:
         user: {{ _app_user }}
         group: {{ _app_group }}
         php_version: {{ app["pool"]["php_version"] }}
-        pm: {{ app["pool"]["pm"] | yaml_encode }}
-        {%- if "php_admin" in app["pool"] %}
-        php_admin: {{ app["pool"]["php_admin"] | yaml_encode }}
-        {%- else %}
-        php_admin: "; no other admin vals"
-        {%- endif %}
-
+        config: {{ app["pool"]["config"] | yaml_encode }}
       {%- endif %}
 
 

@@ -33,13 +33,13 @@ app:
             rotate_count: 31
             rotate_when: weekly
           php_version: 7.4
-          pm: |
+          config: |
             pm = dynamic
             pm.max_children = 50
             pm.start_servers = 20
             pm.min_spare_servers = 10
             pm.max_spare_servers = 40
-          php_admin: |
+
             php_admin_flag[html_errors] = off
             php_admin_value[post_max_size] = 25M
             php_admin_value[upload_max_filesize] = 25M
