@@ -20,10 +20,10 @@ app:
           target: /opt/__APP_NAME__/venv
         # only for php-fpm
         pool:
-          pool_config: salt://app/files/.../pool.conf
+          #pool_template: salt://app/files/.../pool.conf # optional, by default uses salt://app/files/php-generic/pool.conf
           reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
           log: # optional pool log params
-            dir: /var/www/__APP_NAME__/log/php # by default pool logs are in /var/log/php
+            error_log: /var/www/__APP_NAME__/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
             dir_user: someapp
             dir_group: someapp
             dir_mode: 755
@@ -33,17 +33,17 @@ app:
             rotate_count: 31
             rotate_when: weekly
           php_version: 7.4
-          pm: |
+          config: |
             pm = dynamic
             pm.max_children = 50
             pm.start_servers = 20
             pm.min_spare_servers = 10
             pm.max_spare_servers = 40
-          php_admin: |
+
             php_admin_flag[html_errors] = off
             php_admin_value[post_max_size] = 25M
             php_admin_value[upload_max_filesize] = 25M
-          #pool_contents: | # optional, instead of pool_config+pm+php_admin you can set this pillar for the complete contents
+          #pool_contents: | # optional, instead of pool_template+config you can set this pillar for the complete contents
           #  [__APP_NAME__]
           #  user = __APP_NAME__
           #  group = __APP_NAME__

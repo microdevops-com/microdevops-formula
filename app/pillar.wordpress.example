@@ -45,7 +45,7 @@ app:
             set -e
             curl -sS https://wordpress.org/latest.tar.gz | tar zxf -
         pool:
-          pool_config: salt://app/files/wp/pool.conf
+          pool_template: salt://app/files/wp/pool.conf
           php_version: 7.4
           reload: True
           pm: |
