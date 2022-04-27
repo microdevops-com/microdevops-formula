@@ -56,6 +56,7 @@ app_php-fpm_app_pool_config_{{ loop.index }}:
         config: {{ app["pool"]["config"] | yaml_encode }}
       {%- endif %}
 
+  {%- if not _pool_log_file.startswith("/var/log") %}
 app_php-fpm_app_log_dir_{{ loop.index }}:
   file.directory:
     {%- set _pool_log_dir = _pool_log_file | regex_replace('/[^/]*$', '') %}
@@ -64,6 +65,7 @@ app_php-fpm_app_log_dir_{{ loop.index }}:
     - group: {{ _pool_log_dir_group }}
     - mode: {{ _pool_log_dir_mode }}
     - makedirs: True
+  {%- endif %}
 
 app_php-fpm_app_log_file_{{ loop.index }}:
   file.managed:
