@@ -23,7 +23,7 @@ app:
           pool_template: salt://app/files/.../pool.conf
           reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
           log: # optional pool log params
-            file: /var/www/__APP_NAME__/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
+            error_log: /var/www/__APP_NAME__/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
             dir_user: someapp
             dir_group: someapp
             dir_mode: 755
@@ -43,7 +43,7 @@ app:
             php_admin_flag[html_errors] = off
             php_admin_value[post_max_size] = 25M
             php_admin_value[upload_max_filesize] = 25M
-          #pool_contents: | # optional, instead of pool_template+pm+php_admin you can set this pillar for the complete contents
+          #pool_contents: | # optional, instead of pool_template+config you can set this pillar for the complete contents
           #  [__APP_NAME__]
           #  user = __APP_NAME__
           #  group = __APP_NAME__

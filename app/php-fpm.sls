@@ -18,7 +18,7 @@
 
       {%- set default_pool_log_file = "/var/log/php/" ~ app["pool"]["php_version"] ~ "-fpm/" ~ app_name ~ ".error.log" %}
       {%- if "log" in app["pool"] %}
-        {%- set _pool_log_file = app["pool"]["log"]["file"]|replace("__APP_NAME__", app_name)|default(default_pool_log_file) %}
+        {%- set _pool_log_file = app["pool"]["log"]["error_log"]|replace("__APP_NAME__", app_name)|default(default_pool_log_file) %}
         {%- set _pool_log_dir_user = app["pool"]["log"]["dir_user"]|default(_app_user) %}
         {%- set _pool_log_dir_group = app["pool"]["log"]["dir_group"]|default(_app_group) %}
         {%- set _pool_log_dir_mode = app["pool"]["log"]["dir_mode"]|default("755") %}
