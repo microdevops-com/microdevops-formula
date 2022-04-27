@@ -22,7 +22,7 @@ app_php-fpm_app_pool_config_{{ loop.index }}:
       {%- if "pool_contents" in app["pool"] %}
     - contents: {{ app["pool"]["pool_contents"] | replace("__APP_NAME__", app_name) | yaml_encode }}
       {%- else %}
-    - source: {{ app["pool"]["pool_config"] }}
+    - source: {{ app["pool"]["pool_template"] }}
     - template: jinja
     - defaults:
         app_name: {{ app_name }}
