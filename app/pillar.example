@@ -20,7 +20,7 @@ app:
           target: /opt/__APP_NAME__/venv
         # only for php-fpm
         pool:
-          pool_template: salt://app/files/.../pool.conf
+          #pool_template: salt://app/files/.../pool.conf # optional, by default uses salt://app/files/php-generic/pool.conf
           reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
           log: # optional pool log params
             error_log: /var/www/__APP_NAME__/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
