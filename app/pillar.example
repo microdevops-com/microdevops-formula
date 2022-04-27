@@ -23,7 +23,7 @@ app:
           pool_config: salt://app/files/.../pool.conf
           reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
           log: # optional pool log params
-            dir: /var/www/__APP_NAME__/log/php # by default pool logs are in /var/log/php
+            file: /var/www/__APP_NAME__/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
             dir_user: someapp
             dir_group: someapp
             dir_mode: 755
