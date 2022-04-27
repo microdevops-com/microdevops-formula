@@ -16,23 +16,6 @@
 
       {%- include "app/_user_and_source.sls" with context %}
 
-app_php-fpm_app_pool_config_{{ loop.index }}:
-  file.managed:
-    - name: /etc/php/{{ app["pool"]["php_version"] }}/fpm/pool.d/{{ app_name }}.conf
-      {%- if "pool_contents" in app["pool"] %}
-    - contents: {{ app["pool"]["pool_contents"] | replace("__APP_NAME__", app_name) | yaml_encode }}
-      {%- else %}
-    - source: {{ app["pool"]["pool_template"] }}
-    - template: jinja
-    - defaults:
-        app_name: {{ app_name }}
-        user: {{ _app_user }}
-        group: {{ _app_group }}
-        php_version: {{ app["pool"]["php_version"] }}
-        config: {{ app["pool"]["config"] | yaml_encode }}
-      {%- endif %}
-
-
       {%- set default_pool_log_file = "/var/log/php/" ~ app["pool"]["php_version"] ~ "-fpm/" ~ app_name ~ ".error.log" %}
       {%- if "log" in app["pool"] %}
         {%- set _pool_log_file = app["pool"]["log"]["file"]|replace("__APP_NAME__", app_name)|default(default_pool_log_file) %}
@@ -54,6 +37,23 @@ app_php-fpm_app_pool_config_{{ loop.index }}:
         {%- set _pool_log_log_mode = "644" %}
         {%- set _pool_log_rotate_count = "31" %}
         {%- set _pool_log_rotate_when = "daily" %}
+      {%- endif %}
+
+app_php-fpm_app_pool_config_{{ loop.index }}:
+  file.managed:
+    - name: /etc/php/{{ app["pool"]["php_version"] }}/fpm/pool.d/{{ app_name }}.conf
+      {%- if "pool_contents" in app["pool"] %}
+    - contents: {{ app["pool"]["pool_contents"] | replace("__APP_NAME__", app_name) | yaml_encode }}
+      {%- else %}
+    - source: {{ app["pool"]["pool_template"] }}
+    - template: jinja
+    - defaults:
+        app_name: {{ app_name }}
+        user: {{ _app_user }}
+        group: {{ _app_group }}
+        php_version: {{ app["pool"]["php_version"] }}
+        error_log: {{ _pool_log_file }}
+        config: {{ app["pool"]["config"] | yaml_encode }}
       {%- endif %}
 
 app_php-fpm_app_log_dir_{{ loop.index }}:
