@@ -211,22 +211,13 @@ alerta_hb_cron:
     - user: alerta
     - minute: '*'
 
-alerta_webuisrc_dir:
-  file.directory:
-    - name: /opt/alerta/alerta/webuisrc
+alerta_install_webui_archive:
+  archive.extracted:
+    - name: /opt/alerta/alerta/html
+    - source: {{ pillar["alerta"]["webui_source"] }}
     - user: alerta
     - group: alerta
-    - makedirs: True
-
-alerta_install_webui:
-  cmd.run:
-    - cwd: /opt/alerta/alerta/webuisrc
-    - runas: alerta
-    - name: |
-        rm -rf /opt/alerta/alerta/webuisrc/*
-        wget -q -O - https://github.com/alerta/alerta-webui/releases/download/{{ pillar["alerta"]["webui_version"]}}/alerta-webui.tar.gz | tar zxf -
-        rsync -a --delete dist/ /opt/alerta/alerta/html/
-        rm -f /opt/alerta/alerta/html/config.json.example
+    - enforce_toplevel: False
 
 alerta_install_webui_config:
   file.managed:

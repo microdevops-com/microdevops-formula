@@ -39,8 +39,8 @@ postgres:
 
 alerta:
   domain: alerta.example.com
-  version: v8.6.0
-  webui_version: v8.5.0
+  version: v8.7.0
+  webui_source: salt://alerta/files/v8.7.0/alerta-webui.tar.gz # patched version with customer, group autocomplete and customer sort
   db:
     user: alerta
     pass: xxxxxxxxxxxxxxxx
