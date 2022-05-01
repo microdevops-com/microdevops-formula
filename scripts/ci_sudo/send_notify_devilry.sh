@@ -108,7 +108,7 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 		"resource": "'${NOTIFY_RESOURCE}'",
 		"event": "'${NOTIFY_EVENT}'",
 		"value": "'${NOTIFY_VALUE}'",
-		"group": "pipeline",
+		"group": "'${SALT_MINION}'",
 		"text": "'${NOTIFY_TEXT}'",
 		"origin": ".gitlab-ci.yml",
 		"correlate": '${NOTIFY_CORRELATE}',
