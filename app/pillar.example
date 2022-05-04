@@ -158,7 +158,7 @@ app:
   docker:
     docker-ce_version: 18.06.1
     networks:
-      - name: proto
+      proto:
         subnet: 172.18.0.0/24
         gateway: 172.18.0.1
     apps:
