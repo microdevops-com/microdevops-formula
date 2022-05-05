@@ -1,0 +1,2 @@
+include:
+  - .disk_alert

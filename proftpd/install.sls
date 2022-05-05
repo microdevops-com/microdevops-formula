@@ -16,6 +16,16 @@ ensure_proftpd_config_dir_exists:
     - require:
       - pkg: install_proftpd
 
+ensure_proftpd_ftpd-users_file_exists:
+  file.managed:
+    - name: /etc/proftpd/ftpd.users
+    - user: proftpd
+    - group: root
+    - mode: 0600
+    - require:
+      - pkg: install_proftpd
+      - file: ensure_proftpd_config_dir_exists
+
 ensure_proftpd_key_dir_exists:
   file.directory:
     - name: /etc/proftpd/keys
@@ -75,14 +85,16 @@ create_config_file:
           <VirtualHost 0.0.0.0>
                 SFTPEngine on
                 RequireValidShell off
+                AllowOverwrite on
                 Port 2226
                 SFTPLog     /var/log/proftpd/sftp.log
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_rsa_key
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_dsa_key
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_ecdsa_key
                 SFTPAuthMethods password
-                SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
+                SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
                 AuthUserFile /etc/proftpd/ftpd.users
+                DefaultRoot ~
           </VirtualHost>
         </IfModule>
     - require:

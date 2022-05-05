@@ -1,0 +1,23 @@
+{%- if pillar["promtail"]["scrape_configs"] is defined  and pillar['promtail']['scrape_configs'] is not none -%}
+  {%- set scrape_configs = pillar['promtail']['scrape_configs'] -%}
+{%- endif -%}
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+{#
+  http_tls_config:
+    cert_file: /opt/acme/cert/promtail_{{ host }}_fullchain.cer
+    key_file: /opt/acme/cert/promtail_{{ host }}_key.key
+    client_ca_file: /opt/acme/cert/promtail_{{ host }}_ca.cer
+    client_auth_type: RequireAndVerifyClientCert
+    #client_auth_type: VerifyClientCertIfGiven
+#}
+positions:
+  filename: /tmp/positions.yaml
+clients:
+  - url: {{ pillar['promtail']['loki']['url'] }}/loki/api/v1/push
+    basic_auth:
+      username: {{ pillar['promtail']['loki']['auth_basic']['username'] }}
+      password: {{ pillar['promtail']['loki']['auth_basic']['password'] }}
+scrape_configs:
+{{ scrape_configs }}

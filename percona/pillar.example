@@ -21,9 +21,8 @@
 # for init.sls
 # percona
 percona:
-  enabled: True
-  version: 5.6
-  root_password: 'cooldnpassword'
+  version: 8.0 # mandatory
+  root_password: cooldnpassword # mandatory
   databases:
     db0:
       character_set: utf8mb4 # optional, utf8mb4 is used by default, you cannot change this param if db is already created
@@ -32,11 +31,26 @@ percona:
   users:
     db:
       host: localhost
-      password: 'userpass'
+      password: userpass
       databases:
         - database: db
           grant: ['all privileges']
 
+
+# In rare cases one may need to create superuser with password authentication
+# to do so, use a such pillar:
+percona:
+  version: 5.7
+  root_password: 'cooldnpassword'
+  users:
+    superuser: # do not name user 'root', may cause bug: https://stackoverflow.com/questions/5555328
+      host: '%'
+      password: 'cooldnpassword1'
+      databases:
+        - database: '*'
+          grant: ['all privileges']
+          grant_option: True
+          unescape_db_name: True
 
 # ///////// WARNING \\\\\\\\\\
 # >>>> legacy, do not use <<<<
@@ -45,7 +59,7 @@ percona:
 # percona
 percona:
   enabled: True
-  version: 5.6
+  version: 5.7
   root_password: 'cooldnpassword'
   databases:
     - name: db

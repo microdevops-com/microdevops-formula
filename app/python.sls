@@ -2,7 +2,7 @@
 
   {%- if "pyenv" in pillar["app"]["python"] %}
     {%- set pyenv = pillar["app"]["python"]["pyenv"] %}
-    {%- include "pyenv/pyenv.sls" with context %}
+    {%- include "pyenv/init.sls" with context %}
   {%- endif %}
 
   {%- for app_name, app in pillar["app"]["python"]["apps"].items() %}
@@ -10,12 +10,17 @@
 
       {%- set app_type = "python" %}
       {%- set loop_index = loop.index %}
-      {%- include "app/user_and_source.sls" with context %}
+      {%- set _app_user = app["user"]|replace("__APP_NAME__", app_name) %}
+      {%- set _app_group = app["group"]|replace("__APP_NAME__", app_name) %}
+      {%- set _app_app_root = app["app_root"]|replace("__APP_NAME__", app_name) %}
+
+      {%- include "app/_user_and_source.sls" with context %}
 
       {%- if "virtualenv" in app %}
+        {%- set _app_virtualenv_target = app["virtualenv"]["target"]|replace("__APP_NAME__", app_name) %}
 app_python_app_virtualenv_dir_{{ loop.index }}:
   file.directory:
-    - name: {{ app["virtualenv"]["target"] }}
+    - name: {{ _app_virtualenv_target }}
     - user: {{ app["user"] }}
     - group: {{ app["group"] }}
     - mode: 755
@@ -23,7 +28,7 @@ app_python_app_virtualenv_dir_{{ loop.index }}:
 
 app_python_app_virtualenv_python_version_{{ loop.index }}:
   file.managed:
-    - name: {{ app["virtualenv"]["target"] ~ "/.python-version" }}
+    - name: {{ _app_virtualenv_target ~ "/.python-version" }}
     - user: {{ app["user"] }}
     - group: {{ app["group"] }}
     - mode: 0644
@@ -50,7 +55,7 @@ app_python_app_virtualenv_bin_{{ loop.index }}:
 
 app_python_app_virtualenv_{{ loop.index }}:
   virtualenv.managed:
-    - name: {{ app["virtualenv"]["target"] }}
+    - name: {{ _app_virtualenv_target }}
     - python: /usr/local/pyenv/shims/python
     - user: {{ app["user"] }}
     - system_site_packages: False
@@ -60,9 +65,10 @@ app_python_app_virtualenv_{{ loop.index }}:
 
       {%- endif %}
 
-      {%- include "app/setup_scripts.sls" with context %}
+      {%- include "app/_setup_scripts.sls" with context %}
+
+      {%- include "app/_nginx.sls" with context %}
 
     {%- endif %}
   {%- endfor %}
 {% endif %}
-

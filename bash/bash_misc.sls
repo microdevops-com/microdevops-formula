@@ -1,9 +1,11 @@
+{%- if grains["os"] not in ["CentOS"] %}
 history_skel_bashrc:
   file.line:
     - name: '/etc/skel/.bashrc'
     - mode: ensure
     - after: ".*HISTSIZE and HISTFILESIZE.*"
     - content: "export HISTTIMEFORMAT='%Y-%m-%d %H:%M:%S '"
+{%- endif %}
 
 ps1_skel_bashrc_1:
   file.replace:
@@ -28,6 +30,7 @@ aliases_bashrc_1:
     - name: '/etc/skel/.bashrc'
     - regex: '\[ -x /usr/bin/lesspipe'
 
+{%- if grains["os"] not in ["CentOS"] %}
 aliases_bashrc_2:
   file.uncomment:
     - name: '/etc/skel/.bashrc'
@@ -60,6 +63,7 @@ aliases_bashrc_7:
   file.uncomment:
     - name: '/etc/skel/.bashrc'
     - regex: 'alias l='
+{%- endif %}
 
 ps1_touch_byobu_bashrc:
   file.touch:

@@ -1,0 +1,94 @@
+# real life wordpress deployment example
+
+percona:
+  enabled: True
+  version: 8.0
+  root_password: xxxxxxxxxxxxxxxxxxxxxx
+  databases:
+    sysadminworkshopcom: {}
+  users:
+    sysadminworkshopcom:
+      host: localhost
+      password: xxxxxxxxxxxxxxxxxxxxxx
+      databases:
+        - database: sysadminworkshopcom
+          grant: ['all privileges']
+
+nginx:
+  configs: nginx/app_hosting
+
+app:
+  php-fpm:
+    versions:
+      7.4:
+        modules:
+          - php7.4-zip
+          - php7.4-intl
+          - php7.4-mbstring
+          - php7.4-mysql
+          - php7.4-soap
+          - php7.4-xml
+          - php7.4-bcmath
+          - php7.4-curl
+          - php7.4-gd
+          - php7.4-sqlite3
+    apps:
+      sysadminworkshopcom:
+        user: __APP_NAME__
+        group: __APP_NAME__
+        pass: '!'
+        app_root: /var/www/__APP_NAME__
+        shell: /bin/false
+        setup_script_app_user:
+          cwd: /var/www/__APP_NAME__
+          name: |
+            set -e
+            curl -sS https://wordpress.org/latest.tar.gz | tar zxf -
+        pool:
+          pool_template: salt://app/files/wp/pool.conf
+          php_version: 7.4
+          reload: True
+          pm: |
+            pm = ondemand
+            pm.max_children = 50
+            pm.process_idle_timeout = 10s
+            pm.max_requests = 500
+          php_admin: |
+            php_admin_value[date.timezone] = Europe/Kiev
+            php_admin_flag[html_errors] = off
+            php_admin_value[post_max_size] = 25M
+            php_admin_value[upload_max_filesize] = 25M
+        nginx:
+          domain: sysadmin-workshop.com
+          ssl:
+            acme_account: sysadmin-workshop.com
+          link_sites-enabled: True
+          reload: True
+          vhost_config: salt://app/files/wp/vhost.conf
+          vhost_defaults:
+            php_version: 7.4
+          root: /var/www/__APP_NAME__/wordpress
+          redirects:
+            - domain: www.sysadmin-workshop.com
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: sysadmin-workshop.com
+            - domain: sysadm.ws
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: sysadm.ws
+            - domain: www.sysadm.ws
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: sysadm.ws
+            - domain: sysadmin-workshop.com.ua
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: sysadmin-workshop.com.ua
+            - domain: www.sysadmin-workshop.com.ua
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: sysadmin-workshop.com.ua
+          log:
+            access_log: /var/log/nginx/__APP_NAME__.access.log
+            error_log: /var/log/nginx/__APP_NAME__.error.log'

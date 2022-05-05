@@ -1,0 +1,17 @@
+logrotate:
+  configs:
+    - path: /etc/logrotate.d/my-config
+      contents: |
+        /var/www/my-app/log/*.txt /var/www/my-app/log/*.log {
+          su apache apache
+          daily
+          missingok
+          rotate 40
+          compress
+          notifempty
+          create 0644 apache apache
+          sharedscripts
+          postrotate
+            /bin/systemctl reload httpd.service > /dev/null 2>/dev/null || true
+          endscript
+        }

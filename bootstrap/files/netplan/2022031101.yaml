@@ -1,0 +1,57 @@
+# Netshop Dedicated
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eno1:
+      optional: true
+      match:
+        macaddress: {{ mac_eno1 }}
+      dhcp4: no
+      dhcp6: no
+    eno2:
+      optional: true
+      match:
+        macaddress: {{ mac_eno2 }}
+      dhcp4: no
+      dhcp6: no
+    eno3:
+      optional: true
+      match:
+        macaddress: {{ mac_eno3 }}
+      dhcp4: no
+      dhcp6: no
+    eno4:
+      optional: true
+      match:
+        macaddress: {{ mac_eno4 }}
+      dhcp4: no
+      dhcp6: no
+  bridges:
+    br0:
+      interfaces:
+        - eno1
+      macaddress: {{ mac_eno1 }}
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - {{ ipv4_address }}
+      routes:
+        - on-link: true
+          to: 0.0.0.0/0
+          via: {{ ipv4_gw }}
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+    br1:
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - 10.0.10.1/24

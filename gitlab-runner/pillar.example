@@ -1,0 +1,14 @@
+gitlab-runner:
+  gitlab:
+    url: https://gitlab.example.com/
+    admin_token: xxxxxxxxxxxxxxxxxxx # needed to cleanup runners in projects
+    registration_token: xxxxxxxxxxxxxxxxxx
+  register_opts: "--locked --docker-privileged --docker-image 'docker:stable' --access-level='ref_protected'"
+  name: some-runner1.example.com
+  executor: docker
+  tags: some-runner1.example.com,dev
+  concurrency: 50
+  docker_group: True # add runner user to docker group to use docker
+  projects: # optional, add runner to projects
+    - somegroup/project1
+    - somegroup/project2

@@ -10,8 +10,18 @@ if [[ -n "$RSNAPSHOT_BACKUP_TYPE" ]]; then
 	NOTIFY_SERVICE=pipeline_rsnapshot_backup
 	NOTIFY_RESOURCE=${SALT_MINION}
 
+	# Failed sync stage (has allow_failure: True) - send critical disregarding other stages
+	if [[ "$RSNAPSHOT_BACKUP_SYNC" == "failed" ]]; then
+
+		NOTIFY_SEVERITY=critical
+		NOTIFY_SEND=1
+		NOTIFY_EVENT=pipeline_rsnapshot_backup_failed
+		NOTIFY_VALUE=failed
+		NOTIFY_TEXT="Pipeline for rsnapshot_backup failed on rsnapshot_backup_sync ${CI_PIPELINE_URL}"
+		NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_backup_failed","pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_ok"]'
+
 	# Failed job on any stage or check_alive_minions failure - send notify
-	if [[ "$CI_JOB_STATUS" == "failed" || "$CHECK_ALIVE_MINIONS" == "failed" ]]; then
+	elif [[ "$CI_JOB_STATUS" == "failed" || "$CHECK_ALIVE_MINIONS" == "failed" ]]; then
 
 		# Consider check_backup as major
 		if [[ $CI_JOB_NAME =~ rsnapshot_backup_check_backup ]]; then
@@ -98,7 +108,7 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 		"resource": "'${NOTIFY_RESOURCE}'",
 		"event": "'${NOTIFY_EVENT}'",
 		"value": "'${NOTIFY_VALUE}'",
-		"group": "pipeline",
+		"group": "'${SALT_MINION}'",
 		"text": "'${NOTIFY_TEXT}'",
 		"origin": ".gitlab-ci.yml",
 		"correlate": '${NOTIFY_CORRELATE}',

@@ -1,0 +1,26 @@
+# There are several ways to pass the desired launch options.
+#  via file data/ipa-server-install-options
+#  docker command
+#   or
+#  Docker env variables
+# https://linux.die.net/man/1/ipa-server-install
+
+freeipa:
+  hostname: ipa.example.com
+  ip: < server_ip >
+  domain: example.com
+  image: freeipa/freeipa-server:centos-8-stream
+  sysctl: net.ipv6.conf.all.disable_ipv6=0
+{#command: ipa-server-install -U --setup-dns --auto-forwarders --no-ntp #}
+  extra_hosts:
+    - ipa2.example.com:< ipa2_server_ip >
+  ipa_server_install_options: |
+    --ds-password=Secret123
+    --admin-password=Secret123
+    --realm=EXAMPLE.COM
+    --unattended
+    --setup-dns
+    --forwarder=1.1.1.1
+    --forwarder=8.8.8.8
+  env_vars:                                 # Docker env variables
+      - key: val #}

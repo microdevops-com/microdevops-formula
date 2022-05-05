@@ -1,22 +1,48 @@
 mailcow:
   docker-ce_version: 5:19.03.13
-  servername: mailcow.example.com
-  acme_account: example.com
-  HTTP_PORT: 8080                 #ONLY PORT
-  HTTP_BIND: 127.0.0.1            #ONLY IP
-  HTTPS_PORT: 8443                #ONLY PORT
-  HTTPS_BIND: 127.0.0.1           #ONLY IP
-  SMTP_PORT: 25                   #PORT OR IP:PORT
-  SMTPS_PORT: 127.0.0.1:465       #PORT OR IP:PORT
-  SUBMISSION_PORT: 127.0.0.1:587  #PORT OR IP:PORT
-  IMAP_PORT: 127.0.0.1:143        #PORT OR IP:PORT
-  IMAPS_PORT: 127.0.0.1:993       #PORT OR IP:PORT
-  POP_PORT: 127.0.0.1:110         #PORT OR IP:PORT
-  POPS_PORT: 127.0.0.1:995        #PORT OR IP:PORT
-  SIEVE_PORT: 127.0.0.1:4190      #PORT OR IP:PORT
-  SKIP_LETS_ENCRYPT: y            #y or n
-  MAILCOW_TZ: Etc/UTC
-  haproxy:                        #REMOVE THIS ENTRY IF HAPROXY IS NOT USED
+  docker_logging:
+    driver: "json-file"
+    options:
+      tag: "{% raw -%}{{.ImageName}}|{{.Name}}|tst{%- endraw %}"
+  acme_account: example.com         # used only when SKIP_LETS_ENCRYPT=y
+  mailcow_conf:
+    MAILCOW_HOSTNAME: mail.example.com
+    SKIP_LETS_ENCRYPT: n            #y or n
+    ENABLE_SSL_SNI: y               # https://mailcow.github.io/mailcow-dockerized-docs/firststeps-ssl/
+    ADDITIONAL_SAN: mail.*,imap.*,smpt.*,pop.*  # https://mailcow.github.io/mailcow-dockerized-docs/firststeps-ssl/
+    HTTP_PORT: 8080                 #ONLY PORT
+    HTTP_BIND: ''                   #ONLY IP or ''
+    HTTPS_PORT: 8443                #ONLY PORT
+    HTTPS_BIND: ''                  #ONLY IP or ''
+    SMTP_PORT: 25                   #PORT OR IP:PORT
+    SMTPS_PORT: 127.0.0.1:465       #PORT OR IP:PORT
+    SUBMISSION_PORT: 127.0.0.1:587  #PORT OR IP:PORT
+    IMAP_PORT: 127.0.0.1:143        #PORT OR IP:PORT
+    IMAPS_PORT: 127.0.0.1:993       #PORT OR IP:PORT
+    POP_PORT: 127.0.0.1:110         #PORT OR IP:PORT
+    POPS_PORT: 127.0.0.1:995        #PORT OR IP:PORT
+    SIEVE_PORT: 127.0.0.1:4190      #PORT OR IP:PORT
+    SOLR_HEAP: 6144                 #2048MB memory for one million objects
+    MAILCOW_TZ: Etc/UTC
+    ALLOW_ADMIN_EMAIL_LOGIN: y      #y or n
+    WATCHDOG_NOTIFY_EMAIL: devops@oxtech.org
+  haproxy:                          #used only when SKIP_LETS_ENCRYPT=y
     EXTERNAL_IP: 1.2.3.4
-  phishtank_enabled: 'true'
-  drweb_milter_socket: 2.3.4.5:13333
+  rspamd:
+    phishing_conf:
+      phishtank_enabled: 'true'
+    global_smtp_from_whitelist_map: |
+      # /.+example\.com/i
+    global_rcpt_whitelist_map: |
+      # /.+example\.com/i
+  clamd:
+    clamd_conf:
+      DetectPUA: 'no'
+      OLE2BlockMacros: 'no'
+    whitelist_ign2:
+      Sanesecurity: 'Junk.41567'
+  postfix:
+    extra_cf:
+      smtpd_milters: "inet:rspamd:9900, inet:2.3.4.5:13333"
+      non_smtpd_milters: '$smtpd_milters'
+      postscreen_dnsbl_action: 'ignore'

@@ -1,10 +1,9 @@
 {#
-- Make sure vm.max_map_count=262144 on docker server
-- Set node_ips, node_transport_ports for ufw_simple purposes
-- Add acme.sh
-- Docker uses internal IPs, so we need to specify external published ips
+- prepare acme
+- Set node_ips, node_transport_port for ufw_simple purposes
 - Apply salt elasticsearch*.example.com state.apply ufw_simple.ufw_simple
 - Apply salt elasticsearch*.example.com state.apply elasticsearch.elasticsearch
+- on every node set users passwords `docker exec -it elasticsearch-elastic.example.com bash -c '/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive'`
 #}
 
 {% from 'ufw_simple/vars.jinja' import vars with context %}
@@ -16,14 +15,8 @@ set node_ips = {
   'elasticsearch3.example.com': '10.0.10.4',
 }
 %}
-{%
-set node_transport_ports = [
-  '9300',
-  '10300',
-]
-%}
 
-# Use as is
+{%- set node_transport_port = 9300 %}
 ufw_simple:
   enabled: True
   logging: 'off'
@@ -32,50 +25,29 @@ ufw_simple:
       proto: 'tcp'
       from:
         {{ node_ips }}
-      to_port: '{% for ip in node_transport_ports %}{{ ip }}{% if not loop.last %},{% endif %}{% endfor %}'
+      to_port: {{ node_transport_port }}
 
 elasticsearch:
-  docker-ce_version: 18.06.1
+  docker-ce_version: 5:20.10.8
+  image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+  cluster: elasticsearch.example.com
+  acme_account: example.com
+  java_opts: '-Xms4096m -Xmx4096m'
+  config: |
+      # additional common settings if needed
+  ports:
+    http: 9200
+    transport: {{ node_transport_port }}
   nodes:
+    roles:
+      elasticsearch1.example.com: [ master, data, data_content, data_hot, data_warm, data_cold, data_frozen, ingest, ml, remote_cluster_client, transform ]
+      elasticsearch1.example.com: [ master, data, data_content, data_hot, data_warm, data_cold, data_frozen, ingest, ml, remote_cluster_client, transform ]
+      elasticsearch1.example.com: [ master, data, data_content, data_hot, data_warm, data_cold, data_frozen, ingest, ml, remote_cluster_client, transform ]
     master:
       - elasticsearch1.example.com
       - elasticsearch2.example.com
       - elasticsearch3.example.com
-    data:
-      - elasticsearch2.example.com
-      - elasticsearch3.example.com
-    ingest:
-      - elasticsearch1.example.com
     # Use as is
     ips:
       {% for key, val in node_ips.items() %}{{ key }}: {{ val }}
       {% endfor %}
-  domains:
-    - name: elasticsearch.example.com
-      clusters:
-        - name: prod
-          ports:
-            http: 9200
-            transport: 9300
-          image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
-          config: |
-            # additional common settings if needed
-          auth:
-            # users
-            - developer1: password1
-            - developer2: password2
-            # services
-            - kibana: password
-        - name: dev
-          ports:
-            http: 10200
-            transport: 10300
-          image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
-          config: |
-            # additional common settings if needed
-          auth:
-            # users
-            - developer1: password3
-            - developer2: password4
-            # services
-            - kibana: password

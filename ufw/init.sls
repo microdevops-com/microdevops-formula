@@ -1,4 +1,4 @@
-{% if pillar["ufw"] is defined %}
+{% if pillar["ufw"] is defined and pillar["_errors"] is not defined %}
 
   # Import deprecated ufw_simple rules if enabled
   {%- if "import_ufw_simple" in pillar["ufw"] and pillar["ufw"]["import_ufw_simple"] and pillar["ufw_simple"] is defined %}
@@ -15,6 +15,9 @@
     {%- if "nat" in pillar["ufw_simple"] %}
       {%- if "nat" not in pillar["ufw"] %}
         {%- do pillar["ufw"].update({ "nat": {} }) %}
+        {%- if "management_disabled" in pillar["ufw_simple"]["nat"] %}
+          {%- do pillar["ufw"]["nat"].update({ "management_disabled": pillar["ufw_simple"]["nat"]["management_disabled"] }) %}
+        {%- endif %}
       {%- endif %}
       # masquerade, dnat, snat, redirect
       {%- for nat_action in ["masquerade", "dnat", "snat", "redirect"] %}
@@ -41,25 +44,17 @@
       {%- endif %}
     {%- endif %}
   {%- endif %}
+  
+  {%- if "nat" in pillar["ufw"] and "management_disabled" in pillar["ufw"]["nat"] and pillar["ufw"]["nat"]["management_disabled"] %}
+    {%- set manage_nat = False %}
+  {%- else %}
+    {%- set manage_nat = True %}
+  {%- endif %}
 
 ufw_pkg_latest:
   pkg.latest:
     - pkgs:
         - ufw
-
-  # Manage /etc/ufw/ufw.conf
-ufw_conf_managed:
-  file.managed:
-    - name: /etc/ufw/ufw.conf
-    - source: salt://ufw/files/etc_ufw_ufw.conf
-    - mode: 0644
-    - template: jinja
-    - defaults:
-  {%- if "loglevel" in pillar["ufw"] %}
-        LOGLEVEL: {{ pillar["ufw"]["loglevel"] }}
-  {%- else %}
-        LOGLEVEL: "off"
-  {%- endif %}
 
   # Enable ip forwarding if nat or custom nat rules
 ufw_ip_fwd_managed_file_1:
@@ -104,18 +99,28 @@ ufw_before_rules_managed:
     - mode: 0640
     - template: jinja
     - defaults:
+    # nat_flush
+  {%- if manage_nat %}
+        nat_flush: "-F"
+  {%- else %}
+        nat_flush: "# management disabled"
+  {%- endif %}
     # masquerade
-  {%- if "nat" in pillar["ufw"] and "masquerade" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "masquerade" in pillar["ufw"]["nat"] and manage_nat %}
         masquerade: |
     {%- for m_key, m_val in pillar["ufw"]["nat"]["masquerade"].items()|sort %}
           # {{ m_key }}
+      {%- if "source" in m_val %}
           -A POSTROUTING -s {{ m_val["source"] }} -o {{ m_val["out"] }} -j MASQUERADE
+      {%- else %}
+          -A POSTROUTING -o {{ m_val["out"] }} -j MASQUERADE
+      {%- endif %}
     {%- endfor %}
   {%- else %}
         masquerade: "# empty"
   {%- endif %}
     # dnat
-  {%- if "nat" in pillar["ufw"] and "dnat" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "dnat" in pillar["ufw"]["nat"] and manage_nat %}
         dnat: |
     {%- for d_key, d_val in pillar["ufw"]["nat"]["dnat"].items()|sort %}
           # {{ d_key }}
@@ -129,13 +134,18 @@ ufw_before_rules_managed:
       {%- else %}
         {%- set daddr_block = " " %}
       {%- endif %}
-          -A PREROUTING -i {{ d_val["in"] }} {{ src_block }} -p {{ d_val["proto"] }} {{ daddr_block }} --dport {{ d_val["dport"] }} -j DNAT --to-destination {{ d_val["to"] }}
+      {%- if "in" in d_val %}
+        {%- set in_block = "-i " ~ d_val["in"] %}
+      {%- else %}
+        {%- set in_block = " " %}
+      {%- endif %}
+          -A PREROUTING {{ in_block }} {{ src_block }} -p {{ d_val["proto"] }} {{ daddr_block }} --dport {{ d_val["dport"] }} -j DNAT --to-destination {{ d_val["to"] }}
     {%- endfor %}
   {%- else %}
         dnat: "# empty"
   {%- endif %}
     # snat
-  {%- if "nat" in pillar["ufw"] and "snat" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "snat" in pillar["ufw"]["nat"] and manage_nat %}
         snat: |
     {%- for s_key, s_val in pillar["ufw"]["nat"]["snat"].items()|sort %}
           # {{ s_key }}
@@ -150,7 +160,7 @@ ufw_before_rules_managed:
         snat: "# empty"
   {%- endif %}
     # redirect
-  {%- if "nat" in pillar["ufw"] and "redirect" in pillar["ufw"]["nat"] %}
+  {%- if "nat" in pillar["ufw"] and "redirect" in pillar["ufw"]["nat"] and manage_nat %}
         redirect: |
     {%- for r_key, r_val in pillar["ufw"]["nat"]["redirect"].items()|sort %}
           # {{ r_key }}
@@ -170,7 +180,7 @@ ufw_before_rules_managed:
         redirect: "# empty"
   {%- endif %}
     # custom_nat
-  {%- if "custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"] %}
+  {%- if "custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"] and manage_nat %}
         custom_nat: {{ pillar["ufw"]["custom"]["nat"] | yaml_encode }}
   {%- else %}
         custom_nat: "# empty"
@@ -190,7 +200,7 @@ ufw_user_rules_src_managed:
     - contents: |
   {%- for rule_action in ["allow", "deny", "reject", "limit"] %}
     {%- if rule_action in pillar["ufw"] %}
-      {%- for rule_name, rule_params in pillar["ufw"][rule_action].items() %}
+      {%- for rule_name, rule_params in pillar["ufw"][rule_action].items()|sort %}
 
         {%- if "insert" in rule_params %}
           {%- set rule_insert = "insert " ~ rule_params["insert"]|string %}
@@ -218,11 +228,17 @@ ufw_user_rules_src_managed:
           {%- set rule_to_port = "" %}
         {%- endif %}
 
+        {%- if "direction" in rule_params %}
+          {%- set rule_direction = " " ~ rule_params["direction"] ~ " " %}
+        {%- else %}
+          {%- set rule_direction = " " %}
+        {%- endif %}
+
         {%- set i_loop = loop %}
         {%- for i_from in rule_from %}
           {%- set j_loop = loop %}
           {%- for i_to in rule_to %}
-        ufw {{ rule_insert }} {{ rule_action }} {{ rule_proto }} from {{ rule_from[i_from] }} to {{ rule_to[i_to] }} {{ rule_to_port }} comment "{{ rule_name }} from {{ i_from }} to {{ i_to }}"
+        ufw {{ rule_insert }} {{ rule_action }}{{ rule_direction }}{{ rule_proto }} from {{ rule_from[i_from] }} to {{ rule_to[i_to] }} {{ rule_to_port }} comment "{{ rule_name }} from {{ i_from }} to {{ i_to }}"
           {%- endfor %}
         {%- endfor %}
       {%- endfor %}
@@ -245,9 +261,6 @@ ufw_user_rules_gen_tmp:
   cmd.run:
     - name: |
         /etc/ufw/user.rules.py v4 > /etc/ufw/user.rules.tmp
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
 
 ufw_user6_rules_gen_tmp:
   cmd.run:
@@ -257,9 +270,6 @@ ufw_user6_rules_gen_tmp:
           | sed -e 's/### RULES ###/:ufw6-user-limit - [0:0]\n:ufw6-user-limit-accept - [0:0]\n### RULES ###/' \
           | sed -e 's/COMMIT/\n### RATE LIMITING ###\n-A ufw6-user-limit -j REJECT\n-A ufw6-user-limit-accept -j ACCEPT\n### END RATE LIMITING ###\nCOMMIT/' \
           > /etc/ufw/user6.rules.tmp
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
 
   # Manage /etc/ufw/user.rules
 ufw_user_rules_managed:
@@ -272,9 +282,9 @@ ufw_user_rules_managed:
     - source: /etc/ufw/user.rules.tmp
     - mode: 0640
     - keep_source: False
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
+    - onlyif:
+      - fun: file.file_exists
+        path: /etc/ufw/user.rules.tmp
 
   # Manage /etc/ufw/user6.rules
 ufw_user6_rules_managed:
@@ -287,9 +297,19 @@ ufw_user6_rules_managed:
     - source: /etc/ufw/user6.rules.tmp
     - mode: 0640
     - keep_source: False
-    - onchanges:
-      - file: /etc/ufw/user.rules.src
-      - file: /etc/ufw/user.rules.py
+    - onlyif:
+      - fun: file.file_exists
+        path: /etc/ufw/user6.rules.tmp
+
+  # Manage /etc/ufw/ufw.conf
+ufw_conf_managed:
+  file.managed:
+    - name: /etc/ufw/ufw.conf
+    - source: salt://ufw/files/etc_ufw_ufw.conf
+    - mode: 0644
+    - template: jinja
+    - defaults:
+        LOGLEVEL: {{ pillar["ufw"].get("loglevel", "'off'") }}
 
   # Reload ufw on any file change
 ufw_reload:
@@ -308,7 +328,36 @@ ufw_reload:
       - file: /etc/ufw/user6.rules
   {%- endif %}
 
+  {% if "exec_after_apply" in pillar["ufw"] %}
+exec_after:
+  cmd.run:
+    - name: {{ pillar["ufw"]["exec_after_apply"] }}
+    - onchanges:
+      - file: /etc/ufw/ufw.conf
+      - file: /etc/ufw/sysctl.conf
+      - file: /etc/default/ufw
+      - file: /etc/ufw/before.rules
+    {%- if grains["os"] in ["CentOS"] %}
+      - file: /var/lib/ufw/user.rules
+      - file: /var/lib/ufw/user6.rules
+    {%- else %}
+      - file: /etc/ufw/user.rules
+      - file: /etc/ufw/user6.rules
+    {%- endif %}
+  {% endif %}
+
 {% else %}
+  {%- if pillar["_errors"] is defined %}
+ufw_nothing_done_info:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        ERROR: There are pillar errors, so nothing has been done.
+        {{ pillar["_errors"] | json() }}
+
+  {%- else %}
 ufw_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
@@ -317,4 +366,5 @@ ufw_nothing_done_info:
     - comment: |
         INFO: This state was not configured with pillar, so nothing has been done. But it is OK.
 
+  {%- endif %}
 {% endif %}

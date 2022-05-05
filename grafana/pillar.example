@@ -1,7 +1,9 @@
 grafana:
-  docker-ce_version: 18.06.1
+  docker-ce_version: 5:20.10.8*
+  acme_account: oxtech.org
   domains:
     - name: grafana.example.com
+      default_instance: prod # optional, redirect to this instance if exist, make html list if not
       instances:
         - name: prod
           port: 3000

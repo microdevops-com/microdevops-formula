@@ -23,7 +23,7 @@ docker_install_2:
     - reload_modules: True
     - pkgs: 
         - docker-ce: '{{ pillar['metabase']['docker-ce_version'] }}*'
-        - python-pip
+        - python3-pip
         # xenial has 1.9 package, it is not sufficiant for docker networks, so we need installing pip manually
         #- python-docker
                 
@@ -88,15 +88,21 @@ nginx_files_2:
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: 'openssl verify -CAfile /opt/acme/cert/metabase_{{ domain['name'] }}_ca.cer /opt/acme/cert/metabase_{{ domain['name'] }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/metabase_{{ domain['name'] }}_cert.cer --key-file /opt/acme/cert/metabase_{{ domain['name'] }}_key.key --ca-file /opt/acme/cert/metabase_{{ domain['name'] }}_ca.cer --fullchain-file /opt/acme/cert/metabase_{{ domain['name'] }}_fullchain.cer --issue -d {{ domain['name'] }} || true'
-
+    - name: "/opt/acme/home/{{ pillar["metabase"]["acme_account"] }}/verify_and_issue.sh metabase {{ domain['name'] }}"
+    
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
 metabase_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
-    - name: /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}
+    - name: /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins
     - mode: 755
     - makedirs: True
+
+    {% if instance['plugins'] is defined %}
+metabase_download_clickhouse_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: wget https://github.com/enqueue/metabase-clickhouse-driver/releases/download/{{ instance['plugins']['clickhouse'] }}/clickhouse.metabase-driver.jar -O  /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar && chmod 2000 /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar
+    {%endif%}
 
 metabase_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
@@ -109,6 +115,8 @@ metabase_container_{{ loop.index }}_{{ i_loop.index }}:
     - image: {{ instance['image'] }}
     - detach: True
     - restart_policy: unless-stopped
+    - binds:
+        - /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar:/plugins/clickhouse.metabase-driver.jar
     - publish:
         - 127.0.0.1:{{ instance['port'] }}:3000/tcp
     - environment:
@@ -129,19 +137,23 @@ nginx_domain_index_{{ loop.index }}:
   file.managed:
     - name: /opt/metabase/{{ domain['name'] }}/index.html
     - contents: |
-    {%- for instance in domain['instances'] %}
+    {%- if 'default_instance' in domain %}
+        <meta http-equiv="refresh" content="0; url='https://{{ domain['name'] }}/{{ domain['default_instance'] }}'" />
+    {%- else %}
+      {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
-    {%- endfor %}
+      {%- endfor %}
+    {%- endif %}
   {%- endfor %}
 
 nginx_reload:
   cmd.run:
     - runas: root
-    - name: service nginx configtest && service nginx reload
+    - name: service nginx configtest && service nginx restart
 
 nginx_reload_cron:
   cron.present:
-    - name: /usr/sbin/service nginx configtest && /usr/sbin/service nginx reload
+    - name: /usr/sbin/service nginx configtest && /usr/sbin/service nginx restart
     - identifier: nginx_reload
     - user: root
     - minute: 15

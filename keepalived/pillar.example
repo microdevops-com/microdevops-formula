@@ -1,0 +1,29 @@
+{% import_yaml "ip/servers.sls" as servers %}
+
+keepalived:
+  config:
+    template: keepalived.conf.jinja
+    global_defs: |-
+      enable_script_security
+        script_user root
+    vrrp:
+      scripts:
+        - name: check_haproxy
+          cmd: /usr/bin/killall -0 haproxy
+      instances:
+        - name: VI_1
+          state: MASTER|BACKUP
+          virtual_router_id: 50
+          interface: eth1
+          priority: 100
+          unicast_src_ip: 10.0.0.1
+          unicast_peer: |-
+            10.0.0.2
+          virtual_ipaddress: |-
+            192.168.0.1
+          track_script: |-
+            check_haproxy
+          other: |-
+            ! PLACE FOR OTHER DEFS
+    other: |-
+      ! PLACE FOR OTHER DEFS

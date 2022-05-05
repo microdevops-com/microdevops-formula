@@ -6,6 +6,7 @@ nextcloud:
       internal_port: 9000
       image: nextcloud:fpm
       default_phone_region: IL
+      overwrite_cli_url: https://nextcloud.example.com
       onlyoffice: # optional
         DocumentServerUrl: https://onlyoffice.example.com/
         DocumentServerInternalUrl: https://onlyoffice.example.com/

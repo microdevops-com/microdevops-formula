@@ -34,10 +34,6 @@ docker_pip_install:
     - name: docker-py >= 1.10
     - reload_modules: True
 
-#docker_purge_apparmor:
-#  pkg.purged:
-#    - name: apparmor
-
 docker_install_3:
   service.running:
     - name: docker
@@ -47,15 +43,32 @@ docker_install_4:
     - name: systemctl restart docker
     - onchanges:
         - file: /etc/docker/daemon.json
-        #- pkg: apparmor
 
-  {%- for net in pillar["app"]["docker"]["networks"] %}
+  {%- if pillar["app"]["docker"]["networks"] is mapping %}
+
+    {%- for net_name, net_params in pillar["app"]["docker"]["networks"].items() %}
+      {%- if not "deploy_only" in pillar["app"]["docker"] or net_name in pillar["app"]["docker"]["deploy_only"] %}
+docker_network_{{ loop.index }}:
+  docker_network.present:
+    - name: {{ net_name }}
+    - subnet: {{ net_params["subnet"] }}
+    - gateway: {{ net_params["gateway"] }}
+
+      {%- endif %}
+    {%- endfor %}
+
+  {%- else %}
+
+    {%- for net in pillar["app"]["docker"]["networks"] %}
 docker_network_{{ loop.index }}:
   docker_network.present:
     - name: {{ net["name"] }}
     - subnet: {{ net["subnet"] }}
     - gateway: {{ net["gateway"] }}
-  {%- endfor %}
+
+    {%- endfor %}
+
+  {%- endif %}
 
   {%- for app_name, app in pillar["app"]["docker"]["apps"].items() %}
     {%- if not "deploy_only" in pillar["app"]["docker"] or app_name in pillar["app"]["docker"]["deploy_only"] %}
@@ -87,7 +100,7 @@ docker_app_docker_pull_{{ loop.index }}:
 docker_app_container_{{ loop.index }}:
   docker_container.running:
     - name: app-{{ app_name }}
-    - user: root
+    - user: {{ app.get("user", "root") }}
     - image: {{ app["image"] }}
     - detach: True
     - restart_policy: unless-stopped

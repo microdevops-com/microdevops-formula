@@ -3,13 +3,14 @@
   {%- for host in pillar["salt"]["minion"]["hosts"] %}
 salt_master_hosts_{{ loop.index }}:
   host.present:
+    - clean: True
     - ip: {{ host["ip"] }}
     - names:
         - {{ host["name"] }}
   {%- endfor %}
 
   {%- if grains["os"] in ["Windows"] %}
-    {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+    {%- set minion_src = 'https://archive.repo.saltproject.io/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
     {%- set minion_exe = 'Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
 
     {%- if 
@@ -25,7 +26,7 @@ minion_installer_exe:
 minion_install_silent_cmd:
   cmd.run:
     - name: |
-        START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar["salt"]["minion"]["config"]["master"]|join(",") }} /minion-name={{ grains["fqdn"] }} /start-minion=1
+        START /B C:\Windows\{{ minion_exe }} /S /master={{ pillar["salt"]["minion"]["config"]["master"]|join(",") }} /minion-name={{ grains["id"] }} /start-minion=1
     {%- endif %}
 
     {%- if pillar["salt"]["minion"]["grains_file_rm"] is defined and pillar["salt"]["minion"]["grains_file_rm"] %}
@@ -38,7 +39,7 @@ salt_minion_id:
   file.managed:
     - name: 'C:\salt\conf\minion_id'
     - contents: |
-        {{ grains["fqdn"] }}
+        {{ grains["id"] }}
 
 salt_minion_config:
   file.serialize:
@@ -86,7 +87,7 @@ salt_minion_id:
   file.managed:
     - name: /etc/salt/minion_id
     - contents: |
-        {{ grains["fqdn"] }}
+        {{ grains["id"] }}
 
 salt_minion_config:
   file.serialize:
@@ -142,15 +143,15 @@ salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
       {%- if grains["osarch"] == "arm64" %}
-    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+    - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
       {%- else %}
-    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+    - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
       {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
       {%- if grains["osarch"] == "arm64" %}
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
       {%- else %}
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
       {%- endif %}
     - clean_file: True
     - refresh: True
