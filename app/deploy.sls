@@ -3,7 +3,6 @@ include:
   - acme
 {% endif %}
   - pkg.before_deploy
-  - proftpd.users
 {% if pillar['postgres'] is defined and pillar['postgres'] is not none %}
   {%- if pillar['postgres']['client'] is defined and pillar['postgres']['client'] is not none and pillar['postgres']['client'] %}
   - postgres.client
@@ -55,6 +54,7 @@ include:
   - atlassian-confluence
 {% endif %}
   - pkg.after_deploy
+  - proftpd.users
 {% if pillar['logrotate'] is defined %}
   - logrotate
 {% endif %}
