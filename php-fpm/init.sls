@@ -12,6 +12,14 @@ php-fpm_repo_deb:
     - keyid: E5267A6C
     - refresh: True
 
+php-fpm_app_log_dir:
+  file.directory:
+    - name: /var/log/php
+    - makedirs: True
+    - user: root
+    - group: root
+    - mode: 755
+
   {%- for version, params in php_fpm["versions"].items() %}
 php-fpm_installed_{{ loop.index }}:
   pkg.installed:
