@@ -155,6 +155,9 @@ salt_master_pkg:
     - pkgs:
         - salt-master
         - salt-ssh
+  {%- if pillar["salt"]["master"]["version"]|string != "3001" %}
+        - python3-contextvars
+  {%- endif %}
 
 salt_master_service:
   cmd.run:
