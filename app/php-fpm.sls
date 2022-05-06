@@ -16,7 +16,7 @@
 
       {%- include "app/_user_and_source.sls" with context %}
 
-      {%- set default_pool_log_file = "/var/log/php/" ~ app["pool"]["php_version"] ~ "-fpm/" ~ app_name ~ ".error.log" %}
+      {%- set default_pool_log_file = "/var/log/php/" ~ app_name ~ "/php" ~ app["pool"]["php_version"] ~ "-fpm-" ~ app_name ~ ".error.log" %}
       {%- if "log" in app["pool"] %}
         {%- set _pool_log_file = app["pool"]["log"]["error_log"]|replace("__APP_NAME__", app_name)|default(default_pool_log_file) %}
         {%- set _pool_log_dir_user = app["pool"]["log"]["dir_user"]|default(_app_user) %}
@@ -56,16 +56,13 @@ app_php-fpm_app_pool_config_{{ loop.index }}:
         config: {{ app["pool"]["config"] | yaml_encode }}
       {%- endif %}
 
-  {%- if not _pool_log_file.startswith("/var/log") %}
 app_php-fpm_app_log_dir_{{ loop.index }}:
   file.directory:
-    {%- set _pool_log_dir = _pool_log_file | regex_replace('/[^/]*$', '') %}
-    - name: {{ _pool_log_dir }}
+    - name: {{ _pool_log_file | regex_replace('/[^/]*$', '') }}
     - user: {{ _pool_log_dir_user }}
     - group: {{ _pool_log_dir_group }}
     - mode: {{ _pool_log_dir_mode }}
     - makedirs: True
-  {%- endif %}
 
 app_php-fpm_app_log_file_{{ loop.index }}:
   file.managed:
