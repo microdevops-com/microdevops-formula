@@ -10,7 +10,14 @@ salt_master_hosts_{{ loop.index }}:
   {%- endfor %}
 
   {%- if grains["os"] in ["Windows"] %}
-    {%- set minion_src = 'https://archive.repo.saltproject.io/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+    {%- if pillar["salt"]["minion"]["version"]|string == "3001" %}
+      {%- set minion_src = 'https://archive.repo.saltproject.io/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+    # This block should be updated each time new minor version comes
+    {%- elif pillar["salt"]["minion"]["version"]|string == "3004" %}
+      {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '.1-Py3-AMD64-Setup.exe' -%}
+    {%- else %}
+      {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '.1-Py3-AMD64-Setup.exe' -%}
+    {%- endif %}
     {%- set minion_exe = 'Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
 
     {%- if 
@@ -142,16 +149,30 @@ salt_minion_pki_minion_master_pub:
 salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-      {%- if grains["osarch"] == "arm64" %}
+      {%- if pillar["salt"]["minion"]["version"]|string == "3001" %}
+        {%- if grains["osarch"] == "arm64" %}
     - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
-      {%- else %}
+        {%- else %}
     - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
-      {%- endif %}
+        {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
-      {%- if grains["osarch"] == "arm64" %}
+        {%- if grains["osarch"] == "arm64" %}
     - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
-      {%- else %}
+        {%- else %}
     - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+        {%- endif %}
+      {%- else %}
+        {%- if grains["osarch"] == "arm64" %}
+    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+        {%- else %}
+    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+        {%- endif %}
+    - file: /etc/apt/sources.list.d/saltstack.list
+        {%- if grains["osarch"] == "arm64" %}
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+        {%- else %}
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+        {%- endif %}
       {%- endif %}
     - clean_file: True
     - refresh: True
