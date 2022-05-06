@@ -39,7 +39,7 @@ cmd_check_alert:
         severity: major
       checks:
         memory-percent:
-{% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") or grains["oscodename"] in ["precise"] %}
           # Available memory in LXC containers is shown wrong (without buffers/cache).
           # Only host machine will have mem checks enabled - it is usually ok.
           # But if you have LXC container with memory limits by LXC - you should enable mem checks for it individually.
@@ -52,7 +52,7 @@ cmd_check_alert:
           service: memory
           resource: __hostname__:memory-percent
         swap-percent:
-{% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           cmd: {{ ruby_prefix }}/check-swap-percent.rb -w 70 -c 80
@@ -62,7 +62,7 @@ cmd_check_alert:
           service: memory
           resource: __hostname__:swap-percent
         swap-usage:
-{% if grains["virtual"] == "lxc"|lower or grains["oscodename"] in ["precise"] %}
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") or grains["oscodename"] in ["precise"] %}
           disabled: True
 {% endif %}
           cmd: {{ ruby_prefix }}/check-swap.rb -w 1024 -c 2048
@@ -181,7 +181,7 @@ cmd_check_alert:
     cron:
       minute: '15'
       hour: '10'
-{% if grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and grains["virtual"] != "lxc"|lower) %}
+{% if grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and (grains["virtual"]|lower != "lxc" and grains["virtual"]|lower != "container")) %}
     install_cvescan: True
 {% endif %}
     config:
@@ -194,7 +194,7 @@ cmd_check_alert:
         severity: minor
       checks:
         cvescan:
-{% if not (grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and grains["virtual"] != "lxc"|lower)) %}
+{% if not (grains["oscodename"] == "focal" or (grains["oscodename"] == "bionic" and (grains["virtual"]|lower != "lxc" and grains["virtual"]|lower != "container"))) %}
           disabled: True
 {% endif %}
           cmd: CVESCAN_OUT=$(/root/.local/bin/cvescan -p all); if echo "${CVESCAN_OUT}" | grep -q -e "Fixes Available by.*apt-get upgrade.* 0$"; then echo "${CVESCAN_OUT}"; ( exit 0 ); else echo "${CVESCAN_OUT}"; ( exit 2 ); fi
