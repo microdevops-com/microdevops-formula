@@ -116,7 +116,7 @@ lxd_profile_create_docker:
     - prepend_path: /snap/bin
     - name: lxc profile list | grep -q -e "| docker *|" || lxc profile create docker
 
-  {%- if grains["oscodename"] in ["focal"] %}
+  {%- if grains["oscodename"] in ["focal", "jammy"] %}
 lxd_profile_set_docker:
   cmd.run:
     - prepend_path: /snap/bin
