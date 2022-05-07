@@ -149,7 +149,9 @@ salt_minion_pki_minion_master_pub:
 salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-      {%- if pillar["salt"]["minion"]["version"]|string == "3001" %}
+      # 3001 is in archive only
+      # xenial packages are in archive only
+      {%- if pillar["salt"]["minion"]["version"]|string == "3001" or grains["oscodename"] in ["xenial"] %}
         {%- if grains["osarch"] == "arm64" %}
     - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
         {%- else %}
