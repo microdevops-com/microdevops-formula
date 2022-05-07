@@ -146,51 +146,57 @@ salt_minion_pki_minion_master_pub:
     {%- endif %}
 
     {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal"] %}
+      # There are only 3001 and 3002 packages for xenial
+      {%- if grains["oscodename"] in ["xenial"] and pillar["salt"]["minion"]["version"]|int > 3002 %}
+        {%- set salt_minion_version = "3002" %}
+      {%- else %}
+        {%- set salt_minion_version = pillar["salt"]["minion"]["version"]|string %}
+      {%- endif %}
 salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
       # 3001 is in archive only
       # xenial packages are in archive only
-      {%- if pillar["salt"]["minion"]["version"]|string == "3001" or grains["oscodename"] in ["xenial"] %}
+      {%- if salt_minion_version == "3001" or grains["oscodename"] in ["xenial"] %}
         {%- if grains["osarch"] == "arm64" %}
-    - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+    - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
         {%- else %}
-    - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+    - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
         {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
         {%- if grains["osarch"] == "arm64" %}
-    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- else %}
-    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- endif %}
       {%- else %}
         {%- if grains["osarch"] == "arm64" %}
-    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
         {%- else %}
-    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
+    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
         {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
         {%- if grains["osarch"] == "arm64" %}
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- else %}
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- endif %}
       {%- endif %}
     - clean_file: True
     - refresh: True
 
       # We don't check salt version in grains as in salt-ssh it equals version of salt-ssh, and we need to know installed package version
-      {%- set installed_ver = salt["cmd.shell"]("dpkg -s salt-minion 2>/dev/null | grep Version | sed -e 's/^Version: //' -e 's/\..*$//' | grep " + pillar["salt"]["minion"]["version"]|string) %}
+      {%- set installed_ver = salt["cmd.shell"]("dpkg -s salt-minion 2>/dev/null | grep Version | sed -e 's/^Version: //' -e 's/\..*$//' | grep " + salt_minion_version) %}
       # Also check if salt-minion is upgradable
       {%- set minion_upgradable = salt["cmd.shell"]("apt-get upgrade --dry-run 2>/dev/null | grep 'Inst salt-minion' | sed -e 's/ .*//'") %}
-      {%- if pillar["salt"]["minion"]["version"]|string != installed_ver or minion_upgradable == "Inst" %}
+      {%- if salt_minion_version != installed_ver or minion_upgradable == "Inst" %}
 salt_minion_update_restart:
   cmd.run:
     - name: |
         exec 0>&- # close stdin
         exec 1>&- # close stdout
         exec 2>&- # close stderr
-        nohup /bin/sh -c 'apt-get update; apt-get -qy -o "DPkg::Options::=--force-confold" -o "DPkg::Options::=--force-confdef" install --allow-downgrades salt-common={{ pillar["salt"]["minion"]["version"]|string }}* salt-minion={{ pillar["salt"]["minion"]["version"]|string }}* && salt-call --local service.restart salt-minion' &
+        nohup /bin/sh -c 'apt-get update; apt-get -qy -o "DPkg::Options::=--force-confold" -o "DPkg::Options::=--force-confdef" install --allow-downgrades salt-common={{ salt_minion_version }}* salt-minion={{ salt_minion_version }}* && salt-call --local service.restart salt-minion' &
       {%- endif %}
 
     {%- endif %}
