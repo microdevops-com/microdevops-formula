@@ -152,34 +152,45 @@ salt_minion_pki_minion_master_pub:
       {%- else %}
         {%- set salt_minion_version = pillar["salt"]["minion"]["version"]|string %}
       {%- endif %}
+      # TODO there are no packages for jammy yet
+      {%- if grains["osrelease"]|string in ["22.04"] %}
+        {%- set repo_osrelease = "20.04" %}
+      {%- else %}
+        {%- set repo_osrelease = grains["osrelease"]|string %}
+      {%- endif %}
+      {%- if grains["oscodename"] in ["jammy"] %}
+        {%- set repo_oscodename = "focal" %}
+      {%- else %}
+        {%- set repo_oscodename = grains["oscodename"] %}
+      {%- endif %}
 salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
       # 3001 is in archive only
       # xenial packages are in archive only
-      {%- if salt_minion_version == "3001" or grains["oscodename"] in ["xenial"] %}
+      {%- if salt_minion_version == "3001" or repo_oscodename in ["xenial"] %}
         {%- if grains["osarch"] == "arm64" %}
-    - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
+    - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }} {{ repo_oscodename }} main'
         {%- else %}
-    - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
+    - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ repo_oscodename }} main'
         {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
         {%- if grains["osarch"] == "arm64" %}
-    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- else %}
-    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- endif %}
       {%- else %}
         {%- if grains["osarch"] == "arm64" %}
-    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
+    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }} {{ repo_oscodename }} main'
         {%- else %}
-    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ grains["oscodename"] }} main'
+    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ repo_oscodename }} main'
         {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
         {%- if grains["osarch"] == "arm64" %}
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- else %}
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
         {%- endif %}
       {%- endif %}
     - clean_file: True
