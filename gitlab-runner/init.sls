@@ -2,7 +2,8 @@
 gitlab-runner_repo:
   pkgrepo.managed:
     - humanname: Gitlab Runner Repository
-    - name: deb https://packages.gitlab.com/runner/gitlab-runner/{{ grains['os']|lower }}/ {{ grains['oscodename'] }} main
+    # TODO no jammy packages yet
+    - name: deb https://packages.gitlab.com/runner/gitlab-runner/{{ grains['os']|lower }}/ {{ "focal" if grains["oscodename"] in ["jammy"] else grains["oscodename"] }} main
     - file: /etc/apt/sources.list.d/gitlab-runner.list
     - key_url: https://packages.gitlab.com/gpg.key
     - clean_file: True
