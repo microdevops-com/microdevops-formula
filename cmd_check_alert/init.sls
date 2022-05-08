@@ -58,7 +58,7 @@ sensu-plugins_repo:
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
-      {%- elif grains["oscodename"] in ["jammy" %}
+      {%- elif grains["oscodename"] in ["jammy"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
