@@ -137,12 +137,13 @@ salt_master_repo:
     - clean_file: True
 
     {%- else %}
+    # TODO there are no packages for jammy yet
 salt_master_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-    - name: deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }} {{ grains["oscodename"] }} main
+    - name: deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ "20.04" if grains["osrelease"]|string in ["22.04"] else grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }} {{ "focal" if grains["oscodename"] in ["jammy"] else grains["oscodename"] }} main
     - file: /etc/apt/sources.list.d/saltstack.list
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ "20.04" if grains["osrelease"]|string in ["22.04"] else grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
     - clean_file: True
 
     {%- endif %}
