@@ -93,7 +93,7 @@ rabbit_service_6:
 rabbit_fix_salt_module:
   cmd.run:
     - name: |
-  {%- if grains['oscodename'] in ['focal'] %}
+  {%- if grains['oscodename'] in ['focal', 'jammy'] %}
         [ -f /usr/lib/python3/dist-packages/salt/modules/rabbitmq.py ] && { sed -i -e 's/check_user_login/user_login_authentication/' /usr/lib/python3/dist-packages/salt/modules/rabbitmq.py &&
   {%- else %}
         [ -f /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py ] && { sed -i -e 's/check_user_login/user_login_authentication/' /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py &&

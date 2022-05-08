@@ -195,7 +195,7 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
     {%- endif %}
 
     {%- if "install_cvescan" in check_group_params %}
-      {%- if grains["oscodename"] in ["bionic", "focal"] %}
+      {%- if grains["oscodename"] in ["bionic", "focal", "jammy"] %}
 cvescan_installed_{{ loop.index }}:
   cmd.run:
     - name: pip3 install --user git+https://github.com/canonical/sec-cvescan

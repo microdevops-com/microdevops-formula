@@ -125,7 +125,7 @@ salt_master_root_rsa_pub:
 
   {%- endif %}
 
-  {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal"] %}
+  {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal", "jammy"] %}
 
     {%- if pillar["salt"]["master"]["version"]|string == "3001" %}
 salt_master_repo:

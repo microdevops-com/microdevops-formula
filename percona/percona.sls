@@ -3,7 +3,7 @@
 percona_repo_deb:
   pkg.installed:
     - sources:
-    {%- if grains['oscodename'] in ['focal'] %}
+    {%- if grains['oscodename'] in ['focal', 'jammy'] %}
       - percona-release: https://repo.percona.com/apt/percona-release_latest.generic_all.deb
     {%- else %}
       - percona-release: https://repo.percona.com/apt/percona-release_latest.{{ grains['oscodename'] }}_all.deb
@@ -38,7 +38,7 @@ percona_config_dir:
 
 mysql_python_dep:
   pkg.installed:
-      {%- if grains['oscodename'] in ['focal'] %}
+      {%- if grains['oscodename'] in ['focal', 'jammy'] %}
     - name: python3-mysqldb
       {%- else %}
     - name: python-mysqldb

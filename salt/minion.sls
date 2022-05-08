@@ -145,7 +145,7 @@ salt_minion_pki_minion_master_pub:
       {%- endif %}
     {%- endif %}
 
-    {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal"] %}
+    {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal", "jammy"] %}
       # There are only 3001 and 3002 packages for xenial
       {%- if grains["oscodename"] in ["xenial"] and pillar["salt"]["minion"]["version"]|int > 3002 %}
         {%- set salt_minion_version = "3002" %}

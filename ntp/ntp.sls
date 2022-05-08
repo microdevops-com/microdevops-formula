@@ -13,7 +13,7 @@ ntp_ntpdate_cron:
 
 {% endif %}
 
-{% if grains['virtual'] == 'physical' and grains['oscodename'] not in ['focal'] %}
+{% if grains['virtual'] == 'physical' and grains['oscodename'] not in ['focal', 'jammy'] %}
 ntp_service_installed:
   pkg.installed:
     - pkgs:

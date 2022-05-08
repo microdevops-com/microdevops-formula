@@ -1,4 +1,4 @@
-{% if grains["oscodename"] in ["bionic", "focal"] %}
+{% if grains["oscodename"] in ["bionic", "focal", "jammy"] %}
 salt_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
