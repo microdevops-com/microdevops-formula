@@ -85,37 +85,10 @@ byobu_prompt_skel_bashrc:
   file.append:
     - name: '/etc/skel/.bashrc'
     - text: |
-        [ ${_byobu_sourced}_ = 1_ ] && export TERM=screen-256color-bce
+        [ ${_byobu_sourced}_ = 1_ ] && export TERM=tmux
         [ -r /usr/share/byobu/profiles/bashrc ] && . /usr/share/byobu/profiles/bashrc  #byobu-prompt#
 
 bash_skel_system_root_bashrc:
   file.managed:
     - name: /root/.bashrc
     - source: /etc/skel/.bashrc
-
-{% for name, user in pillar.get('users', {}).items() if user.absent is not defined or not user.absent %}
-  {%- set current = salt.user.info(name) -%}
-  {%- if user == None -%}
-    {%- set user = {} -%}
-  {%- endif -%}
-  {%- if
-         (pillar['users'] is defined) and (pillar['users'] is not none) and
-         (pillar['users'][name] is defined) and (pillar['users'][name] is not none) and
-         (pillar['users'][name]['skip_bashrc'] is defined) and (pillar['users'][name]['skip_bashrc'] is not none) and
-         (pillar['users'][name]['skip_bashrc'])
-  %}
-  {%- else %}
-    {%- set home = user.get('home', current.get('home', "/home/%s" % name)) -%}
-bash_skel_{{ name }}_bashrc:
-  file.managed:
-    - name: {{ home }}/.bashrc
-    - user: {{ name }}
-    - group: {{ name }}
-    - source: /etc/skel/.bashrc
-  {%- endif %}
-{% endfor %}
-
-byobu_fn_keys:
-  file.append:
-    - name: '/usr/share/byobu/keybindings/common'
-    - text: "source $BYOBU_PREFIX/share/byobu/keybindings/f-keys.screen.disable # final"
