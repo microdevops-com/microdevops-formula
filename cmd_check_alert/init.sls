@@ -231,7 +231,7 @@ cvescan_installed_{{ loop.index }}:
       {%- set a_loop = loop %}
       {%- for file_name, file_data_items in check_group_params["files"].items() %}
         {%- set contents_list = [] %}
-        {%- for file_data_item_name, file_data_item_data in file_data_items.items() %}
+        {%- for file_data_item_name, file_data_item_data in file_data_items.items()|sort %}
           {%- do contents_list.append(file_data_item_data) %}
         {%- endfor %}
 cmd_check_alert_file_managed_{{ loop.index }}_{{ a_loop.index }}:
