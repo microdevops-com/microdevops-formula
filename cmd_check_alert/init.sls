@@ -163,6 +163,7 @@ sensu-plugins_update_cacert:
       {%- for retcode, severity in check_group_params["config"]["defaults"]["severity_per_retcode"].items() %}
         {%- do new_severity_per_retcode.update({retcode|string: severity}) %}
       {%- endfor %}
+      {%- do check_group_params["config"]["defaults"].update({"severity_per_retcode": {}}) %}
       {%- do check_group_params["config"]["defaults"]["severity_per_retcode"].update(new_severity_per_retcode) %}
     {%- endif %}
     # checks
@@ -173,6 +174,7 @@ sensu-plugins_update_cacert:
           {%- for retcode, severity in check_params["severity_per_retcode"].items() %}
             {%- do new_severity_per_retcode.update({retcode|string: severity}) %}
           {%- endfor %}
+          {%- do check_group_params["config"]["checks"][check_name].update({"severity_per_retcode": {}}) %}
           {%- do check_group_params["config"]["checks"][check_name]["severity_per_retcode"].update(new_severity_per_retcode) %}
         {%- endif %}
       {%- endfor %}
