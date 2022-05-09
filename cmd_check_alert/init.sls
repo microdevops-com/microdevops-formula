@@ -155,6 +155,28 @@ sensu-plugins_update_cacert:
   {%- endif %}
 
   {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() %}
+    # There is some bug in serializer that causes int config keys to serialize as strings under salt-ssh and as ints under salt, which leads to flapping of config file
+    # Fix by forcing severity_per_retcode to string
+    # defaults
+    {%- if "defaults" in check_group_params["config"] and "severity_per_retcode" in check_group_params["config"]["defaults"] %}
+      {%- set new_severity_per_retcode = {} %}
+      {%- for retcode, severity in check_group_params["config"]["defaults"]["severity_per_retcode"].items() %}
+        {%- do new_severity_per_retcode.update({retcode|string: severity}) %}
+      {%- endfor %}
+      {%- do check_group_params["config"]["defaults"]["severity_per_retcode"].update(new_severity_per_retcode) %}
+    {%- endif %}
+    # checks
+    {%- if "checks" in check_group_params["config"] %}
+      {%- for check_name, check_params in check_group_params["config"]["checks"].items() %}
+        {%- if "severity_per_retcode" in check_params %}
+          {%- set new_severity_per_retcode = {} %}
+          {%- for retcode, severity in check_params["severity_per_retcode"].items() %}
+            {%- do new_severity_per_retcode.update({retcode|string: severity}) %}
+          {%- endfor %}
+          {%- do check_group_params["config"]["checks"][check_name]["severity_per_retcode"].update(new_severity_per_retcode) %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
 cmd_check_alert_config_managed_{{ loop.index }}:
   file.serialize:
     - name: /opt/sysadmws/cmd_check_alert/checks/{{ check_group_name }}.yaml
