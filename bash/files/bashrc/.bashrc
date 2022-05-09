@@ -151,3 +151,8 @@ if [[ ${_byobu_sourced}_ = 1_ ]]; then
         . /usr/share/byobu/profiles/bashrc
     fi
 fi
+
+# fuzzy history
+if [[ -r /usr/share/doc/fzf/examples/key-bindings.bash ]]; then
+    . /usr/share/doc/fzf/examples/key-bindings.bash
+fi
