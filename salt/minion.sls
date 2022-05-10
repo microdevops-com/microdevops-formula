@@ -10,7 +10,14 @@ salt_master_hosts_{{ loop.index }}:
   {%- endfor %}
 
   {%- if grains["os"] in ["Windows"] %}
-    {%- set minion_src = 'https://archive.repo.saltproject.io/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+    {%- if pillar["salt"]["minion"]["version"]|string == "3001" %}
+      {%- set minion_src = 'https://archive.repo.saltproject.io/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+    # This block should be updated each time new minor version comes
+    {%- elif pillar["salt"]["minion"]["version"]|string == "3004" %}
+      {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '.1-Py3-AMD64-Setup.exe' -%}
+    {%- else %}
+      {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '.1-Py3-AMD64-Setup.exe' -%}
+    {%- endif %}
     {%- set minion_exe = 'Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
 
     {%- if 
@@ -138,36 +145,69 @@ salt_minion_pki_minion_master_pub:
       {%- endif %}
     {%- endif %}
 
-    {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal"] %}
+    {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal", "jammy"] %}
+      # There are only 3001 and 3002 packages for xenial
+      {%- if grains["oscodename"] in ["xenial"] and pillar["salt"]["minion"]["version"]|int > 3002 %}
+        {%- set salt_minion_version = "3002" %}
+      {%- else %}
+        {%- set salt_minion_version = pillar["salt"]["minion"]["version"]|string %}
+      {%- endif %}
+      # TODO there are no packages for jammy yet
+      {%- if grains["osrelease"]|string in ["22.04"] %}
+        {%- set repo_osrelease = "20.04" %}
+      {%- else %}
+        {%- set repo_osrelease = grains["osrelease"]|string %}
+      {%- endif %}
+      {%- if grains["oscodename"] in ["jammy"] %}
+        {%- set repo_oscodename = "focal" %}
+      {%- else %}
+        {%- set repo_oscodename = grains["oscodename"] %}
+      {%- endif %}
 salt_minion_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
-      {%- if grains["osarch"] == "arm64" %}
-    - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
-      {%- else %}
-    - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }} {{ grains["oscodename"] }} main'
-      {%- endif %}
+      # 3001 is in archive only
+      # xenial packages are in archive only
+      {%- if salt_minion_version == "3001" or repo_oscodename in ["xenial"] %}
+        {%- if grains["osarch"] == "arm64" %}
+    - name: 'deb [arch=amd64] https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }} {{ repo_oscodename }} main'
+        {%- else %}
+    - name: 'deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ repo_oscodename }} main'
+        {%- endif %}
     - file: /etc/apt/sources.list.d/saltstack.list
-      {%- if grains["osarch"] == "arm64" %}
-    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/amd64/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+        {%- if grains["osarch"] == "arm64" %}
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+        {%- else %}
+    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+        {%- endif %}
       {%- else %}
-    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"] }}/SALTSTACK-GPG-KEY.pub
+        {%- if grains["osarch"] == "arm64" %}
+    - name: 'deb [arch=amd64] https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }} {{ repo_oscodename }} main'
+        {%- else %}
+    - name: 'deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }} {{ repo_oscodename }} main'
+        {%- endif %}
+    - file: /etc/apt/sources.list.d/saltstack.list
+        {%- if grains["osarch"] == "arm64" %}
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/amd64/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+        {%- else %}
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ repo_osrelease }}/{{ grains["osarch"] }}/{{ salt_minion_version }}/SALTSTACK-GPG-KEY.pub
+        {%- endif %}
       {%- endif %}
     - clean_file: True
     - refresh: True
 
       # We don't check salt version in grains as in salt-ssh it equals version of salt-ssh, and we need to know installed package version
-      {%- set installed_ver = salt["cmd.shell"]("dpkg -s salt-minion 2>/dev/null | grep Version | sed -e 's/^Version: //' -e 's/\..*$//' | grep " + pillar["salt"]["minion"]["version"]|string) %}
+      {%- set installed_ver = salt["cmd.shell"]("dpkg -s salt-minion 2>/dev/null | grep Version | sed -e 's/^Version: //' -e 's/\..*$//' | grep " + salt_minion_version) %}
       # Also check if salt-minion is upgradable
       {%- set minion_upgradable = salt["cmd.shell"]("apt-get upgrade --dry-run 2>/dev/null | grep 'Inst salt-minion' | sed -e 's/ .*//'") %}
-      {%- if pillar["salt"]["minion"]["version"]|string != installed_ver or minion_upgradable == "Inst" %}
+      {%- if salt_minion_version != installed_ver or minion_upgradable == "Inst" %}
 salt_minion_update_restart:
   cmd.run:
     - name: |
         exec 0>&- # close stdin
         exec 1>&- # close stdout
         exec 2>&- # close stderr
-        nohup /bin/sh -c 'apt-get update; apt-get -qy -o "DPkg::Options::=--force-confold" -o "DPkg::Options::=--force-confdef" install --allow-downgrades salt-common={{ pillar["salt"]["minion"]["version"]|string }}* salt-minion={{ pillar["salt"]["minion"]["version"]|string }}* && salt-call --local service.restart salt-minion' &
+        nohup /bin/sh -c 'apt-get update; apt-get -qy -o "DPkg::Options::=--force-confold" -o "DPkg::Options::=--force-confdef" install --allow-downgrades salt-common={{ salt_minion_version }}* salt-minion={{ salt_minion_version }}* && salt-call --local service.restart salt-minion' &
       {%- endif %}
 
     {%- endif %}

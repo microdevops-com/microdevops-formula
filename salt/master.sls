@@ -125,7 +125,9 @@ salt_master_root_rsa_pub:
 
   {%- endif %}
 
-  {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal"] %}
+  {%- if grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["xenial", "bionic", "focal", "jammy"] %}
+
+    {%- if pillar["salt"]["master"]["version"]|string == "3001" %}
 salt_master_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
@@ -133,6 +135,18 @@ salt_master_repo:
     - file: /etc/apt/sources.list.d/saltstack.list
     - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
     - clean_file: True
+
+    {%- else %}
+    # TODO there are no packages for jammy yet
+salt_master_repo:
+  pkgrepo.managed:
+    - humanname: SaltStack Repository
+    - name: deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ "20.04" if grains["osrelease"]|string in ["22.04"] else grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }} {{ "focal" if grains["oscodename"] in ["jammy"] else grains["oscodename"] }} main
+    - file: /etc/apt/sources.list.d/saltstack.list
+    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ "20.04" if grains["osrelease"]|string in ["22.04"] else grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
+    - clean_file: True
+
+    {%- endif %}
 
   {%- endif %}
 
@@ -142,6 +156,9 @@ salt_master_pkg:
     - pkgs:
         - salt-master
         - salt-ssh
+  {%- if pillar["salt"]["master"]["version"]|string != "3001" %}
+        - python3-contextvars
+  {%- endif %}
 
 salt_master_service:
   cmd.run:

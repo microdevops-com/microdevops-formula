@@ -7,7 +7,7 @@ pkg:
             - pkgs:
                 - postfix
                 - bsd-mailx
-            {%- if grains['oscodename'] in ['bionic', 'focal'] %}
+            {%- if grains['oscodename'] in ['bionic', 'focal', 'jammy'] %}
                 - s-nail
             {%- else %}
                 - heirloom-mailx

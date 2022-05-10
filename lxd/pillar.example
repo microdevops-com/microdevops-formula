@@ -37,6 +37,11 @@ lxd:
     ubuntu/focal/amd64/vm:
       source: images:ubuntu/focal/amd64
       vm: True
+    ubuntu/jammy/amd64: # alias
+      source: images:ubuntu/jammy/amd64
+    ubuntu/jammy/amd64/vm:
+      source: images:ubuntu/jammy/amd64
+      vm: True
   profiles:
     br0:
       devices:

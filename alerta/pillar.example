@@ -6,7 +6,7 @@ postgres:
   use_upstream_repo: True
   version: 11
   pkgs_extra:
-  {%- if grains["oscodename"] in ["focal"] %}
+  {%- if grains["oscodename"] in ["focal", "jammy"] %}
     - postgresql-plpython3-11
   {%- else %}
     - postgresql-plpython-11

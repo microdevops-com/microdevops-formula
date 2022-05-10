@@ -1,0 +1,2 @@
+include:
+  - .bulk_log
