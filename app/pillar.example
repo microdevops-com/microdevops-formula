@@ -79,9 +79,9 @@ app:
           #force_reset: False # optional, True by default
           #force_checkout: True # optional, not added by default
           #force_clone: True # optional, not added by default
-          rev: master
           target: /opt/__APP_NAME__/src
-          branch: master
+          rev: master # optional
+          branch: master # optional
           #repo_key: | # optional, put key as .ssh/id_repo
           #  -----BEGIN OPENSSH PRIVATE KEY-----
           #  ...
@@ -91,6 +91,11 @@ app:
           #  Host bitbucket.org
           #    User git
           #    Identityfile ~/.ssh/id_repo
+          #extra_opts: # optional, add any opts from https://docs.saltproject.io/en/latest/ref/states/all/salt.states.git.html#salt.states.git.latest
+          #  - submodules: True
+          #  - fetch_tags: False
+          #  - https_user: deploy-user
+          #  - https_pass: xx-token-xx
         files:
           src: salt://app/__APP_NAME__
           dst: /opt/__APP_NAME__

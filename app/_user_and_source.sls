@@ -101,9 +101,13 @@ app_{{ app_type }}_app_checkout_{{ loop_index }}:
         {%- if "git" in app["source"] %}
   git.latest:
     - name: {{ app["source"]["git"] }}
-    - rev: {{ app["source"]["rev"] }}
     - target: {{ app["source"]["target"]|replace("__APP_NAME__", app_name) }}
+          {%- if "rev" in app["source"] %}
+    - rev: {{ app["source"]["rev"] }}
+          {%- endif %}
+          {%- if "branch" in app["source"] %}
     - branch: {{ app["source"]["branch"] }}
+          {%- endif %}
           {%- if pillar["force_reset"] is defined %}
     - force_reset: {{ pillar["force_reset"] }}
           {%- elif app["source"]["force_reset"] is defined %}
@@ -122,6 +126,11 @@ app_{{ app_type }}_app_checkout_{{ loop_index }}:
           {%- if "repo_key" in app["source"] and "repo_key_pub" in app["source"] %}
     - identity: {{ _app_app_root }}/.ssh/id_repo
           {%- endif %}
+          {%- if "extra_opts" in app["source"] %}
+            {%- for opt in app["source"]["extra_opts"] %}
+    - {{ opt }}
+            {%- endfor %}
+          {%- endif %}
 
         {%- endif %}
 
@@ -137,5 +146,26 @@ app_{{ app_type }}_app_files_{{ loop_index }}:
     - group: {{ _app_group }}
     - dir_mode: 755
     - file_mode: 644
+
+      {%- endif %}
+
+      {%- if "sudo_rules" in app %}
+app_{{ app_type }}_app_sudo_dir_{{ loop_index }}:
+  file.directory:
+    - name: /etc/sudoers.d
+    - user: root
+    - group: root
+    - mode: 755
+
+app_{{ app_type }}_app_sudo_{{ loop_index }}:
+  file.managed:
+    - name: /etc/sudoers.d/{{ _app_user }}
+    - user: root
+    - group: root
+    - mode: 0440
+    - contents: |
+        {%- for rule in app["sudo_rules"] %}
+        {{ _app_user }} {{ rule }}
+        {%- endfor %}
 
       {%- endif %}
