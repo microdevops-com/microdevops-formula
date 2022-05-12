@@ -24,13 +24,6 @@ freeipa_container:
     - image: {{ pillar["freeipa"]["image"] }}
     - detach: True
     - restart_policy: unless-stopped
-    - hostname: {{ pillar["freeipa"]["hostname"] }}
-    {%- if 'sysctls' in pillar["freeipa"] %}
-    - sysctls:
-      {%- for sysctl in pillar["freeipa"]["sysctls"] %}
-        - {{ sysctl }}
-      {%- endfor %}
-    {%- endif %}
     - tmpfs:
       - /run: rw,noexec,nosuid,size=65536k
       - /tmp: rw,noexec,nosuid,size=65536k
@@ -41,6 +34,16 @@ freeipa_container:
         - {{ extra_host }}
       {%- endfor %}
     {%- endif %}
+    {%- if 'network_mode' in pillar["freeipa"] and 'host' in pillar["freeipa"]["network_mode"] %}
+    - network_mode: host
+    {%- else %}
+    - hostname: {{ pillar["freeipa"]["hostname"] }}
+      {%- if 'sysctls' in pillar["freeipa"] %}
+    - sysctls:
+        {%- for sysctl in pillar["freeipa"]["sysctls"] %}
+        - {{ sysctl }}
+        {%- endfor %}
+      {%- endif %}
     - publish:
         - {{ pillar["freeipa"]["ip"] }}:53:53
         - {{ pillar["freeipa"]["ip"] }}:53:53/udp
@@ -53,6 +56,7 @@ freeipa_container:
         - {{ pillar["freeipa"]["ip"] }}:464:464
         - {{ pillar["freeipa"]["ip"] }}:464:464/udp
         - {{ pillar["freeipa"]["ip"] }}:636:636
+    {%- endif %}
     {%- if 'command' in pillar["freeipa"] %}
     - command: {{ pillar["freeipa"]["command"] }}
     {%- endif %}
@@ -72,6 +76,7 @@ freeipa_container:
     {%- endfor %}
   {%- endif %}
 
+{#
 systemd-resolved drop-in:
   file.managed:
     - name: /etc/systemd/resolved.conf.d/freeipa.conf
@@ -86,4 +91,5 @@ systemd-resolved reload:
     - name: systemctl daemon-reload && systemctl restart systemd-resolved
     - onchanges:
       - file: /etc/systemd/resolved.conf.d/freeipa.conf
+#}
 {%- endif %}
