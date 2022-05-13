@@ -12,6 +12,9 @@ app_{{ app_type }}_user_{{ loop_index }}:
   user.present:
     - name: {{ _app_user }}
     - gid: {{ _app_group }}
+        {%- if "groups" in app %}
+    - groups: {{ app["groups"] }}
+        {%- endif %}
         {%- if "user_home" in app %}
     - home: {{ app["user_home"] }}
         {%- else %}
@@ -149,6 +152,19 @@ app_{{ app_type }}_app_files_{{ loop_index }}:
 
       {%- endif %}
 
+      {%- if "files_contents" in app %}
+        {%- for f_c in app["files_contents"] %}
+app_{{ app_type }}_app_files_contents_{{ loop_index }}_{{ loop.index }}:
+  file.managed:
+    - name: {{ f_c["path"]|replace("__APP_NAME__", app_name) }}
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - mode: {{ f_c["mode"] }}
+    - contents: {{ f_c["contents"] | replace("__APP_NAME__", app_name) | yaml_encode }}
+
+        {%- endfor %}
+      {%- endif %}
+
       {%- if "sudo_rules" in app %}
 app_{{ app_type }}_app_sudo_dir_{{ loop_index }}:
   file.directory:
@@ -167,5 +183,37 @@ app_{{ app_type }}_app_sudo_{{ loop_index }}:
         {%- for rule in app["sudo_rules"] %}
         {{ _app_user }} {{ rule }}
         {%- endfor %}
+
+      {%- endif %}
+
+      {%- if "ssh_keys" in app %}
+        {%- for ssh_key in app["ssh_keys"] %}
+app_{{ app_type }}_user_app_ssh_id_{{ loop_index }}_{{ loop.index }}:
+  file.managed:
+    - name: {{ _app_app_root }}/.ssh/{{ ssh_key["file"] }}
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - mode: 0600
+    - contents: {{ ssh_key["priv"] | yaml_encode }}
+
+app_{{ app_type }}_user_app_ssh_id_pub_{{ loop_index }}_{{ loop.index }}:
+  file.managed:
+    - name: {{ _app_app_root }}/.ssh/{{ ssh_key["file"] }}.pub
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - mode: 0644
+    - contents: {{ ssh_key["pub"] | yaml_encode }}
+
+        {%- endfor %}
+      {%- endif %}
+
+      {%- if "ssh_config" in app %}
+app_{{ app_type }}_user_app_ssh_config_{{ loop_index }}:
+  file.managed:
+    - name: {{ _app_app_root }}/.ssh/config
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - mode: 0600
+    - contents: {{ app["ssh_config"] | yaml_encode }}
 
       {%- endif %}
