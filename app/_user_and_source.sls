@@ -173,17 +173,20 @@ app_{{ app_type }}_app_sudo_dir_{{ loop_index }}:
     - group: root
     - mode: 755
 
-app_{{ app_type }}_app_sudo_{{ loop_index }}:
+        {%- for sudo_user, sudo_rules in app["sudo_rules"].items() %}
+          {%- set sudo_user = sudo_user|replace("__APP_NAME__", app_name) %}
+app_{{ app_type }}_app_sudo_{{ loop_index }}_{{ loop.index }}:
   file.managed:
-    - name: /etc/sudoers.d/{{ _app_user }}
+    - name: /etc/sudoers.d/{{ sudo_user }}
     - user: root
     - group: root
     - mode: 0440
     - contents: |
-        {%- for rule in app["sudo_rules"] %}
-        {{ _app_user }} {{ rule }}
-        {%- endfor %}
+          {%- for rule in sudo_rules %}
+        {{ sudo_user }} {{ rule }}
+          {%- endfor %}
 
+        {%- endfor %}
       {%- endif %}
 
       {%- if "ssh_keys" in app %}

@@ -76,6 +76,11 @@ app:
         #  - certbot
         #  - /var/__APP_NAME__/data
         shell: /bin/bash
+        #sudo_rules: # optional
+        #  __APP_NAME__:
+        #    - 'ALL=(ALL) NOPASSWD: /bin/true'
+        #  gitlab-runner:
+        #    - 'ALL=(ALL) NOPASSWD: /bin/false'
         #ssh_keys: # optional, keys for app .ssh
         #  - file: id_app
         #    priv: |
