@@ -24,7 +24,7 @@ network:
         - on-link: true
           to: 0.0.0.0/0
           via: {{ ipv4_gw }}
-          from: {{ ipv4_floating_address }}
+          from: {{ ipv4_floating_address.split('/')[0] }}
       gateway6: {{ ipv6_gw }}
       nameservers:
         search:
