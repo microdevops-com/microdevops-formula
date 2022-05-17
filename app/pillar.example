@@ -63,6 +63,8 @@ app:
         # common for all app types
         user: __APP_NAME__
         group: __APP_NAME__
+        #groups: # optional
+        # - docker
         pass: '!'
         #enforce_password: False # optional, do not change pass if it was changed by user
         app_root: /opt/__APP_NAME__ # /var/www/someapp, whatever
@@ -74,7 +76,21 @@ app:
         #  - certbot
         #  - /var/__APP_NAME__/data
         shell: /bin/bash
-        source:
+        #sudo_rules: # optional
+        #  __APP_NAME__:
+        #    - 'ALL=(ALL) NOPASSWD: /bin/true'
+        #  gitlab-runner:
+        #    - 'ALL=(ALL) NOPASSWD: /bin/false'
+        #ssh_keys: # optional, keys for app .ssh
+        #  - file: id_app
+        #    priv: |
+        #      -----BEGIN OPENSSH PRIVATE KEY-----
+        #      ...
+        #      -----END OPENSSH PRIVATE KEY-----
+        #    pub: ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx app@example.com
+        #ssh_config: | # optional
+        #  ...
+        source: # optional
           git: git@github.com:myorg/app.git
           #force_reset: False # optional, True by default
           #force_checkout: True # optional, not added by default
@@ -96,16 +112,21 @@ app:
           #  - fetch_tags: False
           #  - https_user: deploy-user
           #  - https_pass: xx-token-xx
-        files:
+        files: # optional
           src: salt://app/__APP_NAME__
           dst: /opt/__APP_NAME__
-        setup_script_root:
+        files_contents: # optional
+          - path: /opt/__APP_NAME__/.env
+            mode: 0600
+            contents: |
+              export VAR1=value1
+        setup_script_root: # optional
           cwd: /opt/__APP_NAME__
           name: |
             set -e
             loginctl enable-linger someapp
             loginctl show-user someapp
-        setup_script_app_user:
+        setup_script_app_user: #optional
           cwd: /opt/__APP_NAME__
           name: |
             set -e
@@ -118,7 +139,7 @@ app:
             systemctl --user daemon-reload
             systemctl --user enable --now someapp.service
             systemctl --user status someapp.service
-        nginx:
+        nginx: # optional
           domain: example.com
           ssl: # optional
             acme_account: example.com

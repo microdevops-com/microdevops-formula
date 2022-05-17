@@ -146,7 +146,6 @@ fi
 
 # byobu bashrc in byobu
 if [[ ${_byobu_sourced}_ = 1_ ]]; then
-    export TERM=tmux
     if [[ -r /usr/share/byobu/profiles/bashrc ]]; then
         . /usr/share/byobu/profiles/bashrc
     fi
