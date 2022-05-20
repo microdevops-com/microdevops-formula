@@ -11,10 +11,17 @@ heartbeat_mesh_sender_py:
     - source: https://raw.githubusercontent.com/sysadmws/sysadmws-utils/master/heartbeat_mesh/sender.py
     - skip_verify: True
 
+    {%- if pillar["salt"] is defined and 'minion' in pillar["salt"] %}
 heartbeat_mesh_sender_task:
   cmd.run:
     - name: |
+      {%- if pillar["salt"]["minion"]["version"]|string == "3001" %}
         c:\windows\system32\schtasks.exe /create /tn heartbeat_mesh_sender /ru SYSTEM /sc MINUTE /tr "c:\salt\bin\python.exe c:\opt\sysadmws\heartbeat_mesh\sender.py" /np /f
+      {%- else %}
+        c:\windows\system32\schtasks.exe /create /tn heartbeat_mesh_sender /ru SYSTEM /sc MINUTE /tr "\"C:\Program Files\Salt Project\Salt\bin\python.exe\" c:\opt\sysadmws\heartbeat_mesh\sender.py" /np /f
+      {%- endif %}
+
+    {%- endif %}
   {%- endif %}
 
 heartbeat_mesh_sender_dir:
