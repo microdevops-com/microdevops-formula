@@ -29,6 +29,7 @@ minion_installer_exe:
   file.managed:
     - name: 'C:\Windows\{{ minion_exe }}' # DO NOT USE "" here - slash \ is treated as escape inside
     - source: '{{ minion_src }}'
+    - source_hash: '{{ minion_src }}.sha256'
 
 minion_install_silent_cmd:
   cmd.run:
