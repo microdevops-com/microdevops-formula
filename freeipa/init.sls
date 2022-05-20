@@ -69,6 +69,7 @@ freeipa_container:
     - binds:
         - /opt/freeipa/{{ pillar["freeipa"]["hostname"] }}/data:/data:rw
         - /sys/fs/cgroup:/sys/fs/cgroup:ro
+        - /opt/acme/cert:/acme:ro
   {%- if 'env_var' in pillar["freeipa"] %}
     - environment:
     {%- for var_key, var_val in pillar["freeipa"]["env_vars"].items() %}
