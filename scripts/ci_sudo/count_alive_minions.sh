@@ -9,5 +9,6 @@ MINION_NAME=$1
 
 # manage.alived works up to 2 secs but does not show windows minions for instance
 # manage.up works sometimes up to 20 secs, but show windows minions, better to use this func with pipeline cache
+# https://github.com/saltstack/salt/issues/58592
 #salt-run manage.alived --out=json | jq '.[]|select(. == "'${MINION_NAME}'")' | wc -l
 salt-run manage.up --out=json | jq '.[]|select(. == "'${MINION_NAME}'")' | wc -l
