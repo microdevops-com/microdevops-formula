@@ -581,6 +581,13 @@ postfix_extra_cf_{{ loop.index }}:
     {%- endfor %}
   {% endif %}
 
+  {% if pillar["mailcow"]["postfix"] is defined and "header_checks" in pillar["mailcow"]["postfix"] %}
+postfix_header_checks:
+  file.managed:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/header_checks
+    - contents: {{ pillar["mailcow"]["postfix"]["header_checks"] | yaml_encode }}
+  {% endif %}
+
 mailcow_docker_compose_up:
   cmd.run:
     - shell: /bin/bash
