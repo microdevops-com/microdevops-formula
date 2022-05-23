@@ -46,3 +46,6 @@ mailcow:
       smtpd_milters: "inet:rspamd:9900, inet:2.3.4.5:13333"
       non_smtpd_milters: '$smtpd_milters'
       postscreen_dnsbl_action: 'ignore'
+      header_checks: 'regexp:/opt/postfix/conf/header_checks'
+    header_checks: |
+      /^Subject:/     WARN
