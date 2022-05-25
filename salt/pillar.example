@@ -63,6 +63,7 @@ salt:
       gitlab_url: https://gitlab.example.com
       gitlab_runner_name: salt1.example.com
       registration_token: xxxxxxxxxxxxxxxxxxxx
+      concurrent: 16
 
   minion:
     version: 3001

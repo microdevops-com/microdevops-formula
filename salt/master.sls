@@ -215,7 +215,7 @@ salt_master_gitlab-runner_config:
     - group: root
     - mode: 600
     - contents: |
-        concurrent = 200
+        concurrent = {{ pillar["salt"]["master"]["gitlab-runner"]|default("16") }}
         check_interval = 0
         
         [session_server]
