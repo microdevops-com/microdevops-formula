@@ -87,7 +87,7 @@ netdata_install-type_fix:
 netdata_kickstart:
   cmd.script:
     - name: kickstart-static64.sh --dont-wait --stable-channel --no-updates --reinstall
-    - source: https://raw.githubusercontent.com/netdata/netdata/master/packaging/installer/kickstart-static64.sh
+    - source: https://my-netdata.io/kickstart-static64.sh
 
 netdata_config_health_alarm:
   file.managed:
