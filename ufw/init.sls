@@ -235,9 +235,9 @@ ufw_user_rules_src_managed:
         {%- endif %}
 
         {%- set i_loop = loop %}
-        {%- for i_from in rule_from %}
+        {%- for i_from in rule_from|sort %}
           {%- set j_loop = loop %}
-          {%- for i_to in rule_to %}
+          {%- for i_to in rule_to|sort %}
         ufw {{ rule_insert }} {{ rule_action }}{{ rule_direction }}{{ rule_proto }} from {{ rule_from[i_from] }} to {{ rule_to[i_to] }} {{ rule_to_port }} comment "{{ rule_name }} from {{ i_from }} to {{ i_to }}"
           {%- endfor %}
         {%- endfor %}
