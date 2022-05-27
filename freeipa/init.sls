@@ -1,4 +1,9 @@
 {%- if pillar["freeipa"] is defined %}
+hosts_file:
+  host.only:
+    - name: 127.0.1.1
+    - hostnames: []
+
 freeipa_data_dir:
   file.directory:
     - names:
