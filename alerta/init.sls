@@ -1,12 +1,3 @@
-# Logs and debug:
-# su - alerta
-# /opt/alerta/alerta/venv/bin/uwsgi --ini /etc/uwsgi/sites/alerta.ini # should not detach
-# tail -F /opt/alerta/alerta/uwsgi.log
-# tail -F /opt/alerta/alerta/alertad.log
-#
-# References:
-# - http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
-
 {% if pillar["alerta"] is defined %}
 
   {%- set pyenv_version = "3.7.8" %}
