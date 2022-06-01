@@ -227,7 +227,7 @@ alerta_main_nginx:
         worker_processes auto;
 
         events {
-            worker_connections 512;
+            worker_connections 1024;
         }
 
         http {
