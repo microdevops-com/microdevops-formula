@@ -57,7 +57,7 @@ freeipa:
 ######################################################
 # Freeipa with DNS. Docker network in host mode
 ######################################################
-{% set hostname="ipa2.example.com" %}
+{% set hostname="ipa1.example.com" %}
 {% set ip="1.2.3.4" %}
 {% set domain="example.com" %}
 {% set directory_manager_password="Secret123" %}
@@ -83,6 +83,7 @@ freeipa:
 ######################################################
 # Freeipa with DNS.
 ######################################################
+{% set hostname="ipa1.example.com" %}
 {% set ip=1.2.3.4 %}
 {% set domain="example.com" %}
 {% set directory_manager_password="Secret123" %}
@@ -93,7 +94,7 @@ freeipa:
   ca_less: True
   ca_fix: True
   image: freeipa/freeipa-server:centos-8-stream
-  hostname: ipa1.example.com
+  hostname: {{ hostname }}
   ip: {{ ip }}
   ds_password: {{ directory_manager_password }}
   command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}' --setup-dns --forwarder=1.1.1.1 --allow-zone-overlap
@@ -108,6 +109,7 @@ freeipa:
 ######################################################
 # Freeipa without DNS.
 ######################################################
+{% set hostname="ipa1.example.com" %}
 {% set ip=1.2.3.4 %}
 {% set domain="example.com" %}
 {% set directory_manager_password="Secret123" %}
@@ -116,7 +118,7 @@ freeipa:
 freeipa:
   acme_account: {{ domain }}
   image: freeipa/freeipa-server:centos-8-stream
-  hostname: ipa1.example.com
+  hostname: {{ hostname }}
   ds_password: {{ directory_manager_password }}
   ip: {{ ip }}
   command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}'
