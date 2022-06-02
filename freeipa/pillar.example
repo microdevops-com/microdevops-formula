@@ -30,14 +30,20 @@ freeipa:
 ######################################################
 # Freeipa without DNS. Docker network in host mode
 ######################################################
+
+{% set hostname="ipa1.example.com" %}
+{% set ip="1.2.3.4" %}
 {% set domain="example.com" %}
 {% set directory_manager_password="Secret123" %}
 {% set admin_password="Secret123" %}
 
 freeipa:
   acme_account: {{ domain }}
+  ca_less: True
+  ca_fix: True
   image: freeipa/freeipa-server:centos-8-stream
-  hostname: ipa1.example.com
+  hostname: {{ hostname }}
+  ip: {{ ip }}
   ds_password: {{ directory_manager_password }}
   network_mode: host
   command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}'
@@ -51,14 +57,19 @@ freeipa:
 ######################################################
 # Freeipa with DNS. Docker network in host mode
 ######################################################
+{% set hostname="ipa2.example.com" %}
+{% set ip="1.2.3.4" %}
 {% set domain="example.com" %}
 {% set directory_manager_password="Secret123" %}
 {% set admin_password="Secret123" %}
 
 freeipa:
   acme_account: {{ domain }}
+  ca_less: True
+  ca_fix: True
   image: freeipa/freeipa-server:centos-8-stream
   hostname: ipa1.example.com
+  ip: {{ ip }}
   ds_password: {{ directory_manager_password }}
   network_mode: host
   command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}' --setup-dns --forwarder=1.1.1.1 --allow-zone-overlap
@@ -79,10 +90,12 @@ freeipa:
 
 freeipa:
   acme_account: {{ domain }}
+  ca_less: True
+  ca_fix: True
   image: freeipa/freeipa-server:centos-8-stream
   hostname: ipa1.example.com
-  ds_password: {{ directory_manager_password }}
   ip: {{ ip }}
+  ds_password: {{ directory_manager_password }}
   command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}' --setup-dns --forwarder=1.1.1.1 --allow-zone-overlap
   sysctls:
     - net.ipv6.conf.all.disable_ipv6=0
