@@ -1,7 +1,7 @@
 sysctl:
 
-  config: # optional, state cofig override, f.e. override installed pkg name
-    pkg: procps #optional, the default
+  config: # optional, to setup pkg with sysctl bin on non Ubuntu
+    pkg: procps
 
   default: # default filename means default for the salt.states.sysctl state
            # usually /etc/sysctl.d/99-salt.conf
@@ -15,6 +15,7 @@ sysctl:
 
 
 # Minimal viable examples
+
 sysctl:
   /etc/sysctl.conf:
     vm.swappiness: 10

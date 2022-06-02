@@ -1,4 +1,7 @@
 include:
+{% if pillar['sysctl'] is defined %}
+  - sysctl
+{% endif %}
 {% if pillar['acme'] is defined %}
   - acme
 {% endif %}
