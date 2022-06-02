@@ -93,7 +93,7 @@ freeipa:
       nsslapd-require-secure-binds: 'on'
 
 ######################################################
-# Freeipa with DNS.
+# Freeipa without DNS.
 ######################################################
 {% set ip=1.2.3.4 %}
 {% set domain="example.com" %}
