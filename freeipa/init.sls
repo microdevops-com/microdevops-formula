@@ -142,7 +142,7 @@ freeipa_container:
     - restart_policy: unless-stopped
     - tmpfs:
       - /run: rw,noexec,nosuid,size=65536k
-      - /tmp: rw,noexec,nosuid,size=524288k
+      - /tmp: rw,noexec,nosuid,size=786432k
     - cap_add: SYS_TIME
     {%- if 'extra_hosts' in pillar["freeipa"] %}
     - extra_hosts:
