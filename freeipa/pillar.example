@@ -93,7 +93,7 @@ freeipa:
       nsslapd-require-secure-binds: 'on'
 
 ######################################################
-# Freeipa with DNS.
+# Freeipa without DNS.
 ######################################################
 {% set ip=1.2.3.4 %}
 {% set domain="example.com" %}
@@ -114,3 +114,34 @@ freeipa:
     attributes:
       nsslapd-allow-anonymous-access: 'rootdse'
       nsslapd-require-secure-binds: 'on'
+
+
+
+######################################################
+# Freeipa Replica without DNS.
+######################################################
+{% set hostname="ipa2.example.com" %}
+{% set ip_ipa1="1.2.3.4" %}
+{% set ip_ipa2="1.2.3.4" %}
+{% set domain="example.com" %}
+{% set directory_manager_password="Secret123" %}
+{% set admin_name="admin" %}
+{% set admin_password="Secret123" %}
+
+freeipa:
+  acme_account: {{ domain }}
+  ca_less: True
+  ca_fix: True
+  image: freeipa/freeipa-server:centos-8-stream
+  hostname: {{ hostname }}
+  ip: {{ ip_ipa2 }}
+  ds_password: {{ directory_manager_password }}
+  command: ipa-replica-install --unattended --server=ipa1.example.com --domain={{ domain }} --principal='{{ admin_name }}' --password='{{ admin_password }}' --skip-conncheck  --no-host-dns
+  sysctls:
+    - net.ipv6.conf.all.disable_ipv6=0
+  dsconf:
+    instance: 'EXAMPLE-COM'
+    attributes:
+      nsslapd-allow-anonymous-access: 'rootdse'
+      nsslapd-require-secure-binds: 'on'
+     
