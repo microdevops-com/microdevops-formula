@@ -74,5 +74,5 @@ grafana:
             surname = "sn"
             username = "uid"
             [[servers.group_mappings]]
-            group_dn = "cn=grafana,cn=groups,cn=accounts,dc=oxtech,dc=org"
+            group_dn = "cn=grafana,cn=groups,dc=example,dc=com"
             org_role = "Viewer"
