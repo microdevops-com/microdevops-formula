@@ -120,8 +120,8 @@ app_{{ app_type }}_nginx_logrotate_file_{{ loop_index }}:
     - name: /etc/logrotate.d/nginx-{{ app_name }}
     - mode: 644
     - contents: |
-        {{ app["nginx"]["log"]["access_log"] }}
-        {{ app["nginx"]["log"]["error_log"] }} {
+        {{ _app_nginx_access_log }}
+        {{ _app_nginx_error_log }} {
           rotate {{ app["nginx"]["log"]["rotate_count"]|default("31") }}
           {{ app["nginx"]["log"]["rotate_when"]|default("daily") }}
           missingok
