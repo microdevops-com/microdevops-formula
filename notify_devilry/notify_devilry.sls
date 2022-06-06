@@ -14,6 +14,13 @@ notify_devilry_config_managed:
     - user: root
     - group: root
     - source: {{ pillar["notify_devilry"]["config_file_override"] }}
+    {%- if "defaults" in pillar["notify_devilry"] %}
+    - template: jinja
+    - defaults:
+      {%- for def_key, def_val in pillar["notify_devilry"]["defaults"].items() %}
+        {{ def_key }}: {{ def_val }}
+      {%- endfor %}
+    {%- endif %}
 
   {%- elif "config_file" in pillar["notify_devilry"] %}
 notify_devilry_config_managed:
@@ -23,6 +30,13 @@ notify_devilry_config_managed:
     - user: root
     - group: root
     - source: {{ pillar["notify_devilry"]["config_file"] }}
+    {%- if "defaults" in pillar["notify_devilry"] %}
+    - template: jinja
+    - defaults:
+      {%- for def_key, def_val in pillar["notify_devilry"]["defaults"].items() %}
+        {{ def_key }}: {{ def_val }}
+      {%- endfor %}
+    {%- endif %}
 
   {%- endif %}
 
