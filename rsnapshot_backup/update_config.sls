@@ -36,7 +36,7 @@ rsnapshot_backup_conf:
       {%- for host_backups_item in host_backups %}
         {%- if host_backups_item['type'] != 'SUPPRESS_COVERAGE' %}
           {%- for backup in host_backups_item['backups'] %}
-            {%- if grains['fqdn'] == backup['host'] %}
+            {%- if grains['id'] == backup['host'] %}
               {%- if backup['priority'] is defined and backup['priority'] is not none and priority == backup['priority']|int %}
                 {%- include 'rsnapshot_backup/update_config.jinja' with context %}
               {%- endif  %}
@@ -51,7 +51,7 @@ rsnapshot_backup_conf:
     {%- for host_backups_item in host_backups %}
       {%- if host_backups_item['type'] != 'SUPPRESS_COVERAGE' %}
         {%- for backup in host_backups_item['backups'] %}
-          {%- if grains['fqdn'] == backup['host'] %}
+          {%- if grains['id'] == backup['host'] %}
             {%- if backup['priority'] is not defined or backup['priority'] is none %}
               {%- include 'rsnapshot_backup/update_config.jinja' with context %}
             {%- endif  %}
@@ -66,7 +66,7 @@ rsnapshot_backup_conf:
       {%- for host_backups_item in host_backups %}
         {%- if host_backups_item['type'] != 'SUPPRESS_COVERAGE' %}
           {%- for backup in host_backups_item['backups'] %}
-            {%- if grains['fqdn'] == backup['host'] %}
+            {%- if grains['id'] == backup['host'] %}
               {%- if backup['priority'] is defined and backup['priority'] is not none and priority == backup['priority']|int %}
                 {%- include 'rsnapshot_backup/update_config.jinja' with context %}
               {%- endif  %}

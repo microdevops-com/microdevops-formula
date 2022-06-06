@@ -14,7 +14,7 @@ ufw:
     cluster_vault:
       proto: 'tcp'
       from:
-        {%- for key, val in nodes.items() %}{%- if grains['fqdn'] != key %}
+        {%- for key, val in nodes.items() %}{%- if grains['id'] != key %}
         {{ key }}: {{ val }}
         {%- endif %}{%- endfor %}
       to_port: '8200,8201'
@@ -22,33 +22,33 @@ ufw:
     cluster_consul_tcp:
       proto: 'tcp'
       from:
-        {%- for key, val in nodes.items() %}{%- if grains['fqdn'] != key %}
+        {%- for key, val in nodes.items() %}{%- if grains['id'] != key %}
         {{ key }}: {{ val }}
         {%- endif %}{%- endfor %}
       to_port: '8300,8301,8302,8500,8501,8600'
     cluster_consul_udp:
       proto: 'udp'
       from:
-        {%- for key, val in nodes.items() %}{%- if grains['fqdn'] != key %}
+        {%- for key, val in nodes.items() %}{%- if grains['id'] != key %}
         {{ key }}: {{ val }}
         {%- endif %}{%- endfor %}
       to_port: '8301,8302,8600'
 {%- endif %}
 
 vault:
-  name: {{ grains['fqdn'] }}
+  name: {{ grains['id'] }}
   acme_account: example.org
   docker-ce_version: 5:20.10.9
   image: vault
   env_vars:
-    VAULT_ADDR: "https://{{ grains['fqdn'] }}:8200"
+    VAULT_ADDR: "https://{{ grains['id'] }}:8200"
   config: |
     ui = true
     {%- if storage == "raft" %}
     storage "raft" {
       path = "/vault/data"
-      node_id = "{{ grains['fqdn'] }}"
-      {%- for key, val in vault_nodes.items() %}{%- if grains['fqdn'] != key %}
+      node_id = "{{ grains['id'] }}"
+      {%- for key, val in vault_nodes.items() %}{%- if grains['id'] != key %}
       retry_join {
         leader_api_addr = "https://{{ key }}:8200"
       }{%- endif %}{%- endfor %}
@@ -57,23 +57,23 @@ vault:
     {%- if storage == "consul" %}
     storage "consul" {
       path = "vault/"
-      address = "{{ grains['fqdn'] }}:8500"
+      address = "{{ grains['id'] }}:8500"
     }
     {%- endif %}
     listener "tcp" {
       address = "0.0.0.0:8200"
       cluster_address = "0.0.0.0:8201"
       #tls_disable = "true"
-      tls_cert_file = "/vault/certs/vault_{{ grains['fqdn'] }}_fullchain.cer"
-      tls_key_file  = "/vault/certs/vault_{{ grains['fqdn'] }}_key.key"
+      tls_cert_file = "/vault/certs/vault_{{ grains['id'] }}_fullchain.cer"
+      tls_key_file  = "/vault/certs/vault_{{ grains['id'] }}_key.key"
     }
-    api_addr = "https://{{ grains['fqdn'] }}:8200"
-    cluster_addr = "https://{{ grains['fqdn'] }}:8201"
+    api_addr = "https://{{ grains['id'] }}:8200"
+    cluster_addr = "https://{{ grains['id'] }}:8201"
 
 ###############################################################
 ## SIMPLE PILLAR FOR LEADER NODE WITH INTEGRATED RAFT STORAGE
 ###############################################################
-{% set nodename = grains["fqdn"] %}
+{% set nodename = grains["id"] %}
 
 vault:
   name: {{ nodename }}
@@ -101,7 +101,7 @@ vault:
 ###############################################################
 ## SIMPLE PILLAR FOR NODE WITH CONSUL STORAGE
 ###############################################################
-{% set nodename = grains["fqdn"]  %}
+{% set nodename = grains["id"]  %}
 
 vault:
   name: {{ nodename }}

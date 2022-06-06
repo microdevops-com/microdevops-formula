@@ -10,7 +10,7 @@
 
   {%- if
         pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and
-        pillar['rsnapshot_backup']['sources'][grains['fqdn']] is defined and pillar['rsnapshot_backup']['sources'][grains['fqdn']] is not none
+        pillar['rsnapshot_backup']['sources'][grains['id']] is defined and pillar['rsnapshot_backup']['sources'][grains['id']] is not none
   %}
 
     {# Data Dirs #}
@@ -30,7 +30,7 @@
         {# check if dir is not empty, . and .. are always present, so dir is not empty if > 2 #}
         {%- if salt['file.readdir'](dir)|length > 2 %}
           {# iterate over backup definition items #}
-          {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']] %}
+          {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['id']] %}
             {# iterate over backup data items of type RSYNC_SSH or SUPPRESS_COVERAGE #}
             {%- if backup_item['type'] == 'SUPPRESS_COVERAGE' %}
               {%- for backup_data_item in backup_item['data'] %}
@@ -63,7 +63,7 @@
                   {%- if dir in data_expand[backup_data_item] %}
                     {# iterate over backup backups items to find local and remote backups #}
                     {%- for backup_backups_item in backup_item['backups'] %}
-                      {%- if backup_backups_item['host'] == grains['fqdn'] %}
+                      {%- if backup_backups_item['host'] == grains['id'] %}
                         {%- do data_dirs_backup_found[dir].update({'local': True}) %}
                       {%- else %}
                         {%- do data_dirs_backup_found[dir].update({'remote': True}) %}
@@ -73,7 +73,7 @@
                 {%- elif dir == backup_data_item %}
                   {# iterate over backup backups items to find local and remote backups #}
                   {%- for backup_backups_item in backup_item['backups'] %}
-                    {%- if backup_backups_item['host'] == grains['fqdn'] %}
+                    {%- if backup_backups_item['host'] == grains['id'] %}
                       {%- do data_dirs_backup_found[dir].update({'local': True}) %}
                     {%- else %}
                       {%- do data_dirs_backup_found[dir].update({'remote': True}) %}
@@ -130,7 +130,7 @@ check_coverage_no_remote_backup_dir_found_{{ loop.index }}:
       {%- if salt['cmd.retcode'](cmd, python_shell=True) == 0 %}
         {%- set db_backup_found = {db: {'local': False, 'remote': False}} %}
         {# iterate over backup definition items #}
-        {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']] %}
+        {%- for backup_item in pillar['rsnapshot_backup']['sources'][grains['id']] %}
           {# iterate over backup data items of type {{ db }}_SSH or SUPPRESS_COVERAGE #}
           {%- if backup_item['type'] == 'SUPPRESS_COVERAGE' %}
             {%- for backup_data_item in backup_item['data'] %}
@@ -151,7 +151,7 @@ check_coverage_no_remote_backup_dir_found_{{ loop.index }}:
           {%- if backup_item['type'] == db + '_SSH' %}
             {# iterate over backup backups items to find local and remote backups #}
             {%- for backup_backups_item in backup_item['backups'] %}
-              {%- if backup_backups_item['host'] == grains['fqdn'] %}
+              {%- if backup_backups_item['host'] == grains['id'] %}
                 {%- do db_backup_found[db].update({'local': True}) %}
               {%- else %}
                 {%- do db_backup_found[db].update({'remote': True}) %}
@@ -204,7 +204,7 @@ check_coverage_no_server_in_sources:
     - changes: False
     - result: False
     - comment: |
-        ERROR: '{{ grains['fqdn'] }}' not found in pillar:rsnapshot_backup:sources list - rsnapshot_backup is not configured at all.
+        ERROR: '{{ grains['id'] }}' not found in pillar:rsnapshot_backup:sources list - rsnapshot_backup is not configured at all.
   {%- endif %}
   
 {% elif grains['os'] == "Windows" %}

@@ -9,10 +9,10 @@ put_check_files_nothing_to_do:
 {% if pillar['rsnapshot_backup'] is defined and pillar['rsnapshot_backup'] is not none and pillar['rsnapshot_backup']['sources'] is defined and pillar['rsnapshot_backup']['sources'] is not none %}
 
   # Check if data definition exists for this host (there may be other hosts in this pillar)
-  {%- if pillar['rsnapshot_backup']['sources'][grains['fqdn']] is defined and pillar['rsnapshot_backup']['sources'][grains['fqdn']] is not none  %}
+  {%- if pillar['rsnapshot_backup']['sources'][grains['id']] is defined and pillar['rsnapshot_backup']['sources'][grains['id']] is not none  %}
 
     # Get every data item
-    {%- for source_item in pillar['rsnapshot_backup']['sources'][grains['fqdn']] %}
+    {%- for source_item in pillar['rsnapshot_backup']['sources'][grains['id']] %}
       {%- set i_loop = loop %}
 
       # Only if check defined at all
@@ -61,7 +61,7 @@ put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_lo
   file.managed:
     - name: '{{ expanded_data_item }}{{ '\\' if grains['os'] == "Windows" else '/' }}.backup'
     - contents:
-      - 'Host: {{ grains['fqdn'] }}'
+      - 'Host: {{ grains['id'] }}'
       - 'Path: {{ expanded_data_item }}'
       - 'UTC: {{ salt['cmd.shell']("powershell (get-date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')") if grains['os'] == "Windows" else salt['cmd.shell']('date -u "+%Y-%m-%d %H:%M:%S"') }}'
                   {%- for backup_item in source_item['backups'] %}
