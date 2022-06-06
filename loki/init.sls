@@ -22,7 +22,7 @@ docker_install_4:
     - refresh: True
     - reload_modules: True
     - pkgs: 
-        - docker-ce: '{{ pillar['loki']['docker-ce_version'] }}*'
+        - docker-ce
         - python3-pip
                 
 docker_pip_install:
