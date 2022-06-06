@@ -21,8 +21,7 @@ disk_alert_config_managed:
 # % - is a special char in crontab and should be escaped
 disk_alert_cron_managed:
   cron.present:
-    - name:
-        bash -c 'sleep $((RANDOM \% 240))' && /opt/sysadmws/disk_alert/disk_alert.sh
+    - name: /opt/sysadmws/disk_alert/disk_alert.sh 240
     - identifier: disk_alert
     - user: root
     - minute: "*/5"
