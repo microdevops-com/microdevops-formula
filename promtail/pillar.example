@@ -7,7 +7,6 @@ promtail:
       password: <password>
   binary:
     link: https://github.com/grafana/loki/releases/download/v2.3.0/promtail-linux-amd64.zip
-    hash: 48968d6299ebc24d1b4eee7b9b55c5c1
   docker:
     image: grafana/promtail:2.3.0
     binds:

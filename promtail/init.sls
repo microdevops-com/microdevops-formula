@@ -60,7 +60,6 @@ promtail_binary_1:
   archive.extracted:
     - name: /opt/promtail/bin
     - source: {{ pillar['promtail']['binary']['link'] }}
-    - source_hash: {{ pillar['promtail']['binary']['hash'] }}
     - user: 0
     - group: 0
     - enforce_toplevel: False
