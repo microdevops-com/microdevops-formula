@@ -19,7 +19,7 @@ consul_config:
 
 {%-   if 'node_services' in pillar["consul"]  %}
 {%-     for node in pillar["consul"]["node_services"] %}
-{%-       if node["node_name"] == grains["fqdn"] %}
+{%-       if node["node_name"] == grains["id"] %}
 {%-         for service in node["services"] %}
 consul serivce {{ service["config"]["service"]["name"] }} config on {{ node["node_name"] }}:
   file.serialize:
@@ -37,21 +37,21 @@ cacert:
     - source: {{ pillar["consul"]["tls_dir"] }}/ca.crt
     - user: 100
     - group: 1000
-{%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
+{%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['id'] == key %}
 server_cert:
   file.managed:
-    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/{{ grains['fqdn'] }}.crt
-    - source: {{ pillar["consul"]["tls_dir"] }}/{{ grains['fqdn'] }}.crt
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/{{ grains['id'] }}.crt
+    - source: {{ pillar["consul"]["tls_dir"] }}/{{ grains['id'] }}.crt
     - user: 100
     - group: 1000
 server_key:
   file.managed:
-    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/{{ grains['fqdn'] }}.key
-    - source: {{ pillar["consul"]["tls_dir"] }}/{{ grains['fqdn'] }}.key
+    - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/{{ grains['id'] }}.key
+    - source: {{ pillar["consul"]["tls_dir"] }}/{{ grains['id'] }}.key
     - user: 100
     - group: 1000
 {%- endif %}{%- endfor %}
-{%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
+{%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['id'] == key %}
 client_cert:
   file.managed:
     - name: /opt/consul/{{ pillar["consul"]["name"] }}/certs/agent-client.crt
@@ -98,12 +98,12 @@ consul_container:
         - CONSUL_ALLOW_PRIVILEGED_PORTS: yes
         - CONSUL_HTTP_ADDR: 'https://127.0.0.1:{{ pillar["consul"]["config"]["ports"]["https"] }}'
         - CONSUL_CACERT: /consul/certs/ca.crt
-    {%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['fqdn'] == key %}
+    {%- for key, val in pillar["consul"]["agents"]["clients"].items() %}{%- if grains['id'] == key %}
         - CONSUL_CLIENT_CERT: /consul/certs/agent-client.crt
         - CONSUL_CLIENT_KEY: /consul/certs/agent-client.key{%- endif %}{%- endfor %}
-    {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['fqdn'] == key %}
-        - CONSUL_CLIENT_CERT: /consul/certs/{{ grains['fqdn'] }}.crt
-        - CONSUL_CLIENT_KEY: /consul/certs/{{ grains['fqdn'] }}.key{%- endif %}{%- endfor %}
+    {%- for key, val in pillar["consul"]["agents"]["servers"].items() %}{%- if grains['id'] == key %}
+        - CONSUL_CLIENT_CERT: /consul/certs/{{ grains['id'] }}.crt
+        - CONSUL_CLIENT_KEY: /consul/certs/{{ grains['id'] }}.key{%- endif %}{%- endfor %}
 
 resolv_conf:
   file.replace:

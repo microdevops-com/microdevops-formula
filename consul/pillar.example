@@ -129,14 +129,14 @@ ufw:
     cluster_consul_tcp:
       proto: 'tcp'
       from:
-        {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
+        {%- for key, val in all_nodes.items() %}{%- if grains['id'] != key %}
         {{ key }}: {{ val }}
         {%- endif %}{%- endfor %}
       to_port: '8300,8301,8302,8500,8501'
     cluster_consul_udp:
       proto: 'udp'
       from:
-        {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] != key %}
+        {%- for key, val in all_nodes.items() %}{%- if grains['id'] != key %}
         {{ key }}: {{ val }}
         {%- endif %}{%- endfor %}
       to_port: '8301,8302'
@@ -148,7 +148,7 @@ ufw:
       to_port: 8600
 
 consul:
-  name: {{ grains['fqdn'] }}
+  name: {{ grains['id'] }}
   tls_dir: 'salt://consul/tls/consul.example.com'
   docker-ce_version: 5:20.10.9
   image: consul
@@ -162,7 +162,7 @@ consul:
       "bind_addr": "0.0.0.0",
       "datacenter": "dc1",
       "domain": "consul",
-      {%- for key, val in all_nodes.items() %}{%- if grains['fqdn'] == key %}
+      {%- for key, val in all_nodes.items() %}{%- if grains['id'] == key %}
       "advertise_addr": "{{ val }}",{% endif %}{% endfor %}
       "client_addr": "0.0.0.0",
       "ports": {
@@ -170,9 +170,9 @@ consul:
         "https": 8501
       },
       "connect": { "enabled": true },
-      "retry_join": [{%- for key, val in server_nodes.items() %}{%- if grains['fqdn'] != key %}"{{ key }}", {% endif %}{%- endfor %}],
+      "retry_join": [{%- for key, val in server_nodes.items() %}{%- if grains['id'] != key %}"{{ key }}", {% endif %}{%- endfor %}],
       "telemetry": { "disable_compat_1.9": true },
-      {%- for key, val in server_nodes.items() %}{%- if grains['fqdn'] == key %}
+      {%- for key, val in server_nodes.items() %}{%- if grains['id'] == key %}
       "addresses": {
         "grpc": "{{ val }}",
         "http": "0.0.0.0",
@@ -190,9 +190,9 @@ consul:
         "enable_token_persistence": true
       },
       "auto_encrypt": { "allow_tls": true },
-      "cert_file": "/consul/certs/{{ grains['fqdn'] }}.crt",
-      "key_file": "/consul/certs/{{ grains['fqdn'] }}.key",{% endif %}{% endfor %}
-      {%- for key, val in client_nodes.items() %}{%- if grains['fqdn'] == key %}
+      "cert_file": "/consul/certs/{{ grains['id'] }}.crt",
+      "key_file": "/consul/certs/{{ grains['id'] }}.key",{% endif %}{% endfor %}
+      {%- for key, val in client_nodes.items() %}{%- if grains['id'] == key %}
       "server": false,
       "acl": {
         "enabled": false,
