@@ -7,6 +7,7 @@
 ufw_simple:
   version: '0.35-4' # or 0.36-7.1
   enabled: True
+  #disabled: True # optional, explicitly disable ufw
   reset: False # True => reset ufw every time to clear out manual rules (beware: every time state applies fw is disabled for several seconds)
   logging: 'off'
   nat:
