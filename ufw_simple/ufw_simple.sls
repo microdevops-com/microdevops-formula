@@ -330,7 +330,7 @@ ufw_simple_enable:
   {%- endif %}
 
 {% else %}
-  {%- if "disabled" in pillar["ufw_simple"] and pillar["ufw_simple"]["disabled"] %}
+  {%- if pillar["ufw_simple"] is defined and "disabled" in pillar["ufw_simple"] and pillar["ufw_simple"]["disabled"] %}
 ufw_simple_disable:
   cmd.run:
     - name: "which ufw && ufw disable || true"

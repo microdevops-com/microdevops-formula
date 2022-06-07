@@ -357,7 +357,7 @@ ufw_nothing_done_info:
         ERROR: There are pillar errors, so nothing has been done.
         {{ pillar["_errors"] | json() }}
 
-  {%- elif "disabled" in pillar["ufw"] and pillar["ufw"]["disabled"] %}
+  {%- elif pillar["ufw"] is defined and "disabled" in pillar["ufw"] and pillar["ufw"]["disabled"] %}
 ufw_disable:
   cmd.run:
     - name: "which ufw && ufw disable || true"
