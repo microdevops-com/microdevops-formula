@@ -1,5 +1,5 @@
 cmd_check_alert:
-  pxc:
+  du_root_above_1gb:
     cron: '*/15'
     config:
       enabled: True
@@ -10,7 +10,7 @@ cmd_check_alert:
         timeout: 15
         severity: critical
       checks:
-        pxc:
+        du_root_above_1gb:
           cmd: 'if [[ $(du -sb /root | cut -f1) -gt 1000000000 ]]; then false; else true; fi'
           service: disk
           resource: __hostname__:/root
