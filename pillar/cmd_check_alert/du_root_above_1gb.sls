@@ -1,5 +1,5 @@
 cmd_check_alert:
-  du_root_above_1gb:
+  du:
     cron: '*/15'
     config:
       enabled: True
