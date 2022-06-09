@@ -1,10 +1,10 @@
 # vi: set ft=yaml:
 
-# backup1.domain.com - an example to backup data from two servers to central backup server
+# backup1.example.com - an example to backup data from two servers to central backup server
 rsnapshot_backup:
   backup_server: True
   sources:
-    srv1.domain.com:
+    srv1.example.com:
       - type: RSYNC_SSH # rsync over ssh
         data:
           - UBUNTU # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws']
@@ -25,8 +25,8 @@ rsnapshot_backup:
             file_type: 'regexp' # mandatory, regexp which will be matched agains unix command 'file' output
             files_mask: 'regexp' # mandatory, regexp for find command
         backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
+          - host: backup1.example.com # on which server backup is performed
+            path: /var/backups/srv1.example.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
             priority: -1 # optional, priority (order) of this backup in json config on the end server, -10 priority first, then -9 .. -1, then no priority, then 1 .. 10
             before_backup_check: # optional, the same as below but overrides before_backup_check per backup host
@@ -49,8 +49,8 @@ rsnapshot_backup:
             empty_db: # database list to exclude from checking real data in dumps
               - test
         backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
+          - host: backup1.example.com # on which server backup is performed
+            path: /var/backups/srv1.example.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
             priority: -1 # optional, priority
         mysql_noevents: True # optional, remove --events from dump cmd
@@ -78,8 +78,8 @@ rsnapshot_backup:
               - template0
               - template1
         backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
+          - host: backup1.example.com # on which server backup is performed
+            path: /var/backups/srv1.example.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
             priority: -1 # optional, priority
         postgresql_noclean: False # add --clean by default to pg dump
@@ -102,8 +102,8 @@ rsnapshot_backup:
             empty_db: # database list to exclude from checking real data in dumps
               - config
         backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
+          - host: backup1.example.com # on which server backup is performed
+            path: /var/backups/srv1.example.com # where to store backup
             connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
             priority: -1 # optional, priority
         validate_hostname: False # optional, disable remote ssh hostname check
@@ -139,7 +139,7 @@ rsnapshot_backup:
           - /test3 # suppress local and remote backups for /test3
         local_backups_suppress_reason: Some reason
         remote_backups_suppress_reason: Some reason
-    winsrv1.domain.com:
+    winsrv1.example.com:
       - type: RSYNC_NATIVE
         data:
           - /Share1/Some/Path
@@ -177,8 +177,8 @@ rsnapshot_backup:
             file_type: 'text'
             files_mask: 'test\.txt'
         backups:
-          - host: backup1.domain.com
-            path: /var/backups/winsrv1.domain.com
+          - host: backup1.example.com
+            path: /var/backups/winsrv1.example.com
             connect: 1.2.3.4:873 # optional, native rsync connect with ip or name and port, if not used rsync connects to 873 port by default
             priority: -1 # optional, priority
         connect_user: toor # optional, root by default, user for native rsync connect
@@ -192,10 +192,10 @@ rsnapshot_backup:
         rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
 
 # multi backup server example
-# srv1.domain.com, backup1.domain.com should see tha same pillar data
+# srv1.example.com, backup1.example.com should see tha same pillar data
 rsnapshot_backup:
   sources:
-    srv1.domain.com:
+    srv1.example.com:
       - type: RSYNC_SSH
         data:
           - UBUNTU
@@ -203,7 +203,7 @@ rsnapshot_backup:
         checks:
           - type: .backup
         backups:
-          - host: srv1.domain.com
-            path: /var/backups/srv1.domain.com
-          - host: backup1.domain.com
-            path: /var/backups/srv1.domain.com
+          - host: srv1.example.com
+            path: /var/backups/srv1.example.com
+          - host: backup1.example.com
+            path: /var/backups/srv1.example.com
