@@ -154,7 +154,10 @@ sensu-plugins_update_cacert:
 
   {%- endif %}
 
-  {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() %}
+  {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() if check_group_name not in ["hostname_override"] %}
+    {%- if "hostname_override" in pillar["cmd_check_alert"] %}
+      {%- do check_group_params["config"].update({"hostname_override": pillar["cmd_check_alert"]["hostname_override"]}) %}
+    {%- endif %}
     # There is some bug in serializer that causes int config keys to serialize as strings under salt-ssh and as ints under salt, which leads to flapping of config file
     # Fix by forcing severity_per_retcode to string
     # defaults

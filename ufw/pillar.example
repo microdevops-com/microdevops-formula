@@ -1,4 +1,7 @@
+# vi: set ft=yaml:
+
 ufw:
+  #disabled: True # optional, explicitly disable ufw
   loglevel: "off" # off by default, do not remove quotes - otherwise Salt will make False instead of off
   import_ufw_simple: False # import deprecated ufw_simple state pillar
   allow: # allow/deny/reject/limit
