@@ -64,18 +64,31 @@ rsnapshot_backup_conf:
           native_txt_check: {{ host_backups_item["native_txt_check"]|default(False) }}
           native_10h_limit: {{ host_backups_item["native_10h_limit"]|default(False) }}
           path: {{ backup["path"] }}
-          {%- if host_backups_item["retain_hourly"] is defined %}
+          # Retains per backup host override backup item
+          {%- if "retain_hourly" in backup %}
+          retain_hourly: {{ backup["retain_hourly"] }}
+          {%- elif "retain_hourly" in host_backups_item %}
           retain_hourly: {{ host_backups_item["retain_hourly"] }}
           {%- endif %}
-          {%- if host_backups_item["retain_daily"] is defined %}
+          #
+          {%- if "retain_daily" in backup %}
+          retain_daily: {{ backup["retain_daily"] }}
+          {%- elif "retain_daily" in host_backups_item %}
           retain_daily: {{ host_backups_item["retain_daily"] }}
           {%- endif %}
-          {%- if host_backups_item["retain_weekly"] is defined %}
+          #
+          {%- if "retain_weekly" in backup %}
+          retain_weekly: {{ backup["retain_weekly"] }}
+          {%- elif "retain_weekly" in host_backups_item %}
           retain_weekly: {{ host_backups_item["retain_weekly"] }}
           {%- endif %}
-          {%- if host_backups_item["retain_monthly"] is defined %}
+          #
+          {%- if "retain_monthly" in backup %}
+          retain_monthly: {{ backup["retain_monthly"] }}
+          {%- elif "retain_monthly" in host_backups_item %}
           retain_monthly: {{ host_backups_item["retain_monthly"] }}
           {%- endif %}
+          #
           {%- if host_backups_item["rsync_args"] is defined %}
           rsync_args: {{ host_backups_item["rsync_args"] }}
           {%- endif %}
@@ -91,12 +104,13 @@ rsnapshot_backup_conf:
           {%- if host_backups_item["connect_password"] is defined %}
           connect_password: {{ host_backups_item["connect_password"] }}
           {%- endif %}
-          {# per backup host item is higher priority than per backup item #}
+          # Per backup host item is higher priority than per backup item
           {%- if "before_backup_check" in backup %}
           before_backup_check: {{ backup["before_backup_check"] }}
           {%- elif "before_backup_check" in host_backups_item %}
           before_backup_check: {{ host_backups_item["before_backup_check"] }}
           {%- endif %}
+          #
           {%- if host_backups_item["exec_before_rsync"] is defined %}
           exec_before_rsync: {{ host_backups_item["exec_before_rsync"] }}
           {%- endif %}
@@ -180,8 +194,8 @@ rsnapshot_backup_dir:
     - mode: 775
     - makedirs: True
 
-# Just empty config if not exists - not to overwrite manually created config
   {%- if not salt["file.file_exists"]("/opt/sysadmws/rsnapshot_backup/rsnapshot_backup.conf") %}
+# Just empty config if not exists - not to overwrite manually created config
 rsnapshot_backup_conf:
   file.serialize:
     - name: /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.conf

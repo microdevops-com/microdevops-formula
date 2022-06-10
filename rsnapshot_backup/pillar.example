@@ -36,7 +36,8 @@ rsnapshot_backup:
             path: /var/backups/srv1.example.com # where to store backup
             #connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
             #connect: 1.2.3.4:873 # optional, native rsync connect with ip or name and port, if not used rsync connects to 873 port by default
-            #priority: -1 # optional, priority (order) of this backup in json config on the end server, -10 priority first, then -9 .. -1, then no priority, then 1 .. 10
+            #priority: -1 # optional, priority (order) of this backup in config on the backup server, any signed integer, items are sorted by priority from minus to plus
+                          # default priority is 0, if you need some item to be first in backup order, just add priority: -1, for example
             #before_backup_check: # optional, overrides before_backup_check definition of higher level
             #retain_hourly: N # optional, overrides retain definition of higher level
             #retain_daily: N # optional, overrides retain definition of higher level
