@@ -63,6 +63,7 @@ promtail_binary_1:
     - user: 0
     - group: 0
     - enforce_toplevel: False
+    - skip_verify: True
 
 promtail_binary_2:
   file.rename:
