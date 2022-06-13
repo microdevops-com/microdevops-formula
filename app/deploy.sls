@@ -14,7 +14,7 @@ include:
   {%- endif %}
 {% endif %}
   - percona
-  - rabbitmq.rabbitmq
+  - rabbitmq
   - pyenv
 {% if pillar['sentry'] is defined and pillar['sentry'] is not none %}
   - sentry.sentry
