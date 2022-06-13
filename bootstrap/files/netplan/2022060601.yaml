@@ -1,4 +1,4 @@
-# Hetzner Dedicated with 2 floating IP addresses and floating IP as default source
+# Hetzner Dedicated with 2 failover IP addresses and failover IP as default source
 network:
   version: 2
   renderer: networkd
@@ -18,14 +18,14 @@ network:
         stp: false
       addresses:
         - {{ ipv4_address }}
-        - {{ ipv4_floating_base_address }}
-        - {{ ipv4_floating_address }}
+        - {{ ipv4_failover_base_address }}
+        - {{ ipv4_failover_address }}
         - {{ ipv6_address }}
       routes:
         - on-link: true
           to: 0.0.0.0/0
           via: {{ ipv4_gw }}
-          from: {{ ipv4_floating_base_address.split('/')[0] }}
+          from: {{ ipv4_failover_base_address.split('/')[0] }}
       gateway6: {{ ipv6_gw }}
       nameservers:
         search:
