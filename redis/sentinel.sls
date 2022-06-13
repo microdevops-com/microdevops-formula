@@ -1,6 +1,8 @@
 {% if pillar['redis']['sentinel_conf'] is defined and pillar['redis']['sentinel_conf'] is not none %}
 redis_install:
-  pkg.installed:
+  pkgrepo.managed:
+    - ppa: redislabs/redis
+  pkg.latest:
     - refresh: True
     - reload_modules: True
     - pkgs:
