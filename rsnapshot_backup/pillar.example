@@ -51,16 +51,21 @@ rsnapshot_backup:
           - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws']
           - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/rpm','/usr/local','/opt/sysadmws']
           - /some/path
+        #exclude: # optional, exclude some components from expanded list
+        #  - /root
       - type: RSYNC_NATIVE # native rsync proto, mainly to backup Windows
         data:
           - /Share1/Some/Path
           - /Share2/Other/Path
         checks:
           - type: .backup # .backup can have path modifiers per data item, useful for putting check files on Windows
-            data: /Share1/Some/Path # dot backup files can have real path substituted by matching data key
-            path: C:\Some Actual\Windows Path\Some\Path
+            data: /Share1/Some/Path # optional, set params for specific data item
+            path: C:\Some Actual\Windows Path\Some\Path # dot backup files can have real path substituted by matching data key
+          - type: .backup
+            data: /Share2/Other/Path # optional, set params for specific data item
+            path: D:\Completely Another\Windows Path\Other\Path # dot backup files can have real path substituted by matching data key
           - type: FILE_AGE # FILE_AGE also can have path modifiers per data item
-            data: /Share1/Some/Path # set params for specific data item
+            data: /Share1/Some/Path # optional, set params for specific data item
             last_file_age: 3
             min_file_size: 1000000000
             files_total: 3
@@ -74,6 +79,8 @@ rsnapshot_backup:
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, MYSQL_SSH supports only MYSQL check type
           - type: MYSQL # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
@@ -86,6 +93,8 @@ rsnapshot_backup:
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, POSTGRESQL_SSH supports only POSTGRESQL check type
           - type: POSTGRESQL # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
@@ -97,6 +106,8 @@ rsnapshot_backup:
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, MONGODB_SSH supports only MONGODB check type
           - type: MONGODB # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
