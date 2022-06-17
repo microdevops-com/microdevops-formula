@@ -89,6 +89,7 @@ rsnapshot_backup:
         #mysqldump_args: # optional, pass additional arguments to mysqldump
         #  --ignore-table=dbname.table1
         #  --ignore-table=dbname.table2
+        #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump folder over ssh
         data:
           - ALL # special meaning, expands to all databases available
@@ -102,6 +103,7 @@ rsnapshot_backup:
               - template0
               - template1
         #postgresql_noclean: True # optional, remove --clean from pg dump
+        #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump folder over ssh
         data:
           - ALL # special meaning, expands to all databases available
@@ -113,6 +115,7 @@ rsnapshot_backup:
             empty_db: # database list to exclude from checking real data in dumps
               - config
         #mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
+        #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
         data: # list folders or db types here
           - UBUNTU
