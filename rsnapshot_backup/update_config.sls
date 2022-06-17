@@ -268,6 +268,10 @@ rsnapshot_backup_yaml:
           {%- if "mysqldump_args" in host_backups_item %}
           mysqldump_args: {{ host_backups_item["mysqldump_args"] }}
           {%- endif %}
+          # only for py
+          {%- if "pg_dump_args" in host_backups_item %}
+          pg_dump_args: {{ host_backups_item["pg_dump_args"] }}
+          {%- endif %}
           #
           {%- if "mongo_args" in host_backups_item %}
           mongo_args: {{ host_backups_item["mongo_args"] }}

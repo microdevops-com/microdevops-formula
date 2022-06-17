@@ -102,6 +102,7 @@ rsnapshot_backup:
               - postgres
               - template0
               - template1
+        #pg_dump_args: # optional, pass additional arguments to pg_dump_args
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump folder over ssh
