@@ -131,18 +131,6 @@ rsnapshot_backup_conf:
           exclude: {{ host_backups_item["exclude"] }}
           {%- endif %}
           #
-          {%- if "mysql_dump_dir" in host_backups_item %}
-          exclude: {{ host_backups_item["mysql_dump_dir"] }}
-          {%- endif %}
-          #
-          {%- if "postgresql_dump_dir" in host_backups_item %}
-          exclude: {{ host_backups_item["postgresql_dump_dir"] }}
-          {%- endif %}
-          #
-          {%- if "mongodb_dump_dir" in host_backups_item %}
-          exclude: {{ host_backups_item["mongodb_dump_dir"] }}
-          {%- endif %}
-          #
           {%- if "checks" in host_backups_item %}
             # Some checks have data param to set params for specific data item, so add checks only if matched data item (source var)
             {%- for check in host_backups_item["checks"] if "data" not in check or check["data"] == source %}
@@ -310,17 +298,17 @@ rsnapshot_backup_yaml:
           {%- if "exclude" in host_backups_item %}
           exclude: {{ host_backups_item["exclude"] }}
           {%- endif %}
-          #
+          # only for py
           {%- if "mysql_dump_dir" in host_backups_item %}
-          exclude: {{ host_backups_item["mysql_dump_dir"] }}
+          mysql_dump_dir: {{ host_backups_item["mysql_dump_dir"] }}
           {%- endif %}
           #
           {%- if "postgresql_dump_dir" in host_backups_item %}
-          exclude: {{ host_backups_item["postgresql_dump_dir"] }}
+          postgresql_dump_dir: {{ host_backups_item["postgresql_dump_dir"] }}
           {%- endif %}
           #
           {%- if "mongodb_dump_dir" in host_backups_item %}
-          exclude: {{ host_backups_item["mongodb_dump_dir"] }}
+          mongodb_dump_dir: {{ host_backups_item["mongodb_dump_dir"] }}
           {%- endif %}
           #
           {%- if "checks" in host_backups_item %}
