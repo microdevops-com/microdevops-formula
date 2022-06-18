@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "_$1" == "_" -o "_$2" == "_" -o "_$3" == "_" ]]; then
+if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" ]]; then
 	echo ERROR: needed args missing: use salt_cmd.sh TIMEOUT TARGET CMD
 	exit 1
 fi

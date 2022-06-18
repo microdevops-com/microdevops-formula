@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "_$1" == "_" -o "_$2" == "_" -o "_$3" == "_" ]]; then
+if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" ]]; then
 	echo ERROR: needed args missing: use rsnapshot_backup_sync.sh TIMEOUT TARGET SSH/SALT SSH_HOST SSH_PORT SSH_JUMP
 	echo ERROR: SSH_HOST, SSH_PORT, SSH_JUMP - optional
 	exit 1
