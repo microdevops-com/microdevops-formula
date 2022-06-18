@@ -1,16 +1,15 @@
 #!/bin/bash
-GRAND_EXIT=0
 
-if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" ]; then
+if [[ "_$1" == "_" -o "_$2" == "_" -o "_$3" == "_" ]]; then
 	echo ERROR: needed args missing: use salt_cmd.sh TIMEOUT TARGET CMD
 	exit 1
 fi
 
+GRAND_EXIT=0
 SALT_TIMEOUT=$1
 SALT_TARGET=$2
 SALT_CMD_BASE64=$3
 SALT_CMD=$(echo ${SALT_CMD_BASE64} | base64 -d)
-	
 CMD_SHA=$(echo "$2,$3" | sha1sum | awk '{print $1}')
 OUT_FILE="/srv/scripts/ci_sudo/$(basename $0)_${CMD_SHA}.out"
 
@@ -18,7 +17,9 @@ rm -f ${OUT_FILE}
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
-( set -x ; stdbuf -oL -eL  bash -c "salt --force-color -t ${SALT_TIMEOUT} ${SALT_TARGET} ${SALT_CMD}" ) || GRAND_EXIT=1
+set -x
+salt --force-color -t ${SALT_TIMEOUT} ${SALT_TARGET} ${SALT_CMD} || GRAND_EXIT=1
+set +x
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
