@@ -40,20 +40,23 @@ if [[ -d /.salt-ssh-hooks ]]; then
 fi
 
 set -x
-
-if salt-ssh --wipe ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} pillar.get rsnapshot_backup:python | grep -q -e True; then
-	RSNAPSHOT_BACKUP_SYNC_CMD="rsnapshot_backup.py --sync"
-else
-	RSNAPSHOT_BACKUP_SYNC_CMD="rsnapshot_backup.sh sync"
-fi
-
 set -o pipefail
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
-	ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_SYNC_CMD}"'" | ccze -A || GRAND_EXIT=1
+	if salt-ssh --wipe ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} pillar.get rsnapshot_backup:python | grep -q -e True; then
+		ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
+			"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --sync'" | ccze -A || GRAND_EXIT=1
+	else
+		ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
+			"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --sync'" | ccze -A || GRAND_EXIT=1
+	fi
 elif [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SALT" ]]; then
-	salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_SYNC_CMD}"'" | ccze -A || GRAND_EXIT=1
+	if salt-ssh --wipe ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} pillar.get rsnapshot_backup:python | grep -q -e True; then
+		salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
+			"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh sync'" | ccze -A || GRAND_EXIT=1
+	else
+		salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
+			"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh sync'" | ccze -A || GRAND_EXIT=1
+	fi
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
