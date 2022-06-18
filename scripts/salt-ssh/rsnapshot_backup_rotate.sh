@@ -40,27 +40,38 @@ if [[ -d /.salt-ssh-hooks ]]; then
 fi
 
 set -x
+
+if salt-ssh --wipe ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} pillar.get rsnapshot_backup:python | grep -q -e True; then
+	RSNAPSHOT_BACKUP_ROTATE_MONTHLY_CMD="rsnapshot_backup.py --rotate-monthly"
+	RSNAPSHOT_BACKUP_ROTATE_WEEKLY_CMD="rsnapshot_backup.py --rotate-weekly"
+	RSNAPSHOT_BACKUP_ROTATE_DAILY_CMD="rsnapshot_backup.py --rotate-daily"
+else
+	RSNAPSHOT_BACKUP_ROTATE_MONTHLY_CMD="rsnapshot_backup.sh monthly"
+	RSNAPSHOT_BACKUP_ROTATE_WEEKLY_CMD="rsnapshot_backup.sh weekly"
+	RSNAPSHOT_BACKUP_ROTATE_DAILY_CMD="rsnapshot_backup.sh daily"
+fi
+
 set -o pipefail
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
 	# Monthly
 	ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%d) == 01 ]]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh monthly; fi'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%d) == 01 ]]; then /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_ROTATE_MONTHLY_CMD}"; fi'" | ccze -A || GRAND_EXIT=1
 	# Weekly
 	ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%u) == 1 ]]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh weekly; fi'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%u) == 1 ]]; then /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_ROTATE_WEEKLY_CMD}"; fi'" | ccze -A || GRAND_EXIT=1
 	# Daily
 	ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh daily'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_ROTATE_DAILY_CMD}"'" | ccze -A || GRAND_EXIT=1
 elif [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SALT" ]]; then
 	# Monthly
 	salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%d) == 01 ]]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh monthly; fi'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%d) == 01 ]]; then /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_ROTATE_MONTHLY_CMD}"; fi'" | ccze -A || GRAND_EXIT=1
 	# Weekly
 	salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%u) == 1 ]]; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh weekly; fi'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; if [[ $(date +%u) == 1 ]]; then /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_ROTATE_WEEKLY_CMD}"; fi'" | ccze -A || GRAND_EXIT=1
 	# Daily
 	salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
-		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.sh daily'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec > >(tee /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.log); exec 2>&1; /opt/sysadmws/rsnapshot_backup/"${RSNAPSHOT_BACKUP_ROTATE_DAILY_CMD}"'" | ccze -A || GRAND_EXIT=1
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
