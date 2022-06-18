@@ -1,0 +1,21 @@
+# The minimum working memcached setup
+memcached:
+  instances:
+    main:   # <- memcached instance name, will be memcached.service with all defaults
+
+
+memcached:
+  instances:
+    main:
+      - memory-limit: 1024
+      - conn-limit: 10240
+
+    first:  # <- memcached instance name, will be memcached-first.service with set values
+      - user: memcache # user to run process as in systemd service file
+      - group: memcache # group to run process as in systemd service file
+      # long options from `man memcached' as `- key: value' or `- key'
+      - memory-limit: 128 # size in MB
+      - conn-limit: 1024 
+      - port: 11212
+      - listen: 127.0.1.1
+      - disable-dumping
