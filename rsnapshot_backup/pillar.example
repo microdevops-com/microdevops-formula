@@ -1,6 +1,7 @@
 # vi: set ft=yaml:
 
 rsnapshot_backup:
+  #python: True # optional, switch pipeline to run py version of rsnapshot_backup, sh+awk is default version for now
   sources:
     srv1.example.com:
       - type: ... # gereic params for all types
