@@ -22,7 +22,7 @@ if [[ -d /.salt-ssh-hooks ]]; then
 fi
 
 set -x
-salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} ${SALT_CMD} || GRAND_EXIT=1
+salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} "${SALT_CMD}" || GRAND_EXIT=1
 set +x
 
 # Check out file for errors
