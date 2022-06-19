@@ -18,7 +18,9 @@ exec > >(tee ${OUT_FILE})
 exec 2>&1
 
 set -x
-salt --force-color -t ${SALT_TIMEOUT} ${SALT_TARGET} ${SALT_CMD} || GRAND_EXIT=1
+# Passing through bash -c is important for state args, otherwise you might get error below on salt_cmds with pillar etc:
+# TypeError encountered executing state.apply: apply_() takes from 0 to 1 positional arguments but 2 were given
+bsah -c "salt --force-color -t ${SALT_TIMEOUT} ${SALT_TARGET} ${SALT_CMD}" || GRAND_EXIT=1
 set +x
 
 # Check out file for errors
