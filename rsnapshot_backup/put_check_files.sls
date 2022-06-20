@@ -52,7 +52,8 @@ put_check_files_nothing_to_do:
 
               # Loop over expanded list if expanded_data is not none
               {%- if expanded_data is not none %}
-                {%- for expanded_data_item in expanded_data %}
+                # Skip items if in exclude
+                {%- for expanded_data_item in expanded_data if "exclude" not in source_item or expanded_data_item not in source_item["exclude"]  %}
                 {%- set l_loop = loop %}
 
 put_check_files_{{ i_loop.index }}_{{ j_loop.index }}_{{ k_loop.index }}_{{ l_loop.index }}:

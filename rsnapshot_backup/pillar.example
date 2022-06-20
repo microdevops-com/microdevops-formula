@@ -1,6 +1,7 @@
 # vi: set ft=yaml:
 
 rsnapshot_backup:
+  #python: True # optional, switch pipeline to run py version of rsnapshot_backup, sh+awk is default version for now
   sources:
     srv1.example.com:
       - type: ... # gereic params for all types
@@ -51,16 +52,21 @@ rsnapshot_backup:
           - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws']
           - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/rpm','/usr/local','/opt/sysadmws']
           - /some/path
+        #exclude: # optional, exclude some components from expanded list
+        #  - /root
       - type: RSYNC_NATIVE # native rsync proto, mainly to backup Windows
         data:
           - /Share1/Some/Path
           - /Share2/Other/Path
         checks:
           - type: .backup # .backup can have path modifiers per data item, useful for putting check files on Windows
-            data: /Share1/Some/Path # dot backup files can have real path substituted by matching data key
-            path: C:\Some Actual\Windows Path\Some\Path
+            data: /Share1/Some/Path # optional, set params for specific data item
+            path: C:\Some Actual\Windows Path\Some\Path # dot backup files can have real path substituted by matching data key
+          - type: .backup
+            data: /Share2/Other/Path # optional, set params for specific data item
+            path: D:\Completely Another\Windows Path\Other\Path # dot backup files can have real path substituted by matching data key
           - type: FILE_AGE # FILE_AGE also can have path modifiers per data item
-            data: /Share1/Some/Path # set params for specific data item
+            data: /Share1/Some/Path # optional, set params for specific data item
             last_file_age: 3
             min_file_size: 1000000000
             files_total: 3
@@ -74,6 +80,8 @@ rsnapshot_backup:
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, MYSQL_SSH supports only MYSQL check type
           - type: MYSQL # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
@@ -82,26 +90,34 @@ rsnapshot_backup:
         #mysqldump_args: # optional, pass additional arguments to mysqldump
         #  --ignore-table=dbname.table1
         #  --ignore-table=dbname.table2
+        #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump folder over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, POSTGRESQL_SSH supports only POSTGRESQL check type
           - type: POSTGRESQL # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
               - postgres
               - template0
               - template1
+        #pg_dump_args: # optional, pass additional arguments to pg_dump_args
         #postgresql_noclean: True # optional, remove --clean from pg dump
+        #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump folder over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, MONGODB_SSH supports only MONGODB check type
           - type: MONGODB # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
               - config
         #mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
+        #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
         data: # list folders or db types here
           - UBUNTU

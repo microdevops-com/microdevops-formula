@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-GRAND_EXIT=0
 
-if [[ "_$1" = "_" ]]; then
+if [[ "_$1" == "_" ]]; then
 	echo ERROR: needed args missing: use rsnapshot_backup_update_config.sh TARGET
 	exit 1
 fi
 
+GRAND_EXIT=0
 SALT_TARGET=$1
-	
 OUT_FILE="$(mktemp -p /dev/shm/)"
 
 exec > >(tee ${OUT_FILE})
@@ -20,7 +19,9 @@ if [[ -d /.salt-ssh-hooks ]]; then
 	fi
 fi
 
-( set -x ; stdbuf -oL -eL  bash -c "salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} state.apply rsnapshot_backup.update_config queue=True" ) || GRAND_EXIT=1
+set -x
+salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} state.apply rsnapshot_backup.update_config queue=True || GRAND_EXIT=1
+set +x
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
