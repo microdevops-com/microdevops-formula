@@ -64,6 +64,7 @@ sentry_config_1:
     - source: 'salt://sentry/files/config.yml'
     - template: jinja
 
+{# sentry.conf.py best doc is here: https://github.com/getsentry/sentry/blob/master/src/sentry/conf/server.py #}
 sentry_config_2:
   file.managed:
     - name: '/opt/sentry/sentry/sentry.conf.py'
