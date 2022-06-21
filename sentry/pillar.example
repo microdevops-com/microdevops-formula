@@ -35,3 +35,29 @@ sentry:
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
+
+
+
+
+
+#######################################################################
+# If necessary, you can install only a webhook.
+# You can also build locally a docker image from a forked and modified repository by Roma Kasyanchuk
+
+sentry:
+  webhooks:
+    matrix:
+      use_roman_k_fork: True
+      repo: 'https://github.com/kraicdesign/matrix-sentry-webhooks.git'
+      image: 'docker.local/oxg-webhook/webhook'
+      acme_account: example.com
+      acme_domain: sentry-matrix-webhook.example.com
+      env_vars:
+        APP_PORT: 3000
+        APP_TIMEOUT: 1000
+        SENTRY_CLIENT_SECRET: 'yyyyyyyyyyyyyyyyyy'
+        SENTRY_INCLUDE_TAGS: 'brand,BRAND,DOMAIN'
+        MATRIX_HOMESERVER_URL: 'https://oxgaming.ems.host'
+        MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
+        MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
+        MATRIX_USER: '@sentry:example.com'
