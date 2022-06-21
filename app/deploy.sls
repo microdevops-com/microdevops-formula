@@ -13,6 +13,7 @@ include:
   - postgres
   {%- endif %}
 {% endif %}
+  - memcached
   - percona
   - rabbitmq
   - pyenv
