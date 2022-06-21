@@ -51,9 +51,22 @@ nginx_cert:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["sentry"]["webhooks"]["matrix"]["acme_account"] }}/verify_and_issue.sh sentry-matrix-webhook {{ pillar["sentry"]["webhooks"]["matrix"]["acme_domain"] }}"
 
+  {% if pillar['sentry']['webhooks']['matrix']['use_roman_k_fork'] is defined and pillar['sentry']['webhooks']['matrix']['use_roman_k_fork'] %}
+matrix-sentry-webhooks_clone_fom_git:
+  git.latest:
+    - name: {{ pillar["sentry"]["webhooks"]["matrix"]["repo"] }}
+    - target: /opt/matrix-sentry-webhooks
+
+bocker_build_matrix-sentry-webhooks:
+  docker_image.present:
+    - name:  {{ pillar["sentry"]["webhooks"]["matrix"]["image"] }}
+    - build: /opt/matrix-sentry-webhooks
+    - tag: latest
+  {%- endif %}
+
 matrix-sentry-webhooks_container:
   docker_container.running:
-    - name: 'sentry-matrix-webhook'
+    - name: {{ pillar["sentry"]["webhooks"]["matrix"]["container_name"] }}
     - user: root
     - image: {{ pillar["sentry"]["webhooks"]["matrix"]["image"] }}
     - detach: True
