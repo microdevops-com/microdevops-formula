@@ -17,8 +17,8 @@ include:
   - percona
   - rabbitmq
   - pyenv
-{% if pillar['sentry'] is defined and pillar['sentry'] is not none %}
-  - sentry.sentry
+{% if pillar['sentry']['version'] is defined and pillar['sentry']['version'] is not none %}
+  - sentry
 {% endif %}
   - php-fpm.php-fpm
   - nginx
