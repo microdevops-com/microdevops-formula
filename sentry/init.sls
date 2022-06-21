@@ -1,4 +1,4 @@
-{% if pillar['sentry'] is defined  %}
+{% if pillar['sentry']['version'] is defined  %}
 install_nginx:
   pkg.installed:
     - pkgs:
