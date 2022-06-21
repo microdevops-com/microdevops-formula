@@ -302,7 +302,7 @@ rsnapshot_backup_yaml:
           {%- if "exclude" in host_backups_item %}
           exclude: {{ host_backups_item["exclude"] }}
           {%- endif %}
-          # only for py
+          # only for py everything below
           {%- if "mysql_dump_dir" in host_backups_item %}
           mysql_dump_dir: {{ host_backups_item["mysql_dump_dir"] }}
           {%- endif %}
@@ -313,6 +313,26 @@ rsnapshot_backup_yaml:
           #
           {%- if "mongodb_dump_dir" in host_backups_item %}
           mongodb_dump_dir: {{ host_backups_item["mongodb_dump_dir"] }}
+          {%- endif %}
+          #
+          {%- if "mysql_dump_type" in host_backups_item %}
+          mysql_dump_type: {{ host_backups_item["mysql_dump_type"] }}
+          {%- endif %}
+          #
+          {%- if "xtrabackup_throttle" in host_backups_item %}
+          xtrabackup_throttle: {{ host_backups_item["xtrabackup_throttle"] }}
+          {%- endif %}
+          #
+          {%- if "xtrabackup_parallel" in host_backups_item %}
+          xtrabackup_parallel: {{ host_backups_item["xtrabackup_parallel"] }}
+          {%- endif %}
+          #
+          {%- if "xtrabackup_compress_threads" in host_backups_item %}
+          xtrabackup_compress_threads: {{ host_backups_item["xtrabackup_compress_threads"] }}
+          {%- endif %}
+          #
+          {%- if "xtrabackup_args" in host_backups_item %}
+          xtrabackup_args: {{ host_backups_item["xtrabackup_args"] }}
           {%- endif %}
           #
           {%- if "checks" in host_backups_item %}

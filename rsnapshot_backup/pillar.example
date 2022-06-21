@@ -91,6 +91,11 @@ rsnapshot_backup:
         #  --ignore-table=dbname.table1
         #  --ignore-table=dbname.table2
         #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location
+        #mysql_dump_type: xtrabackup # override default native mysqldump type
+        #xtrabackup_throttle: 20 # optional, override default IO limit 20 MB
+        #xtrabackup_parallel: 2 # optional, override default --parallel=2
+        #xtrabackup_compress_threads: 2 # optional, override default --compress-threads=2
+        #xtrabackup_args: # optional, pass additional arguments to xtrabackup
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump folder over ssh
         data:
           - ALL # special meaning, expands to all databases available
