@@ -18,3 +18,8 @@ memcached:
       - port: 11212
       - listen: 127.0.1.1
       - disable-dumping
+
+# NB
+# This state is not suited for short (one letter) memcached options
+# Long options was added in 2017, so you better use recent memcached release
+# https://github.com/memcached/memcached/wiki/ReleaseNotes150
