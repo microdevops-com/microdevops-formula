@@ -41,7 +41,7 @@ sentry:
 
 
 #######################################################################
-# You can only install a webhook.
+# If necessary, you can install only a webhook.
 # You can also build locally a docker image from a forked and modified repository by Roma Kasyanchuk
 
 sentry:
