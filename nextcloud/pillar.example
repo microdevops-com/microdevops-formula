@@ -1,16 +1,92 @@
 nextcloud:
-  docker-ce_version: 5:19.03.13
+  docker-ce_version: 5:20.10.7
   domains:
     - name: nextcloud.example.com
       internal_name: prd
       internal_port: 9000
       image: nextcloud:fpm
+      php_fpm:
+        pm.max_children: 20
       default_phone_region: IL
       overwrite_cli_url: https://nextcloud.example.com
       onlyoffice: # optional
         DocumentServerUrl: https://onlyoffice.example.com/
         DocumentServerInternalUrl: https://onlyoffice.example.com/
         StorageUrl: https://nextcloud.example.com/
+      user_saml:               ### YOU CAN USE THIS FOR SAML AUTH VIA KEYCLOAK
+        general-allow_multiple_user_back_ends: 1
+        general-uid_mapping: username
+        general-use_saml_auth_for_desktop: 1
+        idp-entityId: https://keycloak.example.com/auth/realms/my_realm
+        idp-singleLogoutService.url: https://keycloak.example.com/auth/realms/my_realm/protocol/saml
+        idp-singleSignOnService.url: https://keycloak.example.com/auth/realms/my_realm/protocol/saml
+        idp-x509cert: |
+          -----BEGIN CERTIFICATE-----
+          MIICnzCCAYcCBgF5ssaiYzANBgkqhkiG9w0BAQsFADATMREwDwYDVQQDDAhveGdhbWluZzAeFw0yMTA1MjgxMTM4NTJaFw0zMTA1MjgxMTQwMzJaMBMxETAPBgNVBAMMCG94Z2FtaW5nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAusMe+FQOxcAQzg+avYtXQyDlZqRTPj4MXQ0fYUrVcffHpkq0omCJrzd5T6WsnEY5cUQ7jilEDahoeGXDA7e+NPgUZt7P5k9LWJk3S/RkK3ECT99GmOF9yXFbsCm+ED8JrtVZmU1fE8I5zlPEGsZvCc84I0hJsLaY29dUpuBJ+zbD8HZb8kMO4nmVzY1puooEJesPl9Zoub7yiGc34vMM0covngdtJnMG5JJNKQq3ue9ypjtH05mvkGnjZMrn6wGlZbTek/5dXGRBmq+/5JPdYZ1K7fMCM+WeRT5sDGtgi2RS6iO54bqDWyRSEyCjOEDj+QAU67S1h8qwzX3Dk+p3jwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAsFM2Omnn9CFoqSOLrQq8j44ct3IdT313/YoMqVC4u9l/rMSsKp5+JdwYxsU+2g/UOhbxc+r+A/55cQfSSg96s5iJwXSEEUk+NCkNSi7vDB0qdNUdnVQIAdVZpZf22ldcIXLUWvj2VXhYkDlA5GNzhNx4P2iSRsKAveh5nfn7TCv86F8pawvhKb5AcyaD4NAAWYasCI4AprvKP6tTbNMPyDO2iMFGp2M4U/tknrvrmsVytaNAm99wV7/VajL5nYIG3kQ+53eBUmoVUU6bO4tp7HDwb4ma5tsYf6T068INUPJMl38ZuxVbGoZmEApM9LoFMQ3kSB2gK5NNehAv1AY2W
+          -----END CERTIFICATE-----
+        providerIds: 1
+        saml-attribute-mapping-displayName_mapping: username
+        saml-attribute-mapping-email_mapping: email
+        saml-attribute-mapping-group_mapping: Role
+        security-authnRequestsSigned: 1
+        security-logoutRequestSigned: 1
+        security-logoutResponseSigned: 1
+        security-wantAssertionsSigned: 1
+        security-wantMessagesSigned: 1
+        sp-name-id-format: urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified
+        sp-privateKey: |
+          -----BEGIN PRIVATE KEY-----
+          MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC3D8WKKa+7YGxF
+          aYLmj24mtwSb520rEtrkkZaYlXPryVPrqoubuUx71Sr3bT6rqq9UVLxRwaGi3IGN
+          KXWdlLVa2X4AyYzTiJv9RqNN152uvX8q8HqeCXqc+GTSMNkij9kSr/0piH9v/GBL
+          EFnXMKSO56R+2iLiupwJ2ti6s7Ybz5tOxIir6CLfTHvdWKhcQkkuIqnx6V5/4KE1
+          UjULzKKxXOB1NErURM37bkI/Hb+BnqwNYBJzm2PUCFdUdIEpv3T+NU4sqy3vU8Qy
+          9IAdZYBMXqlo3csUvqIDdd6FiF3aEHgumIXpxmUATsG5vqPLyUODw8u/5cX19uPd
+          bYNSptFrAgMBAAECggEAb3+WtPFxDLLNH3YFecLQt5nvn7nUn1CrrF4UmLkm0u1c
+          RQUqZV32fNI4il2qt0qN4dJ+pVlHxveBnOYssh86Wqxv97DLKqhhQmH841O5wg2/
+          X/r65DknymXsmq2QA2IUODKjAuIVpLLWP8IkxlHlWPk0EuNwLiK1GbeHHCiLeeHw
+          iwSa7//xCoO6JQiaUMHgYgqVZOdZ0GoFc1s8+2DSYXr25rIfpFIbqvoIACd4s2UZ
+          BApuNl9Cdd/4Y57IrvXA3C4wLiUZlpH6kLDV+1jz2TeFt5Sq40VgCt587dJd75Sn
+          fdr1YII83Sz6G4m5NvAL+0zJ2BfXqtj6Thfqr24BeQKBgQDebFVyQaxwEJOxBAKX
+          2uIluvPW4m8+kT4nDvdcHiab0qArMGFDGGJjUAcIIq5zrMeTCALEbf317F745ibS
+          Z/dTcGyzlPVafjLoNTzazLz4n8vRpVUj3JvWT9N2oDOTW12LEsebPqnSHZL3FLZ5
+          8awakB1YhhbNVKp9BY8az1rhVQKBgQDSsknNBguXjEtWsVM/LdqS88UazZGyCQUj
+          7UjrheBGJ5cQ4PMiEGnXFF2HvI8m7HYz7iiD5R2enPaJ26Y0He6I/POaUJDNutHu
+          DZZ1gLAg5LNTn5QNlR1HO7cIRyA3XHRZ4anqdc6CM7clgvI868L7o7dZJmqphh8B
+          4m4ZjnHnvwKBgDoJ0L4QrvtLCA7fugGABxTLVMdUrKyJ38r3V8p8v5xXeJ3scOS+
+          HyZFAqC31AexJR6Tr40sGmGqfRm7jJPItzvZkTPHAcLMPWJkSe3aENFbeSbKWo4S
+          CcQBbm983BhuddlNXDKBRnTibK/2gqsNSdhglJe93YNUvWwEIFRhmRhFAoGAOmSF
+          BZg+UDLmklE0xBa+M+nxX3tHfLL5RLq3cea5gFfqixf86hzoaF5RiZPdjKkOHVhM
+          zDkMW3Ae95fzWRBOkpKgJM1dRFcZZUNIxqnypjsb4/oe+yCva5WGJXoo2I78BAkB
+          oWQi5nzUrkW7Qt0IPdtirgdymib8ovYRE24h7VsCgYEAnf3UoIbwfwWn1wg8ycTA
+          JbIVLSvMiH8n6FsxHbt7MwGv0S2X1xDcBbADGNpS3XVWTGryzijuQqFKc56E2dxC
+          a7zTOhjl0Zlbt394T93M3wrQAgW/+eNToQq6uS5c4LKr5N5fQOwZEH47DxFnRrJN
+          H5qajsnlWQ0vJdA6cTTqJLc=
+          -----END PRIVATE KEY-----
+        sp-x509cert: |
+          -----BEGIN CERTIFICATE-----
+          MIIDazCCAlOgAwIBAgIUaNwwnNcvr2AuFQ3MwtmbPessftEwDQYJKoZIhvcNAQEL
+          BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+          GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yMTA1MzExNzM3MjVaFw0yMTA2
+          MzAxNzM3MjVaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+          HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
+          AQUAA4IBDwAwggEKAoIBAQC3D8WKKa+7YGxFaYLmj24mtwSb520rEtrkkZaYlXPr
+          yVPrqoubuUx71Sr3bT6rqq9UVLxRwaGi3IGNKXWdlLVa2X4AyYzTiJv9RqNN152u
+          vX8q8HqeCXqc+GTSMNkij9kSr/0piH9v/GBLEFnXMKSO56R+2iLiupwJ2ti6s7Yb
+          z5tOxIir6CLfTHvdWKhcQkkuIqnx6V5/4KE1UjULzKKxXOB1NErURM37bkI/Hb+B
+          nqwNYBJzm2PUCFdUdIEpv3T+NU4sqy3vU8Qy9IAdZYBMXqlo3csUvqIDdd6FiF3a
+          EHgumIXpxmUATsG5vqPLyUODw8u/5cX19uPdbYNSptFrAgMBAAGjUzBRMB0GA1Ud
+          DgQWBBQBKAyUZGfVzAWZ3tnSb9EOMULjtDAfBgNVHSMEGDAWgBQBKAyUZGfVzAWZ
+          3tnSb9EOMULjtDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQB8
+          eJ6AvhdPTSDp0pfXEYgh7UgQAsJfEqFIxyXvkvJYcGhcUuAc02rEsHMjesmBO8iw
+          kBk0DO5GxFvHBN+PZwzcjuAN0DY507N3sUar343OXFOU7kfAwjeAD8UiBJ/pj7Md
+          CQ3u909CNbCFF9UivhlVqxF/7pu+cYMvwJSmyRX+5n9V/f5JtGjbLzBGB017oZT4
+          OegRD62X+vwFpyE1No7iXBfpFf1rHpzl0nUPeYmHJWUulywcl4DL8zJygEL+fU/i
+          sNGiEP7zvv0KOCskmt9kCcyDhdbYb4maUL4uARf8QkxI7AzhMuxzkVEiMMfZ7iKF
+          rxVQ7M/IawQoRu6z0e1K
+          -----END CERTIFICATE-----
+        type: saml
+        types: authentication
       env_vars:
         NEXTCLOUD_ADMIN_USER: admin
         NEXTCLOUD_ADMIN_PASSWORD: xxxxxxxxxxxxxxxxxxxxx
@@ -26,3 +102,4 @@ nextcloud:
         SMTP_PASSWORD: xxxxxxxxxxxxxxxxxxxxx
         MAIL_FROM_ADDRESS: nextcloud
         MAIL_DOMAIN: example.com
+        PHP_MEMORY_LIMIT: 512M
