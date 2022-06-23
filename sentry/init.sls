@@ -2,29 +2,44 @@
 install_nginx:
   pkg.installed:
     - pkgs:
-      - nginx
+      - nginx-full
 
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/sites-available/{{ pillar["sentry"]["acme_domain"] }}.conf
     - contents: |
+        set_real_ip_from 127.0.0.1;
+        set_real_ip_from 172.16.0.0/16;
+        real_ip_header X-Forwarded-For;
+        real_ip_recursive on;
         server {
             listen 80;
             server_name {{ pillar["sentry"]["acme_domain"] }};
-            return 301 https://$host$request_uri;
+            location / {
+                if ($request_method = GET) {
+                  rewrite  ^ https://$host$request_uri? permanent;
+                }
+                return 405;
+            }
         }
         server {
             listen 443 ssl;
             server_name {{ pillar["sentry"]["acme_domain"] }};
             ssl_certificate /opt/acme/cert/sentry_{{ pillar["sentry"]["acme_domain"] }}_fullchain.cer;
             ssl_certificate_key /opt/acme/cert/sentry_{{ pillar["sentry"]["acme_domain"] }}_key.key;
+            ssl_ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS;
+            ssl_session_cache shared:SSL:128m;
+            ssl_session_timeout 10m;
             proxy_redirect off;
+            # keepalive + raven.js is a disaster
             keepalive_timeout 0;
+            # use very aggressive timeouts
             proxy_read_timeout 5s;
             proxy_send_timeout 5s;
             send_timeout 5s;
             resolver_timeout 5s;
             client_body_timeout 5s;
+            # buffer larger messages
             client_max_body_size 5m;
             client_body_buffer_size 100k;
             location / {
