@@ -8,7 +8,10 @@ rsnapshot_backup:
         #validate_hostname: False # optional, disable remote ssh hostname check (for backup types that use ssh)
                               # good if you need to to check if backup storage dir is mounted, avoid using single and double quotes
                               # beware - it will be executed for each item in data, so make separate backup item to exec only once
-        #rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder --some-arg # optional, args of rsync inside rsnapshot, useful for excludes or rsync tuning
+        #rsync_args: # optional, args of rsync inside rsnapshot, useful for excludes or rsync tuning
+                     # --exclude=/root/junk_dir --exclude=/opt/another_junk_dir # to exclude 
+                     # --rsync-path="ionice -c 3 nice rsync" # limit rsync with Idle IO class and be nice with CPU
+                     # --bwlimit=20M # limit rsync data transfer
         #connect_user: toor # optional, root by default, user for ssh or native rsync connect
         #exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes
                             # beware - it will be executed for each item in data, so make separate backup item to exec only once
@@ -74,9 +77,9 @@ rsnapshot_backup:
             files_mask: '123.+_321\..+\.DOC'
         connect_password: secret # mandatory, plain text native rsync auth
         #native_txt_check: True # optional, check for .backup text file in the root of source
-                                # useful if you want to ensure the data is present and not sync empty folder if removable disk gone for example
+                                # useful if you want to ensure the data is present and not sync empty dir if removable disk gone for example
         #native_10h_limit: True # optional, limit time for the execution of rsync to 10 hours
-      - type: MYSQL_SSH # dump mysql over ssh, then rsync dump folder over ssh
+      - type: MYSQL_SSH # dump mysql over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
@@ -96,7 +99,7 @@ rsnapshot_backup:
         #xtrabackup_parallel: 2 # optional, override default --parallel=2
         #xtrabackup_compress_threads: 2 # optional, override default --compress-threads=2
         #xtrabackup_args: # optional, pass additional arguments to xtrabackup
-      - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump folder over ssh
+      - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
@@ -111,7 +114,7 @@ rsnapshot_backup:
         #pg_dump_args: # optional, pass additional arguments to pg_dump_args, only for py version
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location, only for py version
-      - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump folder over ssh
+      - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
@@ -124,7 +127,7 @@ rsnapshot_backup:
         #mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
         #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location, only for py version
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
-        data: # list folders or db types here
+        data: # list dirs or db types here
           - UBUNTU
           - /test
           - POSTGRESQL
