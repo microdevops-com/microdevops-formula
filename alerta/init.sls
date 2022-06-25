@@ -1,12 +1,3 @@
-# Logs and debug:
-# su - alerta
-# /opt/alerta/alerta/venv/bin/uwsgi --ini /etc/uwsgi/sites/alerta.ini # should not detach
-# tail -F /opt/alerta/alerta/uwsgi.log
-# tail -F /opt/alerta/alerta/alertad.log
-#
-# References:
-# - http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
-
 {% if pillar["alerta"] is defined %}
 
   {%- set pyenv_version = "3.7.8" %}
@@ -151,6 +142,7 @@ alerta_uwsgi_ini:
     - replace: True
     - template: jinja
     - defaults:
+        base_url: "https://{{ pillar["alerta"]["domain"] }}/api"
         processes: {{ pillar["alerta"]["uwsgi"]["processes"] }}
         listen: {{ pillar["alerta"]["uwsgi"]["listen"] }}
 
@@ -171,6 +163,7 @@ alerta_config:
     - replace: True
     - template: jinja
     - defaults:
+        base_url: "https://{{ pillar["alerta"]["domain"] }}/api"
         secret_key: {{ pillar["alerta"]["secret_key"] }}
         db_user: {{ pillar["alerta"]["db"]["user"] }}
         db_pass: {{ pillar["alerta"]["db"]["pass"] }}
@@ -209,22 +202,13 @@ alerta_hb_cron:
     - user: alerta
     - minute: '*'
 
-alerta_webuisrc_dir:
-  file.directory:
-    - name: /opt/alerta/alerta/webuisrc
+alerta_install_webui_archive:
+  archive.extracted:
+    - name: /opt/alerta/alerta/html
+    - source: {{ pillar["alerta"]["webui_source"] }}
     - user: alerta
     - group: alerta
-    - makedirs: True
-
-alerta_install_webui:
-  cmd.run:
-    - cwd: /opt/alerta/alerta/webuisrc
-    - runas: alerta
-    - name: |
-        rm -rf /opt/alerta/alerta/webuisrc/*
-        wget -q -O - https://github.com/alerta/alerta-webui/releases/download/{{ pillar["alerta"]["webui_version"]}}/alerta-webui.tar.gz | tar zxf -
-        rsync -a --delete dist/ /opt/alerta/alerta/html/
-        rm -f /opt/alerta/alerta/html/config.json.example
+    - enforce_toplevel: False
 
 alerta_install_webui_config:
   file.managed:
@@ -233,7 +217,7 @@ alerta_install_webui_config:
     - group: alerta
     - mode: 0644
     - contents: |
-        {"endpoint": "/api"}
+        {"endpoint": "https://{{ pillar['alerta']['domain'] }}/api"}
 
 alerta_main_nginx:
   file.managed:
@@ -243,7 +227,7 @@ alerta_main_nginx:
         worker_processes auto;
 
         events {
-            worker_connections 512;
+            worker_connections 1024;
         }
 
         http {

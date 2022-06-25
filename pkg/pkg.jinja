@@ -1,6 +1,7 @@
 {#
 You can apply specific pkg sub pillar by running:
-salt minion state.apply pkg.[pkg|before_deploy|after_deploy] pillar='{"pkg_filter": "some_name"}'
+salt minion state.apply pkg.[pkg|before_deploy|after_deploy] pillar='{"pkg_filter": "some_name"}' # partial filter match
+salt minion state.apply pkg.[pkg|before_deploy|after_deploy] pillar='{"pkg_exact_filter": "some_name"}' # exact filter match
 
 It will run only:
 pkg:
@@ -8,7 +9,7 @@ pkg:
 
 Do not use number as some_name, filter will not match for numbers.
 #}
-{% if pillar['pkg'] is defined and pillar['pkg'] is not none %}
+{% if pillar['pkg'] is defined %}
   {%- set pkg_to_str = {} %}
   # Fix Rendering SLS ... failed: Jinja error: < not supported between instances of str and int
   # Create copy of pillar filtered to str
@@ -26,30 +27,24 @@ Do not use number as some_name, filter will not match for numbers.
             {%- do s_val_to_str.update({ss_key|string: ss_val}) %}
           {%- endfor %}
           {%- for ss_key, ss_val in s_val_to_str.items()|sort %}
-            {%- if pillar['pkg_filter'] is defined and pillar['pkg_filter'] is not none %}
-              {%- if pillar['pkg_filter'] in pkg_key %}
+
+            {%- if (pillar['pkg_filter'] is defined and pillar['pkg_filter'] in pkg_key) or (pillar['pkg_exact_filter'] is defined and pillar['pkg_exact_filter'] == pkg_key) or (pillar['pkg_filter'] is not defined and pillar['pkg_exact_filter'] is not defined) %}
 pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   {{ s_key }}:
                 {%- if not (ss_val['name'] is defined and ss_val['name'] is not none) %}
     - name: {{ ss_key }}
                 {%- endif %}
-{{ ss_val|yaml(False)|replace("&#39;", "'")|indent(width=4,indentfirst=True) }}
-              {%- else %}
+{{ ss_val|yaml(False)|replace("&#39;", "'")|indent(width=4, first=True) }}
+
+            {%- else %}
 pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   test.configurable_test_state:
     - name: pkg_filter_skipped_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}
     - changes: False
     - result: True
     - comment: |
-        NOTICE: pkg_filter pillar applied, state skipped
-              {%- endif %}
-            {%- else %}
-pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
-  {{ s_key }}:
-                {%- if not (ss_val['name'] is defined and ss_val['name'] is not none) %}
-    - name: {{ ss_key }}
-                {%- endif %}
-{{ ss_val|yaml(False)|replace("&#39;", "'")|indent(width=4,indentfirst=True) }}
+        NOTICE: pkg_filter or pkg_exact_filterpillar applied, state skipped
+
             {%- endif %}
 
           {%- endfor %}

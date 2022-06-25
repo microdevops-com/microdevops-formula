@@ -31,8 +31,16 @@ acme_install_{{ loop.index }}:
 
 acme_set_ca_server_{{ loop.index }}:
   cmd.run:
-    - name: /opt/acme/git/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} --set-default-ca  --server {{ acme_params.get("ca_server","letsencrypt") }}
+    - name: /opt/acme/git/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} --set-default-ca --server {{ acme_params.get("ca_server","letsencrypt") }}
     - cwd: /opt/acme/git/{{ acme_acc }}
+
+    {%- if "post_install_cmd" in acme_params %}
+acme_post_install_cmd_{{ loop.index }}:
+  cmd.run:
+    - name: /opt/acme/git/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} {{ acme_params["post_install_cmd"] }}
+    - cwd: /opt/acme/git/{{ acme_acc }}
+
+    {%- endif %}
 
 acme_local_{{ loop.index }}:
   file.managed:
@@ -40,10 +48,12 @@ acme_local_{{ loop.index }}:
     - mode: 0700
     - contents: |
         #!/bin/bash
-    {%- for var_key, var_val in acme_params["vars"].items() %}
+    {%- if "vars" in acme_params %}
+      {%- for var_key, var_val in acme_params["vars"].items() %}
         export {{ var_key }}="{{ var_val }}"
-    {%- endfor %}
-        /opt/acme/home/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} {{ acme_params["args"] }} "$@"
+      {%- endfor %}
+    {%- endif %}
+        /opt/acme/home/{{ acme_acc }}/acme.sh --home /opt/acme/home/{{ acme_acc }} --cert-home /opt/acme/cert --config-home /opt/acme/config/{{ acme_acc }} {{ acme_params["args"]|default("") }} "$@"
 
 acme_verify_and_issue_{{ loop.index }}:
   file.managed:

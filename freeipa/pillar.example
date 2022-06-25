@@ -1,0 +1,147 @@
+# There are several ways to pass the desired launch options.
+#  via file data/ipa-server-install-options
+#  docker command
+#   or
+#  Docker env variables
+# https://linux.die.net/man/1/ipa-server-install
+
+freeipa:
+  hostname: ipa.example.com
+  ip: < server_ip >
+  domain: example.com
+  image: freeipa/freeipa-server:centos-8-stream
+  sysctl:
+    - net.ipv6.conf.all.disable_ipv6=0
+  command: ipa-server-install -U --setup-dns --auto-forwarders --no-ntp
+  extra_hosts:
+    - ipa2.example.com:< ipa2_server_ip >
+  ipa_server_install_options: |
+    --ds-password=Secret123
+    --admin-password=Secret123
+    --realm=EXAMPLE.COM
+    --unattended
+    --setup-dns
+    --forwarder=1.1.1.1
+    --forwarder=8.8.8.8
+  env_vars:                                 # Docker env variables
+      - key: val
+
+
+######################################################
+# Freeipa without DNS. Docker network in host mode
+######################################################
+{% set domain="example.com" %}
+{% set directory_manager_password="Secret123" %}
+{% set admin_password="Secret123" %}
+
+freeipa:
+  acme_account: {{ domain }}
+  image: freeipa/freeipa-server:centos-8-stream
+  hostname: ipa1.example.com
+  ds_password: {{ directory_manager_password }}
+  network_mode: host
+  command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}'
+  dsconf:
+    instance: 'EXAMPLE-COM'
+    attributes:
+      nsslapd-allow-anonymous-access: 'rootdse'
+      nsslapd-require-secure-binds: 'on'
+
+
+######################################################
+# Freeipa with DNS. Docker network in host mode
+######################################################
+{% set domain="example.com" %}
+{% set directory_manager_password="Secret123" %}
+{% set admin_password="Secret123" %}
+
+freeipa:
+  acme_account: {{ domain }}
+  image: freeipa/freeipa-server:centos-8-stream
+  hostname: ipa1.example.com
+  ds_password: {{ directory_manager_password }}
+  network_mode: host
+  command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}' --setup-dns --forwarder=1.1.1.1 --allow-zone-overlap
+  dsconf:
+    instance: 'EXAMPLE-COM'
+    attributes:
+      nsslapd-allow-anonymous-access: 'rootdse'
+      nsslapd-require-secure-binds: 'on'
+
+
+######################################################
+# Freeipa with DNS.
+######################################################
+{% set ip=1.2.3.4 %}
+{% set domain="example.com" %}
+{% set directory_manager_password="Secret123" %}
+{% set admin_password="Secret123" %}
+
+freeipa:
+  acme_account: {{ domain }}
+  image: freeipa/freeipa-server:centos-8-stream
+  hostname: ipa1.example.com
+  ds_password: {{ directory_manager_password }}
+  ip: {{ ip }}
+  command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}' --setup-dns --forwarder=1.1.1.1 --allow-zone-overlap
+  sysctls:
+    - net.ipv6.conf.all.disable_ipv6=0
+  dsconf:
+    instance: 'EXAMPLE-COM'
+    attributes:
+      nsslapd-allow-anonymous-access: 'rootdse'
+      nsslapd-require-secure-binds: 'on'
+
+######################################################
+# Freeipa without DNS.
+######################################################
+{% set ip=1.2.3.4 %}
+{% set domain="example.com" %}
+{% set directory_manager_password="Secret123" %}
+{% set admin_password="Secret123" %}
+
+freeipa:
+  acme_account: {{ domain }}
+  image: freeipa/freeipa-server:centos-8-stream
+  hostname: ipa1.example.com
+  ds_password: {{ directory_manager_password }}
+  ip: {{ ip }}
+  command: ipa-server-install --unattended --realm={{ domain }} --ds-password='{{ directory_manager_password }}' --admin-password='{{ admin_password }}'
+  sysctls:
+    - net.ipv6.conf.all.disable_ipv6=0
+  dsconf:
+    instance: 'EXAMPLE-COM'
+    attributes:
+      nsslapd-allow-anonymous-access: 'rootdse'
+      nsslapd-require-secure-binds: 'on'
+
+
+
+######################################################
+# Freeipa Replica without DNS.
+######################################################
+{% set hostname="ipa2.example.com" %}
+{% set ip_ipa1="1.2.3.4" %}
+{% set ip_ipa2="1.2.3.4" %}
+{% set domain="example.com" %}
+{% set directory_manager_password="Secret123" %}
+{% set admin_name="admin" %}
+{% set admin_password="Secret123" %}
+
+freeipa:
+  acme_account: {{ domain }}
+  ca_less: True
+  ca_fix: True
+  image: freeipa/freeipa-server:centos-8-stream
+  hostname: {{ hostname }}
+  ip: {{ ip_ipa2 }}
+  ds_password: {{ directory_manager_password }}
+  command: ipa-replica-install --unattended --server=ipa1.example.com --domain={{ domain }} --principal='{{ admin_name }}' --password='{{ admin_password }}' --skip-conncheck  --no-host-dns
+  sysctls:
+    - net.ipv6.conf.all.disable_ipv6=0
+  dsconf:
+    instance: 'EXAMPLE-COM'
+    attributes:
+      nsslapd-allow-anonymous-access: 'rootdse'
+      nsslapd-require-secure-binds: 'on'
+     

@@ -142,6 +142,7 @@ pkg_latest:
       - strace
       - whois
       - net-tools
+      - bmon
       # build
       - gcc
       - gcc-c++

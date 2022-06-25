@@ -128,6 +128,15 @@ grafana_config_{{ loop.index }}_{{ i_loop.index }}:
     - mode: 644
     - contents: {{ instance['config'] | yaml_encode }}
 
+      {%- if instance['ldap_toml'] is defined and instance['ldap_toml'] is not none %}
+ldap_toml_{{ loop.index }}_{{ i_loop.index }}:
+  file.managed:
+    - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/ldap.toml
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: {{ instance['ldap_toml'] | yaml_encode }}
+      {%- endif %}
       {%- if instance['datasources'] is defined and instance['datasources'] is not none %}
 grafana_datasources_{{ loop.index }}_{{ i_loop.index }}:
   file.serialize:

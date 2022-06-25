@@ -3,8 +3,13 @@
 timeout 1m bash -c 'until ping -c 1 google.com; do echo .; sleep 1; done'
 
 apt-get -qy -o 'DPkg::Options::=--force-confold' -o 'DPkg::Options::=--force-confdef' install wget gnupg
-echo "deb http://repo.saltstack.com/py3/ubuntu/$(lsb_release -sr)/amd64/$2 $(lsb_release -sc) main">> /etc/apt/sources.list.d/saltstack.list
-wget -qO - https://repo.saltstack.com/py3/ubuntu/$(lsb_release -sr)/amd64/$2/SALTSTACK-GPG-KEY.pub | apt-key add -
+if [[ "$2" == "3001" ]]; then
+	echo "deb https://archive.repo.saltproject.io/py3/ubuntu/$(lsb_release -sr)/amd64/$2 $(lsb_release -sc) main">> /etc/apt/sources.list.d/saltstack.list
+	wget -qO - https://archive.repo.saltproject.io/py3/ubuntu/$(lsb_release -sr)/amd64/$2/SALTSTACK-GPG-KEY.pub | apt-key add -
+else
+	echo "deb https://repo.saltstack.com/py3/ubuntu/$(lsb_release -sr)/amd64/$2 $(lsb_release -sc) main">> /etc/apt/sources.list.d/saltstack.list
+	wget -qO - https://repo.saltstack.com/py3/ubuntu/$(lsb_release -sr)/amd64/$2/SALTSTACK-GPG-KEY.pub | apt-key add -
+fi
 
 [[ -d /home/ubuntu ]] && userdel -r "ubuntu"
 

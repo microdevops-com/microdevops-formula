@@ -1,5 +1,11 @@
-{% if pillar['ufw_simple'] is defined and pillar['ufw'] is not defined %}
+{% if pillar['ufw_simple'] is defined and pillar['ufw'] is not defined and not ('disabled' in pillar['ufw_simple'] and pillar['ufw_simple']['disabled']) %}
   {%- if (pillar['ufw_simple']['enabled'] is defined) and (pillar['ufw_simple']['enabled'] is not none) and (pillar['ufw_simple']['enabled']) %}
+
+    {%- if "nat" in pillar["ufw_simple"] and "management_disabled" in pillar["ufw_simple"]["nat"] and pillar["ufw_simple"]["nat"]["management_disabled"] %}
+      {%- set manage_nat = False %}
+    {%- else %}
+      {%- set manage_nat = True %}
+    {%- endif %}
 
     {%- if (grains['oscodename'] == 'precise') %}
 {#
@@ -104,9 +110,15 @@ ufw_simple_nat_or_custom_managed_file_3:
     - mode: 0640
     - template: jinja
     - defaults:
+      {%- if manage_nat %}
+        nat_flush: "-F"
+      {%- else %}
+        nat_flush: "# management disabled"
+      {%- endif %}
       {%- if
              (pillar['ufw_simple']['nat'] is defined) and (pillar['ufw_simple']['nat'] is not none) and
-             (pillar['ufw_simple']['nat']['enabled'] is defined) and (pillar['ufw_simple']['nat']['enabled'] is not none) and (pillar['ufw_simple']['nat']['enabled'])
+             (pillar['ufw_simple']['nat']['enabled'] is defined) and (pillar['ufw_simple']['nat']['enabled'] is not none) and (pillar['ufw_simple']['nat']['enabled']) and
+             manage_nat
       %}
         {%- if (pillar['ufw_simple']['nat']['masquerade'] is defined) and (pillar['ufw_simple']['nat']['masquerade'] is not none) %}
         masquerade: |
@@ -318,6 +330,12 @@ ufw_simple_enable:
   {%- endif %}
 
 {% else %}
+  {%- if pillar["ufw_simple"] is defined and "disabled" in pillar["ufw_simple"] and pillar["ufw_simple"]["disabled"] %}
+ufw_simple_disable:
+  cmd.run:
+    - name: "which ufw && ufw disable || true"
+
+  {%- else %}
 ufw_simple_nothing_done_info:
   test.configurable_test_state:
     - name: nothing_done
@@ -326,4 +344,5 @@ ufw_simple_nothing_done_info:
     - comment: |
         INFO: This state was not configured with pillar, so nothing has been done. But it is OK.
 
+  {%- endif %}
 {% endif %}

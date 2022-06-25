@@ -55,7 +55,7 @@ docker_install_6:
 
   {%- for node_name, node_ip in pillar['elasticsearch']['nodes']['ips'].items() %}
     {# No need to make self link #}
-    {%- if grains['fqdn'] != node_name %}
+    {%- if grains['id'] != node_name %}
 hosts_node_{{ loop.index }}:
   host.present:
     - name: {{ node_name }}
@@ -86,33 +86,33 @@ elasticsearch_config:
     - group: 0
     - mode: 644
     - contents: |
-        {% for node_name, node_roles in pillar['elasticsearch']['nodes']['roles'].items() %}{% if grains['fqdn'] == node_name %}node.roles: {{ node_roles }}{% endif %}{% endfor %}
+        {% for node_name, node_roles in pillar['elasticsearch']['nodes']['roles'].items() %}{% if grains['id'] == node_name %}node.roles: {{ node_roles }}{% endif %}{% endfor %}
         xpack.ml.enabled: false
-        node.name: {{ grains['fqdn'] }}
+        node.name: {{ grains['id'] }}
         cluster.name: {{ pillar['elasticsearch']['cluster'] }}
-        discovery.seed_hosts: "{% for master in pillar['elasticsearch']['nodes']['master'] %}{% if master != grains['fqdn'] %}{{ master }}:{{ pillar['elasticsearch']['ports']['transport'] }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %}"
+        discovery.seed_hosts: "{% for master in pillar['elasticsearch']['nodes']['master'] %}{% if master != grains['id'] %}{{ master }}:{{ pillar['elasticsearch']['ports']['transport'] }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %}"
         cluster.initial_master_nodes: "{% for master in pillar['elasticsearch']['nodes']['master'] %}{{ master }}{% if not loop.last %},{% endif %}{% endfor %}"
         bootstrap.memory_lock: "true"
         network.host: 0.0.0.0
-        network.publish_host: {{ pillar['elasticsearch']['nodes']['ips'][grains['fqdn']] }}
+        network.publish_host: {{ pillar['elasticsearch']['nodes']['ips'][grains['id']] }}
         http.port: {{ pillar['elasticsearch']['ports']['http'] }}
         transport.port: {{ pillar['elasticsearch']['ports']['transport'] }}
         xpack.security.enabled: true
         xpack.security.transport.ssl.enabled: true
         xpack.security.transport.ssl.verification_mode: certificate
-        xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
-        xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_fullchain.cer
-        xpack.security.transport.ssl.certificate_authorities: [ "/usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_ca.cer" ]
+        xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_key.key
+        xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_fullchain.cer
+        xpack.security.transport.ssl.certificate_authorities: [ "/usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_ca.cer" ]
         xpack.security.http.ssl.enabled: true
         xpack.security.http.ssl.verification_mode: certificate
-        xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_key.key
-        xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['fqdn'] }}_fullchain.cer
+        xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_key.key
+        xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_fullchain.cer
         {{ pillar['elasticsearch']['config'] }}
 
 elasticsearch_cert:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar['elasticsearch']['acme_account'] }}/verify_and_issue.sh elasticsearch {{ grains['fqdn'] }}"
+    - name: "/opt/acme/home/{{ pillar['elasticsearch']['acme_account'] }}/verify_and_issue.sh elasticsearch {{ grains['id'] }}"
 
 elasticsearch_image:
   cmd.run:
@@ -141,7 +141,7 @@ elasticsearch_container:
         - nofile=65535:65535
     - extra_hosts:
         {%- for node_name, node_ip in pillar['elasticsearch']['nodes']['ips'].items() %}
-          {% if grains['fqdn'] != node_name %}- {{ node_name }}:{{ node_ip }}{% endif %}
-          {% if grains['fqdn'] == node_name %}- {{ node_name }}:127.0.0.1{% endif %}
+          {% if grains['id'] != node_name %}- {{ node_name }}:{{ node_ip }}{% endif %}
+          {% if grains['id'] == node_name %}- {{ node_name }}:127.0.0.1{% endif %}
         {%- endfor %}
 {% endif %}

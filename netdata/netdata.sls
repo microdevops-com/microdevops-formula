@@ -10,7 +10,7 @@ remove_old_type_netdata:
   {%- set netdata_mini = pillar["netdata"].get("mini", False) %}
   {%- set postgresql = pillar["netdata"].get("postgresql", False) %}
   {%- set sensors = pillar["netdata"].get("sensors", False) %}
-  {%- set hostname_under = grains["fqdn"]|replace(".", "_") %}
+  {%- set hostname_under = grains["id"]|replace(".", "_") %}
 
   {% if grains["oscodename"] not in ["precise"] and not ("skip-install-required-packages" in pillar["netdata"] and pillar["netdata"]["skip-install-required-packages"]) %}
 # Basic depencies
@@ -87,7 +87,7 @@ netdata_install-type_fix:
 netdata_kickstart:
   cmd.script:
     - name: kickstart-static64.sh --dont-wait --stable-channel --no-updates --reinstall
-    - source: https://raw.githubusercontent.com/netdata/netdata/master/packaging/installer/kickstart-static64.sh
+    - source: https://my-netdata.io/kickstart-static64.sh
 
 netdata_config_health_alarm:
   file.managed:

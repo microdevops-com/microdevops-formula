@@ -63,6 +63,7 @@ salt:
       gitlab_url: https://gitlab.example.com
       gitlab_runner_name: salt1.example.com
       registration_token: xxxxxxxxxxxxxxxxxxxx
+      concurrent: 16
 
   minion:
     version: 3001
@@ -86,7 +87,7 @@ salt:
       master_tries: -1
       ping_interval: 1
       grains:
-        fqdn: {{ grains['fqdn'] }}
+        fqdn: {{ grains['id'] }}
     grains_file_rm: True # optionally remove grains file, if grains are managed inside main config
     pki:
       minion:

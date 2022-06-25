@@ -1,0 +1,8 @@
+# Error saving credentials: error storing credentials - err: exit status 1, out: `The name org.freedesktop.secrets was not provided by any .service files`
+# chmod -x /usr/bin/docker-credential-secretservice
+# https://stackoverflow.com/a/56962423
+
+docker-ce:
+  version: latest
+  daemon_json: |
+    { "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }

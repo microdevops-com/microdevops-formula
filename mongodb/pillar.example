@@ -1,6 +1,7 @@
 mongodb:
   enabled: True
-  version: 4.0
+  version: 5.0
+  pymongo_version: == 3.12.3
   admin:
     authdb: admin
     user: admin

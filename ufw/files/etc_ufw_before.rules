@@ -16,7 +16,7 @@
 :POSTROUTING ACCEPT [0:0]
 
 # flush previous rules
--F
+{{ nat_flush }}
 
 # redirect
 {{ redirect }}

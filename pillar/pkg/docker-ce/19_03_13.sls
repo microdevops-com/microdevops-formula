@@ -22,7 +22,7 @@ pkg:
             - refresh: True
             - pkgs:
               - docker-ce: '5:19.03.13*'
-{%- if grains['oscodename'] in ['focal'] %}
+{%- if grains['oscodename'] in ['focal', 'jammy'] %}
               - python3-docker
 {%- else %}
               - python-docker

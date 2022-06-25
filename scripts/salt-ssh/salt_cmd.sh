@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-GRAND_EXIT=0
 
-if [[ "_$1" = "_" || "_$2" = "_" ]]; then
+if [[ "_$1" == "_" || "_$2" == "_" ]]; then
 	echo ERROR: needed args missing: use salt_cmd.sh TARGET CMD
 	exit 1
 fi
 
+GRAND_EXIT=0
 SALT_TARGET=$1
 SALT_CMD_BASE64=$2
 SALT_CMD=$(echo ${SALT_CMD_BASE64} | base64 -d)
-	
 OUT_FILE="$(mktemp -p /dev/shm/)"
 
 exec > >(tee ${OUT_FILE})
@@ -22,7 +21,11 @@ if [[ -d /.salt-ssh-hooks ]]; then
 	fi
 fi
 
-( set -x ; stdbuf -oL -eL  bash -c "salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} ${SALT_CMD}" ) || GRAND_EXIT=1
+set -x
+# Passing through bash -c is important for state args, otherwise you might get error below on salt_cmds with pillar etc:
+# TypeError encountered executing state.apply: apply_() takes from 0 to 1 positional arguments but 2 were given
+bash -c "salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${SALT_TARGET} ${SALT_CMD}" || GRAND_EXIT=1
+set +x
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1

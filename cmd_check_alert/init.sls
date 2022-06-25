@@ -42,7 +42,7 @@ sensu-plugins_ssl_certs_dir:
 
     {%- if grains["os_family"] == "Debian" %}
       # Sensu Plugins embedded doesn't work on arm64, but can be installed manually, see below
-      {%- if grains["oscodename"] not in ["precise", "buster", "bullseye"] and grains["osarch"] not in ["arm64"] %}
+      {%- if grains["oscodename"] not in ["precise", "buster", "bullseye", "jammy"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
@@ -55,6 +55,14 @@ sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
     - name: deb https://packagecloud.io/sensu/community/{{ grains["os"]|lower }}/ buster main
+    - file: /etc/apt/sources.list.d/sensu_community.list
+    - key_url: https://packagecloud.io/sensu/community/gpgkey
+    - clean_file: True
+      {%- elif grains["oscodename"] in ["jammy"] %}
+sensu-plugins_repo:
+  pkgrepo.managed:
+    - humanname: Sensu Plugins
+    - name: deb https://packagecloud.io/sensu/community/{{ grains["os"]|lower }}/ focal main
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
@@ -146,7 +154,34 @@ sensu-plugins_update_cacert:
 
   {%- endif %}
 
-  {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() %}
+  {%- for check_group_name, check_group_params in pillar["cmd_check_alert"].items() if check_group_name not in ["hostname_override"] %}
+    {%- if "hostname_override" in pillar["cmd_check_alert"] %}
+      {%- do check_group_params["config"].update({"hostname_override": pillar["cmd_check_alert"]["hostname_override"]}) %}
+    {%- endif %}
+    # There is some bug in serializer that causes int config keys to serialize as strings under salt-ssh and as ints under salt, which leads to flapping of config file
+    # Fix by forcing severity_per_retcode to string
+    # defaults
+    {%- if "defaults" in check_group_params["config"] and "severity_per_retcode" in check_group_params["config"]["defaults"] %}
+      {%- set new_severity_per_retcode = {} %}
+      {%- for retcode, severity in check_group_params["config"]["defaults"]["severity_per_retcode"].items() %}
+        {%- do new_severity_per_retcode.update({retcode|string: severity}) %}
+      {%- endfor %}
+      {%- do check_group_params["config"]["defaults"].update({"severity_per_retcode": {}}) %}
+      {%- do check_group_params["config"]["defaults"]["severity_per_retcode"].update(new_severity_per_retcode) %}
+    {%- endif %}
+    # checks
+    {%- if "checks" in check_group_params["config"] %}
+      {%- for check_name, check_params in check_group_params["config"]["checks"].items() %}
+        {%- if "severity_per_retcode" in check_params %}
+          {%- set new_severity_per_retcode = {} %}
+          {%- for retcode, severity in check_params["severity_per_retcode"].items() %}
+            {%- do new_severity_per_retcode.update({retcode|string: severity}) %}
+          {%- endfor %}
+          {%- do check_group_params["config"]["checks"][check_name].update({"severity_per_retcode": {}}) %}
+          {%- do check_group_params["config"]["checks"][check_name]["severity_per_retcode"].update(new_severity_per_retcode) %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
 cmd_check_alert_config_managed_{{ loop.index }}:
   file.serialize:
     - name: /opt/sysadmws/cmd_check_alert/checks/{{ check_group_name }}.yaml
@@ -187,7 +222,7 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
     {%- endif %}
 
     {%- if "install_cvescan" in check_group_params %}
-      {%- if grains["oscodename"] in ["bionic", "focal"] %}
+      {%- if grains["oscodename"] in ["bionic", "focal", "jammy"] %}
 cvescan_installed_{{ loop.index }}:
   cmd.run:
     - name: pip3 install --user git+https://github.com/canonical/sec-cvescan
@@ -199,7 +234,7 @@ cvescan_installed_{{ loop.index }}:
       {%- set a_loop = loop %}
       {%- for file_name, file_data_items in check_group_params["files"].items() %}
         {%- set contents_list = [] %}
-        {%- for file_data_item_name, file_data_item_data in file_data_items.items() %}
+        {%- for file_data_item_name, file_data_item_data in file_data_items.items()|sort %}
           {%- do contents_list.append(file_data_item_data) %}
         {%- endfor %}
 cmd_check_alert_file_managed_{{ loop.index }}_{{ a_loop.index }}:

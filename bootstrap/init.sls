@@ -1,5 +1,5 @@
 include:
-{% if grains["oscodename"] in ["bionic", "focal", "bullseye"] %}
+{% if grains["oscodename"] in ["bionic", "focal", "bullseye", "jammy"] %}
   - .{{ grains["oscodename"] }}
 {% elif grains["osfinger"] == "CentOS Linux-7" %}
   - .centos7

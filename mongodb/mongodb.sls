@@ -4,11 +4,15 @@ install_1:
     - refresh: True
     - reload_modules: True
     - pkgs: 
-        - python-pip
+        - python3-pip
 
 install_2:
   pip.installed:
+{%-  if 'pymongo_version' in pillar['mongodb'] %}
+    - name: pymongo {{ pillar['mongodb']['pymongo_version'] }}
+{%-  else %}
     - name: pymongo
+{%   endif %}
     - reload_modules: True
 
 install_3:

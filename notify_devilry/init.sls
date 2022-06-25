@@ -1,0 +1,2 @@
+include:
+  - .notify_devilry

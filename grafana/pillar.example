@@ -49,3 +49,30 @@ grafana:
             token_url = https://gitlab.example.com/oauth/token
             api_url = https://gitlab.example.com/api/v4
             allowed_groups = grafana
+            [auth.ldap]
+            # Set to `true` to enable LDAP integration (default: `false`)
+            enabled = true
+            # Path to the LDAP specific configuration file (default: `/etc/grafana/ldap.toml`)
+            config_file = /etc/grafana/ldap.toml
+            # Allow sign up should almost always be true (default) to allow new Grafana users to be created (if LDAP authentication is ok). If set to
+            # false only pre-existing Grafana users will be able to login (if LDAP authentication is ok).
+            allow_sign_up = true
+          ldap_toml: |
+            [[servers]]
+            host = "ldap1.example.com ldap2.example.com ldap3.example.com"
+            port = 636
+            use_ssl = true
+            start_tls = false
+            ssl_skip_verify = false
+            bind_dn = "uid=ldap_reader,cn=users,dc=example,dc=com"
+            bind_password = "Secret123"
+            search_filter = "(uid=%s)"
+            [servers.attributes]
+            member_of = "memberOf"
+            email =  "mail"
+            name = "givenName"
+            surname = "sn"
+            username = "uid"
+            [[servers.group_mappings]]
+            group_dn = "cn=grafana,cn=groups,dc=example,dc=com"
+            org_role = "Viewer"
