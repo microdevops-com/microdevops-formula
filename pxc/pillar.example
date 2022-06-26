@@ -1,0 +1,77 @@
+# vi: set ft=yaml:
+
+# This state helps to prepare cluster nodes for PXC (Percona XtraDB Cluster)
+
+# Recommended node setup:
+# - No swap
+# - Dedicated partitions:
+#   - /var/backups 20G+
+#   - /var/log/mysql 100G+
+#   - /var/lib/mysql
+# - No continuous trim (discard) for partitions, use just simple default mount
+#   /dev/vg_mdX/backups /var/backups ext4 defaults 0 0
+#   /dev/vg_mdX/mysql-data /var/lib/mysql ext4 defaults 0 0
+#   /dev/vg_mdX/mysql-logs /var/log/mysql ext4 defaults 0 0
+
+pxc:
+  root_password: xxxxxxxxxxxxxxxxxxxxxxx
+  clustercheck_password: xxxxxxxxxxxxxxxxxxxxxxx
+  pmm_password: xxxxxxxxxxxxxxxxxxxxxxx
+  repos:
+    tools: release
+    pmm2-client: release
+    mysql-shell: release
+    pxc-80: release
+  pkgs:
+    percona-toolkit: latest
+    pmm2-client: latest
+    percona-xtrabackup-80: latest
+    percona-mysql-shell: latest
+{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com" ] %}
+    percona-xtradb-cluster: 1:8.0.26-16-1.focal
+{% endif %}
+  
+{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com" ] %}
+  debconf:
+    percona-xtradb-cluster-server:
+      percona-xtradb-cluster-server/root-pass:
+        type: password
+        value: __root_password__ # use __root_password__ to replace with root_password pillar
+      percona-xtradb-cluster-server/re-root-pass:
+        type: password
+        value: __root_password__ # use __root_password__ to replace with root_password pillar
+      percona-xtradb-cluster-server/default-auth-override:
+        type: select
+        value: Use Legacy Authentication Method (Retain MySQL 5.x Compatibility)
+
+  clustercheck_install: True
+
+  configs:
+
+    dirs:
+      - /etc/mysql/pxc
+
+    /etc/mysql/pxc/cluster.cnf: |
+      [mysqld]
+      wsrep_cluster_name=example-com
+      ...
+
+    /etc/mysql/pxc/common.cnf: |
+      [mysqld]
+      transaction-isolation=READ-COMMITTED
+      ...
+
+    /etc/mysql/pxc/node.cnf: |
+      [mysqld]
+  {%- if grains["id"] in ["pxc1.example.com" ] %}
+      server-id=101
+      ...
+  {%- endif %}
+  ...
+
+    /etc/mysql/pxc/replica.cnf: |
+      [mysqld]
+      replicate-do-db=db1
+      ...
+
+{% endif %}
