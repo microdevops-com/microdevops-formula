@@ -13,6 +13,14 @@
 #   /dev/vg_mdX/mysql-data /var/lib/mysql ext4 defaults 0 0
 #   /dev/vg_mdX/mysql-logs /var/log/mysql ext4 defaults 0 0
 
+# Cleanup with dedicated partitions:
+# systemctl stop mysql
+# umount /var/lib/mysql /var/log/mysql
+# apt-get purge -y percona-xtradb-cluster-server
+# mkdir /var/lib/mysql /var/log/mysql
+# mount /var/lib/mysql; mount /var/log/mysq
+# Remove contents of /var/lib/mysql, /var/log/mysq if needed
+
 pxc:
   root_password: xxxxxxxxxxxxxxxxxxxxxxx
   clustercheck_password: xxxxxxxxxxxxxxxxxxxxxxx
