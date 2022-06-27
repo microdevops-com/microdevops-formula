@@ -1,4 +1,4 @@
-{%- if pillar['sentry']['catch_root_email']['enabled'] %}
+{%- if  pillar['sentry'] is defined and 'catch_root_email' in pillar['sentry'] and pillar['sentry']['catch_root_email']['enabled'] %}
   {%- if not salt['file.file_exists']('/usr/local/bin/sentry-cli') %}
 install_sentry-cli:
   cmd.run:
@@ -33,4 +33,16 @@ permissions:
     - follow_symlinks: True
     - recurse:
       - mode
+
+  {%- if 'newaliases' in pillar['sentry']['catch_root_email'] and pillar['sentry']['catch_root_email']['newaliases'] %}
+set_alias:
+  alias.present:
+    - name: root
+    - target: '| /opt/sysadmws/sentry_catch_root_mail/sentry-sender.sh'
+
+reload_aliases:
+  cmd.run:
+    - name: newaliases
+  {%- endif %}
+
 {%- endif %}
