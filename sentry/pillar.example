@@ -65,7 +65,7 @@ sentry:
 
 
 #######################################################################
-# If necessary, you can install a catcher root email
+# If necessary, you can configure a catcher root email only
 
 sentry:
   catch_root_email:
