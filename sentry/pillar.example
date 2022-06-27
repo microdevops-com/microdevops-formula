@@ -61,3 +61,15 @@ sentry:
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
+
+
+
+#######################################################################
+# If necessary, you can install a catcher root email
+
+sentry:
+  catch_root_email:
+    enabled: True
+    SENTRY_URL: 'https://sentry.exampe.com/'
+    SENTRY_DSN: 'https://71b11b6b8b814bc183e0c30a702eeb08@sentry.exampe.com/2'
+    SENTRY_AUTH_TOKEN: '35baa0f825e84ac29d009890830b7467dbf30d9cbe5b4ecfbbcb3eeb958c802a'
