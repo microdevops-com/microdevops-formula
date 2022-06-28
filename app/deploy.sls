@@ -1,5 +1,6 @@
 include:
   - sysctl
+  - hosts
   - acme
   - pkg.before_deploy
 {% if pillar["postgres"] is defined and pillar["postgres"] is not none %}
