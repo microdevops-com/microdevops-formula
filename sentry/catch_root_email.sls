@@ -16,7 +16,6 @@ sentry_properties:
     - name: "/opt/sysadmws/sentry_catch_root_mail/sentry.properties"
     - contents: |
         defaults.url={{ pillar['sentry']['catch_root_email']['SENTRY_URL'] }}
-        auth.token={{ pillar['sentry']['catch_root_email']['SENTRY_AUTH_TOKEN'] }}
         auth.dsn={{ pillar['sentry']['catch_root_email']['SENTRY_DSN'] }}
     - makedirs: True
 
