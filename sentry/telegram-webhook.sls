@@ -61,6 +61,7 @@ docker_build_sentry-telegram-webhook:
     - name:  {{ pillar["sentry"]["webhooks"]["telegram"]["image"] }}
     - build: /opt/sentry-telegram-webhook
     - tag: latest
+    - force: True
 
 sentry-telegram-webhook_container:
   docker_container.running:
