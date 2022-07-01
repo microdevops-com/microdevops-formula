@@ -54,6 +54,7 @@ sentry-telegram-webhook_clone_fom_git:
   git.latest:
     - name: {{ pillar["sentry"]["webhooks"]["telegram"]["repo"] }}
     - target: /opt/sentry-telegram-webhook
+    - force_reset: True
 
 docker_build_sentry-telegram-webhook:
   docker_image.present:
