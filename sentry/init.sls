@@ -71,6 +71,7 @@ sentry_installer_clone_fom_git:
     - name: https://github.com/getsentry/self-hosted.git
     - target: /opt/sentry/
     - rev: {{ pillar ["sentry"]["version"] }}
+    - force_reset: True
 
 sentry_config_1:
   file.managed:
@@ -96,6 +97,44 @@ sentry_install:
       - file: /opt/sentry/sentry/config.yml
       - file: /opt/sentry/sentry/sentry.conf.py
       - git: https://github.com/getsentry/self-hosted.git
+
+sentry_volume_backup_script:
+  file.managed:
+    - name: /opt/sentry/backup_volumes.sh
+    - contents: |
+        #!/bin/bash
+        mkdir -p /opt/sentry/backup/volumes/
+        docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/sentry/backup.json
+        docker-compose --file /opt/sentry/docker-compose.yml stop
+        docker run --rm --volumes-from sentry-self-hosted-clickhouse-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-clickhouse-1.tar /var/lib/clickhouse /var/log/clickhouse-server
+        docker run --rm --volumes-from sentry-self-hosted-web-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-web-1.tar /data
+        docker run --rm --volumes-from sentry-self-hosted-kafka-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-kafka-1.tar /var/lib/kafka/data /etc/kafka/secrets /var/lib/kafka/log
+        docker run --rm --volumes-from sentry-self-hosted-nginx-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-nginx-1.tar /var/cache/nginx
+        docker run --rm --volumes-from sentry-self-hosted-postgres-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-postgres-1.tar /var/lib/postgresql/data
+        docker run --rm --volumes-from sentry-self-hosted-redis-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-redis-1.tar /data
+        docker run --rm --volumes-from sentry-self-hosted-smtp-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-smtp-1.tar /var/spool/exim4 /var/log/exim4
+        docker run --rm --volumes-from sentry-self-hosted-symbolicator-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-symbolicator-1.tar /data
+        docker run --rm --volumes-from sentry-self-hosted-zookeeper-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-zookeeper-1.tar /var/lib/zookeeper/data  /var/lib/zookeeper/log
+        docker-compose --file /opt/sentry/docker-compose.yml up -d
+    - mode: 774
+
+sentry_volume_restore_script:
+  file.managed:
+    - name: /opt/sentry/restore_volumes.sh
+    - contents: |
+        #!/bin/bash
+        docker-compose --file /opt/sentry/docker-compose.yml stop
+        docker run --rm --volumes-from sentry-self-hosted-clickhouse-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-clickhouse-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-web-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-web-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-kafka-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-kafka-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-nginx-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-nginx-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-postgres-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-postgres-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-redis-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-redis-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-smtp-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-smtp-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-symbolicator-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-symbolicator-1.tar"
+        docker run --rm --volumes-from sentry-self-hosted-zookeeper-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-zookeeper-1.tar"
+        docker-compose --file /opt/sentry/docker-compose.yml up -d
+    - mode: 774
 
   {% if pillar['sentry']['secret'] is not defined or pillar['sentry']['secret'] is none %}
 sentry_secret_generation:
