@@ -128,9 +128,12 @@ pmm-data_backup_script:
     - contents: |
         #!/bin/bash
         mkdir -p /opt/pmm/{{ pillar["pmm"]["name"] }}/backup
+        iptables -A ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
         docker stop percona-{{ pillar["pmm"]["name"] }}
         docker run --rm --volumes-from percona-{{ pillar["pmm"]["name"] }}-data -v /opt/pmm/{{ pillar["pmm"]["name"] }}/backup:/backup ubuntu tar cvf /backup/percona-{{ pillar["pmm"]["name"] }}-data_srv.tar /srv
         docker start percona-{{ pillar["pmm"]["name"] }}
+        sleep 60
+        iptables -D ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
     - mode: 774
 
 pmm-data_restore_script:
