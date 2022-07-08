@@ -132,7 +132,7 @@ pmm-data_backup_script:
         docker stop percona-{{ pillar["pmm"]["name"] }}
         docker run --rm --volumes-from percona-{{ pillar["pmm"]["name"] }}-data -v /opt/pmm/{{ pillar["pmm"]["name"] }}/backup:/backup ubuntu tar cvf /backup/percona-{{ pillar["pmm"]["name"] }}-data_srv.tar /srv
         docker start percona-{{ pillar["pmm"]["name"] }}
-        sleep 60
+        sleep 120
         iptables -D ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
     - mode: 774
 
@@ -141,9 +141,12 @@ pmm-data_restore_script:
     - name: /opt/pmm/{{ pillar["pmm"]["name"] }}/restore_pmm-data.sh
     - contents: |
         #!/bin/bash
+        iptables -A ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
         docker stop percona-{{ pillar["pmm"]["name"] }}
         docker run --rm --volumes-from percona-{{ pillar["pmm"]["name"] }}-data -v /opt/pmm/{{ pillar["pmm"]["name"] }}/backup:/backup ubuntu bash -c "cd / && tar xvf /backup/percona-{{ pillar["pmm"]["name"] }}-data_srv.tar"
         docker start percona-{{ pillar["pmm"]["name"] }}
+        sleep 120
+        iptables -D ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
     - mode: 774
 
 {#
