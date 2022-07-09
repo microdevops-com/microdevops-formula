@@ -94,11 +94,19 @@ rsnapshot_backup:
         #  --ignore-table=dbname.table1
         #  --ignore-table=dbname.table2
         #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location, only for py version
+        #
         #mysql_dump_type: xtrabackup # override default native mysqldump type, only for py version
         #xtrabackup_throttle: 20 # optional, override default IO limit 20 MB
         #xtrabackup_parallel: 2 # optional, override default --parallel=2
         #xtrabackup_compress_threads: 2 # optional, override default --compress-threads=2
         #xtrabackup_args: # optional, pass additional arguments to xtrabackup
+        #
+        #mysql_dump_type: mysqlsh # override default native mysqldump type, only for py version
+        #mysqlsh_connect_args: --user=root --password=xxx # mandatory for mysqlsh, it cannot use standard my.cnf like files
+        #mysqlsh_args: --compatibility=strip_definers # optional, add any additional mysqlsh args, this example compatibility arg is recommended
+        #mysqlsh_max_rate: 20M # optional, override default IO limit 20 MB
+        #mysqlsh_bytes_per_chunk: 100M # optional, override default 100 MB chunk size, dumped tables are splitted to chunks
+        #mysqlsh_threads: 2 # optional, override default 2 mysqlsh threads
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available

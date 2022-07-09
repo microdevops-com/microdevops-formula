@@ -335,6 +335,26 @@ rsnapshot_backup_yaml:
           xtrabackup_args: {{ host_backups_item["xtrabackup_args"] }}
           {%- endif %}
           #
+          {%- if "mysqlsh_connect_args" in host_backups_item %}
+          mysqlsh_connect_args: {{ host_backups_item["mysqlsh_connect_args"] }}
+          {%- endif %}
+          #
+          {%- if "mysqlsh_args" in host_backups_item %}
+          mysqlsh_args: {{ host_backups_item["mysqlsh_args"] }}
+          {%- endif %}
+          #
+          {%- if "mysqlsh_max_rate" in host_backups_item %}
+          mysqlsh_max_rate: {{ host_backups_item["mysqlsh_max_rate"] }}
+          {%- endif %}
+          #
+          {%- if "mysqlsh_bytes_per_chunk" in host_backups_item %}
+          mysqlsh_bytes_per_chunk: {{ host_backups_item["mysqlsh_bytes_per_chunk"] }}
+          {%- endif %}
+          #
+          {%- if "mysqlsh_threads" in host_backups_item %}
+          mysqlsh_threads: {{ host_backups_item["mysqlsh_threads"] }}
+          {%- endif %}
+          #
           {%- if "checks" in host_backups_item %}
             # Some checks have data param to set params for specific data item, so add checks only if matched data item (source var)
             {%- for check in host_backups_item["checks"] if "data" not in check or check["data"] == source %}
