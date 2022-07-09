@@ -1,7 +1,13 @@
 {% if pillar["bootstrap"] is defined and "files" in pillar["bootstrap"] %}
   {%- if "managed" in pillar["bootstrap"]["files"] %}
     {%- for file in pillar["bootstrap"]["files"]["managed"] %}
-      {%- do file["values"].update({'bootstrap_network_domain': pillar["bootstrap"]["network"]["domain"]}) %}
+      {%- if "domain" in pillar["bootstrap"] %}
+        {%- do file["values"].update({"bootstrap_network_domain": pillar["bootstrap"]["domain"]}) %}
+      {%- elif "network" in pillar["bootstrap"] and "domain" in pillar["bootstrap"]["network"] %}
+        {%- do file["values"].update({"bootstrap_network_domain": pillar["bootstrap"]["network"]["domain"]}) %}
+      {%- else %}
+        {%- do file["values"].update({"bootstrap_network_domain": "local"}) %}
+      {%- endif %}
 bootstrap_file_managed_{{ loop.index }}:
   file.managed:
     - name: {{ file["name"] }}
