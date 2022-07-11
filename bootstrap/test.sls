@@ -20,7 +20,13 @@ full_hostname:
         grep {{ grains["id"] }} /etc/hosts && \
         hostname | grep {{ grains["id"] }} && \
         hostname -f | grep {{ grains["id"] }} && \
+  {%- if "domain" in pillar["bootstrap"] %}
+        grep "search {{ pillar["bootstrap"]["domain"] }}" /etc/resolv.conf
+  {%- elif "network" in pillar["bootstrap"] and "domain" in pillar["bootstrap"]["network"] %}
         grep "search {{ pillar["bootstrap"]["network"]["domain"] }}" /etc/resolv.conf
+  {%- else %}
+        grep "search local" /etc/resolv.conf
+  {%- endif %}
 
 memory_accounting:
   cmd.run:

@@ -28,6 +28,7 @@ pxc_prereq_pkgs:
         - xinetd
         - debconf-utils
         - nmap
+        - zstd
 
 # Predefine server root passwords before package installed
   {%- if "debconf" in pillar["pxc"] %}
