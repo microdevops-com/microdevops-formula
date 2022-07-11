@@ -88,6 +88,18 @@ sentry_config_2:
     - source: 'salt://sentry/files/sentry.conf.py'
     - template: jinja
 
+{%- if "enhance_image_sh" in pillar["sentry"] %}
+sentry_enhance-image_sh_create:
+  file.managed:
+    - name: '/opt/sentry/sentry/enhance-image.sh'
+    - contents: {{ salt['pillar.get']('sentry:enhance_image_sh') | yaml_encode }}
+    - mode: 755
+{%- else %}
+sentry_enhance-image_sh_del:
+  file.absent:
+    - name: '/opt/sentry/sentry/enhance-image.sh'
+{%- endif %}
+
 sentry_install:
   cmd.run:
     - name: ./install.sh --no-user-prompt --skip-commit-check
