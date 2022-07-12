@@ -1,4 +1,4 @@
-{% if pillar['redis']['redis_conf'] %}
+{% if pillar['redis']['redis_conf'] is defined %}
 redis_install:
   pkgrepo.managed:
     - ppa: redislabs/redis
