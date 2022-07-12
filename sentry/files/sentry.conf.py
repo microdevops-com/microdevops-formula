@@ -282,3 +282,7 @@ GEOIP_PATH_MMDB = '/geoip/GeoLite2-City.mmdb'
 
 # BITBUCKET_CONSUMER_KEY = 'YOUR_BITBUCKET_CONSUMER_KEY'
 # BITBUCKET_CONSUMER_SECRET = 'YOUR_BITBUCKET_CONSUMER_SECRET'
+
+{%- if "ldap" in pillar["sentry"]["config"] and salt['pillar.get']('sentry:config:ldap:enabled', False) %}
+{{ salt['pillar.get']('sentry:config:ldap:sentry_conf_py') }}
+{%- endif %}

@@ -6,6 +6,11 @@ sentry:
   url: 'https://sentry.example.com'
   admin_email: 'admin@example.com'
   admin_password: 'xxxxxxxxxxxxxxxxxx'
+  enhance_image_sh: |
+    apt-get update
+    apt-get install -y gcc libsasl2-dev python-dev libldap2-dev libssl-dev
+    pip install django-auth-ldap
+    pip install sentry-ldap-auth
   config:
     features:
       auth_register: True
@@ -22,6 +27,59 @@ sentry:
       reply_hostname: ''
     web:
       ssl: True
+    ldap:
+      enabled: True
+      sentry_conf_py: |
+        ################################################
+        #                   LDAP AUTH                  #
+        # https://github.com/Banno/getsentry-ldap-auth #
+        ################################################
+        import ldap
+        from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+        AUTH_LDAP_SERVER_URI = 'ldaps://ldap.example.com'
+        AUTH_LDAP_BIND_DN = 'uid=ldap_reader,cn=users,dc=example,dc=com'
+        AUTH_LDAP_BIND_PASSWORD = 'Secret123'
+        AUTH_LDAP_USER_SEARCH = LDAPSearch(
+          'cn=users,dc=example,dc=com',
+          ldap.SCOPE_SUBTREE,
+          '(uid=%(user)s)',
+        )
+        AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+          'cn=groups,dc=example,dc=com',
+          ldap.SCOPE_SUBTREE,
+          '(objectClass=groupOfNames)'
+        )
+        AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
+        AUTH_LDAP_REQUIRE_GROUP = 'cn=sentry,cn=groups,dc=example,dc=com'
+        AUTH_LDAP_DENY_GROUP = None
+        AUTH_LDAP_USER_ATTR_MAP = {
+          'username': 'uid',
+          'name': 'cn',
+          'email': 'mail'
+        }
+        AUTH_LDAP_FIND_GROUP_PERMS = True
+        AUTH_LDAP_CACHE_GROUPS = False
+        AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+        AUTH_LDAP_DEFAULT_SENTRY_comANIZATION = u'example'
+        AUTH_LDAP_SENTRY_SUBSCRIBE_BY_DEFAULT = True
+        AUTH_LDAP_DEFAULT_EMAIL_DOMAIN = 'example.com'
+        #AUTH_LDAP_MIRROR_GROUPS = True,
+        AUTH_LDAP_SENTRY_GROUP_ROLE_MAPPING = {
+          'owner': ['admins'],
+          'admin': [],
+          'member': ['sentry'],
+        }
+        AUTH_LDAP_SENTRY_comANIZATION_ROLE_TYPE = 'member'
+        AUTH_LDAP_SENTRY_comANIZATION_GLOBAL_ACCESS = True
+        AUTH_LDAP_SENTRY_USERNAME_FIELD = 'uid'
+        AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + (
+          'sentry_ldap_auth.backend.SentryLdapBackend',
+        )
+        import logging
+        logger = logging.getLogger('django_auth_ldap')
+        logger.addHandler(logging.StreamHandler())
+        logger.addHandler(logging.FileHandler(r"/data/ldap2.log"))
+        logger.setLevel('DEBUG')
   webhooks:
     matrix:
       image: 'matrixdotorg/matrix-sentry-webhooks:latest'
