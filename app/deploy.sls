@@ -14,6 +14,7 @@ include:
   - percona
   - rabbitmq
   - pyenv
+  - rvm
   - php-fpm.php-fpm
   - nginx
   - app.php-fpm_apps
