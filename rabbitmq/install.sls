@@ -49,7 +49,6 @@ rabbit_cert_for_management:
 
 rabbit_cert_perm_1:
   file.managed:
-    - name: /opt/acme/cert/rabbitmq_key.key
     - name: /opt/acme/cert/rabbitmq_{{ pillar["rabbitmq"]["management_domain"] }}_key.key
     - mode: 644
   {% endif %}
