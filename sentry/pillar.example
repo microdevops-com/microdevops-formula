@@ -27,6 +27,9 @@ sentry:
       reply_hostname: ''
     web:
       ssl: True
+    google_auth:
+      client_id: '012345678999-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com'
+      client_secret: 'ABCDEF-1q2w3e4r5t6y7u8i9o0pASDFGHJK'
     ldap:
       enabled: True
       sentry_conf_py: |
