@@ -12,6 +12,9 @@ redis:
 
 
 redis:
+  keep_exists_conf: False
+  disable_thp: True
+  maxclients: 10000
   redis_conf: |
     replicaof 1.2.3.4 6379
     bind 0.0.0.0
@@ -86,3 +89,6 @@ redis:
     aof-rewrite-incremental-fsync yes
     rdb-save-incremental-fsync yes
     jemalloc-bg-thread yes
+    save 900 1
+    save 300 10
+    save 60 10000
