@@ -13,7 +13,7 @@ redis_run:
     - name: redis-server
     - enable: True
 
-  {%- if not pillar['redis']['keep_exists_conf'] | default(False) %}
+  {%- if not pillar['redis']['keep_existing_conf'] | default(False) %}
 redis_config:
   file.managed:
     - name: /etc/redis/redis.conf

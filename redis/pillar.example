@@ -12,7 +12,7 @@ redis:
 
 
 redis:
-  keep_exists_conf: False
+  keep_existing_conf: False
   disable_thp: True
   maxclients: 10000
   redis_conf: |
