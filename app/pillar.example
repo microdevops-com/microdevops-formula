@@ -220,6 +220,9 @@ app:
             dayweek: ... # optional 
             special: ... # optional 
         #command: bash # optional, override cmd
+        #volumes: # optional
+        #  - ...
+        #volumes_from: ... # optional
       proto-redis:
         image: redis:latest
         home: /var/www/proto-redis
