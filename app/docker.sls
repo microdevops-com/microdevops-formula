@@ -112,16 +112,15 @@ docker_app_container_{{ loop.index }}:
       {%- if "command" in app %}
     - command : {{ app["command"] }}
       {%- endif %}
-      {%- if "volume" in app %}
+      {%- if "volumes" in app %}
     - volumes:
-      {%- for volume in app["volume"] %}
+        {%- for volume in app["volumes"] %}
       - {{ volume }}
-      {%- endfor %}
+        {%- endfor %}
       {%- endif %}
       {%- if "volumes_from" in app %}
     - volumes_from: {{ app["volumes_from"] }}
       {%- endif %}
-      
       
       {%- if app["exec_after_deploy"] is defined %}
 docker_app_container_exec_{{ loop.index }}:
