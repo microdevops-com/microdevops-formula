@@ -35,7 +35,7 @@ pxc:
     pmm2-client: latest
     percona-xtrabackup-80: latest
     percona-mysql-shell: latest
-{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com" ] %}
+{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com"] %}
     percona-xtradb-cluster: 1:8.0.27-18-1.focal
 {% elif grains["id"] in ["mysql-slave1.example.com"] %}
     percona-server-common: 8.0.27-18-1.focal
@@ -43,7 +43,7 @@ pxc:
     percona-server-server: 8.0.27-18-1.focal
 {% endif %}
   
-{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com" ] %}
+{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com"] %}
   debconf:
     percona-xtradb-cluster-server:
       percona-xtradb-cluster-server/root-pass:
@@ -75,7 +75,7 @@ pxc:
 
     /etc/mysql/pxc/node.cnf: |
       [mysqld]
-  {%- if grains["id"] in ["pxc1.example.com" ] %}
+  {%- if grains["id"] in ["pxc1.example.com"] %}
       server-id=101
       ...
   {%- endif %}
