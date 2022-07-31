@@ -36,7 +36,11 @@ pxc:
     percona-xtrabackup-80: latest
     percona-mysql-shell: latest
 {% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com" ] %}
-    percona-xtradb-cluster: 1:8.0.26-16-1.focal
+    percona-xtradb-cluster: 1:8.0.27-18-1.focal
+{% elif grains["id"] in ["mysql-slave1.example.com"] %}
+    percona-server-common: 8.0.27-18-1.focal
+    percona-server-client: 8.0.27-18-1.focal
+    percona-server-server: 8.0.27-18-1.focal
 {% endif %}
   
 {% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com" ] %}
@@ -82,4 +86,22 @@ pxc:
       replicate-do-db=db1
       ...
 
+{% elif grains["id"] in ["mysql-slave1.example.com"] %}
+  debconf:
+    percona-server-server:
+      percona-server-server/re-root-pass:
+        type: password
+        value: __root_password__
+      percona-server-server/root_password_again:
+        type: password
+        value: __root_password__
+      percona-server-server/root-pass:
+        type: password
+        value: __root_password__
+      percona-server-server/root_password:
+        type: password
+        value: __root_password__
+      percona-server-server/default-auth-override:
+        type: select
+        value: Use Legacy Authentication Method (Retain MySQL 5.x Compatibility)
 {% endif %}
