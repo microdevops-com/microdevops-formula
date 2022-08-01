@@ -50,6 +50,10 @@ set_maxclients_for_redis_user:
     - group: 0
     - mode: 644
     - contents: |
+        root soft nofile {{ pillar['redis']['maxclients'] | default(10000) }}
+        root hard nofile {{ pillar['redis']['maxclients'] | default(10000) }}
         redis soft nofile {{ pillar['redis']['maxclients'] | default(10000) }}
         redis hard nofile {{ pillar['redis']['maxclients'] | default(10000) }}
+        haproxy soft nofile {{ pillar['redis']['maxclients'] * 2 + 100 | default(20100) }}
+        haproxy hard nofile {{ pillar['redis']['maxclients'] * 2 + 100 | default(20100) }}
 {%- endif  %}
