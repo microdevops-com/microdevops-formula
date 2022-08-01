@@ -12,6 +12,7 @@ include:
 {% endif %}
   - memcached
   - percona
+  - pxc
   - rabbitmq
   - pyenv
   - rvm

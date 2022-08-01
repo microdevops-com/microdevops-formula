@@ -1,7 +1,7 @@
 # vi: set ft=yaml:
 
 app:
-  #python|php-fpm|static: # choose one of app types
+  #python|php-fpm|ruby|static: # choose one of app types
     # only for python
     pyenv: # to include pyenv state
       versions:
@@ -11,6 +11,10 @@ app:
       7.4:
         modules:
           - php7.4-zip
+    # only for ruby
+    rvm: # to include rvm state
+      versions:
+        3.0.4: True
     # common for all app types
     apps:
       someapp: # you can use __APP_NAME__ to substitute to app name in some of values here
