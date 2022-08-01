@@ -56,6 +56,13 @@ sentry-telegram-webhook_clone_fom_git:
     - target: /opt/sentry-telegram-webhook
     - force_reset: True
 
+create_env_file:
+  file.managed:
+    - name: /opt/sentry-telegram-webhook/.env
+    - contents: |
+        TOKEN={{ pillar["sentry"]["webhooks"]["telegram"]["env_vars"]["TOKEN"] }}
+        CHANNEL_ID={{ pillar["sentry"]["webhooks"]["telegram"]["env_vars"]["CHANNEL_ID"] }}
+
 docker_build_sentry-telegram-webhook:
   docker_image.present:
     - name:  {{ pillar["sentry"]["webhooks"]["telegram"]["image"] }}
