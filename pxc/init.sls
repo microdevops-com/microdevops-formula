@@ -1,0 +1,4 @@
+include:
+  - .pkgs
+  - .configs
+  - .roles
