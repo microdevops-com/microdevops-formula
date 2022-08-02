@@ -1,4 +1,7 @@
 {% if pillar["app"] is defined and "docker" in pillar["app"] %}
+
+  {%- include "app/_pkg.sls" with context %}
+
 docker_install_00:
   file.directory:
     - name: /etc/docker

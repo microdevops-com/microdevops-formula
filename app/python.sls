@@ -1,5 +1,7 @@
 {% if pillar["app"] is defined and "python" in pillar["app"] %}
 
+  {%- include "app/_pkg.sls" with context %}
+
   {%- if "pyenv" in pillar["app"]["python"] %}
     {%- set pyenv = pillar["app"]["python"]["pyenv"] %}
     {%- include "pyenv/init.sls" with context %}
