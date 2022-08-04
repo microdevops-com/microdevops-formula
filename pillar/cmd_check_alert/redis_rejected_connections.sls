@@ -1,6 +1,6 @@
 cmd_check_alert:
   redis_rejected_connections:
-    cron: '*/10'
+    cron: '*/1'
     config:
       enabled: True
       limits:
@@ -13,4 +13,4 @@ cmd_check_alert:
         rejected_connections_greater_than_0:
           cmd: '/opt/sysadmws/misc/check_redis_rejected_connections.sh'
           service: redis
-          resource: rejected_connections
+          resource: __hostname__:redis-rejected-connections
