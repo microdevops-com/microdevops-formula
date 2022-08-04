@@ -15,7 +15,6 @@ include:
   - pxc
   - rabbitmq
   - pyenv
-  - rvm
   - php-fpm.php-fpm
   - nginx
   - app.php-fpm_apps
@@ -23,6 +22,7 @@ include:
   - app.static_apps
   - app.python
   - app.php-fpm
+  - app.ruby
   - app.static
   - app.docker
   - pkg.after_deploy

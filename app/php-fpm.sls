@@ -1,5 +1,7 @@
 {% if pillar["app"] is defined and "php-fpm" in pillar["app"] %}
 
+  {%- include "app/_pkg.sls" with context %}
+
   {%- if "versions" in pillar["app"]["php-fpm"] %}
     {%- set php_fpm = pillar["app"]["php-fpm"] %}
     {%- include "php-fpm/init.sls" with context %}
