@@ -13,6 +13,18 @@
 
       {%- include "app/_user_and_source.sls" with context %}
 
+      {%- if "npm" in app and "install" in app["npm"] %}
+        {%- set i_loop = loop %}
+        {%- for pkg in app["npm"]["install"] %}
+app_ruby_app_npm_install_{{ i_loop.index}}_{{ loop.index }}:
+  cmd.run:
+    - cwd: {{ _app_app_root }}
+    - runas: {{ _app_user }}
+    - name: npm install {{ pkg }}
+
+        {%- endfor %}
+      {%- endif %}
+
       {%- if "rvm" in app %}
 # Do not try to use Multi User or Mixed Mode - it will drive you crazy and will not work anyway :) spent 2 days on this.
 # Single User will take extra space for each app, but at least works.
@@ -51,6 +63,52 @@ app_ruby_app_rvm_bundle_install_{{ loop.index }}:
       {%- endif %}
 
       {%- include "app/_setup_scripts.sls" with context %}
+
+      {%- if "puma" in app %}
+app_ruby_app_puma_root_{{ loop.index }}:
+  cmd.run:
+    - name: |
+        loginctl enable-linger {{ _app_user }} && loginctl show-user {{ _app_user }}
+
+app_ruby_app_puma_user_systemd_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - makedirs: True
+
+app_ruby_app_puma_user_systemd_unit_file_{{ loop.index }}:
+  file.managed:
+    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user/puma-{{ app_name }}.service
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - contents: |
+        [Unit]
+        Description=Puma HTTP Server
+        After=network.target
+
+        [Service]
+        WorkingDirectory={{ app["puma"]["working_directory"]|replace("__APP_NAME__", app_name) }}
+        ExecStart={{ app["puma"]["exec_start"]|replace("__APP_NAME__", app_name) }}
+        Restart=always
+        Environment=PUMA_DEBUG=1
+        Environment=RAILS_ENV={{ app["puma"]["rails_env"] }}
+
+        [Install]
+        WantedBy=default.target
+
+app_ruby_app_puma_user_systemd_unit_setup_{{ loop.index }}:
+  cmd.run:
+    - cwd: {{ _app_app_root }}
+    - runas: {{ _app_user }}
+    - name: |
+        export XDG_RUNTIME_DIR=/run/user/$(id -u {{ _app_user }})
+        systemctl --user daemon-reload
+        systemctl --user enable --now puma-{{ app_name }}.service
+        systemctl --user restart puma-{{ app_name }}.service
+        systemctl --user status puma-{{ app_name }}.service
+
+      {%- endif %}
 
       {%- include "app/_nginx.sls" with context %}
 
