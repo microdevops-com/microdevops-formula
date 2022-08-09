@@ -2,7 +2,7 @@
 
 ufw:
   allow:
-    k8s_ingress_office_and_vpn:
+    k8s_master_office_and_vpn:
       proto: tcp
       from:
         {{ vars["Office_And_VPN"] }}
