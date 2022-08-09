@@ -22,6 +22,7 @@ cmd_check_alert:
         salt-master:
           #disabled: True # optional, disable this check, useful for overriding
           cmd: systemctl is-active salt-master.service && ps ax | grep '/usr/bin/salt-maste[r]'
+          #cmd_override: xxx # optional, cmd definition that will override cmd on pillar level, useful for setting custom thresholds for hosts
           service: service
           resource: __hostname__:salt-master
     files: # optionally fill in some files like exclusions in check helpers, useful if joined from other standard pillar
