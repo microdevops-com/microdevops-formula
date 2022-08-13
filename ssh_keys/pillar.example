@@ -4,6 +4,6 @@ ssh_keys:
   root:
     present:
       - ssh-ed25519 AAAACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx user@example.com
-    absent: # Keep only hash in absent for partial search
+    absent: # Keep only key (without comment) in absent for partial search
       # Admins
       - AAAACyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy # olduser
