@@ -1,7 +1,8 @@
 # vi: set ft=yaml:
 
 ssh_keys:
-  root:
+  root: # Just a name, used for pillar merging, keep unique in each pillar
+    user: root
     present:
       - ssh-ed25519 AAAACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx user@example.com
     absent: # Keep only key (without comment) in absent for partial search
