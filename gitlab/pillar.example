@@ -8,13 +8,13 @@ gitlab:
   domain: gitlab.example.com
   acme_account: example.com # use either acme_account or ssl_certificate + ssl_certificate_key
   #ssl_certificate:
-  #  file: /etc/ssl/hicell.net/ssl.crt
+  #  file: /etc/ssl/example.com/ssl.crt
   #  contents: |
   #    -----BEGIN CERTIFICATE-----
   #    ...
   #    -----END CERTIFICATE-----
   #ssl_certificate_key:
-  #  file: /etc/ssl/hicell.net/ssl.key
+  #  file: /etc/ssl/example.com/ssl.key
   #  contents: |
   #    -----BEGIN PRIVATE KEY-----
   #    ...
@@ -23,13 +23,13 @@ gitlab:
   #  domain: gitlab.old-example.com
   #  acme_account: old-example.com # use either acme_account or ssl_certificate + ssl_certificate_key
   #  #ssl_certificate:
-  #  #  file: /etc/ssl/hicell.net/ssl.crt
+  #  #  file: /etc/ssl/example.com/ssl.crt
   #  #  contents: |
   #  #    -----BEGIN CERTIFICATE-----
   #  #    ...
   #  #    -----END CERTIFICATE-----
   #  #ssl_certificate_key:
-  #  #  file: /etc/ssl/hicell.net/ssl.key
+  #  #  file: /etc/ssl/example.com/ssl.key
   #  #  contents: |
   #  #    -----BEGIN PRIVATE KEY-----
   #  #    ...
@@ -38,13 +38,13 @@ gitlab:
     domain: mattermost.example.com
     acme_account: example.com
     #ssl_certificate:
-    #  file: /etc/ssl/hicell.net/ssl.crt
+    #  file: /etc/ssl/example.com/ssl.crt
     #  contents: |
     #    -----BEGIN CERTIFICATE-----
     #    ...
     #    -----END CERTIFICATE-----
     #ssl_certificate_key:
-    #  file: /etc/ssl/hicell.net/ssl.key
+    #  file: /etc/ssl/example.com/ssl.key
     #  contents: |
     #    -----BEGIN PRIVATE KEY-----
     #    ...
