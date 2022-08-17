@@ -28,7 +28,12 @@ pxc_user_password_{{ loop.index }}:
 pxc_grant_{{ i_loop.index }}_{{ j_loop.index }}_{{ loop.index }}:
   cmd.run:
     - name: |
-        mysql -e 'GRANT {{ what }} ON {{ on}} TO `{{ user_name }}`@`{{ user_params["host"] }}`;'
+          {%- if " WITH GRANT OPTION" in what %}
+            {%- set what = what|replace(" WITH GRANT OPTION", "") %}
+        mysql -e 'GRANT {{ what }} ON {{ on }} TO `{{ user_name }}`@`{{ user_params["host"] }}` WITH GRANT OPTION;'
+          {%- else %}
+        mysql -e 'GRANT {{ what }} ON {{ on }} TO `{{ user_name }}`@`{{ user_params["host"] }}`;'
+          {%- endif %}
 
         {%- endfor %}
       {%- endfor %}
