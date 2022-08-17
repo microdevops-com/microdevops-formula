@@ -180,6 +180,10 @@ sensu-plugins_update_cacert:
           {%- do check_group_params["config"]["checks"][check_name].update({"severity_per_retcode": {}}) %}
           {%- do check_group_params["config"]["checks"][check_name]["severity_per_retcode"].update(new_severity_per_retcode) %}
         {%- endif %}
+        # Also apply cmd_override over cmd here
+        {%- if "cmd_override" in check_params %}
+          {%- do check_group_params["config"]["checks"][check_name].update({"cmd": check_params["cmd_override"]}) %}
+        {%- endif %}
       {%- endfor %}
     {%- endif %}
 cmd_check_alert_config_managed_{{ loop.index }}:

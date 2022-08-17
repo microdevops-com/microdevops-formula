@@ -15,6 +15,7 @@ include:
   - pxc
   - rabbitmq
   - pyenv
+  - nodejs
   - php-fpm.php-fpm
   - nginx
   - app.php-fpm_apps
