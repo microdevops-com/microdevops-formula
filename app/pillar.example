@@ -1,6 +1,10 @@
 # vi: set ft=yaml:
 
 app:
+  pkg: # optional, to install prerequisites
+    default-libmysqlclient-dev: any # just make sure version is installed
+    python2: latest # always install latest
+    libgmp-dev: 2:6.2.0 # install specific version
   #python|php-fpm|ruby|static: # choose one of app types
     # only for python
     pyenv: # to include pyenv state
@@ -11,10 +15,6 @@ app:
       7.4:
         modules:
           - php7.4-zip
-    # only for ruby
-    rvm: # to include rvm state
-      versions:
-        3.0.4: True
     # common for all app types
     apps:
       someapp: # you can use __APP_NAME__ to substitute to app name in some of values here
@@ -64,6 +64,17 @@ app:
           #  php_admin_flag[html_errors] = off
           #  php_admin_value[post_max_size] = 25M
           #  php_admin_value[upload_max_filesize] = 25M
+        # only for ruby
+        rvm: # install rvm and specific ruby version for app
+          version: 3.0.0 
+          bundle_install: /var/www/__APP_NAME__/src
+        npm: # optional, install per app user
+          install:
+            - yarn
+        puma: # optional, install puma app user level service
+          working_directory: /var/www/__APP_NAME__/src
+          exec_start: /var/www/__APP_NAME__/.rvm/wrappers/ruby-3.0.0/puma -C /var/www/__APP_NAME__/src/config/puma.rb
+          rails_env: production
         # common for all app types
         user: __APP_NAME__
         group: __APP_NAME__
@@ -143,6 +154,8 @@ app:
             systemctl --user daemon-reload
             systemctl --user enable --now someapp.service
             systemctl --user status someapp.service
+            # Another example line for ruby
+            #source ~/.rvm/scripts/rvm && rvm use 3.0.0 && RAILS_ENV=production rails assets:precompile
         nginx: # optional
           domain: example.com
           ssl: # optional

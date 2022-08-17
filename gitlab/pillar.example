@@ -1,15 +1,54 @@
+# vi: set ft=yaml:
+
+# gitlab
 gitlab:
   version: latest # latest or version like 14.8.3
   root_password: xxxxxxxxxxxxxxxxxxx
   distribution: ce # ce or ee, see https://about.gitlab.com/handbook/marketing/strategic-marketing/tiers/#history-of-ce-and-ee-distributions
   domain: gitlab.example.com
-  acme_account: example.com
+  acme_account: example.com # use either acme_account or ssl_certificate + ssl_certificate_key
+  #ssl_certificate:
+  #  file: /etc/ssl/example.com/ssl.crt
+  #  contents: |
+  #    -----BEGIN CERTIFICATE-----
+  #    ...
+  #    -----END CERTIFICATE-----
+  #ssl_certificate_key:
+  #  file: /etc/ssl/example.com/ssl.key
+  #  contents: |
+  #    -----BEGIN PRIVATE KEY-----
+  #    ...
+  #    -----END PRIVATE KEY-----
   #redirect: # optional, add custom nginx config with redirect from other domain
   #  domain: gitlab.old-example.com
-  #  acme_account: old-example.com
+  #  acme_account: old-example.com # use either acme_account or ssl_certificate + ssl_certificate_key
+  #  #ssl_certificate:
+  #  #  file: /etc/ssl/example.com/ssl.crt
+  #  #  contents: |
+  #  #    -----BEGIN CERTIFICATE-----
+  #  #    ...
+  #  #    -----END CERTIFICATE-----
+  #  #ssl_certificate_key:
+  #  #  file: /etc/ssl/example.com/ssl.key
+  #  #  contents: |
+  #  #    -----BEGIN PRIVATE KEY-----
+  #  #    ...
+  #  #    -----END PRIVATE KEY-----
   mattermost: # optional, enable bundled mattermost instance
     domain: mattermost.example.com
     acme_account: example.com
+    #ssl_certificate:
+    #  file: /etc/ssl/example.com/ssl.crt
+    #  contents: |
+    #    -----BEGIN CERTIFICATE-----
+    #    ...
+    #    -----END CERTIFICATE-----
+    #ssl_certificate_key:
+    #  file: /etc/ssl/example.com/ssl.key
+    #  contents: |
+    #    -----BEGIN PRIVATE KEY-----
+    #    ...
+    #    -----END PRIVATE KEY-----
   gitaly_ruby_num_workers: 4
   google_oauth2:
     app_id: xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com

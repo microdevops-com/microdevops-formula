@@ -1,0 +1,11 @@
+openresty:
+  configs: openresty/base_config # mandatory
+  modules: # optional
+    - url: https://github.com/openresty/lua-resty-limit-traffic.git
+      install:
+        - lua_package_path "/usr/local/openresty/site/lua-resty-limit-traffic/lib/?.lua;;"
+    - url: https://github.com/openresty/lua-resty-websocket.git
+      install:
+        - lua_package_path "/usr/local/openresty/site/lua-resty-websocket/lib/?.lua;;";
+
+# more modules https://github.com/orgs/openresty/repositories?q=lua-resty
