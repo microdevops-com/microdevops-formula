@@ -42,4 +42,4 @@ network:
       dhcp4: no
       dhcp6: no
       addresses:
-        - {{ ipv4_address }}
+        - {{ ipv4_lan_address }}
