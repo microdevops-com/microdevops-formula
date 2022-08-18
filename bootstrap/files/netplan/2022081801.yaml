@@ -1,0 +1,45 @@
+# Simple server with local net on br1
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ wan_iface }}:
+      dhcp4: no
+      dhcp6: no
+  bridges:
+    br0:
+      interfaces:
+        - {{ wan_iface }}
+      macaddress: {{ mac }}
+      dhcp4: no
+      dhcp6: no
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - {{ ipv4_address }}
+        - {{ ipv6_address }}
+      routes:
+        - on-link: true
+          to: 0.0.0.0/0
+          via: {{ ipv4_gw }}
+      gateway6: {{ ipv6_gw }}
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+          - 2001:4860:4860::8888
+          - 2001:4860:4860::8844
+          - 2606:4700:4700::1111
+          - 2606:4700:4700::1001
+    br1:
+      interfaces:
+        - {{ lan_iface }}
+      dhcp4: no
+      dhcp6: no
+      addresses:
+        - {{ ipv4_lan_address }}
