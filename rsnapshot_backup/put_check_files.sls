@@ -95,13 +95,11 @@ put_check_files_tmp_{{ i_loop.index }}_{{ j_loop.index }}:
             {%- endfor %}
 
 put_check_files_tmp_upload_{{ i_loop.index }}_{{ j_loop.index }}:
-  module.run:
-    - name: s3.put
-    - bucket: '{{ check_item["s3_bucket"] }}'
-    - path: '{{ check_item["s3_path"] }}/.backup'
-    - local_file: '/tmp/put_check_files/.backup'
-    - keyid: '{{ check_item["s3_keyid"] }}'
-    - key: '{{ check_item["s3_key"] }}'
+  cmd.run:
+    - env:
+      - AWS_ACCESS_KEY_ID: '{{ check_item["s3_keyid"] }}'
+      - AWS_SECRET_ACCESS_KEY: '{{ check_item["s3_key"] }}'
+    - name: aws s3 cp '/tmp/put_check_files/.backup' 's3://{{ check_item["s3_bucket"] }}/{{ check_item["s3_path"] }}/.backup'
 
           {%- endif %}
 
