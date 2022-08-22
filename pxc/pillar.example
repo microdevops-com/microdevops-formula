@@ -117,3 +117,6 @@ pxc:
       grants:
         "`exampledb`.*":
           - ALL PRIVILEGES
+          #- ALL PRIVILEGES WITH GRANT OPTION
+        "*.*":
+          - ALL PRIVILEGES
