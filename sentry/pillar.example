@@ -6,6 +6,7 @@ sentry:
   url: 'https://sentry.example.com'
   admin_email: 'admin@example.com'
   admin_password: 'xxxxxxxxxxxxxxxxxx'
+  fix_admin_permissions: True                                                             # https://github.com/getsentry/self-hosted/issues/1288
   enhance_image_sh: |
     apt-get update
     apt-get install -y gcc libsasl2-dev python-dev libldap2-dev libssl-dev
