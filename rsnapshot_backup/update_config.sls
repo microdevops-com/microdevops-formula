@@ -388,6 +388,10 @@ rsnapshot_backup_yaml:
               files_total: {{ check["files_total"] }}
               {%- endif %}
               #
+              {%- if "files_total_max" in check %}
+              files_total_max: {{ check["files_total_max"] }}
+              {%- endif %}
+              #
               {%- if "files_mask" in check %}
               files_mask: '{{ check["files_mask"] }}'
               {%- endif %}
