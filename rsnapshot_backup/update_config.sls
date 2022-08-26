@@ -355,6 +355,10 @@ rsnapshot_backup_yaml:
           mysqlsh_threads: {{ host_backups_item["mysqlsh_threads"] }}
           {%- endif %}
           #
+          {%- if "retries" in host_backups_item %}
+          retries: {{ host_backups_item["retries"] }}
+          {%- endif %}
+          #
           {%- if "checks" in host_backups_item %}
             # Some checks have data param to set params for specific data item, so add checks only if matched data item (source var)
             {%- for check in host_backups_item["checks"] if "data" not in check or check["data"] == source %}

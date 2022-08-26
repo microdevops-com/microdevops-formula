@@ -22,6 +22,7 @@ rsnapshot_backup:
         #retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
         #retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
         #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
+        #retries: N # optional, if rsnapshot fails, try N times more
         backups: # mandatory
           - host: backup1.example.com # backup from remote server
             path: /var/backups/srv1.example.com # where to store backup
