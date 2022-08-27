@@ -358,6 +358,12 @@ rsnapshot_backup_yaml:
           {%- if "retries" in host_backups_item %}
           retries: {{ host_backups_item["retries"] }}
           {%- endif %}
+          # Per backup host item is higher priority than per backup item
+          {%- if "rsnapshot_prefix_cmd" in backup %}
+          rsnapshot_prefix_cmd: {{ backup["rsnapshot_prefix_cmd"] }}
+          {%- elif "rsnapshot_prefix_cmd" in host_backups_item %}
+          rsnapshot_prefix_cmd: {{ host_backups_item["rsnapshot_prefix_cmd"] }}
+          {%- endif %}
           #
           {%- if "checks" in host_backups_item %}
             # Some checks have data param to set params for specific data item, so add checks only if matched data item (source var)

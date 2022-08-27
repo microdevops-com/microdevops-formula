@@ -23,6 +23,8 @@ rsnapshot_backup:
         #retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
         #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
+        #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call
+                               # ionice -c 3 nice # to make rssnapshot more gentle with io
         backups: # mandatory
           - host: backup1.example.com # backup from remote server
             path: /var/backups/srv1.example.com # where to store backup
@@ -35,6 +37,7 @@ rsnapshot_backup:
             #retain_daily: N # optional, overrides retain definition of higher level
             #retain_weekly: N # optional, overrides retain definition of higher level
             #retain_monthly: N # optional, overrides retain definition of higher level
+            #rsnapshot_prefix_cmd: # optional, overrides prefix definition of higher level
           - host: srv1.example.com # backup from server itself (local backup)
             path: /var/backups/srv1.example.com
       - type: RSYNC_SSH # rsync over ssh
