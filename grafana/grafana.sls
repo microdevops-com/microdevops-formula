@@ -101,7 +101,7 @@ nginx_cert_{{ loop.index }}:
     
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
-grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
+grafana_dirs_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - names:
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc
@@ -111,12 +111,7 @@ grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/notifiers
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/plugins
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/log
-    - mode: 755
-    - makedirs: True
-
-grafana_data_dir_{{ loop.index }}_{{ i_loop.index }}:
-  file.directory:
-    - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data
     - mode: 755
     - makedirs: True
 
