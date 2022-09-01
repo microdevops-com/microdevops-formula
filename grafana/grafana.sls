@@ -8,7 +8,7 @@ docker_install_01:
   file.managed:
     - name: /etc/docker/daemon.json
     - contents: |
-        {"iptables": false}
+        { "dns": ["1.1.1.1", "8.8.8.8", "8.8.4.4"], "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
 
 docker_install_1:
   pkgrepo.managed:
