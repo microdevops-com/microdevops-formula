@@ -114,13 +114,7 @@ nginx_cert:
 loki_data_dir:
   file.directory:
     - names:
-      - /opt/loki/{{ pillar['loki']['name'] }}/chunks
-      - /opt/loki/{{ pillar['loki']['name'] }}/rules
-      - /opt/loki/{{ pillar['loki']['name'] }}/rules-temp
-      - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-active
-      - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-cache
-      - /opt/loki/{{ pillar['loki']['name'] }}/boltdb-shipper-compactor
-      - /opt/loki/{{ pillar['loki']['name'] }}/wal
+      - /opt/loki/{{ pillar['loki']['name'] }}
     - mode: 755
     - user: 0
     - group: 0
@@ -151,10 +145,10 @@ loki_container:
     - publish:
         - 127.0.0.1:{{ pillar['loki']['config']['server']['http_listen_port'] }}:{{ pillar['loki']['config']['server']['http_listen_port'] }}/tcp
     - binds:
-        - /opt/loki/{{ pillar['loki']['name'] }}:/tmp/loki
+        - /opt/loki/{{ pillar['loki']['name'] }}:{{ pillar['loki']['path_prefix'] }}
     - watch:
         - /opt/loki/{{ pillar['loki']['name'] }}/config.yaml
-    - command: -config.file=/tmp/loki/config.yaml
+    - command: -config.file={{ pillar['loki']['path_prefix'] }}/config.yaml
 
 nginx_reload:
   cmd.run:
