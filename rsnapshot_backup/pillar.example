@@ -22,19 +22,9 @@ rsnapshot_backup:
         #retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
         #retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
         #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
-        checks: # all checks are optional
-          - type: .backup # check special .backup files in data roots, files are put there before backup by rsnapshot_backup.put_check_files
-          - type: s3/.backup # put .backup file to s3 bucket for the same purposes
-            s3_bucket: bucket_name
-            s3_path: path_within_bucket
-            s3_keyid: xxx
-            s3_key: yyy
-          - type: FILE_AGE # check newest file age and other params, useful to monitor that fresh dumps exist
-            last_file_age: N # files can be no more N days old
-            min_file_size: N # files can be no less than N size in bytes
-            files_total: N # there should be no less than N files of this type
-            file_type: 'regexp' # regexp which will be matched agains unix command 'file' output
-            files_mask: 'regexp' # regexp for find command
+        #retries: N # optional, if rsnapshot fails, try N times more
+        #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call
+                               # ionice -c 3 nice # to make rssnapshot more gentle with io
         backups: # mandatory
           - host: backup1.example.com # backup from remote server
             path: /var/backups/srv1.example.com # where to store backup
@@ -47,6 +37,7 @@ rsnapshot_backup:
             #retain_daily: N # optional, overrides retain definition of higher level
             #retain_weekly: N # optional, overrides retain definition of higher level
             #retain_monthly: N # optional, overrides retain definition of higher level
+            #rsnapshot_prefix_cmd: # optional, overrides prefix definition of higher level
           - host: srv1.example.com # backup from server itself (local backup)
             path: /var/backups/srv1.example.com
       - type: RSYNC_SSH # rsync over ssh
@@ -57,6 +48,22 @@ rsnapshot_backup:
           - /some/path
         #exclude: # optional, exclude some components from expanded list
         #  - /root
+        checks: # all checks are optional
+          - type: .backup # check special .backup files in data roots, files are put there before backup by rsnapshot_backup.put_check_files
+                          # .backup checks work with RSYNC_SSH and RSYNC_NATIVE type backup items
+          - type: s3/.backup # put .backup file to s3 bucket for the same purposes
+            s3_bucket: bucket_name
+            s3_path: path_within_bucket
+            s3_keyid: xxx
+            s3_key: yyy
+          - type: FILE_AGE # check newest file age and other params, useful to monitor that fresh dumps exist
+                          # FILE_AGE checks work with RSYNC_SSH and RSYNC_NATIVE type backup items
+            files_mask: 'regexp' # regexp for find command
+            last_file_age: N # files found can be no more N days old
+            min_file_size: N # files found can be no less than N size in bytes
+            file_type: 'regexp' # regexp which will be matched against unix command 'file' output
+            files_total: N # there should be no less than N files found
+            files_total_max: N # optional, there should be no more than N files found
       - type: RSYNC_NATIVE # native rsync proto, mainly to backup Windows
         data:
           - /Share1/Some/Path
