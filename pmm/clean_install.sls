@@ -47,11 +47,11 @@ acme_cert:
 grafana_dirs:
   file.directory:
     - names:
-      - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/provisioning/dashboards
-      - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/provisioning/datasources
-      - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/provisioning/notifiers
-      - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/provisioning/plugins
-      - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["var_lib_grafana"] }}
+      - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_provisioning"] }}/dashboards
+      - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_provisioning"] }}/datasources
+      - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_provisioning"] }}/notifiers
+      - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_provisioning"] }}/plugins
+      - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_var_lib"] }}
     - mode: 755
     - makedirs: True
 
@@ -91,7 +91,7 @@ percona_pmm_container:
     - binds:
         - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana:/etc/grafana:rw
         - /opt/acme/cert/{{ pillar["pmm"]["name"] }}:/opt/acme/cert/{{ pillar["pmm"]["name"] }}:rw
-        - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["var_lib_grafana"] }}:{{ pillar["pmm"]["var_lib_grafana"] }}:rw
+        - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_var_lib"] }}:{{ pillar["pmm"]["gf_path_var_lib"] }}:rw
     - watch:
         - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/grafana.ini
     - volumes_from: percona-{{ pillar["pmm"]["name"] }}-data
@@ -104,11 +104,11 @@ percona_pmm_container:
 
 rsync_default_pmm_provisioning:
   cmd.run:
-    - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} bash -c 'rsync -avHAX --delete /usr/share/grafana/conf/provisioning/ /etc/grafana/provisioning/'
+    - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} bash -c 'rsync -avHAX --delete /usr/share/grafana/conf/provisioning/ {{ pillar["pmm"]["gf_path_provisioning"] }}/'
 
   {%- if 'notifiers' in pillar['pmm'] %}
   file.serialize:
-    - name: /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/provisioning/notifiers/notifiers.yaml
+    - name: /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_provisioning"] }}/notifiers/notifiers.yaml
     - user: root
     - group: root
     - mode: 644
@@ -121,7 +121,7 @@ rsync_default_pmm_provisioning:
   {%- if 'datasources' in pillar['pmm'] %}
 grafana_datasources:
   file.serialize:
-    - name: /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/provisioning/datasources/datasources.yaml
+    - name: /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_provisioning"] }}/datasources/datasources.yaml
     - user: root
     - group: root
     - mode: 644
@@ -134,7 +134,7 @@ grafana_datasources:
   {%- if 'dashboards' in pillar['pmm'] %}
 grafana_dashboards_provisioning_config:
   file.serialize:
-    - name: /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/provisioning/dashboards/dashboards.yaml
+    - name: /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_provisioning"] }}/dashboards/dashboards.yaml
     - user: root
     - group: root
     - mode: 644
