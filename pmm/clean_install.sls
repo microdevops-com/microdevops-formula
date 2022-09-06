@@ -183,14 +183,19 @@ install_grafana_image_renderer_components:
   cmd.run:
     - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} bash -c 'yum install libXcomposite libXdamage libXtst cups libXScrnSaver pango atk adwaita-cursor-theme adwaita-icon-theme at at-spi2-atk at-spi2-core cairo-gobject colord-libs  dconf desktop-file-utils ed emacs-filesystem gdk-pixbuf2 glib-networking gnutls gsettings-desktop-schemas gtk-update-icon-cache gtk3 hicolor-icon-theme jasper-libs json-glib libappindicator-gtk3 libdbusmenu libdbusmenu-gtk3 libepoxy liberation-fonts liberation-narrow-fonts liberation-sans-fonts liberation-serif-fonts libgusb libindicator-gtk3 libmodman libproxy libsoup libwayland-cursor libwayland-egl libxkbcommon m4 mailx nettle patch psmisc redhat-lsb-core redhat-lsb-submod-security rest spax time trousers xdg-utils xkeyboard-config alsa-lib -y'
 
+stop grafana:
+  cmd.run:
+    - shell: /bin/bash
+    - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} supervisorctl stop grafana
+
 install_pmm_image_plugins:
   cmd.run:
     - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} bash -ic 'grafana-cli plugins install {{ pillar["pmm"]["plugins"] }}'
 
-restart grafana:
+start grafana:
   cmd.run:
     - shell: /bin/bash
-    - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} supervisorctl restart grafana
+    - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} supervisorctl start grafana
 
 pmm-data_backup_script:
   file.managed:
