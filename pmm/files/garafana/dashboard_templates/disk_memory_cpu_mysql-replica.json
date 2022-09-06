@@ -1,0 +1,793 @@
+{
+  "title": "{{ board_name }}",
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "title": "Disk Space and Memory",
+      "type": "row"
+    },
+    {
+      "title": "[{{ node_name }}] Disk Space Usage",
+      "id": 2,
+      "alert": {
+        "name": "[{{ node_name }}] Disk Space Usage > 80%",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0.8
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "type": "max"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0",
+        "frequency": "1m",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 10,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "max by (node_name) (1 - (max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m]) or max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m])) / \n(max_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m]) or\nmax_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m])))",
+          "interval": "",
+          "legendFormat": "Disk Space Usage",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0.8,
+          "visible": true
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:392",
+          "format": "percentunit",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:393",
+          "format": "percentunit",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "id": 3,
+      "alert": {
+        "name": "[{{ node_name }}] Free Memory < 10%",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                10
+              ],
+              "type": "lt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "type": "min"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0m",
+        "frequency": "1m",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 4,
+      "fillGradient": 10,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 7,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:400",
+          "alias": "Memory available",
+          "color": "#37872D"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "100 - (clamp_min(avg by (node_name) (((avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s])) - ((avg_over_time(node_memory_MemFree_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_MemFree_bytes{node_name=~\"{{ node_name }}\"}[10s]))+ \n(avg_over_time(node_memory_Buffers_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_Buffers_bytes{node_name=~\"{{ node_name }}\"}[10s])) + \n(avg_over_time(node_memory_Cached_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_Cached_bytes{node_name=~\"{{ node_name }}\"}[10s]))))),0) /\n\n\navg by (node_name) (avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s])) * 100)",
+          "interval": "",
+          "legendFormat": "Memory available",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 10,
+          "visible": true
+        }
+      ],
+      "title": "[{{ node_name }}] Free Memory",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:449",
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:450",
+          "format": "percent",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "title": "CPU",
+      "type": "row"
+    },
+    {
+      "id": 4,
+      "alert": {
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                30
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0m",
+        "frequency": "30s",
+        "handler": 1,
+        "name": "[{{ node_name }}] CPU Usage > 30%",
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 7,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 8
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 0.5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:1142",
+          "alias": "user",
+          "color": "#1F60C4"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (node_name,mode) (clamp_max(((avg by (mode) ( (clamp_max(rate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"user\"}[1m]),1)) or (clamp_max(irate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"user\"}[5m]),1)) ))*100 or (avg_over_time(node_cpu_average{node_name=~\"{{ node_name }}\", mode!=\"total\", mode=\"user\"}[1m]) or avg_over_time(node_cpu_average{node_name=~\"{{ node_name }}\", mode!=\"total\", mode=\"user\"}[5m]))),100))",
+          "interval": "1",
+          "legendFormat": "user",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 30,
+          "visible": true
+        }
+      ],
+      "title": "[{{ node_name }}] CPU Usage",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:90",
+          "format": "percent",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:91",
+          "format": "short",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "id": 5,
+      "alert": {
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0.2
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "type": "avg"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0m",
+        "frequency": "1m",
+        "handler": 1,
+        "name": "[{{ node_name }}] CPU IOWait > 20%",
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 7,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 7,
+        "y": 8
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 0.5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:118",
+          "alias": "CPU iowait",
+          "color": "#C4162A"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "clamp_max(max by () (sum  by (cpu) ( (clamp_max(rate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"iowait\"}[1m]),1)) or (clamp_max(irate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"iowait\"}[5m]),1)) )),1)",
+          "interval": "",
+          "legendFormat": "CPU iowait",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0.2,
+          "visible": true
+        }
+      ],
+      "title": "[{{ node_name }}] CPU IOWait",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:90",
+          "format": "percentunit",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:91",
+          "format": "short",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    }
+{%- if replication_panel %},
+    {
+      "id": 6,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "title": "Replication",
+      "type": "row"
+    },
+    {
+      "id": 7,
+      "alert": {
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0.5
+              ],
+              "type": "lt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "10s",
+                "now"
+              ]
+            },
+            "reducer": {
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0m",
+        "frequency": "10s",
+        "handler": 1,
+        "name": "[{{ node_name }}] Replica IS NOT RUNNING",
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 10,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 15
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:201",
+          "alias": "Replication is running",
+          "color": "#8F3BB8"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "\tmin(\n\t\t(min_over_time(mysql_slave_status_slave_io_running{service_name=~\"{{ node_name }}-mysql\"}[1m])),\n\t\t(min_over_time(mysql_slave_status_slave_sql_running{service_name=~\"{{ node_name }}-mysql\"}[1m]))\n\t)",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Replication is running",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 0.5,
+          "visible": true
+        }
+      ],
+      "title": "[{{ node_name }}] Replica Status",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:3988",
+          "format": "short",
+          "label": "",
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:3989",
+          "format": "short",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "id": 8,
+      "alert": {
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                60
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "type": "max"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0m",
+        "frequency": "1m",
+        "handler": 1,
+        "name": "[{{ node_name }}] Replica Lag > 1 min",
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "decimals": 0,
+      "description": "",
+      "fill": 10,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 7,
+        "y": 15
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 4,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:628",
+          "alias": "Replica lag",
+          "color": "#B877D9"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "clamp_min(avg by (service_name) (\n(max_over_time(mysql_slave_status_seconds_behind_master{service_name=~\"{{ node_name }}-mysql\"}[30s]) or max_over_time(mysql_slave_status_seconds_behind_master{service_name=~\"{{ node_name }}-mysql\"}[30s])) - (max_over_time(mysql_slave_status_sql_delay{service_name=~\"{{ node_name }}-mysql\"}[30s]) or max_over_time(mysql_slave_status_sql_delay{service_name=~\"{{ node_name }}-mysql\"}[30s]))\n),0)",
+          "hide": false,
+          "instant": false,
+          "interval": "10",
+          "legendFormat": "Replica lag",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 60,
+          "visible": true
+        }
+      ],
+      "title": "[{{ node_name }}] Replica Lag",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,  
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:89",
+          "decimals": 2,
+          "format": "s",
+          "logBase": 1,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:90",
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    }
+{%- endif %}
+  ],
+  "version": 0
+}
