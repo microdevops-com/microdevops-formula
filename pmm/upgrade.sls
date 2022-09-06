@@ -40,6 +40,7 @@ percona_pmm_container:
     - binds:
         - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana:/etc/grafana:rw
         - /opt/acme/cert/{{ pillar["pmm"]["name"] }}:/opt/acme/cert/{{ pillar["pmm"]["name"] }}:rw
+        - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_var_lib"] }}:{{ pillar["pmm"]["gf_path_var_lib"] }}:rw
     - watch:
         - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/grafana.ini
     - volumes_from: percona-{{ pillar["pmm"]["name"] }}-data
