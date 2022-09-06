@@ -200,10 +200,12 @@ pmm-data_backup_script:
         mkdir -p /opt/pmm/{{ pillar["pmm"]["name"] }}/backup
         iptables -A ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
         docker stop percona-{{ pillar["pmm"]["name"] }}
-        tar cvf /opt/pmm/{{ pillar["pmm"]["name"] }}/backup/percona-{{ pillar["pmm"]["name"] }}-data_opt.tar /opt/pmm/{{ pillar["pmm"]["name"] }}/var /opt/pmm/{{ pillar["pmm"]["name"] }}/etc
-        docker run --rm --volumes-from percona-{{ pillar["pmm"]["name"] }}-data -v /opt/pmm/{{ pillar["pmm"]["name"] }}/backup:/backup ubuntu tar cvf /backup/percona-{{ pillar["pmm"]["name"] }}-data_srv.tar /srv
+        tar --exclude='/opt/pmm/{{ pillar["pmm"]["name"] }}/backup' -cf /opt/pmm/{{ pillar["pmm"]["name"] }}/backup/percona-{{ pillar["pmm"]["name"] }}-data_opt.tar /opt/pmm/{{ pillar["pmm"]["name"] }}
+        docker run --rm --volumes-from percona-{{ pillar["pmm"]["name"] }}-data -v /opt/pmm/{{ pillar["pmm"]["name"] }}/backup:/backup ubuntu tar cf /backup/percona-{{ pillar["pmm"]["name"] }}-data_srv.tar /srv
         docker start percona-{{ pillar["pmm"]["name"] }}
-        sleep 120
+        #echo "CONTAINER percona-{{ pillar["pmm"]["name"] }} STARTED"
+        #echo "Started timeout to disable firewall for api.telegram.org"
+        sleep 180
         iptables -D ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
     - mode: 774
 
@@ -214,10 +216,12 @@ pmm-data_restore_script:
         #!/bin/bash
         iptables -A ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
         docker stop percona-{{ pillar["pmm"]["name"] }}
-        cd / && tar xvf /opt/pmm/{{ pillar["pmm"]["name"] }}/backup/percona-{{ pillar["pmm"]["name"] }}-data_opt.tar
-        docker run --rm --volumes-from percona-{{ pillar["pmm"]["name"] }}-data -v /opt/pmm/{{ pillar["pmm"]["name"] }}/backup:/backup ubuntu bash -c "cd / && tar xvf /backup/percona-{{ pillar["pmm"]["name"] }}-data_srv.tar"
+        cd / && tar xf /opt/pmm/{{ pillar["pmm"]["name"] }}/backup/percona-{{ pillar["pmm"]["name"] }}-data_opt.tar
+        docker run --rm --volumes-from percona-{{ pillar["pmm"]["name"] }}-data -v /opt/pmm/{{ pillar["pmm"]["name"] }}/backup:/backup ubuntu bash -c "cd / && tar xf /backup/percona-{{ pillar["pmm"]["name"] }}-data_srv.tar"
         docker start percona-{{ pillar["pmm"]["name"] }}
-        sleep 120
+        #echo "CONTAINER percona-{{ pillar["pmm"]["name"] }} STARTED"
+        #echo "Started timeout to disable firewall for api.telegram.org"
+        sleep 180
         iptables -D ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
     - mode: 774
 {% endif %}
