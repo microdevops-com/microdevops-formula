@@ -93,7 +93,7 @@ sentry:
         APP_PORT: 3000
         SENTRY_CLIENT_SECRET: 'yyyyyyyyyyyyyyyyyy'
         SENTRY_INCLUDE_TAGS: 'brand,BRAND,DOMAIN'
-        MATRIX_HOMESERVER_URL: 'https://oxgaming.ems.host'
+        MATRIX_HOMESERVER_URL: 'https://example.ems.host'
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
@@ -119,7 +119,7 @@ sentry:
         APP_TIMEOUT: 1000
         SENTRY_CLIENT_SECRET: 'yyyyyyyyyyyyyyyyyy'
         SENTRY_INCLUDE_TAGS: 'brand,BRAND,DOMAIN'
-        MATRIX_HOMESERVER_URL: 'https://oxgaming.ems.host'
+        MATRIX_HOMESERVER_URL: 'https://example.ems.host'
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
