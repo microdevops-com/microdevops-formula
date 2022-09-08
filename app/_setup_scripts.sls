@@ -3,7 +3,7 @@
 app_{{ app_type }}_app_setup_script_root_run_{{ loop_index }}:
   cmd.run:
     - cwd: {{ _app_cwd }}
-    - name: {{ app["setup_script_root"]["name"] | yaml_encode }}
+    - name: {{ app["setup_script_root"]["name"] | replace("__APP_NAME__", app_name) | yaml_encode }}
     - runas: root
 
       {%- endif %}
@@ -13,7 +13,7 @@ app_{{ app_type }}_app_setup_script_root_run_{{ loop_index }}:
 app_{{ app_type }}_app_setup_script_app_user_run_{{ loop_index }}:
   cmd.run:
     - cwd: {{ _app_cwd }}
-    - name: {{ app["setup_script_app_user"]["name"] | yaml_encode }}
+    - name: {{ app["setup_script_app_user"]["name"] | replace("__APP_NAME__", app_name) | yaml_encode }}
     - runas: {{ _app_user }}
 
       {%- endif %}
