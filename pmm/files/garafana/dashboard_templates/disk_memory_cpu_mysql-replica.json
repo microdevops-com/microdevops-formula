@@ -18,34 +18,32 @@
       "title": "[{{ node_name }}] Disk Space Usage",
       "id": 2,
       "alert": {
-        "name": "[{{ node_name }}] Disk Space Usage > 80%",
+        "name": "[{{ node_name }}] Disk Space Usage {{  panel_disk_space_usage_alert_conditions_evaluator_type }} {{  panel_disk_space_usage_alert_conditions_evaluator_params * 100 }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                0.8
+                {{  panel_disk_space_usage_alert_conditions_evaluator_params }}
               ],
-              "type": "gt"
+              "type": "{{  panel_disk_space_usage_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "and"
+              "type": "{{  panel_disk_space_usage_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
-                "A",
-                "5m",
-                "now"
+                {{  panel_disk_space_usage_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "max"
+              "type": "{{  panel_disk_space_usage_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
+        "frequency": "{{  panel_disk_space_usage_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "0",
-        "frequency": "1m",
         "handler": 1,
         "noDataState": "no_data"
       },
@@ -93,16 +91,6 @@
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 0.8,
-          "visible": true
-        }
-      ],
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -132,36 +120,35 @@
       }
     },
     {
+      "title": "[{{ node_name }}] Free Memory",
       "id": 3,
       "alert": {
-        "name": "[{{ node_name }}] Free Memory < 10%",
+        "name": "[{{ node_name }}] Free Memory {{  panel_free_memory_alert_conditions_evaluator_type }} {{  panel_free_memory_alert_conditions_evaluator_params }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                10
+                {{  panel_free_memory_alert_conditions_evaluator_params }}
               ],
-              "type": "lt"
+              "type": "{{  panel_free_memory_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "and"
+              "type": "{{  panel_free_memory_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
-                "A",
-                "1m",
-                "now"
+                {{  panel_free_memory_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "min"
+              "type": "{{  panel_free_memory_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
+        "frequency": "{{  panel_free_memory_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "0m",
-        "frequency": "1m",
         "handler": 1,
         "noDataState": "no_data"
       },
@@ -216,17 +203,6 @@
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "lt",
-          "value": 10,
-          "visible": true
-        }
-      ],
-      "title": "[{{ node_name }}] Free Memory",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -267,37 +243,36 @@
       "type": "row"
     },
     {
+      "title": "[{{ node_name }}] CPU Usage",
       "id": 4,
       "alert": {
+        "name": "[{{ node_name }}] CPU Usage {{  panel_cpu_usage_alert_conditions_evaluator_type }} {{  panel_cpu_usage_alert_conditions_evaluator_params }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                30
+                {{  panel_cpu_usage_alert_conditions_evaluator_params }}
               ],
-              "type": "gt"
+              "type": "{{  panel_cpu_usage_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "and"
+              "type": "{{  panel_cpu_usage_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
-                "A",
-                "1m",
-                "now"
+                {{  panel_cpu_usage_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "last"
+              "type": "{{  panel_cpu_usage_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
+        "frequency": "{{  panel_cpu_usage_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "0m",
-        "frequency": "30s",
         "handler": 1,
-        "name": "[{{ node_name }}] CPU Usage > 30%",
         "noDataState": "no_data"
       },
       "bars": false,
@@ -351,17 +326,6 @@
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 30,
-          "visible": true
-        }
-      ],
-      "title": "[{{ node_name }}] CPU Usage",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -391,37 +355,37 @@
       }
     },
     {
+      "title": "[{{ node_name }}] CPU IOWait",
       "id": 5,
       "alert": {
+        "name": "[{{ node_name }}] CPU IOWait {{  panel_cpu_iowait_alert_conditions_evaluator_type }} {{  panel_cpu_iowait_alert_conditions_evaluator_params * 100 }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                0.2
+                {{  panel_cpu_iowait_alert_conditions_evaluator_params }}
               ],
-              "type": "gt"
+              "type": "{{  panel_cpu_iowait_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "and"
+              "type": "{{  panel_cpu_iowait_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
-                "A",
-                "5m",
-                "now"
+                {{  panel_cpu_iowait_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "avg"
+              "type": "{{  panel_cpu_iowait_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
+        "frequency": "{{  panel_cpu_iowait_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "0m",
         "frequency": "1m",
         "handler": 1,
-        "name": "[{{ node_name }}] CPU IOWait > 20%",
         "noDataState": "no_data"
       },
       "bars": false,
@@ -475,17 +439,6 @@
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 0.2,
-          "visible": true
-        }
-      ],
-      "title": "[{{ node_name }}] CPU IOWait",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -514,7 +467,7 @@
         "align": false
       }
     }
-{%- if replication_panel %},
+{%- if panel_mysql_replication_enable %},
     {
       "id": 6,
       "collapsed": false,
@@ -528,37 +481,36 @@
       "type": "row"
     },
     {
+      "title": "[{{ node_name }}] MYSQL Replica Status",
       "id": 7,
       "alert": {
+        "name": "[{{ node_name }}] MYSQL Replica IS NOT RUNNING",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                0.5
+                {{  panel_mysql_replication_status_alert_conditions_evaluator_params }}
               ],
-              "type": "lt"
+              "type": "{{  panel_mysql_replication_status_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "and"
+              "type": "{{  panel_mysql_replication_status_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
-                "A",
-                "10s",
-                "now"
+                {{  panel_mysql_replication_status_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "last"
+              "type": "{{  panel_mysql_replication_status_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
+        "frequency": "{{  panel_mysql_replication_status_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "0m",
-        "frequency": "10s",
         "handler": 1,
-        "name": "[{{ node_name }}] Replica IS NOT RUNNING",
         "noDataState": "no_data"
       },
       "bars": false,
@@ -613,17 +565,6 @@
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "lt",
-          "value": 0.5,
-          "visible": true
-        }
-      ],
-      "title": "[{{ node_name }}] Replica Status",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -656,37 +597,36 @@
       }
     },
     {
+      "title": "[{{ node_name }}] MYSQL Replica Lag",
       "id": 8,
       "alert": {
+        "name": "[{{ node_name }}] MYSQL Replica Lag {{ panel_mysql_replication_lag_alert_conditions_evaluator_type }} {{ panel_mysql_replication_lag_alert_conditions_evaluator_params }}s",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                60
+                {{  panel_mysql_replication_lag_alert_conditions_evaluator_params }}
               ],
-              "type": "gt"
+              "type": "{{  panel_mysql_replication_lag_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "and"
+              "type": "{{  panel_mysql_replication_lag_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
-                "A",
-                "1m",
-                "now"
+                {{  panel_mysql_replication_lag_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "max"
+              "type": "{{  panel_mysql_replication_lag_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
+        "frequency": "{{  panel_mysql_replication_lag_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "0m",
-        "frequency": "1m",
         "handler": 1,
-        "name": "[{{ node_name }}] Replica Lag > 1 min",
         "noDataState": "no_data"
       },
       "bars": false,
@@ -746,17 +686,6 @@
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 60,
-          "visible": true
-        }
-      ],
-      "title": "[{{ node_name }}] Replica Lag",
       "tooltip": {
         "shared": true,
         "sort": 0,  
