@@ -14,10 +14,10 @@
               "params": [
                 {{ panel_pxc_size_alert_conditions_evaluator_params }}
               ],
-              "type": "{{  panel_pxc_size_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_pxc_size_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "{{  panel_pxc_size_alert_conditions_operator_type }}"
+              "type": "{{ panel_pxc_size_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
