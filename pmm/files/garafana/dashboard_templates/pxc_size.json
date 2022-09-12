@@ -12,7 +12,7 @@
           {
             "evaluator": {
               "params": [
-                {{  panel_pxc_size_alert_conditions_evaluator_params }}
+                {{ panel_pxc_size_alert_conditions_evaluator_params }}
               ],
               "type": "{{  panel_pxc_size_alert_conditions_evaluator_type }}"
             },
@@ -21,16 +21,16 @@
             },
             "query": {
               "params": [
-                {{  panel_pxc_size_alert_conditions_query_params }}
+                {{ panel_pxc_size_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "{{  panel_pxc_size_alert_conditions_reducer_type }}"
+              "type": "{{ panel_pxc_size_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{  panel_pxc_size_alert_frequency }}",
+        "frequency": "{{ panel_pxc_size_alert_frequency }}",
         "for": "0m",
         "handler": 1,
         "noDataState": "no_data"
