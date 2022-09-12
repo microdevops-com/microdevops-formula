@@ -81,6 +81,57 @@ pmm:
           options:
             path: {{ gf_path_var_lib }}/dashboards
             foldersFromFilesStructure: true
+    dashboard_definitions_defaults:
+      panel_disk_space_usage_alert_conditions_evaluator_params:         0.8
+      panel_disk_space_usage_alert_conditions_evaluator_type:           'gt'
+      panel_disk_space_usage_alert_conditions_operator_type:            'and'
+      panel_disk_space_usage_alert_conditions_query_params:             '"A","5m","now"'
+      panel_disk_space_usage_alert_conditions_reducer_type:             'max'
+      panel_disk_space_usage_alert_frequency:                           '1m'
+#
+      panel_free_memory_alert_conditions_evaluator_params:              10
+      panel_free_memory_alert_conditions_evaluator_type:                'lt'
+      panel_free_memory_alert_conditions_operator_type:                 'and'
+      panel_free_memory_alert_conditions_query_params:                  '"A","1m","now"'
+      panel_free_memory_alert_conditions_reducer_type:                  'min'
+      panel_free_memory_alert_frequency:                                '1m'
+#
+      panel_cpu_usage_alert_conditions_evaluator_params:                30
+      panel_cpu_usage_alert_conditions_evaluator_type:                  'gt'
+      panel_cpu_usage_alert_conditions_operator_type:                   'and'
+      panel_cpu_usage_alert_conditions_query_params:                    '"A","1m","now"'
+      panel_cpu_usage_alert_conditions_reducer_type:                    'last'
+      panel_cpu_usage_alert_frequency:                                  '30s'
+#
+      panel_cpu_iowait_alert_conditions_evaluator_params:               0.2
+      panel_cpu_iowait_alert_conditions_evaluator_type:                 'gt'
+      panel_cpu_iowait_alert_conditions_operator_type:                  'and'
+      panel_cpu_iowait_alert_conditions_query_params:                   '"A","5m","now"'
+      panel_cpu_iowait_alert_conditions_reducer_type:                   'avg'
+      panel_cpu_iowait_alert_frequency:                                 '1m'
+#
+      panel_mysql_replication_enable:                                   false
+      panel_mysql_replication_status_alert_conditions_evaluator_params: 0.5
+      panel_mysql_replication_status_alert_conditions_evaluator_type:   'lt'
+      panel_mysql_replication_status_alert_conditions_query_params:     '"A","10s","now"'
+      panel_mysql_replication_status_alert_conditions_operator_type:    'and'
+      panel_mysql_replication_status_alert_conditions_reducer_type:     'last'
+      panel_mysql_replication_status_alert_frequency:                   '10s'
+#
+      panel_mysql_replication_lag_alert_conditions_evaluator_params:    60
+      panel_mysql_replication_lag_alert_conditions_evaluator_type:      'gt'
+      panel_mysql_replication_lag_alert_conditions_operator_type:       'and'
+      panel_mysql_replication_lag_alert_conditions_query_params:        '"A","1m","now"'
+      panel_mysql_replication_lag_alert_conditions_reducer_type:        'max'
+      panel_mysql_replication_lag_alert_frequency:                      '1m'
+#
+      panel_pxc_size_title:                                             'Percona XtraDB Cluster size'
+      panel_pxc_size_alert_conditions_evaluator_params:                 3
+      panel_pxc_size_alert_conditions_evaluator_type:                   'lt'
+      panel_pxc_size_alert_conditions_operator_type:                    'and'
+      panel_pxc_size_alert_conditions_query_params:                     '"A","10s","now"'
+      panel_pxc_size_alert_conditions_reducer_type:                     'min'
+      panel_pxc_size_alert_frequency:                                   '10s'
     dashboard_definitions:
       - template: salt://pmm/files/garafana/dashboard_templates/disk_memory_cpu_mysql-replica.json
         {%- set folder = 'DATA-CENTER-NAME' %}
@@ -88,15 +139,15 @@ pmm:
         path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ node_name }}.json
         context:
           node_name: {{ node_name }}
-          replication_panel: false
           board_name: {{ node_name }}
-      - template: salt://pmm/files/garafana/dashboard_templates/pxc_cluster.json
+      - template: salt://pmm/files/garafana/dashboard_templates/pxc_size.json
         {%- set folder = 'DATA-CENTER-NAME' %}
         {%- set brand = 'PREFIX-EXAMPLE' %}
         {%- set wsrep_cluster_name = 'pxc-example-cluster' %}
+        {%- set pxc_cluster_size = 4 %}
         path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ wsrep_cluster_name }}.json
         context:
           wsrep_cluster_name: {{ wsrep_cluster_name }}
-          cluster_size: 3
-          brand: {{ brand }}
           board_name: '{{ brand }} Percona XtraDB Cluster'
+          panel_pxc_size_title: '{{ brand }} PXCluster size'
+          panel_pxc_size_alert_conditions_evaluator_params: {{ pxc_cluster_size }}
