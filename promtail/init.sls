@@ -73,7 +73,7 @@ promtail_binary_2:
 
 promtail_systemd_1:
   file.managed:
-    - name: /opt/promtail/etc/systemd/promtail.service
+    - name: /etc/systemd/system/promtail.service
     - user: 0
     - group: 0
     - mode: 644
@@ -89,16 +89,18 @@ promtail_systemd_1:
         [Install]
         WantedBy=multi-user.target
 
+{#
 promtail_systemd_2:
   file.symlink:
     - name: /etc/systemd/system/promtail.service
     - target: /opt/promtail/etc/systemd/promtail.service
+#}
 
 systemd-reload:
   cmd.run:
     - name: systemctl daemon-reload
     - onchanges:
-      - file: /opt/promtail/etc/systemd/promtail.service
+      - file: /etc/systemd/system/promtail.service
 
 promtail_systemd_3:
   service.running:
@@ -109,7 +111,7 @@ promtail_systemd_4:
   cmd.run:
     - name: systemctl restart promtail
     - onchanges:
-      - file: /opt/promtail/etc/systemd/promtail.service
+      - file: /etc/systemd/system/promtail.service
       - file: /opt/promtail/etc/promtail.yaml
   {% endif %}
 {% endif %}
