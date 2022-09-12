@@ -23,6 +23,7 @@ rsnapshot_backup:
         #retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
         #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
+                    # beware - retries work only on rsnapshot sync command, remote DB dumps are not being retried, it is hard to implement and makes no sense practically
         #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call
                                # ionice -c 3 nice # to make rssnapshot more gentle with io
         backups: # mandatory

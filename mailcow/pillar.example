@@ -25,7 +25,7 @@ mailcow:
     SOLR_HEAP: 6144                 #2048MB memory for one million objects
     MAILCOW_TZ: Etc/UTC
     ALLOW_ADMIN_EMAIL_LOGIN: y      #y or n
-    WATCHDOG_NOTIFY_EMAIL: devops@oxtech.org
+    WATCHDOG_NOTIFY_EMAIL: devops@example.com
   haproxy:                          #used only when SKIP_LETS_ENCRYPT=y
     EXTERNAL_IP: 1.2.3.4
   rspamd:
