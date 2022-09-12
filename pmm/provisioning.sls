@@ -1,3 +1,4 @@
+{% if pillar["pmm"] is defined %}
 rsync_default_pmm_provisioning:
   cmd.run:
     - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} bash -c 'rsync -avHAX --delete /usr/share/grafana/conf/provisioning/ {{ pillar["pmm"]["gf_path_provisioning"] }}/'
@@ -87,3 +88,4 @@ start grafana:
   cmd.run:
     - shell: /bin/bash
     - name: docker exec -t percona-{{ pillar["pmm"]["name"] }} supervisorctl start grafana
+{%- endif %}
