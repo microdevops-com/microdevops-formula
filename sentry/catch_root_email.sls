@@ -39,9 +39,22 @@ set_alias:
     - name: root
     - target: '| /opt/sysadmws/sentry_catch_root_mail/sentry-sender.sh'
 
+    {%- if pillar["sentry"]["catch_root_email"]["catch_other_users_email"] and salt['file.file_exists']('/opt/sysadmws/sentry_catch_root_mail/set-alias-for-all-users.sh')%}
+set_alias_for_all_users:
+  cmd.run:
+    - name: /opt/sysadmws/sentry_catch_root_mail/set-alias-for-all-users.sh
+    - shell: /bin/bash
+cron_for_set-alias-for-all-users.sh:
+  cron.present:
+    - identifier: sentry catch mail for all users
+    - name: /opt/sysadmws/sentry_catch_root_mail/set-alias-for-all-users.sh
+    - user: root
+    - minute: '0'
+    - hour: '0'
+    {%- endif %}
+
 reload_aliases:
   cmd.run:
     - name: newaliases
   {%- endif %}
-
 {%- endif %}
