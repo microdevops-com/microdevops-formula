@@ -1,4 +1,4 @@
-# Simple server without additional network
+# Simple server with local net on eth1
 network:
   version: 2
   renderer: networkd
@@ -29,3 +29,13 @@ network:
           - 2001:4860:4860::8844
           - 2606:4700:4700::1111
           - 2606:4700:4700::1001
+    
+    eth1:
+      dhcp4: no
+      dhcp6: no
+      match:
+        macaddress: {{ mac_lan }}
+      set-name: eth1
+      addresses:
+        - {{ ipv4_lan_address }}
+

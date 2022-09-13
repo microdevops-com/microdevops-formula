@@ -6,6 +6,7 @@ sentry:
   url: 'https://sentry.example.com'
   admin_email: 'admin@example.com'
   admin_password: 'xxxxxxxxxxxxxxxxxx'
+  fix_admin_permissions: True                                                             # https://github.com/getsentry/self-hosted/issues/1288
   enhance_image_sh: |
     apt-get update
     apt-get install -y gcc libsasl2-dev python-dev libldap2-dev libssl-dev
@@ -92,7 +93,7 @@ sentry:
         APP_PORT: 3000
         SENTRY_CLIENT_SECRET: 'yyyyyyyyyyyyyyyyyy'
         SENTRY_INCLUDE_TAGS: 'brand,BRAND,DOMAIN'
-        MATRIX_HOMESERVER_URL: 'https://oxgaming.ems.host'
+        MATRIX_HOMESERVER_URL: 'https://example.ems.host'
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
@@ -118,7 +119,7 @@ sentry:
         APP_TIMEOUT: 1000
         SENTRY_CLIENT_SECRET: 'yyyyyyyyyyyyyyyyyy'
         SENTRY_INCLUDE_TAGS: 'brand,BRAND,DOMAIN'
-        MATRIX_HOMESERVER_URL: 'https://oxgaming.ems.host'
+        MATRIX_HOMESERVER_URL: 'https://example.ems.host'
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'

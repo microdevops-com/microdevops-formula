@@ -166,6 +166,12 @@ sentry_superuser:
     - name: docker exec sentry-self-hosted-postgres-1 bash -c "( echo \"select id from auth_user where email = '{{ pillar['sentry']['admin_email'] }}' and is_superuser is true\" | su -l postgres -c \"psql postgres\" | grep -q \"(0 rows)\" )" && docker exec sentry-self-hosted-web-1 bash -c "sentry createuser --email '{{ pillar['sentry']['admin_email'] }}' --password '{{ pillar['sentry']['admin_password'] }}' --superuser --no-input" || true
     - runas: 'root'
 
+{%- if "fix_admin_permissions" in pillar["sentry"] and salt['pillar.get']('sentry:fix_admin_permissions', False) %}
+fix_sentry_admin_permissions:
+  cmd.run:
+    - name: docker exec sentry-self-hosted-web-1 sentry permissions add -u "{{ pillar['sentry']['admin_email'] }}" -p "users.admin"
+{%- endif %}
+
 nginx_reload:
   cmd.run:
     - runas: root

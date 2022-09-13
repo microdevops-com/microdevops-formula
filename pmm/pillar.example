@@ -1,4 +1,6 @@
 # https://github.com/percona/pmm-doc/blob/main/docs/_images/PMM_Architecture_Client_Server.jpg
+{% set gf_path_var_lib = '/var/lib/grafana' %}
+{% set gf_path_provisioning = '/etc/grafana/provisioning'  %}
 pmm:
   docker-ce_version: 5:20.10.8*
   acme_account: example.com
@@ -6,6 +8,8 @@ pmm:
   admin_password: 'XXXXXXXXXXXXXXXX'
   plugins: grafana-image-renderer
   image: percona/pmm-server:2.26
+  gf_path_var_lib: {{ gf_path_var_lib }}
+  gf_path_provisioning: {{ gf_path_provisioning }}
   config: |
     [server]
     root_url = https://pmm.example.com/graph/
@@ -19,6 +23,7 @@ pmm:
     [paths]
     # Directory where grafana will automatically scan and look for plugins
     plugins = /srv/grafana/plugins
+    provisioning = {{ gf_path_provisioning }}
     [plugins]
     # Enter a comma-separated list of plugin identifiers to identify plugins that are allowed to be loaded even if they lack a valid signature.
     allow_loading_unsigned_plugins = vertamedia-clickhouse-datasource,pmm-app,pmm-check-panel-home,pmm-update,pmm-qan-app-panel,pmm-pt-summary-panel,pmm-pt-summary-datasource
@@ -38,3 +43,111 @@ pmm:
     enabled = true
   env_vars:
     DISABLE_UPDATES: true
+  datasources:
+    apiVersion: 1
+    datasources:
+      - name: "prometheus.example.org"
+        type: prometheus
+        access: proxy
+        url: https://prometheus.example.com
+        basicAuth: true
+        basicAuthUser: username
+        basicAuthPassword: XXXXXXXXXXXXXXXXXXXXXXX
+        editable: true
+  notifiers:
+    apiVersion: 1
+    notifiers:
+      - name: telegram1
+        type: telegram
+        uid: telega1
+        org_id: 1
+        is_default: true
+        send_reminder: false
+        disable_resolve_message: false
+        settings:
+          chatid: '-123456789'
+          uploadImage: true
+          bottoken: '1234567890:XXXXXXXXX-YYYYYYYYYYYYYYYY-ZZZZZZZZ'
+  dashboards:
+    provisioning_config:
+      apiVersion: 1
+      providers:
+        - name: dashboards
+          orgId: 1
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          allowUiUpdates: true
+          options:
+            path: {{ gf_path_var_lib }}/dashboards
+            foldersFromFilesStructure: true
+    dashboard_definitions_defaults:
+      panel_disk_space_usage_alert_conditions_evaluator_params:         0.8
+      panel_disk_space_usage_alert_conditions_evaluator_type:           'gt'
+      panel_disk_space_usage_alert_conditions_operator_type:            'and'
+      panel_disk_space_usage_alert_conditions_query_params:             '"A","5m","now"'
+      panel_disk_space_usage_alert_conditions_reducer_type:             'max'
+      panel_disk_space_usage_alert_frequency:                           '1m'
+#
+      panel_free_memory_alert_conditions_evaluator_params:              10
+      panel_free_memory_alert_conditions_evaluator_type:                'lt'
+      panel_free_memory_alert_conditions_operator_type:                 'and'
+      panel_free_memory_alert_conditions_query_params:                  '"A","1m","now"'
+      panel_free_memory_alert_conditions_reducer_type:                  'min'
+      panel_free_memory_alert_frequency:                                '1m'
+#
+      panel_cpu_usage_alert_conditions_evaluator_params:                30
+      panel_cpu_usage_alert_conditions_evaluator_type:                  'gt'
+      panel_cpu_usage_alert_conditions_operator_type:                   'and'
+      panel_cpu_usage_alert_conditions_query_params:                    '"A","1m","now"'
+      panel_cpu_usage_alert_conditions_reducer_type:                    'last'
+      panel_cpu_usage_alert_frequency:                                  '30s'
+#
+      panel_cpu_iowait_alert_conditions_evaluator_params:               0.2
+      panel_cpu_iowait_alert_conditions_evaluator_type:                 'gt'
+      panel_cpu_iowait_alert_conditions_operator_type:                  'and'
+      panel_cpu_iowait_alert_conditions_query_params:                   '"A","5m","now"'
+      panel_cpu_iowait_alert_conditions_reducer_type:                   'avg'
+      panel_cpu_iowait_alert_frequency:                                 '1m'
+#
+      panel_mysql_replication_enable:                                   false
+      panel_mysql_replication_status_alert_conditions_evaluator_params: 0.5
+      panel_mysql_replication_status_alert_conditions_evaluator_type:   'lt'
+      panel_mysql_replication_status_alert_conditions_query_params:     '"A","10s","now"'
+      panel_mysql_replication_status_alert_conditions_operator_type:    'and'
+      panel_mysql_replication_status_alert_conditions_reducer_type:     'last'
+      panel_mysql_replication_status_alert_frequency:                   '10s'
+#
+      panel_mysql_replication_lag_alert_conditions_evaluator_params:    60
+      panel_mysql_replication_lag_alert_conditions_evaluator_type:      'gt'
+      panel_mysql_replication_lag_alert_conditions_operator_type:       'and'
+      panel_mysql_replication_lag_alert_conditions_query_params:        '"A","1m","now"'
+      panel_mysql_replication_lag_alert_conditions_reducer_type:        'max'
+      panel_mysql_replication_lag_alert_frequency:                      '1m'
+#
+      panel_pxc_size_title:                                             'Percona XtraDB Cluster size'
+      panel_pxc_size_alert_conditions_evaluator_params:                 3
+      panel_pxc_size_alert_conditions_evaluator_type:                   'lt'
+      panel_pxc_size_alert_conditions_operator_type:                    'and'
+      panel_pxc_size_alert_conditions_query_params:                     '"A","10s","now"'
+      panel_pxc_size_alert_conditions_reducer_type:                     'min'
+      panel_pxc_size_alert_frequency:                                   '10s'
+    dashboard_definitions:
+      - template: salt://pmm/files/garafana/dashboard_templates/disk_memory_cpu_mysql-replica.json
+        {%- set folder = 'DATA-CENTER-NAME' %}
+        {%- set node_name = 'node1.example.com' %}
+        path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ node_name }}.json
+        context:
+          node_name: {{ node_name }}
+          board_name: {{ node_name }}
+      - template: salt://pmm/files/garafana/dashboard_templates/pxc_size.json
+        {%- set folder = 'DATA-CENTER-NAME' %}
+        {%- set brand = 'PREFIX-EXAMPLE' %}
+        {%- set wsrep_cluster_name = 'pxc-example-cluster' %}
+        {%- set pxc_cluster_size = 4 %}
+        path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ wsrep_cluster_name }}.json
+        context:
+          wsrep_cluster_name: {{ wsrep_cluster_name }}
+          board_name: '{{ brand }} Percona XtraDB Cluster'
+          panel_pxc_size_title: '{{ brand }} PXCluster size'
+          panel_pxc_size_alert_conditions_evaluator_params: {{ pxc_cluster_size }}

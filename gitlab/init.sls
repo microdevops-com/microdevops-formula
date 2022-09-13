@@ -219,6 +219,9 @@ gitlab_config:
         mattermost_nginx['ssl_certificate_key'] = "{{ pillar["gitlab"]["mattermost"]["ssl_certificate_key"]["file"] }}"
     {%- endif %}
   {%- endif %}
+  {%- if "config_additions" in pillar["gitlab"] %}
+        {{ pillar["gitlab"]["config_additions"] | indent(8) }}
+  {%- endif %}
 
 # Fix the issue when doing clean install with EXTERNAL_URL set - it will wait indefinately for service to start
 gitlab_fix_clean_install_with_ext_url:

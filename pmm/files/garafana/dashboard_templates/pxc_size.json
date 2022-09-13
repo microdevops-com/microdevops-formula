@@ -1,0 +1,118 @@
+{
+  "title": "{{ board_name }}",
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "title": "{{ panel_pxc_size_title }}",
+      "alert": {
+        "executionErrorState": "alerting",
+        "name": "[{{ wsrep_cluster_name }}] Percona XtraDB Cluster size abnormal",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_pxc_size_alert_conditions_evaluator_params }}
+              ],
+              "type": "{{ panel_pxc_size_alert_conditions_evaluator_type }}"
+            },
+            "operator": {
+              "type": "{{ panel_pxc_size_alert_conditions_operator_type }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_pxc_size_alert_conditions_query_params }}
+              ]
+            },
+            "reducer": {
+              "type": "{{ panel_pxc_size_alert_conditions_reducer_type }}"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "{{ panel_pxc_size_alert_frequency }}",
+        "for": "0m",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "targets": [
+        {
+          "expr": "(min_over_time(mysql_global_status_wsrep_cluster_size[5s]) or min_over_time(mysql_global_status_wsrep_cluster_size[5s])) * \non (service_name) group_left avg by (service_name) (mysql_galera_variables_info{wsrep_cluster_name=\"{{ wsrep_cluster_name }}\"})",
+          "legendFormat": "Size",
+          "interval": "5s",
+          "exemplar": true,
+          "refId": "A"
+        }
+      ],
+      "type": "graph",
+      "gridPos": {
+      "x": 0,
+      "y": 0,
+      "h": 8,
+      "w": 8
+      },
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": false,
+        "total": false,
+        "values": false
+      },
+      "dashLength": 10,
+      "lines": true,
+      "linewidth": 3,
+      "options": {
+        "alertThreshold": true
+      },
+      "pointradius": 2,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:665",
+          "alias": "Size",
+          "color": "#FFF899"
+        }
+      ],
+      "spaceLength": 10,
+      "steppedLine": true,
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:619",
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:620",
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      },
+      "bars": false,
+      "dashes": false,
+      "fill": 0,
+      "fillGradient": 0,
+      "hiddenSeries": false,
+      "percentage": false,
+      "points": false,
+      "stack": false
+    }
+  ],
+  "version": 0
+}
