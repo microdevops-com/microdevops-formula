@@ -384,7 +384,6 @@
         "frequency": "{{  panel_cpu_iowait_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "0m",
-        "frequency": "1m",
         "handler": 1,
         "noDataState": "no_data"
       },
