@@ -60,9 +60,9 @@ app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
         ssl_cert: /opt/acme/cert/{{ app_name }}_{{ app["nginx"]["domain"] }}_fullchain.cer
         ssl_key: /opt/acme/cert/{{ app_name }}_{{ app["nginx"]["domain"] }}_key.key
           {%- elif "cert" in app["nginx"]["ssl"] %}
-        ssl_cert: {{ app["nginx"]["ssl"]["cert"] }}
-        ssl_key: {{ app["nginx"]["ssl"]["key"] }}
-        ssl_chain: {{ app["nginx"]["ssl"].get("chain", "") }}
+        ssl_cert: {{ app["nginx"]["ssl"]["cert"]|replace("__APP_NAME__", app_name) }}
+        ssl_key: {{ app["nginx"]["ssl"]["key"]|replace("__APP_NAME__", app_name) }}
+        ssl_chain: {{ app["nginx"]["ssl"].get("chain", "")|replace("__APP_NAME__", app_name) }}
           {%- endif %}
         {%- endif %}
         auth_basic_block: '{{ auth_basic_block }}'
@@ -97,9 +97,9 @@ app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ loop.index }}
         ssl_cert: /opt/acme/cert/{{ app_name }}_{{ redirect["domain"] }}_fullchain.cer
         ssl_key: /opt/acme/cert/{{ app_name }}_{{ redirect["domain"] }}_key.key
               {%- elif "cert" in redirect["ssl"] %}
-        ssl_cert: {{ redirect["ssl"]["cert"] }}
-        ssl_key: {{ redirect["ssl"]["key"] }}
-        ssl_chain: {{ redirect["ssl"].get("chain", "") }}
+        ssl_cert: {{ redirect["ssl"]["cert"]|replace("__APP_NAME__", app_name) }}
+        ssl_key: {{ redirect["ssl"]["key"]|replace("__APP_NAME__", app_name) }}
+        ssl_chain: {{ redirect["ssl"].get("chain", "")|replace("__APP_NAME__", app_name) }}
               {%- endif %}
             {%- endif %}
 
