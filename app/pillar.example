@@ -68,6 +68,7 @@ app:
         rvm: # install rvm and specific ruby version for app
           version: 3.0.0 
           bundle_install: /var/www/__APP_NAME__/src
+          #bundle_install_cmd: bundle install --without development test # override default 'bundle install' command
         npm: # optional, install per app user
           install:
             - yarn

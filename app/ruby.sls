@@ -58,7 +58,11 @@ app_ruby_app_rvm_bundle_install_{{ loop.index }}:
   cmd.run:
     - cwd: {{ app["rvm"]["bundle_install"]|replace("__APP_NAME__", app_name) }}
     - runas: {{ _app_user }}
+      {%- if "bundle_install_cmd" in app["rvm"] %}
+    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }} && {{ app["rvm"]["bundle_install_cmd"] }}
+      {%- else %}
     - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }} && bundle install
+      {%- endif %}
 
       {%- endif %}
 
