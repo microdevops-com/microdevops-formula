@@ -1,6 +1,6 @@
 # PMM Agent Setup
 
-mysql -e "CEATE USER 'pmm'@'localhost' IDENTIFIED BY 'XXXXXXXXXXXXXXXXX';"
+mysql -e "CREATE USER 'pmm'@'localhost' IDENTIFIED BY 'XXXXXXXXXXXXXXXXX';"
 
 mysql -e "GRANT SELECT, PROCESS, SUPER, REPLICATION CLIENT, RELOAD ON *.* TO 'pmm'@'localhost';"
 
