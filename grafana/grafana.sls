@@ -75,6 +75,10 @@ nginx_files_1:
                 ssl_certificate_key /opt/acme/cert/grafana_{{ domain['name'] }}_key.key;
     {%- for instance in domain['instances'] %}
                 location /{{ instance['name'] }}/ {
+                    proxy_connect_timeout       300;
+                    proxy_send_timeout          300;
+                    proxy_read_timeout          300;
+                    send_timeout                300;
                     proxy_http_version 1.1;
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-Proto $scheme;
