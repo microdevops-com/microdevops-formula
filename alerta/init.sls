@@ -190,14 +190,14 @@ alerta_reload:
 alerta_housekeeping_cron:
   cron.present:
     # otherwise it will swipe out closed (green) after default 2 hours and info after 12 hours
-    - name: /opt/alerta/alerta/venv/bin/alerta housekeeping --expired 24 --info 24
+    - name: /opt/alerta/alerta/venv/bin/alerta housekeeping --expired 24 --info 24 > /dev/null
     - identifier: alerta_housekeeping
     - user: alerta
     - minute: '*'
 
 alerta_hb_cron:
   cron.present:
-    - name: /opt/alerta/alerta/venv/bin/alerta heartbeats --alert --severity major
+    - name: /opt/alerta/alerta/venv/bin/alerta heartbeats --alert --severity major > /dev/null
     - identifier: alerta_heartbeats_alert
     - user: alerta
     - minute: '*'
