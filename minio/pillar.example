@@ -1,0 +1,17 @@
+minio:
+  download_url: https://dl.min.io/server/minio/release/linux-amd64/minio
+  install_path: /usr/local/bin/
+  user: minio
+  group: minio
+  limit_nofile: 65536
+
+  environment:
+    MINIO_VOLUMES: /usr/local/share/minio/
+    MINIO_OPTS: '"--address :9000 --console-address :9001"'
+    MINIO_ROOT_USER: admin
+    MINIO_ROOT_PASSWORD: examplePassword
+    MINIO_BROWSER: on
+    MINIO_KMS_KES_KEY_FILE: /home/minio/.minio/certs/private.key
+    MINIO_KMS_KES_CERT_FILE: /home/minio/.minio/certs/public.crt
+    MINIO_SERVER_URL: https://example.com:9000
+    MINIO_BROWSER_REDIRECT_URL: https://example.com:9001

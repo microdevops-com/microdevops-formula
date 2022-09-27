@@ -1,0 +1,17 @@
+asterisk_archive:
+  host: example-archive.com
+  user: asterisk
+  group: asterisk
+  Auth_user: asterisk
+  Auth_passwd: examplePasswd
+
+  ssh_keys:
+    ssh_file: id_ssh_asterisk
+    pub: 
+      - ssh-rsa AAAAipvNet5DOGYoht2f/1X+U/3Wdv9VH/PTfpmAxHmEK4Kw== generated-key
+  
+  directory_create:
+    - /var/archive/example/backup/full
+    - /var/archive/example/backup/settings
+    - /example-dir
+
