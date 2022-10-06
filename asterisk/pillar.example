@@ -1,0 +1,84 @@
+asterisk:
+  user: asterisk
+  group: asterisk
+  version: 18.12.0
+  modules:
+    disable:
+      - CORE-SOUNDS-EN-GSM
+      - cel_radius
+      - cel_pgsql
+      - cel_sqlite3_custom
+      - cel_tds
+      - cdr_radius
+      - cdr_beanstalkd
+      - cdr_pgsql
+      - cdr_tds
+      - chan_dahdi
+      - app_jack
+      - res_fax
+      - func_shell
+      - func_uri
+    enable:
+      - format_mp3
+      - app_macro
+      - CORE-SOUNDS-EN-WAV
+      - EXTRA-SOUNDS-EN-WAV
+  files:
+    /etc/asterisk: salt://asterisk/asterisk-all/etc
+  acme:
+    certificate_name: asterisk
+    certificate_dir: /etc/asterisk/keys
+    reloadcmd: fwconsole certificate --import && fwconsole certificate --default=asterisk && fwconsole certificate --updateall && systemctl reload apache2
+
+freepbx:
+  host: example.com
+  administrator:
+    username: 'admin'
+    password: 'examplePassword'
+  Scheduler_and_Alerts:
+    notification_emails: example@example.com
+    auto_module_updates: disabled                    # | enabled | emailonly | disabled |
+    unsigned_module_emails: disabled                 # | enabled | disabled  |
+    auto_module_security_updates: emailonly          # | enabled | emailonly |
+  freepbx_settings:
+    MIXMON_POST: '/var/lib/asterisk/agi-bin/realtime_transfer.sh ^{YEAR} ^{MONTH} ^{DAY} ^{CALLFILENAME}'
+    FREEPBX_SYSTEM_IDENT: example
+  modules:
+    - amd
+    - filestore
+    - backup
+    - userman
+    - announcement
+    - api
+    - asteriskinfo
+    - blacklist
+    - bulkhandler
+    - calendar
+    - certman
+    - findmefollow
+    - ivr
+    - manager
+    - printextensions
+    - queues
+    - setcid
+  
+сluster_asterisk:
+  archive_server:
+    host_archive: 'example-archive.com'
+    user_archive: 'asterisk'
+    records_to_archive:
+      delete_old_records_on_asterisk_server_days: 31
+      destination_directory: "/var/archive/example"
+
+  ssh_keys:
+    ssh_file: id_rsa
+    priv: |
+      -----BEGIN RSA PRIVATE KEY-----
+      dfgdfgIBAAKCAgEA1WUXZeMpRfpW/HYPbKNtmT/acl5xL5NBt6sQi2RsuAANy/u3
+      W7RV7x0f25s9c6TpCtb0i2g4bKXZWCgcVEkXytdNAgSvZzz5EyGv24ykHFgtlGq1
+      RAYsfRsHK3V9n/nXwOwP1oueMqzbLk2kyERb5n60e0gTmG8p2Bh/7HC62NY=
+      -----END RSA PRIVATE KEY-----
+
+    pub: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABw== generated-key
+  
+
