@@ -150,6 +150,21 @@ grafana_datasources_{{ loop.index }}_{{ i_loop.index }}:
     - dataset: {{ instance['datasources'] }}
       {%- endif %}
 
+      {%- if "image_renderer" in instance and instance["image_renderer"]["external"] %}
+gf_image_renderer_pull_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: 'docker pull grafana/grafana-image-renderer:{{ instance["image_renderer"]["version"] }}'
+gf_image_renderer_run_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: grafana_image_renderer-{{ domain["name"] }}-{{ instance["name"] }}
+    - user: root
+    - image: 'grafana/grafana-image-renderer:{{ instance["image_renderer"]["version"] }}'
+    - detach: True
+    - restart_policy: unless-stopped
+    - publish:
+        - {{ instance["image_renderer"]["port"] }}:8081/tcp
+      {%- endif %}
+
 grafana_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['image'] }}
@@ -178,10 +193,11 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
     - log_driver: {{ instance['docker_logging']['driver'] }}
     - log_opt: {{ instance['docker_logging']['options'] }}
       {%- endif %}
-
+      {%- if "image_renderer" not in instance or not instance["image_renderer"]["external"] %}
 install_grafana_image_render_components_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker exec -t grafana-{{ domain['name'] }}-{{ instance['name'] }} bash -c 'apt update && apt install libnss3 libgbm1 libappindicator3-1 libxshmfence-dev libasound2 -y'
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 

@@ -10,6 +10,11 @@ grafana:
           image: grafana/grafana
           admin_password: xxx
           install_plugins: grafana-clock-panel,grafana-simple-json-datasource
+          image_renderer:
+            external: true
+            version: latest
+            {% set renderer_port = 8081 %}
+            port: {{ renderer_port }}
           config: |
             instance_name = grafana.example.com-prod
             [server]
@@ -27,11 +32,28 @@ grafana:
             token_url = https://gitlab.example.com/oauth/token
             api_url = https://gitlab.example.com/api/v4
             allowed_groups = grafana
+            [log]
+            level = info
+            mode = console file
+            filters = rendering:debug
+            [smtp]
+            enabled = true
+            host = smtp.gmail.com:465
+            user = grafana@example.com
+            password = """XXXXXXXXXXXXXXXXX"""
+            from_address = grafana@example.com
+            from_name = Grafana
+            [rendering]
+            server_url = http://{{ grains['fqdn'] }}:{{ renderer_port }}/render
+            callback_url = https://grafana.example.com/prod/
         - name: dev
           port: 3001
           image: grafana/grafana
           admin_password: xxx
           install_plugins: grafana-clock-panel,grafana-simple-json-datasource
+          docker_logging:
+            driver: "json-file"
+            options: "tag={% raw -%}{{.ImageName}}|{{.Name}}|prd{%- endraw %}"
           config: |
             instance_name = grafana.example.com-dev
             [server]
