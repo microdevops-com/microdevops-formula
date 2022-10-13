@@ -134,6 +134,10 @@ app:
         files: # optional
           src: salt://app/__APP_NAME__
           dst: /opt/__APP_NAME__
+        files_source: # optional
+          - path: /opt/__APP_NAME__/.file
+            mode: 0600
+            source: salt://app/.file
         files_contents: # optional
           - path: /opt/__APP_NAME__/.env
             mode: 0600

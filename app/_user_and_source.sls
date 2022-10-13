@@ -152,6 +152,19 @@ app_{{ app_type }}_app_files_{{ loop_index }}:
 
       {%- endif %}
 
+      {%- if "files_source" in app %}
+        {%- for f_s in app["files_source"] %}
+app_{{ app_type }}_app_files_source_{{ loop_index }}_{{ loop.index }}:
+  file.managed:
+    - name: {{ f_s["path"]|replace("__APP_NAME__", app_name) }}
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - mode: {{ f_s["mode"] }}
+    - source: {{ f_s["source"] | replace("__APP_NAME__", app_name) }}
+
+        {%- endfor %}
+      {%- endif %}
+
       {%- if "files_contents" in app %}
         {%- for f_c in app["files_contents"] %}
 app_{{ app_type }}_app_files_contents_{{ loop_index }}_{{ loop.index }}:
