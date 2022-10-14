@@ -51,37 +51,23 @@ php-fpm_modules_installed_{{ loop.index }}:
       {%- endfor %}
 
       # ioncube is not supported for 8.0+ php yet
-      {%- if version|float < 8.0 and "php" ~ version ~ "-ioncube" in params["modules"] %}
-        {%- if version|float == 5.6 %}
-          {%- set lib_path = "/usr/lib/php/20131226" %}
-        {%- endif %}
-        {%- if version|float == 7.0 %}
-          {%- set lib_path = "/usr/lib/php/20151012" %}
-        {%- endif %}
-        {%- if version|float == 7.1 %}
-          {%- set lib_path = "/usr/lib/php/20160505" %}
-        {%- endif %}
-        {%- if version|float == 7.2 %}
-          {%- set lib_path = "/usr/lib/php/20170718" %}
-        {%- endif %}
-        {%- if version|float == 7.3 %}
-          {%- set lib_path = "/usr/lib/php/20180731" %}
-        {%- endif %}
-        {%- if version|float == 7.4 %}
-          {%- set lib_path = "/usr/lib/php/20190902" %}
-        {%- endif %}
+      {%- if version|float <= 8.1 and "php" ~ version ~ "-ioncube" in params["modules"] %}
+      {%- set lib_path = "/usr/lib/php/" ~ version ~ "-ioncube" %}
+
 php-fpm_modules_ioncube_1_{{ loop.index }}:
   file.managed:
     - name: {{ lib_path }}/ioncube_loader_lin_{{ version }}.so
-    - source: salt://php-fpm/files/ioncube/ioncube_loader_lin_{{ version }}.so
+    - makedirs: True
+    - user: root
+    - group: root
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_{{ version }}.so'
+    - skip_verify: True
 
 php-fpm_modules_ioncube_2_{{ loop.index }}:
   file.managed:
     - name: /etc/php/{{ version }}/mods-available/ioncube.ini
-    - source: salt://php-fpm/files/ioncube/ioncube.ini
-    - template: jinja
-    - defaults:
-        path: {{ lib_path }}/ioncube_loader_lin_{{ version }}.so
+    - contents: |
+        zend_extension={{ lib_path }}/ioncube_loader_lin_{{ version }}.so
 
 php-fpm_modules_ioncube_3_{{ loop.index }}:
   file.symlink:
