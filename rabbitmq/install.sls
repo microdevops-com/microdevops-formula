@@ -45,7 +45,7 @@ rabbit_pkg:
 rabbit_cert_for_management:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["rabbitmq"]["acme_account"] }}/verify_and_issue.sh rabbitmq {{ pillar["rabbitmq"]["management_domain"] }}"
+    - name: "/opt/acme/home/{{ pillar["rabbitmq"]["acme_account"] }}/verify_and_issue.sh rabbitmq {{ pillar["rabbitmq"]["management_domain"] }} {%- if 'subjectAltNames' in pillar['rabbitmq'] %} {{ pillar['rabbitmq']['subjectAltNames'] }} {% endif %}"
 
 rabbit_cert_perm_1:
   file.managed:
