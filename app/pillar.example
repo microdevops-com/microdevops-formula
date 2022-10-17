@@ -1,5 +1,8 @@
 # vi: set ft=yaml:
 
+# To deploy only specific apps add pillar in state.apply like:
+# state.apply app.python pillar='{app: {python: {deploy_only: ["someapp"]}}}'
+
 app:
   pkg: # optional, to install prerequisites
     default-libmysqlclient-dev: any # just make sure version is installed
@@ -131,6 +134,10 @@ app:
         files: # optional
           src: salt://app/__APP_NAME__
           dst: /opt/__APP_NAME__
+        files_source: # optional
+          - path: /opt/__APP_NAME__/.file
+            mode: 0600
+            source: salt://app/.file
         files_contents: # optional
           - path: /opt/__APP_NAME__/.env
             mode: 0600
