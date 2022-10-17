@@ -7,6 +7,7 @@ rabbitmq:
     name: root
     password: USE_YOUR_OWN
   management_domain: rabbit.example.com # if rabbitmq_management is enabled, acme is used for cert request, see acme state
+  subjectAltNames: 'www.rabbit.example.com rabbit1.example.com' #specify all additional domains separated by a space that should be in the ssl certificate
   management_port: 15672 # you cannot use 443 port because of privileges
   acme_account: example.com # acme state account
   plugins: # optional
