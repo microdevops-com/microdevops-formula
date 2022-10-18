@@ -191,6 +191,12 @@ ufw_before_rules_managed:
   {%- else %}
         custom_filter: "# empty"
   {%- endif %}
+    # custom_raw_rules
+  {%- if "custom" in pillar["ufw"] and "raw_rules" in pillar["ufw"]["custom"] %}
+        custom_raw_rules: {{ pillar["ufw"]["custom"]["raw_rules"] | yaml_encode }}
+  {%- else %}
+        custom_raw_rules: "# empty"
+  {%- endif %}
 
   # Fill src rules with ufw commands to process next
 ufw_user_rules_src_managed:
