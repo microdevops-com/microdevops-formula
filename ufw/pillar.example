@@ -86,3 +86,9 @@ ufw:
     filter: | # filter table, filter table is not flused, use ufw chains ufw-before-forward, ufw-before-input, ufw-before-output etc otherwise rules will duplicate on apply
       -A ufw-before-forward -s 10.0.0.10/32 -j ACCEPT
       -A ufw-before-forward -d 10.0.0.10/32 -j ACCEPT
+    raw_rules: | # add custom rule block to the bottom of the before.rules
+      *mangle # example for logging of ipsec traffic
+      -F
+      -A PREROUTING -m policy --dir in --pol ipsec -j NFLOG --nflog-group 16
+      -A POSTROUTING -m policy --dir out --pol ipsec -j NFLOG --nflog-group 16
+      COMMIT
