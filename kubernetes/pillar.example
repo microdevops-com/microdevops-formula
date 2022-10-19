@@ -1,0 +1,6 @@
+# vi: set ft=yaml:
+
+kubernetes:
+  tools:
+    kubectl: 1.23.7 # or 'kubectl: latest' for the latest version
+    helm-assistant: 0.2.2
