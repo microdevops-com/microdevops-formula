@@ -88,6 +88,7 @@ pmm:
       panel_disk_space_usage_alert_conditions_query_params:             '"A","5m","now"'
       panel_disk_space_usage_alert_conditions_reducer_type:             'max'
       panel_disk_space_usage_alert_frequency:                           '1m'
+      panel_disk_space_usage_alert_pending_for:                         '0m'
 #
       panel_free_memory_alert_conditions_evaluator_params:              10
       panel_free_memory_alert_conditions_evaluator_type:                'lt'
@@ -95,6 +96,7 @@ pmm:
       panel_free_memory_alert_conditions_query_params:                  '"A","1m","now"'
       panel_free_memory_alert_conditions_reducer_type:                  'min'
       panel_free_memory_alert_frequency:                                '1m'
+      panel_free_memory_alert_pending_for:                              '0m'
 #
       panel_cpu_usage_alert_conditions_evaluator_params:                30
       panel_cpu_usage_alert_conditions_evaluator_type:                  'gt'
@@ -102,6 +104,7 @@ pmm:
       panel_cpu_usage_alert_conditions_query_params:                    '"A","1m","now"'
       panel_cpu_usage_alert_conditions_reducer_type:                    'last'
       panel_cpu_usage_alert_frequency:                                  '30s'
+      panel_cpu_usage_alert_pending_for:                                '1m'
 #
       panel_cpu_iowait_alert_conditions_evaluator_params:               0.2
       panel_cpu_iowait_alert_conditions_evaluator_type:                 'gt'
@@ -109,6 +112,7 @@ pmm:
       panel_cpu_iowait_alert_conditions_query_params:                   '"A","5m","now"'
       panel_cpu_iowait_alert_conditions_reducer_type:                   'avg'
       panel_cpu_iowait_alert_frequency:                                 '1m'
+      panel_cpu_iowait_alert_pending_for:                               '0m'
 #
       panel_mysql_replication_enable:                                   false
       panel_mysql_replication_status_alert_conditions_evaluator_params: 0.5
@@ -117,6 +121,7 @@ pmm:
       panel_mysql_replication_status_alert_conditions_operator_type:    'and'
       panel_mysql_replication_status_alert_conditions_reducer_type:     'last'
       panel_mysql_replication_status_alert_frequency:                   '10s'
+      panel_mysql_replication_status_alert_pending_for:                 '0m'
 #
       panel_mysql_replication_lag_alert_conditions_evaluator_params:    60
       panel_mysql_replication_lag_alert_conditions_evaluator_type:      'gt'
@@ -124,6 +129,7 @@ pmm:
       panel_mysql_replication_lag_alert_conditions_query_params:        '"A","1m","now"'
       panel_mysql_replication_lag_alert_conditions_reducer_type:        'max'
       panel_mysql_replication_lag_alert_frequency:                      '1m'
+      panel_mysql_replication_lag_alert_pending_for:                    '0m'
 #
       panel_pxc_size_title:                                             'Percona XtraDB Cluster size'
       panel_pxc_size_alert_conditions_evaluator_params:                 3
