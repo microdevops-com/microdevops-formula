@@ -18,30 +18,30 @@
       "title": "[{{ node_name }}] Disk Space Usage",
       "id": 2,
       "alert": {
-        "name": "[{{ node_name }}] Disk Space Usage {{  panel_disk_space_usage_alert_conditions_evaluator_type }} {{  panel_disk_space_usage_alert_conditions_evaluator_params * 100 }}%",
+        "name": "[{{ node_name }}] Disk Space Usage {{ panel_disk_space_usage_alert_conditions_evaluator_type }} {{ panel_disk_space_usage_alert_conditions_evaluator_params * 100 }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                {{  panel_disk_space_usage_alert_conditions_evaluator_params }}
+                {{ panel_disk_space_usage_alert_conditions_evaluator_params }}
               ],
-              "type": "{{  panel_disk_space_usage_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_disk_space_usage_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "{{  panel_disk_space_usage_alert_conditions_operator_type }}"
+              "type": "{{ panel_disk_space_usage_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
-                {{  panel_disk_space_usage_alert_conditions_query_params }}
+                {{ panel_disk_space_usage_alert_conditions_query_params }}
               ]
             },
             "reducer": {
-              "type": "{{  panel_disk_space_usage_alert_conditions_reducer_type }}"
+              "type": "{{ panel_disk_space_usage_alert_conditions_reducer_type }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{  panel_disk_space_usage_alert_frequency }}",
+        "frequency": "{{ panel_disk_space_usage_alert_frequency }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_disk_space_usage_alert_pending_for | default('0m') }}",
         "handler": 1,
@@ -123,7 +123,7 @@
       "title": "[{{ node_name }}] Free Memory",
       "id": 3,
       "alert": {
-        "name": "[{{ node_name }}] Free Memory {{  panel_free_memory_alert_conditions_evaluator_type }} {{  panel_free_memory_alert_conditions_evaluator_params }}%",
+        "name": "[{{ node_name }}] Free Memory {{ panel_free_memory_alert_conditions_evaluator_type }} {{ panel_free_memory_alert_conditions_evaluator_params }}%",
         "conditions": [
           {
             "evaluator": {
@@ -133,7 +133,7 @@
               "type": "{{ panel_free_memory_alert_conditions_evaluator_type }}"
             },
             "operator": {
-              "type": "{{  panel_free_memory_alert_conditions_operator_type }}"
+              "type": "{{ panel_free_memory_alert_conditions_operator_type }}"
             },
             "query": {
               "params": [
@@ -246,7 +246,7 @@
       "title": "[{{ node_name }}] CPU Usage",
       "id": 4,
       "alert": {
-        "name": "[{{ node_name }}] CPU Usage {{  panel_cpu_usage_alert_conditions_evaluator_type }} {{  panel_cpu_usage_alert_conditions_evaluator_params }}%",
+        "name": "[{{ node_name }}] CPU Usage {{ panel_cpu_usage_alert_conditions_evaluator_type }} {{ panel_cpu_usage_alert_conditions_evaluator_params }}%",
         "conditions": [
           {
             "evaluator": {
@@ -358,7 +358,7 @@
       "title": "[{{ node_name }}] CPU IOWait",
       "id": 5,
       "alert": {
-        "name": "[{{ node_name }}] CPU IOWait {{  panel_cpu_iowait_alert_conditions_evaluator_type }} {{  panel_cpu_iowait_alert_conditions_evaluator_params * 100 }}%",
+        "name": "[{{ node_name }}] CPU IOWait {{ panel_cpu_iowait_alert_conditions_evaluator_type }} {{ panel_cpu_iowait_alert_conditions_evaluator_params * 100 }}%",
         "conditions": [
           {
             "evaluator": {
@@ -613,7 +613,7 @@
             },
             "query": {
               "params": [
-                {{  panel_mysql_replication_lag_alert_conditions_query_params }}
+                {{ panel_mysql_replication_lag_alert_conditions_query_params }}
               ]
             },
             "reducer": {
