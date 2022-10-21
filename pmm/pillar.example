@@ -112,7 +112,7 @@ pmm:
       panel_cpu_iowait_alert_conditions_query_params:                   '"A","5m","now"'
       panel_cpu_iowait_alert_conditions_reducer_type:                   'avg'
       panel_cpu_iowait_alert_frequency:                                 '1m'
-      panel_cpu_iowait_alert_pending_for:                               '0m'
+      panel_cpu_iowait_alert_for:                                       '0m'
 #
       panel_mysql_replication_enable:                                   false
       panel_mysql_replication_status_alert_conditions_evaluator_params: 0.5
@@ -129,7 +129,7 @@ pmm:
       panel_mysql_replication_lag_alert_conditions_query_params:        '"A","1m","now"'
       panel_mysql_replication_lag_alert_conditions_reducer_type:        'max'
       panel_mysql_replication_lag_alert_frequency:                      '1m'
-      panel_mysql_replication_lag_alert_pending_for:                    '0m'
+      panel_mysql_replication_lag_alert_for:                            '0m'
 #
       panel_pxc_size_title:                                             'Percona XtraDB Cluster size'
       panel_pxc_size_alert_conditions_evaluator_params:                 3
@@ -138,6 +138,7 @@ pmm:
       panel_pxc_size_alert_conditions_query_params:                     '"A","10s","now"'
       panel_pxc_size_alert_conditions_reducer_type:                     'min'
       panel_pxc_size_alert_frequency:                                   '10s'
+      panel_pxc_size_alert_for:                                         '0m'
     dashboard_definitions:
       - template: salt://pmm/files/garafana/dashboard_templates/disk_memory_cpu_mysql-replica.json
         {%- set folder = 'DATA-CENTER-NAME' %}
