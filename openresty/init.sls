@@ -34,7 +34,7 @@ openresty_pkg_repo:
       {%- endif %}
 
       {%- if grains["osmajorrelease"] <= 20 %}
-        deb http://openresty.org/package/ubuntu {{ grains["oscodename"] }} main
+        deb http://openresty.org/package{{ arch }}/ubuntu {{ grains["oscodename"] }} main
       {%- elif grains["osmajorrelease"] >= 22 %}
         deb [arch={{ grains["osarch"] }} signed-by=/usr/share/keyrings/openresty.gpg] http://openresty.org/package{{ arch }}/ubuntu {{ grains["oscodename"] }} main
       {%- endif %}
