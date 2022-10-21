@@ -4,7 +4,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "{{ panel_pxc_size_title }}",
+      "title": "{{ panel_pxc_size_title | default('Percona XtraDB Cluster size') }}",
       "alert": {
         "executionErrorState": "alerting",
         "name": "[{{ wsrep_cluster_name }}] Percona XtraDB Cluster size abnormal",
@@ -12,26 +12,26 @@
           {
             "evaluator": {
               "params": [
-                {{ panel_pxc_size_alert_conditions_evaluator_params }}
+                {{ panel_pxc_size_alert_conditions_evaluator_params | default(3) }}
               ],
-              "type": "{{ panel_pxc_size_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_pxc_size_alert_conditions_evaluator_type | default('lt') }}"
             },
             "operator": {
-              "type": "{{ panel_pxc_size_alert_conditions_operator_type }}"
+              "type": "{{ panel_pxc_size_alert_conditions_operator_type | default('and') }}"
             },
             "query": {
               "params": [
-                {{ panel_pxc_size_alert_conditions_query_params }}
+                {{ panel_pxc_size_alert_conditions_query_params | default('"A","10s","now"') }}
               ]
             },
             "reducer": {
-              "type": "{{ panel_pxc_size_alert_conditions_reducer_type }}"
+              "type": "{{ panel_pxc_size_alert_conditions_reducer_type | default('min') }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{ panel_pxc_size_alert_frequency }}",
-        "for": "0m",
+        "frequency": "{{ panel_pxc_size_alert_frequency | default('10s') }}",
+        "for": "{{ panel_pxc_size_alert_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
