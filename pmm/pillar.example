@@ -81,14 +81,15 @@ pmm:
           options:
             path: {{ gf_path_var_lib }}/dashboards
             foldersFromFilesStructure: true
-    dashboard_definitions_defaults:
+    dashboard_definitions_defaults:                                     # Optional. Here you can set default values for all boards and panels on the server.
+                                                                        # These variables can also be set in the context of each individual board.
       panel_disk_space_usage_alert_conditions_evaluator_params:         0.8
       panel_disk_space_usage_alert_conditions_evaluator_type:           'gt'
       panel_disk_space_usage_alert_conditions_operator_type:            'and'
       panel_disk_space_usage_alert_conditions_query_params:             '"A","5m","now"'
       panel_disk_space_usage_alert_conditions_reducer_type:             'max'
       panel_disk_space_usage_alert_frequency:                           '1m'
-      panel_disk_space_usage_alert_pending_for:                         '0m'
+      panel_disk_space_usage_alert_for:                                 '0m'
 #
       panel_free_memory_alert_conditions_evaluator_params:              10
       panel_free_memory_alert_conditions_evaluator_type:                'lt'
@@ -96,7 +97,7 @@ pmm:
       panel_free_memory_alert_conditions_query_params:                  '"A","1m","now"'
       panel_free_memory_alert_conditions_reducer_type:                  'min'
       panel_free_memory_alert_frequency:                                '1m'
-      panel_free_memory_alert_pending_for:                              '0m'
+      panel_free_memory_alert_for:                                      '0m'
 #
       panel_cpu_usage_alert_conditions_evaluator_params:                30
       panel_cpu_usage_alert_conditions_evaluator_type:                  'gt'
@@ -104,7 +105,7 @@ pmm:
       panel_cpu_usage_alert_conditions_query_params:                    '"A","1m","now"'
       panel_cpu_usage_alert_conditions_reducer_type:                    'last'
       panel_cpu_usage_alert_frequency:                                  '30s'
-      panel_cpu_usage_alert_pending_for:                                '1m'
+      panel_cpu_usage_alert_for:                                        '1m'
 #
       panel_cpu_iowait_alert_conditions_evaluator_params:               0.2
       panel_cpu_iowait_alert_conditions_evaluator_type:                 'gt'
@@ -121,7 +122,7 @@ pmm:
       panel_mysql_replication_status_alert_conditions_operator_type:    'and'
       panel_mysql_replication_status_alert_conditions_reducer_type:     'last'
       panel_mysql_replication_status_alert_frequency:                   '10s'
-      panel_mysql_replication_status_alert_pending_for:                 '0m'
+      panel_mysql_replication_status_alert_for:                         '0m'
 #
       panel_mysql_replication_lag_alert_conditions_evaluator_params:    60
       panel_mysql_replication_lag_alert_conditions_evaluator_type:      'gt'
@@ -146,7 +147,7 @@ pmm:
         path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ node_name }}.json
         context:
           node_name: {{ node_name }}
-          board_name: {{ node_name }}
+          board_name: 'my-board-name'                                                   # Optional. Default is "{{ node_name }}"
       - template: salt://pmm/files/garafana/dashboard_templates/pxc_size.json
         {%- set folder = 'DATA-CENTER-NAME' %}
         {%- set brand = 'PREFIX-EXAMPLE' %}
@@ -155,6 +156,6 @@ pmm:
         path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ wsrep_cluster_name }}.json
         context:
           wsrep_cluster_name: {{ wsrep_cluster_name }}
-          board_name: '{{ brand }} Percona XtraDB Cluster'
-          panel_pxc_size_title: '{{ brand }} PXCluster size'
-          panel_pxc_size_alert_conditions_evaluator_params: {{ pxc_cluster_size }}
+          board_name: '{{ brand }} Percona XtraDB Cluster'                              # Optional. Default is "{{ wsrep_cluster_name ~ 'Percona XtraDB Cluster' }}"
+          panel_pxc_size_title: '{{ brand }} PXCluster size'                            # Optional. Default is "Percona XtraDB Cluster size'"
+          panel_pxc_size_alert_conditions_evaluator_params: {{ pxc_cluster_size }}      # Default is "3"
