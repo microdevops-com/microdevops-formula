@@ -1,5 +1,5 @@
 {
-  "title": "{{ board_name }}",
+  "title": "{{ board_name | default(wsrep_cluster_name ~ 'Percona XtraDB Cluster') }}",
   "editable": true,
   "panels": [
     {
