@@ -1,5 +1,5 @@
 {
-  "title": "{{ board_name }}",
+  "title": "{{ board_name | default(node_name) }}",
   "editable": true,
   "panels": [
     {
