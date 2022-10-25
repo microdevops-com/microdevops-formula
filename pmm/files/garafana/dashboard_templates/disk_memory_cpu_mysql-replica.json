@@ -43,7 +43,7 @@
         ],
         "frequency": "{{ panel_disk_space_usage_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
-        "for": "{{ panel_disk_space_usage_alert_for | default('0m') }}",
+        "for": "{{ panel_disk_space_usage_alert_pending_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
@@ -148,7 +148,7 @@
         ],
         "frequency": "{{ panel_free_memory_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
-        "for": "{{ panel_free_memory_alert_for | default('0m') }}",
+        "for": "{{ panel_free_memory_alert_pending_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
@@ -271,7 +271,7 @@
         ],
         "frequency": "{{ panel_cpu_usage_alert_frequency | default('30s') }}",
         "executionErrorState": "alerting",
-        "for": "{{ panel_cpu_usage_alert_for | default('0m') }}",
+        "for": "{{ panel_cpu_usage_alert_pending_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
@@ -383,7 +383,7 @@
         ],
         "frequency": "{{ panel_cpu_iowait_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
-        "for": "{{ panel_cpu_iowait_alert_for | default('0m') }}",
+        "for": "{{ panel_cpu_iowait_alert_pending_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
@@ -508,7 +508,7 @@
         ],
         "frequency": "{{ panel_mysql_replication_status_alert_frequency | default('10s') }}",
         "executionErrorState": "alerting",
-        "for": "{{ panel_mysql_replication_status_alert_for | default('0m') }}",
+        "for": "{{ panel_mysql_replication_status_alert_pending_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
@@ -624,7 +624,7 @@
         ],
         "frequency": "{{ panel_mysql_replication_lag_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
-        "for": "{{ panel_mysql_replication_lag_alert_for | default('0m') }}",
+        "for": "{{ panel_mysql_replication_lag_alert_pending_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
