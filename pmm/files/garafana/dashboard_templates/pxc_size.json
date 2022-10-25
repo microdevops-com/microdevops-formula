@@ -31,7 +31,7 @@
           }
         ],
         "frequency": "{{ panel_pxc_size_alert_frequency | default('10s') }}",
-        "for": "{{ panel_pxc_size_alert_for | default('0m') }}",
+        "for": "{{ panel_pxc_size_alert_pending_for | default('0m') }}",
         "handler": 1,
         "noDataState": "no_data"
       },
