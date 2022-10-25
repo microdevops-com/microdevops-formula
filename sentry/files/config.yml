@@ -13,6 +13,7 @@ mail.port: {{ salt['pillar.get']('sentry:config:email:port', '25') }}
 mail.username: '{{ salt['pillar.get']('sentry:config:email:username', '') }}'
 mail.password: '{{ salt['pillar.get']('sentry:config:email:password', '') }}'
 mail.use-tls: {{ salt['pillar.get']('sentry:config:email:tls', 'false') }}
+mail.use-ssl: {{ salt['pillar.get']('sentry:config:email:ssl', 'false') }}
 # NOTE: The following 2 configs (mail.from and mail.list-namespace) are set
 #       through SENTRY_MAIL_HOST in sentry.conf.py so remove those first if
 #       you want your values in this file to be effective!

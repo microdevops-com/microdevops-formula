@@ -1,5 +1,5 @@
 {
-  "title": "{{ board_name }}",
+  "title": "{{ board_name | default(node_name) }}",
   "editable": true,
   "panels": [
     {
@@ -18,30 +18,30 @@
       "title": "[{{ node_name }}] Disk Space Usage",
       "id": 2,
       "alert": {
-        "name": "[{{ node_name }}] Disk Space Usage {{ panel_disk_space_usage_alert_conditions_evaluator_type }} {{ panel_disk_space_usage_alert_conditions_evaluator_params * 100 }}%",
+        "name": "[{{ node_name }}] Disk Space Usage {{ panel_disk_space_usage_alert_conditions_evaluator_type | default('gt') }} {{ panel_disk_space_usage_alert_conditions_evaluator_params | default(0.8) * 100 }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                {{ panel_disk_space_usage_alert_conditions_evaluator_params }}
+                {{ panel_disk_space_usage_alert_conditions_evaluator_params | default(0.8) }}
               ],
-              "type": "{{ panel_disk_space_usage_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_disk_space_usage_alert_conditions_evaluator_type | default('gt') }}"
             },
             "operator": {
-              "type": "{{ panel_disk_space_usage_alert_conditions_operator_type }}"
+              "type": "{{ panel_disk_space_usage_alert_conditions_operator_type | default('and') }}"
             },
             "query": {
               "params": [
-                {{ panel_disk_space_usage_alert_conditions_query_params }}
+                {{ panel_disk_space_usage_alert_conditions_query_params |default('"A","5m","now"') }}
               ]
             },
             "reducer": {
-              "type": "{{ panel_disk_space_usage_alert_conditions_reducer_type }}"
+              "type": "{{ panel_disk_space_usage_alert_conditions_reducer_type | default('max') }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{ panel_disk_space_usage_alert_frequency }}",
+        "frequency": "{{ panel_disk_space_usage_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_disk_space_usage_alert_pending_for | default('0m') }}",
         "handler": 1,
@@ -123,30 +123,30 @@
       "title": "[{{ node_name }}] Free Memory",
       "id": 3,
       "alert": {
-        "name": "[{{ node_name }}] Free Memory {{ panel_free_memory_alert_conditions_evaluator_type }} {{ panel_free_memory_alert_conditions_evaluator_params }}%",
+        "name": "[{{ node_name }}] Free Memory {{ panel_free_memory_alert_conditions_evaluator_type | default('lt') }} {{ panel_free_memory_alert_conditions_evaluator_params | default(10) }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                {{ panel_free_memory_alert_conditions_evaluator_params }}
+                {{ panel_free_memory_alert_conditions_evaluator_params | default(10) }}
               ],
-              "type": "{{ panel_free_memory_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_free_memory_alert_conditions_evaluator_type | default('lt') }}"
             },
             "operator": {
-              "type": "{{ panel_free_memory_alert_conditions_operator_type }}"
+              "type": "{{ panel_free_memory_alert_conditions_operator_type | default('and') }}"
             },
             "query": {
               "params": [
-                {{ panel_free_memory_alert_conditions_query_params }}
+                {{ panel_free_memory_alert_conditions_query_params | default('"A","1m","now"') }}
               ]
             },
             "reducer": {
-              "type": "{{ panel_free_memory_alert_conditions_reducer_type }}"
+              "type": "{{ panel_free_memory_alert_conditions_reducer_type | default('min') }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{ panel_free_memory_alert_frequency }}",
+        "frequency": "{{ panel_free_memory_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_free_memory_alert_pending_for | default('0m') }}",
         "handler": 1,
@@ -246,30 +246,30 @@
       "title": "[{{ node_name }}] CPU Usage",
       "id": 4,
       "alert": {
-        "name": "[{{ node_name }}] CPU Usage {{ panel_cpu_usage_alert_conditions_evaluator_type }} {{ panel_cpu_usage_alert_conditions_evaluator_params }}%",
+        "name": "[{{ node_name }}] CPU Usage {{ panel_cpu_usage_alert_conditions_evaluator_type | default('gt') }} {{ panel_cpu_usage_alert_conditions_evaluator_params | default(30) }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                {{ panel_cpu_usage_alert_conditions_evaluator_params }}
+                {{ panel_cpu_usage_alert_conditions_evaluator_params | default(30) }}
               ],
-              "type": "{{ panel_cpu_usage_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_cpu_usage_alert_conditions_evaluator_type | default('gt') }}"
             },
             "operator": {
-              "type": "{{ panel_cpu_usage_alert_conditions_operator_type }}"
+              "type": "{{ panel_cpu_usage_alert_conditions_operator_type | default('and') }}"
             },
             "query": {
               "params": [
-                {{ panel_cpu_usage_alert_conditions_query_params }}
+                {{ panel_cpu_usage_alert_conditions_query_params | default('"A","1m","now"') }}
               ]
             },
             "reducer": {
-              "type": "{{ panel_cpu_usage_alert_conditions_reducer_type }}"
+              "type": "{{ panel_cpu_usage_alert_conditions_reducer_type | default('last') }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{ panel_cpu_usage_alert_frequency }}",
+        "frequency": "{{ panel_cpu_usage_alert_frequency | default('30s') }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_cpu_usage_alert_pending_for | default('0m') }}",
         "handler": 1,
@@ -358,30 +358,30 @@
       "title": "[{{ node_name }}] CPU IOWait",
       "id": 5,
       "alert": {
-        "name": "[{{ node_name }}] CPU IOWait {{ panel_cpu_iowait_alert_conditions_evaluator_type }} {{ panel_cpu_iowait_alert_conditions_evaluator_params * 100 }}%",
+        "name": "[{{ node_name }}] CPU IOWait {{ panel_cpu_iowait_alert_conditions_evaluator_type | default('gt') }} {{ panel_cpu_iowait_alert_conditions_evaluator_params | default(0.2) * 100 }}%",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                {{ panel_cpu_iowait_alert_conditions_evaluator_params }}
+                {{ panel_cpu_iowait_alert_conditions_evaluator_params | default(0.2) }}
               ],
-              "type": "{{ panel_cpu_iowait_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_cpu_iowait_alert_conditions_evaluator_type | default('gt') }}"
             },
             "operator": {
-              "type": "{{ panel_cpu_iowait_alert_conditions_operator_type }}"
+              "type": "{{ panel_cpu_iowait_alert_conditions_operator_type | default('and') }}"
             },
             "query": {
               "params": [
-                {{ panel_cpu_iowait_alert_conditions_query_params }}
+                {{ panel_cpu_iowait_alert_conditions_query_params | default('"A","5m","now"') }}
               ]
             },
             "reducer": {
-              "type": "{{ panel_cpu_iowait_alert_conditions_reducer_type }}"
+              "type": "{{ panel_cpu_iowait_alert_conditions_reducer_type | default('avg') }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{ panel_cpu_iowait_alert_frequency }}",
+        "frequency": "{{ panel_cpu_iowait_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_cpu_iowait_alert_pending_for | default('0m') }}",
         "handler": 1,
@@ -466,7 +466,7 @@
         "align": false
       }
     }
-{%- if panel_mysql_replication_enable %},
+{%- if panel_mysql_replication_enable | default(false) %},
     {
       "id": 6,
       "collapsed": false,
@@ -488,25 +488,25 @@
           {
             "evaluator": {
               "params": [
-                {{ panel_mysql_replication_status_alert_conditions_evaluator_params }}
+                {{ panel_mysql_replication_status_alert_conditions_evaluator_params | default(0.5) }}
               ],
-              "type": "{{ panel_mysql_replication_status_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_mysql_replication_status_alert_conditions_evaluator_type | default('lt') }}"
             },
             "operator": {
-              "type": "{{ panel_mysql_replication_status_alert_conditions_operator_type }}"
+              "type": "{{ panel_mysql_replication_status_alert_conditions_operator_type | default('and') }}"
             },
             "query": {
               "params": [
-                {{ panel_mysql_replication_status_alert_conditions_query_params }}
+                {{ panel_mysql_replication_status_alert_conditions_query_params | default('"A","10s","now"') }}
               ]
             },
             "reducer": {
-              "type": "{{ panel_mysql_replication_status_alert_conditions_reducer_type }}"
+              "type": "{{ panel_mysql_replication_status_alert_conditions_reducer_type | default('last') }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{ panel_mysql_replication_status_alert_frequency }}",
+        "frequency": "{{ panel_mysql_replication_status_alert_frequency | default('10s') }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_mysql_replication_status_alert_pending_for | default('0m') }}",
         "handler": 1,
@@ -599,30 +599,30 @@
       "title": "[{{ node_name }}] MYSQL Replica Lag",
       "id": 8,
       "alert": {
-        "name": "[{{ node_name }}] MYSQL Replica Lag {{ panel_mysql_replication_lag_alert_conditions_evaluator_type }} {{ panel_mysql_replication_lag_alert_conditions_evaluator_params }}s",
+        "name": "[{{ node_name }}] MYSQL Replica Lag {{ panel_mysql_replication_lag_alert_conditions_evaluator_type | default('gt') }} {{ panel_mysql_replication_lag_alert_conditions_evaluator_params | default(60) }}s",
         "conditions": [
           {
             "evaluator": {
               "params": [
-                {{ panel_mysql_replication_lag_alert_conditions_evaluator_params }}
+                {{ panel_mysql_replication_lag_alert_conditions_evaluator_params | default(60) }}
               ],
-              "type": "{{ panel_mysql_replication_lag_alert_conditions_evaluator_type }}"
+              "type": "{{ panel_mysql_replication_lag_alert_conditions_evaluator_type | default('gt') }}"
             },
             "operator": {
-              "type": "{{ panel_mysql_replication_lag_alert_conditions_operator_type }}"
+              "type": "{{ panel_mysql_replication_lag_alert_conditions_operator_type | default('and') }}"
             },
             "query": {
               "params": [
-                {{ panel_mysql_replication_lag_alert_conditions_query_params }}
+                {{ panel_mysql_replication_lag_alert_conditions_query_params | default('"A","1m","now"') }}
               ]
             },
             "reducer": {
-              "type": "{{ panel_mysql_replication_lag_alert_conditions_reducer_type }}"
+              "type": "{{ panel_mysql_replication_lag_alert_conditions_reducer_type | default('max') }}"
             },
             "type": "query"
           }
         ],
-        "frequency": "{{ panel_mysql_replication_lag_alert_frequency }}",
+        "frequency": "{{ panel_mysql_replication_lag_alert_frequency | default('1m') }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_mysql_replication_lag_alert_pending_for | default('0m') }}",
         "handler": 1,
