@@ -7,7 +7,7 @@
         {%- set _app_nginx_access_log = app["nginx"]["log"]["access_log"]|replace("__APP_NAME__", app_name) %}
         {%- set _app_nginx_error_log = app["nginx"]["log"]["error_log"]|replace("__APP_NAME__", app_name) %}
 
-        {%- if "auth_basic" in app["nginx"] %}
+        {%- if "auth_basic" in app["nginx"] and "auth" in app["nginx"]["auth_basic"] %}
 app_{{ app_type }}_nginx_apache_utils_{{ loop_index }}:
   pkg.installed:
     - pkgs:
@@ -32,6 +32,22 @@ app_{{ app_type }}_nginx_htaccess_user_{{ loop_index }}_{{ loop.index }}:
 
         {%- else %}
           {%- set auth_basic_block = ' ' %}
+        {%- endif %}
+
+        {%- if "auth_basic" in app["nginx"] and "custom" in app["nginx"]["auth_basic"] %}
+          {%- for htaccess_file in app["nginx"]["auth_basic"]["custom"] %}
+            {%- set file_loop = loop %}
+            {%- for item in htaccess_file["auth"] %}
+app_{{ app_type }}_nginx_custom_htaccess_user_{{ loop_index }}_{{ file_loop.index }}_{{ loop.index }}:
+  webutil.user_exists:
+    - name: '{{ item["user"] }}'
+    - password: '{{ item["pass"] }}'
+    - htpasswd_file: {{ htaccess_file["path"]|replace("__APP_NAME__", app_name) }}
+    - force: True
+    - runas: {{ _app_user }}
+
+            {%- endfor %}
+          {%- endfor %}
         {%- endif %}
 
         {%- if "ssl" in app["nginx"] and "acme_account" in app["nginx"]["ssl"] %}

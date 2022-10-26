@@ -177,8 +177,13 @@ app:
           auth_basic: # optional basic auth
             #omit_options: True # optionally disable auth for OPTIONS request method
             auth:
-            - user: basicuser
-              pass: basicpassword
+              - user: basicuser
+                pass: basicpassword
+            custom: # optional, manage custom additional htaccess files if needed
+              - path: /some/path/__APP_NAME__/dir/.htaccess1
+                auth:
+                  - user: basicuser
+                    pass: basicpassword
           vhost_config: salt://app/files/__APP_NAME__/.../vhost.conf
           vhost_defaults: # optional, defaults for vhost config template
             php_version: 7.4 # e.g. for php-fpm apps
