@@ -84,7 +84,7 @@ app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
         auth_basic_block: '{{ auth_basic_block }}'
         {%- if "vhost_defaults" in app["nginx"] %}
           {%- for def_key, def_val in app["nginx"]["vhost_defaults"].items() %}
-        {{ def_key }}: {{ def_val|replace("__APP_NAME__", app_name) }}
+        {{ def_key }}: {{ def_val|replace("__APP_NAME__", app_name)|yaml_encode }}
           {%- endfor %}
         {%- endif %}
 
