@@ -1,3 +1,6 @@
+# If you get ValueError: RSA key format is not supported on minion, fix:
+# pip3 install --upgrade pycryptodomex
+
 salt:
 
   master:
