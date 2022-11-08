@@ -1,0 +1,5 @@
+mysql_increment_checker:
+  enabled: True
+  config:
+    auto_increment_ratio: 70 # mandatory, the threshold for alert
+    my_cred: "~/.my.cnf" # optional, path tho the my.cnf file
