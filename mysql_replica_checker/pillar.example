@@ -1,0 +1,4 @@
+mysql_replica_checker:
+  enabled: True
+  config: |
+    BEHIND_MASTER_THR="600"
