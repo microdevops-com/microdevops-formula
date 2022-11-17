@@ -16,6 +16,18 @@ cmd_check_alert:
         timeout: 15
         severity: critical
       checks:
+        dmesg-has-hardware-errors:
+          cmd: ! dmesg -T | grep -i "hardware.*error" -m 10
+          service: os
+          resource: __hostname__:hardware
+          severity_per_retcode:
+            1: critical
+        dmesg-has-nvme-errors:
+          cmd: ! dmesg -T | grep -i "nvme.*err" -m 10
+          service: os
+          resource: __hostname__:hardware
+          severity_per_retcode:
+            1: critical
         has-oom-kills:
           cmd: :; ! dmesg -T | grep "Out of memory"
           service: os
