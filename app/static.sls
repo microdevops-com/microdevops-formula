@@ -3,7 +3,7 @@
   {%- include "app/_pkg.sls" with context %}
 
   {%- for app_name, app in pillar["app"]["static"]["apps"].items() %}
-    {%- if not "deploy_only" in pillar["app"]["static"] or app_name in pillar["app"]["static"]["deploy_only"] %}
+    {%- if not "deploy_only" in pillar["app"]["static"] or app_name == pillar["app"]["static"]["deploy_only"] %}
 
       {%- set app_type = "static" %}
       {%- set loop_index = loop.index %}

@@ -8,7 +8,7 @@
   {%- endif %}
 
   {%- for app_name, app in pillar["app"]["php-fpm"]["apps"].items() %}
-    {%- if not "deploy_only" in pillar["app"]["php-fpm"] or app_name in pillar["app"]["php-fpm"]["deploy_only"] %}
+    {%- if not "deploy_only" in pillar["app"]["php-fpm"] or app_name == pillar["app"]["php-fpm"]["deploy_only"] %}
 
       {%- set app_type = "php-fpm" %}
       {%- set loop_index = loop.index %}

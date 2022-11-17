@@ -8,7 +8,7 @@
   {%- endif %}
 
   {%- for app_name, app in pillar["app"]["python"]["apps"].items() %}
-    {%- if not "deploy_only" in pillar["app"]["python"] or app_name in pillar["app"]["python"]["deploy_only"] %}
+    {%- if not "deploy_only" in pillar["app"]["python"] or app_name == pillar["app"]["python"]["deploy_only"] %}
 
       {%- set app_type = "python" %}
       {%- set loop_index = loop.index %}
