@@ -17,6 +17,8 @@
 
       {%- include "app/_nginx.sls" with context %}
 
+      {%- include "app/_logrotate.sls" with context %}
+
     {%- endif %}
   {%- endfor %}
 {% endif %}

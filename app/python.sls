@@ -71,6 +71,8 @@ app_python_app_virtualenv_{{ loop.index }}:
 
       {%- include "app/_nginx.sls" with context %}
 
+      {%- include "app/_logrotate.sls" with context %}
+
     {%- endif %}
   {%- endfor %}
 {% endif %}

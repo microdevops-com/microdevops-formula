@@ -101,6 +101,8 @@ app_php-fpm_app_pool_reload_{{ loop.index }}:
 
       {%- include "app/_nginx.sls" with context %}
 
+      {%- include "app/_logrotate.sls" with context %}
+
     {%- endif %}
   {%- endfor %}
 {% endif %}
