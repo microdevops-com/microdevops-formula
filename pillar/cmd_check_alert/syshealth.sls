@@ -25,7 +25,7 @@ cmd_check_alert:
         dmesg-has-nvme-errors:
           cmd: :; ! dmesg -T | grep -i "nvme.*err" -m 10
           service: os
-          resource: __hostname__:hardware
+          resource: __hostname__:hardware-nvme
           severity_per_retcode:
             1: critical
         has-oom-kills:
