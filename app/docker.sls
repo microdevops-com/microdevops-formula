@@ -50,7 +50,7 @@ docker_install_4:
   {%- if pillar["app"]["docker"]["networks"] is mapping %}
 
     {%- for net_name, net_params in pillar["app"]["docker"]["networks"].items() %}
-      {%- if not "deploy_only" in pillar["app"]["docker"] or net_name in pillar["app"]["docker"]["deploy_only"] %}
+      {%- if not "deploy_only" in pillar["app"]["docker"] or net_name == pillar["app"]["docker"]["deploy_only"] %}
 docker_network_{{ loop.index }}:
   docker_network.present:
     - name: {{ net_name }}
@@ -74,7 +74,7 @@ docker_network_{{ loop.index }}:
   {%- endif %}
 
   {%- for app_name, app in pillar["app"]["docker"]["apps"].items() %}
-    {%- if not "deploy_only" in pillar["app"]["docker"] or app_name in pillar["app"]["docker"]["deploy_only"] %}
+    {%- if not "deploy_only" in pillar["app"]["docker"] or app_name == pillar["app"]["docker"]["deploy_only"] %}
 docker_app_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app["home"] }}
