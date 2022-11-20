@@ -8,8 +8,9 @@ logrotate_config_{{ loop.index }}:
 
   {%- endfor %}
 
-  {% if pillar["logrotate"]["custom_scripts"] is defined %}
-      {%- for custom_script in pillar["logrotate"]["custom_scripts"] %}
+  {%- if pillar["logrotate"]["custom_scripts"] is defined %}
+  
+    {%- for custom_script in pillar["logrotate"]["custom_scripts"] %}
 logrotate_custom_script_{{ loop.index }}:
   file.managed:
     - name: {{ custom_script["path"] }}
@@ -18,7 +19,8 @@ logrotate_custom_script_{{ loop.index }}:
     - group: root
     - mode: 755
     - makedirs: True
-      {%- endfor %}
+
+    {%- endfor %}
 
   {%- endif %}
 
