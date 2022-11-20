@@ -32,11 +32,20 @@ k8s_tools_kubectl:
   {%- if "helm-assistant" in pillar["kubernetes"]["tools"] %}
 k8s_tools_helm_assistant_curl:
   cmd.run:
-    - name: curl -L https://github.com/SomeBlackMagic/helm-assistant/releases/download/v{{ pillar["kubernetes"]["tools"]["helm-assistant"] }}/helm-assistant-linux-amd64 -o /usr/local/bin/helm-assistant
+    - name: |
+        curl -L https://github.com/SomeBlackMagic/helm-assistant/releases/download/v{{ pillar["kubernetes"]["tools"]["helm-assistant"] }}/helm-assistant-linux-amd64 -o /usr/local/bin/helm-assistant
+        chmod +x /usr/local/bin/helm-assistant
 
-k8s_tools_helm_assistant_chmod:
+  {%- endif %}
+
+  {%- if "helm" in pillar["kubernetes"]["tools"] %}
+k8s_tools_helm_curl:
   cmd.run:
-    - name: chmod +x /usr/local/bin/helm-assistant
+    - name: |
+        curl -L https://get.helm.sh/helm-v{{ pillar["kubernetes"]["tools"]["helm"] }}-linux-amd64.tar.gz -o /tmp/helm.tar.gz
+        tar -zxvf /tmp/helm.tar.gz -C /tmp
+        mv /tmp/linux-amd64/helm /usr/local/bin/helm
+        chmod +x /usr/local/bin/helm
 
   {%- endif %}
 
