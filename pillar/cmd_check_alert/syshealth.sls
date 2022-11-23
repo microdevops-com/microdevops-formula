@@ -16,26 +16,32 @@ cmd_check_alert:
         timeout: 15
         severity: critical
       checks:
-        dmesg-has-hardware-errors:
+        hardware:
           cmd: :; ! dmesg -T | grep -i "hardware.*error" -m 10
           service: os
           resource: __hostname__:hardware
           severity_per_retcode:
             1: critical
-        dmesg-has-nvme-errors:
+        hardware-nvme:
           cmd: :; ! dmesg -T | grep -i "nvme.*err" -m 10
           service: os
           resource: __hostname__:hardware-nvme
           severity_per_retcode:
             1: critical
-        has-oom-kills:
+        hardware-cpu-temperature-throttling:
+          cmd: :; ! dmesg -T | grep -i -e "temperature above threshold" -e "cpu clock throttled" -m 10
+          service: os
+          resource: __hostname__:hardware-cpu-temperature-throttling
+          severity_per_retcode:
+            1: critical
+        oom:
           cmd: :; ! dmesg -T | grep "Out of memory"
           service: os
           resource: __hostname__:oom
           severity_per_retcode:
             1: critical
       {%- if grains.get("oscodename","") not in ["precise"] %}
-        has-zombies:
+        zombie:
           cmd: {{ ruby_prefix }}/check-process.rb -s Z -W 0 -C 0 -w 10 -c 15
           service: os
           resource: __hostname__:zombie
