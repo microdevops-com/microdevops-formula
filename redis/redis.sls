@@ -6,6 +6,13 @@ auth file for cmd check alert:
     - contents: "AUTH={{ pillar['redis']['auth'] }}"
   {% endif %}
 
+inotify-tools install:
+  pkg.latest:
+    - refresh: True
+    - reload_modules: True
+    - pkgs:
+        - inotify-tools
+
 redis_install:
   pkgrepo.managed:
     - ppa: redislabs/redis
