@@ -1,4 +1,4 @@
-{% if pillar["app"] is defined and "static" in pillar["app"] %}
+{% if pillar["app"] is defined and "static" in pillar["app"] and "apps" in pillar["app"]["static"] %}
 
   {%- include "app/_pkg.sls" with context %}
 

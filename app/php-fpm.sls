@@ -1,4 +1,4 @@
-{% if pillar["app"] is defined and "php-fpm" in pillar["app"] %}
+{% if pillar["app"] is defined and "php-fpm" in pillar["app"] and "apps" in pillar["app"]["php-fpm"] %}
 
   {%- include "app/_pkg.sls" with context %}
 

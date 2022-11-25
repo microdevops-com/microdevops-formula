@@ -1,4 +1,4 @@
-{% if pillar["app"] is defined and "docker" in pillar["app"] %}
+{% if pillar["app"] is defined and "docker" in pillar["app"] and "apps" in pillar["app"]["docker"] %}
 
   {%- include "app/_pkg.sls" with context %}
 
