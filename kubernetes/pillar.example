@@ -3,4 +3,5 @@
 kubernetes:
   tools:
     kubectl: 1.23.7 # or 'kubectl: latest' for the latest version
-    helm-assistant: 0.2.2
+    helm-assistant: 0.2.4
+    helm: 3.10.2
