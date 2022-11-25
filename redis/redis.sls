@@ -1,4 +1,18 @@
 {%- if pillar['redis']['redis_conf'] is defined %}
+  {%- if 'auth' in pillar['redis'] %}
+auth file for cmd check alert:
+  file.managed:
+    - name: /root/.redis
+    - contents: "AUTH={{ pillar['redis']['auth'] }}"
+  {% endif %}
+
+inotify-tools install:
+  pkg.latest:
+    - refresh: True
+    - reload_modules: True
+    - pkgs:
+        - inotify-tools
+
 redis_install:
   pkgrepo.managed:
     - ppa: redislabs/redis
