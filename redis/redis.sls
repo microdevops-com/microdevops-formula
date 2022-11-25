@@ -1,4 +1,11 @@
 {%- if pillar['redis']['redis_conf'] is defined %}
+  {%- if 'auth' in pillar['redis'] %}
+auth file for cmd check alert:
+  file.managed:
+    - name: /root/.redis
+    - contents: "AUTH={{ pillar['redis']['auth'] }}"
+  {% endif %}
+
 redis_install:
   pkgrepo.managed:
     - ppa: redislabs/redis
