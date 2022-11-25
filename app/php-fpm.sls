@@ -1,5 +1,7 @@
 {% if pillar["app"] is defined and "php-fpm" in pillar["app"] and "apps" in pillar["app"]["php-fpm"] %}
 
+  {%- set app_type = "php-fpm" %}
+
   {%- include "app/_pkg.sls" with context %}
 
   {%- if "versions" in pillar["app"]["php-fpm"] %}
@@ -10,7 +12,6 @@
   {%- for app_name, app in pillar["app"]["php-fpm"]["apps"].items() %}
     {%- if not "deploy_only" in pillar["app"]["php-fpm"] or app_name == pillar["app"]["php-fpm"]["deploy_only"] %}
 
-      {%- set app_type = "php-fpm" %}
       {%- set loop_index = loop.index %}
       {%- set _app_user = app["user"]|replace("__APP_NAME__", app_name) %}
       {%- set _app_group = app["group"]|replace("__APP_NAME__", app_name) %}
