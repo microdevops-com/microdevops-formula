@@ -148,20 +148,20 @@ alerta:
 
     COLOR_MAP = {
         'severity': {
-            'fatal': 'blue',
-            'security': 'blue',
-            'critical': 'red',
-            'major': 'orange',
-            'minor': 'yellow',
-            'warning': 'dodgerblue',
-            'ok': '#00CC00',
-            'normal': '#00CC00',
-            'cleared': '#00CC00',
-            'indeterminate': 'lightblue',
-            'informational': '#00CC00',
-            'debug': '#9D006D',
-            'trace': '#7554BF',
-            'unknown': 'silver'
+            'fatal': '#8f4df7',
+            'security': '#d323eb',
+            'critical': '#fa3e3e',
+            'major': '#faae20',
+            'minor': '#fae848',
+            'warning': '#fa7d3e',
+            'ok': '#5de35d',
+            'normal': '#5de35d',
+            'cleared': '#5de35d',
+            'indeterminate': '#6fc5ed',
+            'informational': '#66edbe',
+            'debug': '#e32bab',
+            'trace': '#7456b8',
+            'unknown': '#d3dcde'
         },
         'text': 'black',
         'highlight': 'skyblue'
