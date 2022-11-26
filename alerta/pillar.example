@@ -191,4 +191,4 @@ alerta:
         'Example': '-xxxxxxxxxxxxx',
     }
 
-    SORT_LIST_BY = ['severity', 'customer', 'status', 'lastReceiveTime']
+    SORT_LIST_BY = ['severity', 'customer', 'status', 'resource']
