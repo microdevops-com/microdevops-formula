@@ -105,7 +105,7 @@ alerta:
     ```
 {% endraw %}
 
-  config: | # https://github.com/alerta/alerta/blob/master/alerta/settings.py
+  config: | # https://github.com/alerta/alerta/blob/master/alerta/settings.py https://github.com/alerta/alerta-docs/blob/master/configuration.rst
     DASHBOARD_URL = 'https://alerta.example.com/'
 
     AUTH_REQUIRED = True
