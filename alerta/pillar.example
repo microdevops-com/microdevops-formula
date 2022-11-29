@@ -105,7 +105,7 @@ alerta:
     ```
 {% endraw %}
 
-  config: |
+  config: | # https://github.com/alerta/alerta/blob/master/alerta/settings.py https://github.com/alerta/alerta-docs/blob/master/configuration.rst
     DASHBOARD_URL = 'https://alerta.example.com/'
 
     AUTH_REQUIRED = True
@@ -119,7 +119,9 @@ alerta:
     CUSTOMER_VIEWS = True
 
     SITE_LOGO_URL = 'https://example.com/uploads/example.png'
-    DATE_FORMAT_LONG_DATE = 'yyyy-MM-dd HH:mm:ss.sss'
+    DATE_FORMAT_LONG_DATE = 'YYYY-MM-DD HH:mm:ss Z'
+    DATE_FORMAT_MEDIUM_DATE = 'YYYY-MM-DD HH:mm'
+    DATE_FORMAT_SHORT_TIME = 'HH:mm'
     DEFAULT_AUDIO_FILE = '/audio/alert_high-intensity.ogg'
 
     API_KEY_EXPIRE_DAYS = 36500 # 100 years
@@ -148,20 +150,20 @@ alerta:
 
     COLOR_MAP = {
         'severity': {
-            'fatal': 'blue',
-            'security': 'blue',
-            'critical': 'red',
-            'major': 'orange',
-            'minor': 'yellow',
-            'warning': 'dodgerblue',
-            'ok': '#00CC00',
-            'normal': '#00CC00',
-            'cleared': '#00CC00',
-            'indeterminate': 'lightblue',
-            'informational': '#00CC00',
-            'debug': '#9D006D',
-            'trace': '#7554BF',
-            'unknown': 'silver'
+            'fatal': '#8f4df7',
+            'security': '#d323eb',
+            'critical': '#fa3e3e',
+            'major': '#faae20',
+            'minor': '#fae848',
+            'warning': '#fa7d3e',
+            'ok': '#5de35d',
+            'normal': '#5de35d',
+            'cleared': '#5de35d',
+            'indeterminate': '#6fc5ed',
+            'informational': '#66edbe',
+            'debug': '#e32bab',
+            'trace': '#7456b8',
+            'unknown': '#d3dcde'
         },
         'text': 'black',
         'highlight': 'skyblue'
@@ -188,3 +190,5 @@ alerta:
     TELEGRAM_CHAT_ID_PER_CUSTOMER = {
         'Example': '-xxxxxxxxxxxxx',
     }
+
+    SORT_LIST_BY = ['severity', 'customer', 'status', 'resource']
