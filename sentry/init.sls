@@ -88,6 +88,19 @@ sentry_config_2:
     - source: 'salt://sentry/files/sentry.conf.py'
     - template: jinja
 
+create .env.custom:
+  file.copy:
+    - name: '/opt/sentry/.env.custom'
+    - source: '/opt/sentry/.env'
+    - force: true
+
+set a custom environment variable for the general system option SENTRY_EVENT_RETENTION_DAYS:
+  file.replace:
+    - name: '/opt/sentry/.env.custom'
+    - pattern: '^ *SENTRY_EVENT_RETENTION_DAYS=.*$'
+    - repl: 'SENTRY_EVENT_RETENTION_DAYS={{ salt["pillar.get"]("sentry:config:general:options:system:event_retention_days", 90) }}'
+    - append_if_not_found: True
+
 {%- if "enhance_image_sh" in pillar["sentry"] %}
 sentry_enhance-image_sh_create:
   file.managed:
