@@ -60,7 +60,7 @@ SENTRY_USE_BIG_INTS = True
 SENTRY_SINGLE_ORGANIZATION = True
 
 SENTRY_OPTIONS["system.event-retention-days"] = int(
-    env("SENTRY_EVENT_RETENTION_DAYS", "90")
+    env("SENTRY_EVENT_RETENTION_DAYS", "{{ salt['pillar.get']('sentry:config:general:options:system:event_retention_days', 90) }}")
 )
 
 #########
