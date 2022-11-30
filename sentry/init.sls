@@ -93,25 +93,26 @@ create .env.custom:
     - name: '/opt/sentry/.env.custom'
     - source: '/opt/sentry/.env'
     - force: true
-
+  {% if salt['file.file_exists']('/opt/sentry/.env.custom') %}
 set a custom environment variable for the general system option SENTRY_EVENT_RETENTION_DAYS:
   file.replace:
     - name: '/opt/sentry/.env.custom'
     - pattern: '^ *SENTRY_EVENT_RETENTION_DAYS=.*$'
     - repl: 'SENTRY_EVENT_RETENTION_DAYS={{ salt["pillar.get"]("sentry:config:general:options:system:event_retention_days", 90) }}'
     - append_if_not_found: True
+  {% endif %}
 
-{%- if "enhance_image_sh" in pillar["sentry"] %}
+  {%- if "enhance_image_sh" in pillar["sentry"] %}
 sentry_enhance-image_sh_create:
   file.managed:
     - name: '/opt/sentry/sentry/enhance-image.sh'
     - contents: {{ salt['pillar.get']('sentry:enhance_image_sh') | yaml_encode }}
     - mode: 755
-{%- else %}
+  {%- else %}
 sentry_enhance-image_sh_del:
   file.absent:
     - name: '/opt/sentry/sentry/enhance-image.sh'
-{%- endif %}
+  {%- endif %}
 
 sentry_install:
   cmd.run:
