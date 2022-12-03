@@ -57,10 +57,10 @@ SENTRY_USE_BIG_INTS = True
 
 # Instruct Sentry that this install intends to be run by a single organization
 # and thus various UI optimizations should be enabled.
-SENTRY_SINGLE_ORGANIZATION = True
+SENTRY_SINGLE_ORGANIZATION = {{ salt["pillar.get"]("sentry:config:single_organization", True) }}
 
 SENTRY_OPTIONS["system.event-retention-days"] = int(
-    env("SENTRY_EVENT_RETENTION_DAYS", "{{ salt['pillar.get']('sentry:config:general:options:system:event_retention_days', 90) }}")
+    env("SENTRY_EVENT_RETENTION_DAYS", "{{ salt["pillar.get"]("sentry:config:general:options:system:event_retention_days", 90) }}")
 )
 
 #########
@@ -220,7 +220,7 @@ SENTRY_WEB_OPTIONS = {
 
 # If you're using a reverse SSL proxy, you should enable the X-Forwarded-Proto
 # header and enable the settings below
-{% if salt['pillar.get']('sentry:config:web:ssl', False) == True %}
+{% if salt["pillar.get"]("sentry:config:web:ssl", False) == True %}
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -240,9 +240,7 @@ SENTRY_OPTIONS["mail.from"] = f"sentry@{SENTRY_OPTIONS['mail.list-namespace']}"
 ############
 
 SENTRY_FEATURES["projects:sample-events"] = False
-SENTRY_FEATURES = {
-    'auth:register': {{ salt['pillar.get']('sentry:config:features:auth_register', 'False') }},
-}
+SENTRY_FEATURES["auth:register"] = {{ salt["pillar.get"]("sentry:config:features:auth_register", False) }}
 SENTRY_FEATURES.update(
     {
         feature: True
@@ -283,6 +281,6 @@ GEOIP_PATH_MMDB = '/geoip/GeoLite2-City.mmdb'
 # BITBUCKET_CONSUMER_KEY = 'YOUR_BITBUCKET_CONSUMER_KEY'
 # BITBUCKET_CONSUMER_SECRET = 'YOUR_BITBUCKET_CONSUMER_SECRET'
 
-{%- if "ldap" in pillar["sentry"]["config"] and salt['pillar.get']('sentry:config:ldap:enabled', False) %}
-{{ salt['pillar.get']('sentry:config:ldap:sentry_conf_py') }}
+{%- if "ldap" in pillar["sentry"]["config"] and salt["pillar.get"]("sentry:config:ldap:enabled", False) %}
+{{ salt["pillar.get"]("sentry:config:ldap:sentry_conf_py") }}
 {%- endif %}

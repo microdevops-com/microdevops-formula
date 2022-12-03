@@ -7,13 +7,13 @@
 # Mail Server #
 ###############
 
-mail.backend: '{{ salt['pillar.get']('sentry:config:email:backend', 'smtp') }}'  # Use dummy if you want to disable email entirely
-mail.host: '{{ salt['pillar.get']('sentry:config:email:host', 'smtp') }}'
-mail.port: {{ salt['pillar.get']('sentry:config:email:port', '25') }}
-mail.username: '{{ salt['pillar.get']('sentry:config:email:username', '') }}'
-mail.password: '{{ salt['pillar.get']('sentry:config:email:password', '') }}'
-mail.use-tls: {{ salt['pillar.get']('sentry:config:email:tls', 'false') }}
-mail.use-ssl: {{ salt['pillar.get']('sentry:config:email:ssl', 'false') }}
+mail.backend: '{{ salt["pillar.get"]("sentry:config:email:backend", "smtp") }}'  # Use dummy if you want to disable email entirely
+mail.host: '{{ salt["pillar.get"]("sentry:config:email:host", "smtp") }}'
+mail.port: {{ salt["pillar.get"]("sentry:config:email:port", "25") }}
+mail.username: '{{ salt["pillar.get"]("sentry:config:email:username", "") }}'
+mail.password: '{{ salt["pillar.get"]("sentry:config:email:password", "") }}'
+mail.use-tls: {{ salt["pillar.get"]("sentry:config:email:tls", "false") }}
+mail.use-ssl: {{ salt["pillar.get"]("sentry:config:email:ssl", "false") }}
 # NOTE: The following 2 configs (mail.from and mail.list-namespace) are set
 #       through SENTRY_MAIL_HOST in sentry.conf.py so remove those first if
 #       you want your values in this file to be effective!
@@ -21,7 +21,7 @@ mail.use-ssl: {{ salt['pillar.get']('sentry:config:email:ssl', 'false') }}
 
 # The email address to send on behalf of
 # mail.from: 'root@localhost' or ...
-mail.from: '{{ salt['pillar.get']('sentry:config:email:from', 'root@localhost') }}'
+mail.from: '{{ salt["pillar.get"]("sentry:config:email:from", "root@localhost") }}'
 
 # The mailing list namespace for emails sent by this Sentry server.
 # This should be a domain you own (often the same domain as the domain
@@ -29,10 +29,10 @@ mail.from: '{{ salt['pillar.get']('sentry:config:email:from', 'root@localhost') 
 # mail.list-namespace: 'localhost'
 
 # If you'd like to configure email replies, enable this.
-mail.enable-replies: {{ salt['pillar.get']('sentry:config:email:enable_replies', False) }}
+mail.enable-replies: {{ salt["pillar.get"]("sentry:config:email:enable_replies", False) }}
 
 # When email-replies are enabled, this value is used in the Reply-To header
-mail.reply-hostname: '{{ salt['pillar.get']('sentry:config:email:reply_hostname', '') }}'
+mail.reply-hostname: '{{ salt["pillar.get"]("sentry:config:email:reply_hostname", "") }}'
 
 # If you're using mailgun for inbound mail, set your API key and configure a
 # route to forward to /api/hooks/mailgun/inbound/
@@ -46,9 +46,9 @@ mail.reply-hostname: '{{ salt['pillar.get']('sentry:config:email:reply_hostname'
 # If this file ever becomes compromised, it's important to generate a new key.
 # Changing this value will result in all current sessions being invalidated.
 # A new key can be generated with `$ sentry config generate-secret-key`
-system.secret-key: '{{ salt['pillar.get']('sentry:secret') }}'
-system.admin-email: '{{ salt['pillar.get']('sentry:admin_email') }}'
-system.url-prefix: '{{ salt['pillar.get']('sentry:url') }}'
+system.secret-key: '{{ salt["pillar.get"]("sentry:secret") }}'
+system.admin-email: '{{ salt["pillar.get"]("sentry:admin_email") }}'
+system.url-prefix: '{{ salt["pillar.get"]("sentry:url") }}'
 # The ``redis.clusters`` setting is used, unsurprisingly, to configure Redis
 # clusters. These clusters can be then referred to by name when configuring
 # backends such as the cache, digests, or TSDB backend.

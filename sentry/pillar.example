@@ -13,6 +13,7 @@ sentry:
     pip install django-auth-ldap
     pip install sentry-ldap-auth
   config:
+    single_organization: True
     features:
       auth_register: True
       projects_plugins: True
