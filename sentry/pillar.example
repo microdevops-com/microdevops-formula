@@ -1,12 +1,12 @@
 sentry:
   acme_account: example.com
   acme_domain: sentry.example.com
-  version: '22.6.0'
-  secret: '7lqun0fxeblz^m5i@!45*6+@263-b-i^^s&!2db*&792#41h*1'                            # To generate secret, leave blank and run state sentry
-  url: 'https://sentry.example.com'
-  admin_email: 'admin@example.com'
-  admin_password: 'xxxxxxxxxxxxxxxxxx'
-  fix_admin_permissions: True                                                             # https://github.com/getsentry/self-hosted/issues/1288
+  version: 22.11.0
+  secret: "7lqun0fxeblz^m5i@!45*6+@263-b-i^^s&!2db*&792#41h*1" # To generate secret, leave blank and run state sentry
+  url: https://sentry.example.com
+  admin_email: admin@example.com
+  admin_password: xxxxxxxxxxxxxxxxxx
+  fix_admin_permissions: True # https://github.com/getsentry/self-hosted/issues/1288
   enhance_image_sh: |
     apt-get update
     apt-get install -y gcc libsasl2-dev python-dev libldap2-dev libssl-dev
@@ -17,20 +17,20 @@ sentry:
       auth_register: True
       projects_plugins: True
     email:
-      backend: 'smtp'
-      host: 'smtp.gmail.com'
+      backend: smtp
+      host: smtp.gmail.com
       port: 587
-      username: 'sentry@example.com'
-      password: 'xxxxxxxxxxxxxxxxxx'
+      username: sentry@example.com
+      password: xxxxxxxxxxxxxxxxxx
       tls: True
-      from: root@localhost
+      from: sentry@example.com
       enable_replies: False
       reply_hostname: ''
     web:
       ssl: True
-    google_auth:
-      client_id: '012345678999-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com'
-      client_secret: 'ABCDEF-1q2w3e4r5t6y7u8i9o0pASDFGHJK'
+    google_auth: # https://develop.sentry.dev/self-hosted/sso/
+      client_id: 012345678999-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+      client_secret: ABCDEF-1q2w3e4r5t6y7u8i9o0pASDFGHJK
     general:
       options:
         system:
@@ -89,33 +89,10 @@ sentry:
         logger.addHandler(logging.FileHandler(r"/data/ldap2.log"))
         logger.setLevel('DEBUG')
   webhooks:
-    matrix:
-      image: 'matrixdotorg/matrix-sentry-webhooks:latest'
-      acme_account: example.com
-      acme_domain: sentry-matrix-webhook.example.com
-      env_vars:
-        APP_PORT: 3000
-        SENTRY_CLIENT_SECRET: 'yyyyyyyyyyyyyyyyyy'
-        SENTRY_INCLUDE_TAGS: 'brand,BRAND,DOMAIN'
-        MATRIX_HOMESERVER_URL: 'https://example.ems.host'
-        MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
-        MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
-        MATRIX_USER: '@sentry:example.com'
-
-
-
-
-
-#######################################################################
-# If necessary, you can install only a webhook.
-# You can also build locally a docker image from a forked and modified repository by Roma Kasyanchuk
-
-sentry:
-  webhooks:
-    matrix:
-      use_roman_k_fork: True
-      repo: 'https://github.com/kraicdesign/matrix-sentry-webhooks.git'
-      image: 'docker.local/oxg-webhook/webhook'
+    matrix: # optional, if necessary, you can install only a webhook using sentry.matrix-webhook
+      use_roman_k_fork: True # optional, you can build locally a docker image from a forked and modified repository by Roma Kasyanchuk
+      repo: https://github.com/kraicdesign/matrix-sentry-webhooks.git # repo for build
+      image: docker.local/sentry-matrix-webhook # original image: matrixdotorg/matrix-sentry-webhooks:latest
       acme_account: example.com
       acme_domain: sentry-matrix-webhook.example.com
       env_vars:
@@ -127,16 +104,20 @@ sentry:
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
-
-
-
-#######################################################################
-# If necessary, you can configure a catcher root email only
-
-sentry:
-  catch_root_email:
+  webhooks:
+    telegram: # optional, if necessary, you can install only a webhook using sentry.telegram-webhook
+      repo: https://github.com/microdevops-com/sentry-telegram-webhook
+      image: docker.local/sentry-telegram-webhook
+      container_name: sentry-telegram-webhook
+      acme_account: example.com
+      acme_domain: sentry-telegram-webhook.example.com
+      local_port: 8000
+      env_vars:
+        TOKEN: xxxxxxxxx:xxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        CHANNEL_ID: -11111111111
+  catch_root_email: # optional, you can configure a catcher for root email
     enabled: True
     catch_other_users_email: true
     newaliases: True
-    SENTRY_URL: 'https://sentry.exampe.com/'
-    SENTRY_DSN: 'https://71b11b6b8b814bc183e0c30a702eeb08@sentry.exampe.com/2'
+    SENTRY_URL: https://sentry.example.com/
+    SENTRY_DSN: https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@sentry.example.com/2
