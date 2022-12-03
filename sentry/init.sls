@@ -1,10 +1,15 @@
-{% if pillar['sentry']['version'] is defined  %}
-install_nginx:
+{% if pillar["sentry"]["version"] is defined  %}
+sentry_acme_run:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar["sentry"]["acme_account"] }}/verify_and_issue.sh sentry {{ pillar["sentry"]["acme_domain"] }}"
+
+sentry_install_nginx:
   pkg.installed:
     - pkgs:
       - nginx-full
 
-nginx_files_1:
+sentry_nginx_files_1:
   file.managed:
     - name: /etc/nginx/sites-available/{{ pillar["sentry"]["acme_domain"] }}.conf
     - contents: |
@@ -52,19 +57,14 @@ nginx_files_1:
             }
         }
 
-nginx_files_2:
+sentry_nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
-nginx_files_3:
+sentry_nginx_files_3:
   file.symlink:
     - name: /etc/nginx/sites-enabled/{{ pillar["sentry"]["acme_domain"] }}.conf
     - target: /etc/nginx/sites-available/{{ pillar["sentry"]["acme_domain"] }}.conf
-
-nginx_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["sentry"]["acme_account"] }}/verify_and_issue.sh sentry {{ pillar["sentry"]["acme_domain"] }}"
 
 sentry_installer_clone_fom_git:
   git.latest:
@@ -75,49 +75,53 @@ sentry_installer_clone_fom_git:
 
 sentry_config_1:
   file.managed:
-    - name: '/opt/sentry/sentry/config.yml'
-    - mode: '0644'
-    - source: 'salt://sentry/files/config.yml'
+    - name: /opt/sentry/sentry/config.yml
+    - mode: 0644
+    - source: salt://sentry/files/config.yml
     - template: jinja
 
-{# sentry.conf.py best doc is here: https://github.com/getsentry/sentry/blob/master/src/sentry/conf/server.py #}
+# sentry.conf.py best doc is here: https://github.com/getsentry/sentry/blob/master/src/sentry/conf/server.py
 sentry_config_2:
   file.managed:
-    - name: '/opt/sentry/sentry/sentry.conf.py'
-    - mode: '0644'
-    - source: 'salt://sentry/files/sentry.conf.py'
+    - name: /opt/sentry/sentry/sentry.conf.py
+    - mode: 0644
+    - source: salt://sentry/files/sentry.conf.py
     - template: jinja
 
-create .env.custom:
+sentry_create_env_custom:
   file.copy:
-    - name: '/opt/sentry/.env.custom'
-    - source: '/opt/sentry/.env'
+    - name: /opt/sentry/.env.custom
+    - source: /opt/sentry/.env
     - force: true
-  {% if salt['file.file_exists']('/opt/sentry/.env.custom') %}
-set a custom environment variable for the general system option SENTRY_EVENT_RETENTION_DAYS:
+
+  {%- if salt["file.file_exists"]("/opt/sentry/.env.custom") %}
+sentry_custom_env:
   file.replace:
-    - name: '/opt/sentry/.env.custom'
+    - name: /opt/sentry/.env.custom
     - pattern: '^ *SENTRY_EVENT_RETENTION_DAYS=.*$'
     - repl: 'SENTRY_EVENT_RETENTION_DAYS={{ salt["pillar.get"]("sentry:config:general:options:system:event_retention_days", 90) }}'
     - append_if_not_found: True
-  {% endif %}
+
+  {%- endif %}
 
   {%- if "enhance_image_sh" in pillar["sentry"] %}
 sentry_enhance-image_sh_create:
   file.managed:
-    - name: '/opt/sentry/sentry/enhance-image.sh'
-    - contents: {{ salt['pillar.get']('sentry:enhance_image_sh') | yaml_encode }}
+    - name: /opt/sentry/sentry/enhance-image.sh
+    - contents: {{ salt["pillar.get"]("sentry:enhance_image_sh") | yaml_encode }}
     - mode: 755
+
   {%- else %}
 sentry_enhance-image_sh_del:
   file.absent:
-    - name: '/opt/sentry/sentry/enhance-image.sh'
+    - name: /opt/sentry/sentry/enhance-image.sh
+
   {%- endif %}
 
 sentry_install:
   cmd.run:
-#    For versions older than 22.10.0
-#    - name: ./install.sh --no-user-prompt --skip-commit-check
+    # For versions older than 22.10.0
+    # - name: ./install.sh --no-user-prompt --skip-commit-check
     - name: ./install.sh --skip-user-creation --skip-commit-check --no-report-self-hosted-issues
     - shell: /bin/bash
     - cwd: /opt/sentry
@@ -125,6 +129,8 @@ sentry_install:
       - file: /opt/sentry/sentry/config.yml
       - file: /opt/sentry/sentry/sentry.conf.py
       - git: https://github.com/getsentry/self-hosted.git
+    - require:
+      - cmd: sentry_acme_run
 
 sentry_volume_backup_script:
   file.managed:
@@ -164,44 +170,54 @@ sentry_volume_restore_script:
         docker-compose --file /opt/sentry/docker-compose.yml up -d
     - mode: 774
 
-  {% if pillar['sentry']['secret'] is not defined or pillar['sentry']['secret'] is none %}
+  {%- if pillar["sentry"]["secret"] is not defined or pillar["sentry"]["secret"] is none %}
 sentry_secret_generation:
   cmd.run:
     - name: docker-compose run --rm web config generate-secret-key 2>/dev/null
     - shell: /bin/bash
     - cwd: /opt/sentry
-notification:
+
+sentry_notification:
   cmd.run:
     - name: echo "  !!! ADD THE GENERATED SECRET IN THE PREVIOUS STEP TO THE PILLAR AND RUN THE STATE AGAIN !!!"
-  {% else %}
+
+  {%- else %}
 sentry_docker_compose_up:
   cmd.run:
     - shell: /bin/bash
     - cwd: /opt/sentry
-    - name: '[[ -f /opt/sentry/.env.custom ]] && docker-compose --env-file /opt/sentry/.env.custom up -d || docker-compose up -d'
+    - name: |
+        [[ -f /opt/sentry/.env.custom ]] && docker-compose --env-file /opt/sentry/.env.custom up -d || docker-compose up -d
+    - require:
+      - cmd: sentry_acme_run
 
 sentry_superuser:
   cmd.run:
-    - name: docker exec sentry-self-hosted-postgres-1 bash -c "( echo \"select id from auth_user where email = '{{ pillar['sentry']['admin_email'] }}' and is_superuser is true\" | su -l postgres -c \"psql postgres\" | grep -q \"(0 rows)\" )" && docker exec sentry-self-hosted-web-1 bash -c "sentry createuser --email '{{ pillar['sentry']['admin_email'] }}' --password '{{ pillar['sentry']['admin_password'] }}' --superuser --no-input" || true
-    - runas: 'root'
+    - name: docker exec sentry-self-hosted-postgres-1 bash -c "( echo \"select id from auth_user where email = '{{ pillar["sentry"]["admin_email"] }}' and is_superuser is true\" | su -l postgres -c \"psql postgres\" | grep -q \"(0 rows)\" )" && docker exec sentry-self-hosted-web-1 bash -c "sentry createuser --email '{{ pillar["sentry"]["admin_email"] }}' --password '{{ pillar["sentry"]["admin_password"] }}' --superuser --no-input" || true
+    - runas: root
+    - require:
+      - cmd: sentry_acme_run
 
-    {%- if "fix_admin_permissions" in pillar["sentry"] and salt['pillar.get']('sentry:fix_admin_permissions', False) %}
-fix_sentry_admin_permissions:
+    {%- if "fix_admin_permissions" in pillar["sentry"] and salt["pillar.get"]("sentry:fix_admin_permissions", False) %}
+sentry_fix_sentry_admin_permissions:
   cmd.run:
-    - name: docker exec sentry-self-hosted-web-1 sentry permissions add -u "{{ pillar['sentry']['admin_email'] }}" -p "users.admin"
+    - name: docker exec sentry-self-hosted-web-1 sentry permissions add -u "{{ pillar["sentry"]["admin_email"] }}" -p "users.admin"
+    - require:
+      - cmd: sentry_acme_run
     {%- endif %}
 
-nginx_reload:
+sentry_nginx_reload:
   cmd.run:
     - runas: root
     - name: service nginx configtest && service nginx reload
 
-nginx_reload_cron:
+sentry_nginx_reload_cron:
   cron.present:
     - name: /usr/sbin/service nginx configtest && /usr/sbin/service nginx reload
     - identifier: nginx_reload
     - user: root
     - minute: 15
     - hour: 6
+
   {%- endif %}
 {%- endif %}
