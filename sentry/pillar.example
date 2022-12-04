@@ -1,3 +1,5 @@
+# vi: set ft=yaml:
+
 sentry:
   acme_account: example.com
   acme_domain: sentry.example.com
@@ -89,6 +91,20 @@ sentry:
         logger.addHandler(logging.StreamHandler())
         logger.addHandler(logging.FileHandler(r"/data/ldap2.log"))
         logger.setLevel('DEBUG')
+  # Set Admin -> Settings -> SECURITY & ABUSE -> Organization Creation Rate Limit to 0
+  # Create auth_token for admin user after Sentry install and put here to manage orgs, teams, projects
+  # Membership management is not supported by Sentry API
+  # https://docs.sentry.io/api/
+  auth_token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  organizations:
+    - name: Example
+      slug: example
+      teams:
+        - name: Team
+          slug: team
+          projects:
+            - name: catch_root_email
+              slug: catch_root_email
   webhooks:
     matrix: # optional, if necessary, you can install only a webhook using sentry.matrix-webhook
       use_roman_k_fork: True # optional, you can build locally a docker image from a forked and modified repository by Roma Kasyanchuk
