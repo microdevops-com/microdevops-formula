@@ -1,4 +1,4 @@
-{% if pillar['sentry']['webhooks']['matrix'] is defined  %}
+{% if pillar["sentry"] is defined and "webhooks" in pillar["sentry"] and "matrix" in pillar["sentry"]["webhooks"]  %}
 install_nginx:
   pkg.installed:
     - pkgs:
@@ -51,7 +51,7 @@ nginx_cert:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["sentry"]["webhooks"]["matrix"]["acme_account"] }}/verify_and_issue.sh sentry-matrix-webhook {{ pillar["sentry"]["webhooks"]["matrix"]["acme_domain"] }}"
 
-  {% if pillar['sentry']['webhooks']['matrix']['use_roman_k_fork'] is defined and pillar['sentry']['webhooks']['matrix']['use_roman_k_fork'] %}
+  {% if pillar["sentry"]["webhooks"]["matrix"]["use_roman_k_fork"] is defined and pillar["sentry"]["webhooks"]["matrix"]["use_roman_k_fork"] %}
 matrix-sentry-webhooks_clone_fom_git:
   git.latest:
     - name: {{ pillar["sentry"]["webhooks"]["matrix"]["repo"] }}
@@ -72,10 +72,10 @@ matrix-sentry-webhooks_container:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-       - '127.0.0.1:{{ pillar["sentry"]["webhooks"]["matrix"]["env_vars"]["APP_PORT"] }}:{{ pillar["sentry"]["webhooks"]["matrix"]["env_vars"]["APP_PORT"] }}/tcp'
+       - "127.0.0.1:{{ pillar["sentry"]["webhooks"]["matrix"]["env_vars"]["APP_PORT"] }}:{{ pillar["sentry"]["webhooks"]["matrix"]["env_vars"]["APP_PORT"] }}/tcp"
     - environment:
     {%- for var_key, var_val in pillar["sentry"]["webhooks"]["matrix"]["env_vars"].items() %}
-        - {{ var_key }}: '{{ var_val }}'
+        - {{ var_key }}: "{{ var_val }}"
     {%- endfor %}
 
 nginx_reload:

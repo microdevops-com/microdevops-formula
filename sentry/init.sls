@@ -1,4 +1,4 @@
-{% if pillar["sentry"]["version"] is defined  %}
+{% if pillar["sentry"] is defined and "version" in pillar["sentry"]  %}
 sentry_acme_run:
   cmd.run:
     - shell: /bin/bash

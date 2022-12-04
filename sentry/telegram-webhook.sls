@@ -1,4 +1,4 @@
-{% if pillar["sentry"]["webhooks"]["telegram"] is defined  %}
+{% if pillar["sentry"] is defined and "webhooks" in pillar["sentry"] and "telegram" in pillar["sentry"]["webhooks"]  %}
 install_nginx:
   pkg.installed:
     - pkgs:
@@ -78,10 +78,10 @@ sentry-telegram-webhook_container:
     - detach: True
     - restart_policy: unless-stopped
     - publish:
-       - '127.0.0.1:{{ pillar["sentry"]["webhooks"]["telegram"]["local_port"] }}:8000/tcp'
+       - "127.0.0.1:{{ pillar["sentry"]["webhooks"]["telegram"]["local_port"] }}:8000/tcp"
     - environment:
     {%- for var_key, var_val in pillar["sentry"]["webhooks"]["telegram"]["env_vars"].items() %}
-        - {{ var_key }}: '{{ var_val }}'
+        - {{ var_key }}: "{{ var_val }}"
     {%- endfor %}
 
 nginx_reload:
