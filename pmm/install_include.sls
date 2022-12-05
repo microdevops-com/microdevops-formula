@@ -104,3 +104,11 @@ pmm-data_restore_script:
         sleep 180
         iptables -D ufw-before-forward -d $(dig +short api.telegram.org) -j REJECT --reject-with icmp-port-unreachable
     - mode: 774
+
+pmm_nginx_reload_cron:
+  cron.present:
+    - name: docker exec -it percona-{{ pillar["pmm"]["name"] }} nginx -s reload
+    - identifier: pmm_nginx_reload
+    - user: root
+    - minute: 10
+    - hour: 12
