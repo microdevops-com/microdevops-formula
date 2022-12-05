@@ -324,4 +324,12 @@ gitlab_ssh_git_apply:
     - onchanges:
       - file: /etc/ssh/sshd_config.d/gitlab.conf
 
+gitlab_nginx_reload_cron:
+  cron.present:
+    - name: gitlab-ctl restart nginx
+    - identifier: gitlab_nginx_reload
+    - user: root
+    - minute: 15
+    - hour: 12
+
 {% endif %}
