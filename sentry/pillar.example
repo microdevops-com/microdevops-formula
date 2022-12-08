@@ -93,18 +93,43 @@ sentry:
         logger.setLevel('DEBUG')
   # Set Admin -> Settings -> SECURITY & ABUSE -> Organization Creation Rate Limit to 0
   # Create auth_token for admin user after Sentry install and put here to manage orgs, teams, projects
-  # Membership management is not supported by Sentry API
+  # Warning: membership management, dsn keys setting etc. is not supported by Sentry API, so it is done using postgresql direct access
   # https://docs.sentry.io/api/
   auth_token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  organizations:
+  users: # optional
+    - email: admin@example.com
+      password: password
+      superuser: True
+      staff: True
+    - email: user@example.com
+      password: password
+      superuser: False
+      staff: False
+  organizations: # optional
     - name: Example
       slug: example
-      teams:
+      members: # optional
+        - email: admin@example.com
+          role: owner
+        - email: user@example.com
+          role: member
+      teams: # optional
         - name: Team
           slug: team
-          projects:
-            - name: catch_root_email
-              slug: catch_root_email
+          members:
+            - admin@example.com
+            - user@example.com
+      projects: # optional
+        - name: Project
+          slug: project
+          teams:
+            - team # you can assign several teams for the project, but it should have at least one team assigned to be created
+          auto_resolve_issues_30_days: True # optional
+          platform: other # optional
+          dsn: # optional
+            - label: Default
+              public: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1 # cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1
+              secret: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1 # cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1
   webhooks:
     matrix: # optional, if necessary, you can install only a webhook using sentry.matrix-webhook
       use_roman_k_fork: True # optional, you can build locally a docker image from a forked and modified repository by Roma Kasyanchuk
