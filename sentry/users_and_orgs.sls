@@ -171,8 +171,6 @@ sentry_org_project_dsn_create_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.inde
             SELECT COUNT(id) FROM sentry_projectkey
             WHERE
               label = '{{ dsn["label"] }}'
-              AND public_key= '{{ dsn["public"] }}'
-              AND secret_key = '{{ dsn["secret"] }}'
               AND project_id = (
                 SELECT id FROM sentry_project
                 WHERE slug = '{{ project["slug"] }}'
