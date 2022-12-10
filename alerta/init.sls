@@ -248,6 +248,68 @@ alerta_main_nginx:
             gzip_min_length 256;
             gzip_types text/plain text/css application/json application/x-javascript application/javascript text/xml application/xml application/xml+rss text/javascript application/vnd.ms-fontobject application/x-font-ttf font/opentype image/svg+xml image/x-icon;
 
+  {%- if "redirect" in pillar["alerta"] %}
+            server {
+                listen 443 ssl http2;
+                server_name {{ pillar["alerta"]["redirect"]["domain"] }};
+
+                include snippets/ssl-params.conf;
+
+                ssl_certificate /opt/acme/cert/alerta_{{ pillar["alerta"]["redirect"]["domain"] }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/alerta_{{ pillar["alerta"]["redirect"]["domain"] }}_key.key;
+
+                return 301 https://{{ pillar["alerta"]["domain"] }}$request_uri;
+            }
+
+  {%- endif %}
+  {%- if "alias" in pillar["alerta"] %}
+            server {
+                listen 443 ssl http2;
+                server_name {{ pillar["alerta"]["alias"]["domain"] }};
+
+                include snippets/ssl-params.conf;
+
+                ssl_certificate /opt/acme/cert/alerta_{{ pillar["alerta"]["alias"]["domain"] }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/alerta_{{ pillar["alerta"]["alias"]["domain"] }}_key.key;
+
+                root /opt/alerta/alerta/html;
+                index index.html;
+                charset UTF-8;
+                autoindex off;
+
+                error_page 403 =404;
+
+                access_log /var/log/nginx/alerta.access.log;
+                error_log /var/log/nginx/alerta.error.log;
+
+                client_max_body_size 4M;
+                client_body_buffer_size 128k;
+
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+
+                location = /robots.txt  { access_log off; log_not_found off; }
+                location = /favicon.ico { access_log off; log_not_found off; }
+                location ~ /\.          { access_log off; log_not_found off; deny all; }
+                location ~ ~$           { access_log off; log_not_found off; deny all; }
+
+                location ~* ^.+\.(jpg|jpeg|gif|png|ico|css|zip|tgz|gz|rar|bz2|pdf|txt|tar|wav|bmp|rtf|js|flv|swf|svg|woff|woff2|eot)$ {
+                    expires max;
+                    access_log off;
+                    log_not_found off;
+                }
+
+                location ~ /api {
+                    include uwsgi_params;
+                    uwsgi_pass unix:/tmp/uwsgi-alerta.sock;
+                    proxy_set_header Host $host:$server_port;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                }
+            }
+
+  {%- endif %}
             server {
                 listen 443 ssl http2;
                 server_name {{ pillar["alerta"]["domain"] }};
@@ -293,6 +355,7 @@ alerta_main_nginx:
                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 }
             }
+
         }
 
 alerta_nginx_absent_default:
@@ -303,6 +366,22 @@ alerta_acme_run:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["alerta"]["acme_account"] }}/verify_and_issue.sh alerta {{ pillar["alerta"]["domain"] }}"
+
+  {%- if "redirect" in pillar["alerta"] %}
+alerta_acme_redirect_run:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar["alerta"]["redirect"]["acme_account"] }}/verify_and_issue.sh alerta {{ pillar["alerta"]["redirect"]["domain"] }}"
+
+  {%- endif %}
+
+  {%- if "alias" in pillar["alerta"] %}
+alerta_acme_alias_run:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ pillar["alerta"]["alias"]["acme_account"] }}/verify_and_issue.sh alerta {{ pillar["alerta"]["alias"]["domain"] }}"
+
+  {%- endif %}
 
 alerta_nginx_reload:
   cmd.run:

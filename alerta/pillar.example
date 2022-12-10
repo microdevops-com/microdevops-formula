@@ -1,3 +1,5 @@
+# vi: set ft=yaml:
+
 pyenv:
   versions:
     python-3.7.8: True
@@ -49,6 +51,13 @@ postgres:
 
 alerta:
   domain: alerta.example.com
+  acme_account: example.com
+  #alias: # optional
+  #  domain: alerta.olddomain.com
+  #  acme_account: olddomain.com
+  #redirect: # optional
+  #  domain: alerta.olddomain.com
+  #  acme_account: olddomain.com
   version: v8.7.0
   webui_source: salt://alerta/files/v8.7.0/alerta-webui.tar.gz # patched version with customer, group autocomplete and customer sort
   db:
@@ -58,7 +67,6 @@ alerta:
     name: alerta
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
   cli_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1
-  acme_account: example.com
   uwsgi:
     processes: 30
     listen: 1500

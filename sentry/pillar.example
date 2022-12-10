@@ -147,7 +147,7 @@ sentry:
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
     telegram: # optional, if necessary, you can install only a webhook using sentry.telegram-webhook
-      repo: https://github.com/microdevops-com/sentry-telegram-webhook
+      repo: https://github.com/microdevops-com/sentry-telegram-webhook.git
       image: docker.local/sentry-telegram-webhook
       container_name: sentry-telegram-webhook
       acme_account: example.com
