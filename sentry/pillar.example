@@ -146,7 +146,6 @@ sentry:
         MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
         MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
         MATRIX_USER: '@sentry:example.com'
-  webhooks:
     telegram: # optional, if necessary, you can install only a webhook using sentry.telegram-webhook
       repo: https://github.com/microdevops-com/sentry-telegram-webhook
       image: docker.local/sentry-telegram-webhook
