@@ -465,8 +465,8 @@
       "yaxis": {
         "align": false
       }
-    }
-{%- if panel_mysql_replication_enable | default(false) %},
+    },
+{%- if panel_mysql_replication_enable | default(false) %}
     {
       "id": 6,
       "collapsed": false,
@@ -714,8 +714,150 @@
       "yaxis": {
         "align": false
       }
-    }
+    },
 {%- endif %}
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 13,
+      "panels": [],
+      "title": "General",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_server_uptime_threshold_alert_conditions_evaluator_params | default(300) }}
+              ],
+              "type": "lt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0m",
+        "frequency": "10s",
+        "handler": 1,
+        "name": "[{{ node_name }}] MySQL server restarted",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": {{ panel_server_uptime_threshold_alert_conditions_evaluator_params | default(300) }}
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 22
+      },
+      "id": 11,
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "hidden",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (service_name) (mysql_global_status_uptime{service_name=~\"{{ node_name }}-mysql\"})",
+          "interval": "5m",
+          "legendFormat": "Server uptime",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "lt",
+          "value": {{ panel_server_uptime_threshold_alert_conditions_evaluator_params | default(300) }},
+          "visible": true
+        }
+      ],
+      "title": "[{{ node_name }}] Server Uptime",
+      "type": "timeseries"
+    }
   ],
   "version": 0
 }
