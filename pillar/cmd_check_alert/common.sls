@@ -173,7 +173,7 @@ cmd_check_alert:
 {% endif %}
           cmd: {{ ruby_prefix }}/check-raid.rb
           severity_per_retcode:
-            1: major
+            1: critical
             2: critical
           service: disk
           resource: __hostname__:raid
