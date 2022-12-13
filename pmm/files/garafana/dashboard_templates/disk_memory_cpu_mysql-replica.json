@@ -465,8 +465,8 @@
       "yaxis": {
         "align": false
       }
-    },
-{%- if panel_mysql_replication_enable | default(false) %}
+    }
+{%- if panel_mysql_replication_enable | default(false) %},
     {
       "id": 6,
       "collapsed": false,
@@ -714,8 +714,9 @@
       "yaxis": {
         "align": false
       }
-    },
+    }
 {%- endif %}
+{%- if is_mysql_server | default(true) %},
     {
       "collapsed": false,
       "gridPos": {
@@ -858,6 +859,7 @@
       "title": "[{{ node_name }}] Server Uptime",
       "type": "timeseries"
     }
+{%- endif %}
   ],
   "version": 0
 }
