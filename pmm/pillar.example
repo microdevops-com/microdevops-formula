@@ -83,6 +83,8 @@ pmm:
             foldersFromFilesStructure: true
     dashboard_definitions_defaults:                                     # Optional. Here you can set default values for all boards and panels on the server.
                                                                         # These variables can also be set in the context of each individual board.
+      is_mysql_server:                                                  true
+#
       panel_disk_space_usage_alert_conditions_evaluator_params:         0.8
       panel_disk_space_usage_alert_conditions_evaluator_type:           'gt'
       panel_disk_space_usage_alert_conditions_operator_type:            'and'
