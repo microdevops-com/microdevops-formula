@@ -73,10 +73,6 @@ sentry_installer_clone_fom_git:
     - rev: {{ pillar ["sentry"]["version"] }}
     - force_reset: True
 
-sentry_backup_dir:
-  file.directory:
-    - name: /opt/sentry/backup
-
 sentry_config_1:
   file.managed:
     - name: /opt/sentry/sentry/config.yml
@@ -136,13 +132,17 @@ sentry_install:
     - require:
       - cmd: sentry_acme_run
 
+sentry_backup_dir:
+  file.directory:
+    - name: /opt/sentry/backup
+
 sentry_volume_backup_script:
   file.managed:
     - name: /opt/sentry/backup_volumes.sh
     - contents: |
         #!/bin/bash
         mkdir -p /opt/sentry/backup/volumes/
-        docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/sentry/backup.json
+        docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/backup/backup.json
         docker-compose --file /opt/sentry/docker-compose.yml stop
         docker run --rm --volumes-from sentry-self-hosted-clickhouse-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-clickhouse-1.tar /var/lib/clickhouse /var/log/clickhouse-server
         docker run --rm --volumes-from sentry-self-hosted-web-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-web-1.tar /data
