@@ -73,6 +73,10 @@ sentry_installer_clone_fom_git:
     - rev: {{ pillar ["sentry"]["version"] }}
     - force_reset: True
 
+sentry_backup_dir:
+  file.directory:
+    - name: /opt/sentry/backup
+
 sentry_config_1:
   file.managed:
     - name: /opt/sentry/sentry/config.yml
