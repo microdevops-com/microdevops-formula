@@ -136,6 +136,13 @@ sentry_backup_dir:
   file.directory:
     - name: /opt/sentry/backup
 
+sentry_export_backup_script:
+  file.managed:
+    - name: /opt/sentry/backup_export.sh
+    - contents: |
+        #!/bin/bash
+        docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/backup/backup.json
+
 sentry_volume_backup_script:
   file.managed:
     - name: /opt/sentry/backup_volumes.sh
