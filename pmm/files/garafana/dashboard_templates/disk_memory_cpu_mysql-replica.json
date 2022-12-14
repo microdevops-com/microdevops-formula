@@ -861,5 +861,9 @@
     }
 {%- endif %}
   ],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
   "version": 0
 }
