@@ -92,33 +92,36 @@ sentry:
         logger.addHandler(logging.FileHandler(r"/data/ldap2.log"))
         logger.setLevel('DEBUG')
   # Set Admin -> Settings -> SECURITY & ABUSE -> Organization Creation Rate Limit to 0
-  # Create auth_token for admin user after Sentry install and put here to manage orgs, teams, projects
+  # Create auth_token (or define it below, it will be created with postgresql direct access) for admin user after Sentry install and put here to manage orgs, teams, projects (state.apply sentry.users_and_orgs)
   # Warning: membership management, dsn keys setting etc. is not supported by Sentry API, so it is done using postgresql direct access
   # https://docs.sentry.io/api/
   auth_token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   users: # optional
-    - email: admin@example.com
-      password: password
-      superuser: True
-      staff: True
-    - email: user@example.com
-      password: password
-      superuser: False
-      staff: False
+    - email: admin@example.com # admin user is duplicated here to create auth token
+      password: password # optional, --no-password used if missing
+      superuser: True # optional
+      staff: True # optional
+      auth_tokens: # optional
+        - scope_list: '{event:admin,event:read,member:read,org:read,project:read,project:releases,team:read,event:write,org:admin,member:admin,alerts:read,org:integrations,team:write,project:write,project:admin,team:admin,alerts:write,member:write,org:write}'
+          token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 64 | head -n 1
+    - email: not_really_email # strict email format is not required, you can just name here, useful for creating pseudo users with auth token access for sentry-cli
+      auth_tokens:
+        - scope_list: '{project:read,team:read,project:releases,event:read,event:write,org:read,member:read}'
+          token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   organizations: # optional
     - name: Example
       slug: example
       members: # optional
         - email: admin@example.com
           role: owner
-        - email: user@example.com
+        - email: not_really_email
           role: member
       teams: # optional
         - name: Team
           slug: team
           members:
             - admin@example.com
-            - user@example.com
+            - not_really_email
       projects: # optional
         - name: Project
           slug: project

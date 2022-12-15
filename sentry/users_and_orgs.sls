@@ -2,8 +2,30 @@
   {%- for user in pillar["sentry"]["users"] %}
 sentry_user_create_{{ loop.index }}:
   cmd.run:
-    - name: docker exec sentry-self-hosted-web-1 sentry createuser --email {{ user["email"] }} --password {{ user["password"] }} {{ "--superuser" if "superuser" in user and user["superuser"] else "--no-superuser" }} {{ "--staff" if "staff" in user and user["staff"] else "--no-staff" }} --force-update
+    - name: docker exec sentry-self-hosted-web-1 sentry createuser --email {{ user["email"] }} {{ "--password " ~ user["password"] if "password" in user else "--no-password" }} {{ "--superuser" if "superuser" in user and user["superuser"] else "--no-superuser" }} {{ "--staff" if "staff" in user and user["staff"] else "--no-staff" }} --force-update
 
+    {%- if "auth_tokens" in user %}
+      {%- set a_loop = loop %}
+      {%- for token in user["auth_tokens"] %}
+sentry_auth_token_create_{{ a_loop.index }}_{{ loop.index }}:
+  cmd.run:
+    - name: |
+        docker exec sentry-self-hosted-postgres-1 su - postgres -c "psql -c \"
+          INSERT INTO sentry_apitoken
+            (scopes, scope_list, token, date_added, user_id)
+          VALUES
+            (
+              0,
+              '{{ token["scope_list"] }}',
+              '{{ token["token"] }}',
+              now(),
+              (SELECT id FROM auth_user WHERE email = '{{ user["email"] }}')
+            )
+          ON CONFLICT (token) DO UPDATE SET scope_list = '{{ token["scope_list"] }}'
+        \""
+
+      {%- endfor %}
+    {%- endif %}
   {%- endfor %}
 {%- endif %}
 
