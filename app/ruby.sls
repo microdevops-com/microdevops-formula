@@ -115,6 +115,51 @@ app_ruby_app_puma_user_systemd_unit_setup_{{ loop.index }}:
 
       {%- endif %}
 
+      {%- if "unicorn" in app %}
+app_ruby_app_unicorn_root_{{ loop.index }}:
+  cmd.run:
+    - name: |
+        loginctl enable-linger {{ _app_user }} && loginctl show-user {{ _app_user }}
+
+app_ruby_app_unicorn_user_systemd_dir_{{ loop.index }}:
+  file.directory:
+    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - makedirs: True
+
+app_ruby_app_unicorn_user_systemd_unit_file_{{ loop.index }}:
+  file.managed:
+    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user/unicorn-{{ app_name }}.service
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - contents: |
+        [Unit]
+        Description=Unicorn
+        
+        [Service]
+        WorkingDirectory={{ app["unicorn"]["working_directory"]|replace("__APP_NAME__", app_name) }}
+        Environment=RAILS_ENV={{ app["unicorn"]["rails_env"] }}
+        ExecStart={{ app["unicorn"]["exec_start"]|replace("__APP_NAME__", app_name) }}
+        Restart=always
+        Type=forking
+        
+        [Install]
+        WantedBy=default.target
+
+app_ruby_app_unicorn_user_systemd_unit_setup_{{ loop.index }}:
+  cmd.run:
+    - cwd: {{ _app_app_root }}
+    - runas: {{ _app_user }}
+    - name: |
+        export XDG_RUNTIME_DIR=/run/user/$(id -u {{ _app_user }})
+        systemctl --user daemon-reload
+        systemctl --user enable --now unicorn-{{ app_name }}.service
+        systemctl --user restart unicorn-{{ app_name }}.service
+        systemctl --user status unicorn-{{ app_name }}.service
+
+      {%- endif %}
+
       {%- include "app/_nginx.sls" with context %}
 
       {%- include "app/_logrotate.sls" with context %}
