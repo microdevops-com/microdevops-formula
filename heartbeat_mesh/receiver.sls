@@ -37,7 +37,7 @@ heartbeat_mesh_systemd_unit:
 
 heartbeat_mesh_systemd_daemon_reload:
   cmd.run:
-    - name: systemctl daemon-reload
+    - name: systemctl daemon-reload && systemctl enable heartbeat_mesh_receiver
     - onchanges:
       - file: /etc/systemd/system/heartbeat_mesh_receiver.service
 
