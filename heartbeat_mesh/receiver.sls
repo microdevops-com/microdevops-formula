@@ -18,6 +18,29 @@ heartbeat_mesh_receiver_config:
     - formatter: yaml
     - dataset: {{ pillar["heartbeat_mesh"]["receiver"]["config"] }}
 
+heartbeat_mesh_systemd_unit:
+  file.managed:
+    - name: /etc/systemd/system/heartbeat_mesh_receiver.service
+    - mode: 644
+    - contents: |
+        [Unit]
+        Description=Microdevops Heartbeat Mesh Receiver Service
+
+        [Service]
+        ExecStart=/opt/sysadmws/heartbeat_mesh/receiver.py
+        Environment=PYTHONUNBUFFERED=1
+        Restart=on-failure
+        Type=notify
+
+        [Install]
+        WantedBy=default.target
+
+heartbeat_mesh_systemd_daemon_reload:
+  cmd.run:
+    - name: systemctl daemon-reload
+    - onchanges:
+      - file: /etc/systemd/system/heartbeat_mesh_receiver.service
+
 heartbeat_mesh_receiver_service_restart:
   module.run:
     - name: service.restart
