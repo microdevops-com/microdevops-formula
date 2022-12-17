@@ -157,9 +157,3 @@ sentry:
       env_vars:
         TOKEN: xxxxxxxxx:xxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
         CHANNEL_ID: -11111111111
-  catch_root_email: # optional, you can configure a catcher for root email
-    enabled: True
-    catch_other_users_email: true
-    newaliases: True
-    SENTRY_URL: https://sentry.example.com/
-    SENTRY_DSN: https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@sentry.example.com/2
