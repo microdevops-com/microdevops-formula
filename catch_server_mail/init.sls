@@ -72,9 +72,15 @@ catch_server_mail_sentry_properties_line_5:
 
   {%- for user in users %}
 catch_server_mail_set_alias_{{ user }}:
+    # If enabled - set alias, if not - remove alias
+    {%- if pillar["catch_server_mail"]["enabled"] %}
   alias.present:
     - name: {{ user }}
     - target: "| /opt/microdevops/catch_server_mail/sentry.sh"
+    {%- else %}
+  alias.absent:
+    - name: {{ user }}
+    {%- endif %}
 
   {%- endfor %}
 

@@ -1,4 +1,5 @@
 catch_server_mail:
+  enabled: True
   sentry:
     all_users: True
     domain: sentry.example.com
