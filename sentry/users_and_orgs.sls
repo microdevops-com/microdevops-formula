@@ -2,7 +2,7 @@
   {%- for user in pillar["sentry"]["users"] %}
 sentry_user_create_{{ loop.index }}:
   cmd.run:
-    - name: docker exec sentry-self-hosted-web-1 sentry createuser --email {{ user["email"] }} {{ "--password " ~ user["password"] if "password" in user else "--no-password" }} {{ "--superuser" if "superuser" in user and user["superuser"] else "--no-superuser" }} {{ "--staff" if "staff" in user and user["staff"] else "--no-staff" }} --force-update
+    - name: docker exec sentry-self-hosted-web-1 sentry createuser --email {{ user["email"] }} {{ "--password " ~ user["password"] if "password" in user else "--no-password" }} {{ "--superuser" if "superuser" in user and user["superuser"] else "--no-superuser" }} {{ "--staff" if "staff" in user and user["staff"] else "--no-staff" }} --force-update --no-input
 
     {%- if "auth_tokens" in user %}
       {%- set a_loop = loop %}

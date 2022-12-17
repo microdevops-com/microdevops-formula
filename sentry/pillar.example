@@ -4,11 +4,10 @@ sentry:
   acme_account: example.com
   acme_domain: sentry.example.com
   version: 22.11.0
-  secret: "7lqun0fxeblz^m5i@!45*6+@263-b-i^^s&!2db*&792#41h*1" # To generate secret, leave blank and run state sentry
+  secret: "secretsecretsecretsecretsecretsecretsecretsecretse" # cat /dev/urandom | tr -dc 'abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*(-_=+)' | fold -w 50 | head -n 1 # see https://github.com/getsentry/sentry/blob/22.11.0/src/sentry/runner/settings.py#L14
   url: https://sentry.example.com
   admin_email: admin@example.com
   admin_password: xxxxxxxxxxxxxxxxxx
-  fix_admin_permissions: True # https://github.com/getsentry/self-hosted/issues/1288
   enhance_image_sh: |
     apt-get update
     apt-get install -y gcc libsasl2-dev python-dev libldap2-dev libssl-dev
@@ -37,7 +36,7 @@ sentry:
     general:
       options:
         system:
-          event_retention_days: 30
+          event_retention_days: 90 # optional
     ldap:
       enabled: True
       sentry_conf_py: |
@@ -91,12 +90,11 @@ sentry:
         logger.addHandler(logging.StreamHandler())
         logger.addHandler(logging.FileHandler(r"/data/ldap2.log"))
         logger.setLevel('DEBUG')
-  # Set Admin -> Settings -> SECURITY & ABUSE -> Organization Creation Rate Limit to 0
-  # Create auth_token (or define it below, it will be created with postgresql direct access) for admin user after Sentry install and put here to manage orgs, teams, projects (state.apply sentry.users_and_orgs)
-  # Warning: membership management, dsn keys setting etc. is not supported by Sentry API, so it is done using postgresql direct access
+  # Warning: membership management, dsn keys setting etc. is not supported by Sentry API or sentry cmds, so it is done using postgresql direct access
   # https://docs.sentry.io/api/
+  organization_creation_rate_limit_to_0: True
   auth_token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  users: # optional
+  users: # optional, use state.apply sentry.users_and_orgs
     - email: admin@example.com # admin user is duplicated here to create auth token
       password: password # optional, --no-password used if missing
       superuser: True # optional
@@ -108,7 +106,7 @@ sentry:
       auth_tokens:
         - scope_list: '{project:read,team:read,project:releases,event:read,event:write,org:read,member:read}'
           token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  organizations: # optional
+  organizations: # optional, use state.apply sentry.users_and_orgs
     - name: Example
       slug: example
       members: # optional

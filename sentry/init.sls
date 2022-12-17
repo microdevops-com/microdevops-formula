@@ -108,7 +108,7 @@ sentry_custom_env:
 sentry_enhance-image_sh_create:
   file.managed:
     - name: /opt/sentry/sentry/enhance-image.sh
-    - contents: {{ salt["pillar.get"]("sentry:enhance_image_sh") | yaml_encode }}
+    - contents: {{ pillar["sentry"]["enhance_image_sh"] | yaml_encode }}
     - mode: 755
 
   {%- else %}
@@ -139,60 +139,21 @@ sentry_backup_dir:
 sentry_export_backup_script:
   file.managed:
     - name: /opt/sentry/backup_export.sh
-    - contents: |
-        #!/bin/bash
-        docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/backup/backup.json
+    - source: salt://sentry/files/backup_export.sh
+    - mode: 775
 
 sentry_volume_backup_script:
   file.managed:
     - name: /opt/sentry/backup_volumes.sh
-    - contents: |
-        #!/bin/bash
-        mkdir -p /opt/sentry/backup/volumes/
-        docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/backup/backup.json
-        docker-compose --file /opt/sentry/docker-compose.yml stop
-        docker run --rm --volumes-from sentry-self-hosted-clickhouse-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-clickhouse-1.tar /var/lib/clickhouse /var/log/clickhouse-server
-        docker run --rm --volumes-from sentry-self-hosted-web-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-web-1.tar /data
-        docker run --rm --volumes-from sentry-self-hosted-kafka-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-kafka-1.tar /var/lib/kafka/data /etc/kafka/secrets /var/lib/kafka/log
-        docker run --rm --volumes-from sentry-self-hosted-nginx-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-nginx-1.tar /var/cache/nginx
-        docker run --rm --volumes-from sentry-self-hosted-postgres-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-postgres-1.tar /var/lib/postgresql/data
-        docker run --rm --volumes-from sentry-self-hosted-redis-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-redis-1.tar /data
-        docker run --rm --volumes-from sentry-self-hosted-smtp-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-smtp-1.tar /var/spool/exim4 /var/log/exim4
-        docker run --rm --volumes-from sentry-self-hosted-symbolicator-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-symbolicator-1.tar /data
-        docker run --rm --volumes-from sentry-self-hosted-zookeeper-1 -v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-zookeeper-1.tar /var/lib/zookeeper/data  /var/lib/zookeeper/log
-        docker-compose --file /opt/sentry/docker-compose.yml up -d
-    - mode: 774
+    - source: salt://sentry/files/backup_volumes.sh
+    - mode: 775
 
 sentry_volume_restore_script:
   file.managed:
     - name: /opt/sentry/restore_volumes.sh
-    - contents: |
-        #!/bin/bash
-        docker-compose --file /opt/sentry/docker-compose.yml stop
-        docker run --rm --volumes-from sentry-self-hosted-clickhouse-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-clickhouse-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-web-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-web-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-kafka-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-kafka-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-nginx-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-nginx-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-postgres-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-postgres-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-redis-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-redis-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-smtp-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-smtp-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-symbolicator-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-symbolicator-1.tar"
-        docker run --rm --volumes-from sentry-self-hosted-zookeeper-1 -v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xvf /backup/sentry-self-hosted-zookeeper-1.tar"
-        docker-compose --file /opt/sentry/docker-compose.yml up -d
-    - mode: 774
+    - source: salt://sentry/files/restore_volumes.sh
+    - mode: 775
 
-  {%- if pillar["sentry"]["secret"] is not defined or pillar["sentry"]["secret"] is none %}
-sentry_secret_generation:
-  cmd.run:
-    - name: docker-compose run --rm web config generate-secret-key 2>/dev/null
-    - shell: /bin/bash
-    - cwd: /opt/sentry
-
-sentry_notification:
-  cmd.run:
-    - name: echo "  !!! ADD THE GENERATED SECRET IN THE PREVIOUS STEP TO THE PILLAR AND RUN THE STATE AGAIN !!!"
-
-  {%- else %}
 sentry_docker_compose_up:
   cmd.run:
     - shell: /bin/bash
@@ -204,22 +165,37 @@ sentry_docker_compose_up:
 
 sentry_superuser:
   cmd.run:
-    - name: docker exec sentry-self-hosted-postgres-1 bash -c "( echo \"select id from auth_user where email = '{{ pillar["sentry"]["admin_email"] }}' and is_superuser is true\" | su -l postgres -c \"psql postgres\" | grep -q \"(0 rows)\" )" && docker exec sentry-self-hosted-web-1 bash -c "sentry createuser --email '{{ pillar["sentry"]["admin_email"] }}' --password '{{ pillar["sentry"]["admin_password"] }}' --superuser --no-input" || true
-    - runas: root
+    - name: docker exec sentry-self-hosted-web-1 sentry createuser --email {{ pillar["sentry"]["admin_email"] }} --password {{ pillar["sentry"]["admin_password"] }} --superuser --staff --force-update --no-input
     - require:
       - cmd: sentry_acme_run
 
-    {%- if "fix_admin_permissions" in pillar["sentry"] and salt["pillar.get"]("sentry:fix_admin_permissions", False) %}
 sentry_fix_sentry_admin_permissions:
   cmd.run:
     - name: docker exec sentry-self-hosted-web-1 sentry permissions add -u "{{ pillar["sentry"]["admin_email"] }}" -p "users.admin"
     - require:
       - cmd: sentry_acme_run
-    {%- endif %}
+
+  {%- if "organization_creation_rate_limit_to_0" in pillar["sentry"] and pillar["sentry"]["organization_creation_rate_limit_to_0"] %}
+sentry_organization_creation_rate_limit_to_0:
+  cmd.run:
+    - name: |
+        docker exec sentry-self-hosted-postgres-1 su - postgres -c "psql -c \"
+          INSERT INTO sentry_option
+            (key, value, last_updated)
+          VALUES
+            (
+              'api.rate-limit.org-create',
+              'gAJLAC4=',
+              now()
+            )
+          ON CONFLICT (key) DO UPDATE SET value = 'gAJLAC4=', last_updated = now();
+        \""
+    - require:
+      - cmd: sentry_acme_run
+  {%- endif %}
 
 sentry_nginx_reload:
   cmd.run:
-    - runas: root
     - name: service nginx configtest && service nginx reload
 
 sentry_nginx_reload_cron:
@@ -230,5 +206,4 @@ sentry_nginx_reload_cron:
     - minute: 15
     - hour: 6
 
-  {%- endif %}
 {%- endif %}
