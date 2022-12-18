@@ -8,6 +8,7 @@ catch_server_mail_sentry-cli:
 catch_server_mail_dir:
   file.directory:
     - name: /opt/microdevops/catch_server_mail
+    - makedirs: True
 
 # Catcher is run by different users, so log dir and file should be all writable
 catch_server_mail_log_dir:
