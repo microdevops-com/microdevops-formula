@@ -15,10 +15,11 @@ catch_server_mail_log_dir:
     - name: /opt/microdevops/catch_server_mail/log
     - mode: 0777
 
-catch_server_mail_sentry_properties_touch:
-  file.touch:
-    - name: /opt/microdevops/catch_server_mail/log/sentry.log
-    - mode: 0666
+catch_server_mail_sentry_log_touch:
+  cmd.run:
+    - name: |
+        touch /opt/microdevops/catch_server_mail/log/sentry.log
+        chmod 0666 /opt/microdevops/catch_server_mail/log/sentry.log
 
 # We gradually add needed lines to file if they do not exist
 catch_server_mail_sentry_properties_touch:
@@ -97,6 +98,16 @@ catch_server_mail_set_alias_{{ user }}:
 catch_server_mail_reload_aliases:
   cmd.run:
     - name: newaliases
+
+# Save environment, location, description to sentry.env
+# This file is used by sentry.sh
+catch_server_mail_sentry_env:
+  file.managed:
+    - name: /opt/microdevops/catch_server_mail/sentry.env
+    - contents: |
+        SERVER_ENVIRONMENT: "{{ pillar["catch_server_mail"]["sentry"]["environment"] }}"
+        SERVER_LOCATION: "{{ pillar["catch_server_mail"]["sentry"]["location"] }}"
+        SERVER_DESCRIPTION: "{{ pillar["catch_server_mail"]["sentry"]["description"] }}"
 
 {% else %}
 catch_server_mail_nothing_done_info:
