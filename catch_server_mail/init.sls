@@ -2,13 +2,23 @@
 catch_server_mail_sentry-cli:
   cmd.run:
     - name: |
-        curl -L https://release-registry.services.sentry.io/apps/sentry-cli/latest?response=download&arch={{ grains["cpuarch"] }}&platform=Linux&package=sentry-cli -o /usr/local/bin/sentry-cli
+        curl -L "https://release-registry.services.sentry.io/apps/sentry-cli/latest?response=download&arch={{ grains["cpuarch"] }}&platform=Linux&package=sentry-cli" -o /usr/local/bin/sentry-cli
         chmod +x /usr/local/bin/sentry-cli
 
+catch_server_mail_dir:
+  file.directory:
+    - name: /opt/microdevops/catch_server_mail
+
+# Catcher is run by different users, so log dir and file should be all writable
 catch_server_mail_log_dir:
   file.directory:
     - name: /opt/microdevops/catch_server_mail/log
-    - makedirs: True
+    - mode: 0777
+
+catch_server_mail_sentry_properties_touch:
+  file.touch:
+    - name: /opt/microdevops/catch_server_mail/log/sentry.log
+    - mode: 0666
 
 # We gradually add needed lines to file if they do not exist
 catch_server_mail_sentry_properties_touch:
