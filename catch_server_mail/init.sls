@@ -105,9 +105,9 @@ catch_server_mail_sentry_env:
   file.managed:
     - name: /opt/microdevops/catch_server_mail/sentry.env
     - contents: |
-        SERVER_ENVIRONMENT: "{{ pillar["catch_server_mail"]["sentry"]["environment"] }}"
-        SERVER_LOCATION: "{{ pillar["catch_server_mail"]["sentry"]["location"] }}"
-        SERVER_DESCRIPTION: "{{ pillar["catch_server_mail"]["sentry"]["description"] }}"
+        SERVER_ENVIRONMENT: "{{ pillar["catch_server_mail"]["sentry"]["environment"]|default("infra") }}"
+        SERVER_LOCATION: "{{ pillar["catch_server_mail"]["sentry"]["location"]|default("") }}"
+        SERVER_DESCRIPTION: "{{ pillar["catch_server_mail"]["sentry"]["description"]|default("") }}"
 
 {% else %}
 catch_server_mail_nothing_done_info:
