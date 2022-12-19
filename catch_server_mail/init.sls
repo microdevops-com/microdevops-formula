@@ -64,7 +64,7 @@ catch_server_mail_sentry_properties_line_5:
   cmd.run:
     - name: |
         set -e
-        PROJECT_ID=$(SENTRY_PROPERTIES=/opt/microdevops/catch_server_mail/sentry.properties sentry-cli projects list | grep "| {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} |" | awk '{print $2}')
+        PROJECT_ID=$(set -o pipefail; SENTRY_PROPERTIES=/opt/microdevops/catch_server_mail/sentry.properties sentry-cli projects list | grep "| {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} |" | awk '{print $2}')
         if grep -q auth.dsn /opt/microdevops/catch_server_mail/sentry.properties; then
           sed -i "s#^auth.dsn=.*#auth.dsn=https://{{ pillar["catch_server_mail"]["sentry"]["dsn_public"] }}@{{ pillar["catch_server_mail"]["sentry"]["domain"] }}/${PROJECT_ID}#" /opt/microdevops/catch_server_mail/sentry.properties
         else
