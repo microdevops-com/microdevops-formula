@@ -63,7 +63,7 @@ catch_server_mail_sentry_properties_line_4:
 catch_server_mail_sentry_properties_line_5:
   cmd.run:
     - name: |
-        PROJECT_ID=$(SENTRY_PROPERTIES=/opt/microdevops/catch_server_mail/sentry.properties sentry-cli projects list | grep "| {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} |" | awk '{print $2}')
+        PROJECT_ID=$(SENTRY_PROPERTIES=/opt/microdevops/catch_server_mail/sentry.properties sentry-cli projects list | grep "| *{{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} *|" | awk '{print $2}')
         # Check if PROJECT_ID is integer
         if [[ $PROJECT_ID =~ ^[0-9]+$ ]]; then
           if grep -q auth.dsn /opt/microdevops/catch_server_mail/sentry.properties; then
