@@ -63,12 +63,17 @@ catch_server_mail_sentry_properties_line_4:
 catch_server_mail_sentry_properties_line_5:
   cmd.run:
     - name: |
-        set -e
-        PROJECT_ID=$(set -o pipefail; SENTRY_PROPERTIES=/opt/microdevops/catch_server_mail/sentry.properties sentry-cli projects list | grep "| {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} |" | awk '{print $2}')
-        if grep -q auth.dsn /opt/microdevops/catch_server_mail/sentry.properties; then
-          sed -i "s#^auth.dsn=.*#auth.dsn=https://{{ pillar["catch_server_mail"]["sentry"]["dsn_public"] }}@{{ pillar["catch_server_mail"]["sentry"]["domain"] }}/${PROJECT_ID}#" /opt/microdevops/catch_server_mail/sentry.properties
+        PROJECT_ID=$(SENTRY_PROPERTIES=/opt/microdevops/catch_server_mail/sentry.properties sentry-cli projects list | grep "| {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} |" | awk '{print $2}')
+        # Check if PROJECT_ID is integer
+        if [[ $PROJECT_ID =~ ^[0-9]+$ ]]; then
+          if grep -q auth.dsn /opt/microdevops/catch_server_mail/sentry.properties; then
+            sed -i "s#^auth.dsn=.*#auth.dsn=https://{{ pillar["catch_server_mail"]["sentry"]["dsn_public"] }}@{{ pillar["catch_server_mail"]["sentry"]["domain"] }}/${PROJECT_ID}#" /opt/microdevops/catch_server_mail/sentry.properties
+          else
+            echo "auth.dsn=https://{{ pillar["catch_server_mail"]["sentry"]["dsn_public"] }}@{{ pillar["catch_server_mail"]["sentry"]["domain"] }}/${PROJECT_ID}" >> /opt/microdevops/catch_server_mail/sentry.properties
+          fi
         else
-          echo "auth.dsn=https://{{ pillar["catch_server_mail"]["sentry"]["dsn_public"] }}@{{ pillar["catch_server_mail"]["sentry"]["domain"] }}/${PROJECT_ID}" >> /opt/microdevops/catch_server_mail/sentry.properties
+          echo "ERROR: Project {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} not found"
+          false
         fi
 
   # If all_users is True, set mail alias to sender for all users, otherwise set alias for root only
