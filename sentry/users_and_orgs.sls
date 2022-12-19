@@ -21,7 +21,7 @@ sentry_auth_token_create_{{ a_loop.index }}_{{ loop.index }}:
               now(),
               (SELECT id FROM auth_user WHERE email = '{{ user["email"] }}')
             )
-          ON CONFLICT (token) DO UPDATE SET scope_list = '{{ token["scope_list"] }}'
+          ON CONFLICT (token) DO UPDATE SET scope_list = '{{ token["scope_list"] }}', user_id = (SELECT id FROM auth_user WHERE email = '{{ user["email"] }}');
         \""
 
       {%- endfor %}
