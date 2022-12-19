@@ -98,6 +98,11 @@ app_ruby_app_puma_user_systemd_unit_file_{{ loop.index }}:
         Restart=always
         Environment=PUMA_DEBUG=1
         Environment=RAILS_ENV={{ app["puma"]["rails_env"] }}
+        {%- if "envs" in app["puma"] %}
+          {%- for env_name, env_value in app["puma"]["envs"].items() %}
+        Environment={{ env_name }}={{ env_value }}
+          {%- endfor %}
+        {%- endif %}
 
         [Install]
         WantedBy=default.target
@@ -139,10 +144,15 @@ app_ruby_app_unicorn_user_systemd_unit_file_{{ loop.index }}:
         
         [Service]
         WorkingDirectory={{ app["unicorn"]["working_directory"]|replace("__APP_NAME__", app_name) }}
-        Environment=RAILS_ENV={{ app["unicorn"]["rails_env"] }}
         ExecStart={{ app["unicorn"]["exec_start"]|replace("__APP_NAME__", app_name) }}
         Restart=always
         Type=forking
+        Environment=RAILS_ENV={{ app["unicorn"]["rails_env"] }}
+        {%- if "envs" in app["unicorn"] %}
+          {%- for env_name, env_value in app["unicorn"]["envs"].items() %}
+        Environment={{ env_name }}={{ env_value }}
+          {%- endfor %}
+        {%- endif %}
         
         [Install]
         WantedBy=default.target

@@ -91,11 +91,15 @@ app:
           working_directory: /var/www/__APP_NAME__/src
           exec_start: /var/www/__APP_NAME__/.rvm/wrappers/ruby-3.0.0/puma -C /var/www/__APP_NAME__/src/config/puma.rb
           rails_env: production
+          #envs: # optional, additional unit envs
+          #  ENV_NAME: env_value
         # common for all app types
         unicorn: # optional, install unicorn app user level service
           working_directory: /var/www/__APP_NAME__/src
           exec_start: /var/www/__APP_NAME__/.rvm/wrappers/ruby-3.0.0/unicorn_rails -c /var/www/__APP_NAME__/src/config/unicorn.rb -E production -D
           rails_env: production
+          #envs: # optional, additional unit envs
+          #  ENV_NAME: env_value
         user: __APP_NAME__
         group: __APP_NAME__
         #groups: # optional
