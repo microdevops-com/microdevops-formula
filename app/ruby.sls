@@ -53,16 +53,16 @@ app_ruby_app_rvm_update_bundler_{{ loop.index }}:
   cmd.run:
     - cwd: {{ _app_app_root }}
     - runas: {{ _app_user }}
-    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }} && gem update bundler
+    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && gem update bundler
 
 app_ruby_app_rvm_bundle_install_{{ loop.index }}:
   cmd.run:
     - cwd: {{ app["rvm"]["bundle_install"]|replace("__APP_NAME__", app_name) }}
     - runas: {{ _app_user }}
       {%- if "bundle_install_cmd" in app["rvm"] %}
-    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }} && {{ app["rvm"]["bundle_install_cmd"] }}
+    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && {{ app["rvm"]["bundle_install_cmd"] }}
       {%- else %}
-    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }} && bundle install
+    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && bundle install
       {%- endif %}
 
       {%- endif %}
