@@ -43,9 +43,9 @@ rsnapshot_backup:
             path: /var/backups/srv1.example.com
       - type: RSYNC_SSH # rsync over ssh
         data:
-          - UBUNTU # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws']
-          - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws']
-          - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/rpm','/usr/local','/opt/sysadmws']
+          - UBUNTU # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws','/opt/microdevops']
+          - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws','/opt/microdevops']
+          - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/rpm','/usr/local','/opt/sysadmws','/opt/microdevops']
           - /some/path
         #exclude: # optional, exclude some components from expanded list
         #  - /root
