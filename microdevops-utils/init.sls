@@ -32,16 +32,17 @@ microdevops-utils_install_from_tar_gz:
   cmd.run:
     - name: curl -L https://repo.sysadm.ws/tgz/sysadmws-utils-v1.tar.gz | tar -xz -C /opt --strip-components=2
 
-# Run old utils cleanup for tgz type install
-microdevops-utils_tgz_cleanup:
-  cmd.run:
-    - name: /opt/sysadmws/misc/tgz_cleanup.sh
-
   {%- endif %}
 
+# Run cleanup
+microdevops-utils_cleanup:
+  cmd.run:
+    - name: /opt/microdevops/misc/cleanup.sh
+
+# Install requirmenets
 microdevops-utils_install_requirements:
   cmd.run:
-    - name: /opt/sysadmws/misc/install_requirements.sh
+    - name: /opt/microdevops/misc/install_requirements.sh
 
 {% else %}
 microdevops-utils_nothing_done_info:
