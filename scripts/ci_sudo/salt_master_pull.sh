@@ -32,6 +32,7 @@ git fetch origin master || GRAND_EXIT=1
 git checkout --force -B master origin/master || GRAND_EXIT=1
 git reset --hard || GRAND_EXIT=1
 git clean -fdx || GRAND_EXIT=1
+git clean -d -f -f || GRAND_EXIT=1 # https://stackoverflow.com/a/14521765
 git submodule update --init --recursive --force || GRAND_EXIT=1
 git submodule foreach git fetch origin master || GRAND_EXIT=1
 git submodule foreach git checkout --force -B master origin/master || GRAND_EXIT=1
