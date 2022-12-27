@@ -27,12 +27,20 @@ exec 2>&1
 
 cd /srv || ( echo "ERROR: /srv does not exist"; exit 1 )
 set -x
-git pull --ff-only || GRAND_EXIT=1
-git checkout -B master origin/master || GRAND_EXIT=1
-git submodule init || GRAND_EXIT=1
-git submodule update --recursive -f --checkout || GRAND_EXIT=1
+# https://stackoverflow.com/a/4327720
+git fetch origin master || GRAND_EXIT=1
+git checkout --force -B master origin/master || GRAND_EXIT=1
+git reset --hard || GRAND_EXIT=1
+git clean -fdx || GRAND_EXIT=1
+git submodule update --init --recursive --force || GRAND_EXIT=1
+git submodule foreach git fetch origin master || GRAND_EXIT=1
+git submodule foreach git checkout --force -B master origin/master || GRAND_EXIT=1
+git submodule foreach git reset --hard || GRAND_EXIT=1
+git submodule foreach git clean -fdx || GRAND_EXIT=1
+#
 ln -sf ../../.githooks/post-merge .git/hooks/post-merge || GRAND_EXIT=1
 .githooks/post-merge || GRAND_EXIT=1
+#
 set +x
 
 grep -q "ERROR" /srv/scripts/ci_sudo/$(basename $0).out && GRAND_EXIT=1
