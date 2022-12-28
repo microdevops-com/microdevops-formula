@@ -42,6 +42,7 @@ gitlab-runner_config:
     - contents: |
         concurrent = {{ pillar["gitlab-runner"]["concurrency"] }}
         check_interval = 0
+        shutdown_timeout = 0
         
         [session_server]
           session_timeout = 1800

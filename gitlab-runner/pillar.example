@@ -2,7 +2,7 @@ gitlab-runner:
   gitlab:
     url: https://gitlab.example.com/
     admin_token: xxxxxxxxxxxxxxxxxxx # needed to cleanup runners in projects
-    registration_token: xxxxxxxxxxxxxxxxxx
+    registration_token: xxxxxxxxxxxxxxxxxx # since approx 15.4 version of GitLab you cannot register project level runners with instance level token, use any legit project registration token here
   register_opts: "--locked --docker-privileged --docker-image 'docker:stable' --access-level='ref_protected'"
   name: some-runner1.example.com
   executor: docker
