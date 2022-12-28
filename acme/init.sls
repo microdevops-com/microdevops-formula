@@ -96,5 +96,13 @@ acme_acc_setenv_{{ a_loop.index }}_{{ loop.index }}:
     - update_minion: True
 
     {%- endfor %}
+
+    {%- if "chown" in acme_params %}
+acme_chown_{{ loop.index }}:
+  cmd.run:
+    - name: chown -R {{ acme_params["chown"] }} /opt/acme
+
+    {%- endif %}
+
   {%- endfor %}
 {% endif %}
