@@ -12,3 +12,11 @@ gitlab-runner:
   projects: # optional, add runner to projects
     - somegroup/project1
     - somegroup/project2
+  keys: # optional, put keys into runner home .ssh
+    id_ed25519:
+      priv: |
+        -----BEGIN OPENSSH PRIVATE KEY-----
+	...
+	-----END OPENSSH PRIVATE KEY-----
+      pub: |
+        ssh-ed25519 AAAA...

@@ -74,4 +74,33 @@ gitlab-runner_project_{{ loop.index }}:
 
   {%- endfor %}
 
+  {%- if "keys" in pillar["gitlab-runner"] %}
+gitlab-runner_ssh_dir:
+  file.directory:
+    - name: /home/gitlab-runner/.ssh
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0700
+
+    {%- for key_name, key_params in pillar["gitlab-runner"]["keys"].items() %}
+gitlab-runner_ssh_key_priv_{{ loop.index }}:
+  file.managed:
+    - name: /home/gitlab-runner/.ssh/{{ key_name }}
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0600
+    - contents: {{ key_params["priv"] }}
+
+gitlab-runner_ssh_key_pub_{{ loop.index }}:
+  file.managed:
+    - name: /home/gitlab-runner/.ssh/{{ key_name }}.pub
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0644
+    - contents: {{ key_params["pub"] }}
+
+    {%- endfor %}
+
+  {%- endif %}
+
 {% endif %}
