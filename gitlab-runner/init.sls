@@ -89,7 +89,7 @@ gitlab-runner_ssh_key_priv_{{ loop.index }}:
     - user: gitlab-runner
     - group: gitlab-runner
     - mode: 0600
-    - contents: {{ key_params["priv"] }}
+    - contents: {{ key_params["priv"] | yaml_encode }}
 
 gitlab-runner_ssh_key_pub_{{ loop.index }}:
   file.managed:
@@ -97,7 +97,7 @@ gitlab-runner_ssh_key_pub_{{ loop.index }}:
     - user: gitlab-runner
     - group: gitlab-runner
     - mode: 0644
-    - contents: {{ key_params["pub"] }}
+    - contents: {{ key_params["pub"] | yaml_encode }}
 
     {%- endfor %}
 
