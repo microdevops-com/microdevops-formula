@@ -187,6 +187,7 @@ sentry_org_project_platform_{{ a_loop.index }}_{{ loop.index }}:
           {%- for dsn in project["dsn"] %}
 sentry_org_project_dsn_create_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}:
   cmd.run:
+    - shell: /bin/bash
     - name: |
         docker exec sentry-self-hosted-postgres-1 su - postgres -c "
           if [[ \$(psql --quiet --no-align --tuples-only -c \"

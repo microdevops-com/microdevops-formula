@@ -6,6 +6,7 @@
           {%- for user in rancher_val["users"] %}
 rancher_user_{{ loop.index }}:
   cmd.run:
+    - shell: /bin/bash
     - name: |
         # Get users with name and get id of first
         USER_ID=$(curl -sS -u "{{ rancher_val["bearer_token"] }}" \
@@ -66,6 +67,7 @@ rancher_user_token_dir_{{ a_loop.index }}_{{ loop.index }}:
 
 rancher_user_token_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
+    - shell: /bin/bash
     - name: |
         # Get user just to check user exists
         USER_ID=$(curl -sS -u "{{ rancher_val["bearer_token"] }}" \
@@ -106,6 +108,7 @@ rancher_user_token_{{ a_loop.index }}_{{ loop.index }}:
           {%- for project in rancher_val["projects"] %}
 rancher_project_{{ loop.index }}:
   cmd.run:
+    - shell: /bin/bash
     - name: |
         # Get projects with name and get id of first
         PROJECT_ID=$(curl -sS -u "{{ rancher_val["bearer_token"] }}" \
@@ -136,6 +139,7 @@ rancher_project_{{ loop.index }}:
               {%- for member in project["members"]["users"] %}
 rancher_project_member_user_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
+    - shell: /bin/bash
     - name: |
         # Get user and project ids
         USER_ID=$(curl -sS -u "{{ rancher_val["bearer_token"] }}" --get \
@@ -192,6 +196,7 @@ rancher_project_member_user_{{ a_loop.index }}_{{ loop.index }}:
               {%- for member in project["members"]["groups"] %}
 rancher_project_member_group_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
+    - shell: /bin/bash
     - name: |
         # Get group and project ids
         # Filter is not working in this API endpoint, use jq filtering
