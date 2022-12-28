@@ -62,6 +62,7 @@ catch_server_mail_sentry_properties_line_4:
 # Sed inplace if line already exists, add line if not
 catch_server_mail_sentry_properties_line_5:
   cmd.run:
+    - shell: /bin/bash
     - name: |
         PROJECT_ID=$(SENTRY_PROPERTIES=/opt/microdevops/catch_server_mail/sentry.properties sentry-cli projects list | grep "| *{{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} *|" | awk '{print $2}')
         # Check if PROJECT_ID is integer
@@ -72,7 +73,7 @@ catch_server_mail_sentry_properties_line_5:
             echo "auth.dsn=https://{{ pillar["catch_server_mail"]["sentry"]["dsn_public"] }}@{{ pillar["catch_server_mail"]["sentry"]["domain"] }}/${PROJECT_ID}" >> /opt/microdevops/catch_server_mail/sentry.properties
           fi
         else
-          echo "ERROR: Project {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} not found"
+          echo "Project {{ pillar["catch_server_mail"]["sentry"]["project-slug"] }} not found"
           false
         fi
 
