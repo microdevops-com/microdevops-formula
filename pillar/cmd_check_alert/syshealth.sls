@@ -35,7 +35,7 @@ cmd_check_alert:
           severity_per_retcode:
             1: critical
         oom:
-          cmd: :; ! dmesg -T | grep "Out of memory"
+          cmd: :; ! dmesg -T | grep -i -e "Out of memory" -e "oom"
           service: os
           resource: __hostname__:oom
           severity_per_retcode:
