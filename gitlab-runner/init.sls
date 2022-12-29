@@ -104,4 +104,32 @@ gitlab-runner_ssh_key_pub_{{ loop.index }}:
 
   {%- endif %}
 
+  {%- if "docker_clean_cron" in pillar["gitlab-runner"] %}
+# Put clean script in gitlab-runner home
+gitlab-runner_docker_clean_script:
+  file.managed:
+    - name: /home/gitlab-runner/docker-clean.sh
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0755
+    - contents: |
+        #!/bin/bash
+        docker stop $(docker ps -a -q)
+        docker rm $(docker ps -a -q)
+        docker rmi $(docker image ls -a -q)
+        docker image prune -f
+        docker image prune -f -a
+        docker volume prune -f
+
+# Add cron job
+gitlab-runner_docker_clean_cron:
+  cron.present:
+    - identifier: docker-clean
+    - user: gitlab-runner
+    - minute: {{ pillar["gitlab-runner"]["docker_clean_cron"]["minute"] }}
+    - hour: {{ pillar["gitlab-runner"]["docker_clean_cron"]["hour"] }}
+    - name: /home/gitlab-runner/docker-clean.sh
+
+  {%- endif %}
+
 {% endif %}

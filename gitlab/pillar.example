@@ -1,6 +1,5 @@
 # vi: set ft=yaml:
 
-# gitlab
 gitlab:
   version: latest # latest or version like 14.8.3
   root_password: xxxxxxxxxxxxxxxxxxx
