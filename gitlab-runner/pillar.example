@@ -18,8 +18,8 @@ gitlab-runner:
     id_ed25519:
       priv: |
         -----BEGIN OPENSSH PRIVATE KEY-----
-	...
-	-----END OPENSSH PRIVATE KEY-----
+        ...
+        -----END OPENSSH PRIVATE KEY-----
       pub: |
         ssh-ed25519 AAAA...
   #docker_clean_cron: # optional, clean everything in docker
