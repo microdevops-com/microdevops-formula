@@ -1,9 +1,12 @@
 minio:
   download_url: https://dl.min.io/server/minio/release/linux-amd64/minio
   install_path: /usr/local/bin/
+  working_directory: /usr/local/
+  env_file: /etc/default/minio
   user: minio
   group: minio
   limit_nofile: 65536
+  name: loki-minio.exmaple.com
 
   environment:
     MINIO_VOLUMES: /usr/local/share/minio/
