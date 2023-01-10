@@ -1,14 +1,14 @@
 #!/bin/bash
 
-ACME_LOCAL_DOMAIN=$(hostname -f)
-if openssl verify -CAfile /home/{{ minio_user }}/.minio/certs/ca.crt /home/{{ minio_user }}/.minio/certs/public.crt 2>&1 | grep -q -i -e error -e cannot; then
+ACME_LOCAL_DOMAIN={{ domain }}
+if openssl verify -CAfile {{ homedir }}/.minio/certs/ca.crt {{ homedir }}/.minio/certs/public.crt 2>&1 | grep -q -i -e error -e cannot; then
   /opt/acme/home/{{ acme }}/acme_local.sh \
-    --cert-file /home/{{ minio_user }}/.minio/certs/cert.crt \
-    --key-file /home/{{ minio_user }}/.minio/certs/private.key \
-    --ca-file /home/{{ minio_user }}/.minio/certs/ca.crt \
-    --fullchain-file /home/{{ minio_user }}/.minio/certs/public.crt \
+    --cert-file {{ homedir }}/.minio/certs/cert.crt \
+    --key-file {{ homedir }}/.minio/certs/private.key \
+    --ca-file {{ homedir }}/.minio/certs/ca.crt \
+    --fullchain-file {{ homedir }}/.minio/certs/public.crt \
     --issue -d ${ACME_LOCAL_DOMAIN} \
     --reloadcmd 'systemctl restart minio.service'
 else
   echo openssl verify OK
-fi   
+fi  
