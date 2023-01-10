@@ -3,6 +3,9 @@
 {% set minio_group = salt['pillar.get']('minio:group', 'minio') %}
 {% set minio_limit_nofile = salt['pillar.get']('minio:limit_nofile', '65536') %}
 {% set environment = salt['pillar.get']('minio:environment') %}
+{% set install_path = salt['pillar.get']('minio:install_path', '/usr/local/bin/') %}
+{% set working_directory = salt['pillar.get']('minio:working_directory', '/usr/local/') %}
+{% set env_file = salt['pillar.get']('minio:env_file', '/etc/default/minio') %}
 
 
 minio_systemd_service:
@@ -17,13 +20,16 @@ minio_systemd_service:
         minio_user: {{ minio_user }}
         minio_group: {{ minio_group }}
         minio_limit_nofile: {{ minio_limit_nofile }}
+        install_path: {{ install_path }}
+        working_directory: {{ working_directory }}
+        env_file: {{ env_file }}
 
 
 minio_etc_default:
   file.managed:
-    - name: /etc/default/minio
-    - user: root
-    - group: root
+    - name: {{ env_file }}
+    - user: {{ minio_user }}
+    - group: {{ minio_group }}
     - mode: 644
     - contents:
 {% for key, val in environment.items() %}
