@@ -1,5 +1,5 @@
 ##############################################
-##### FOR LUCH WITH SYSTEMD
+##### FOR RUNNING WITH SYSTEMD
 
 {%- set path_prefix = '/opt/loki' %}
 {%- set version = '2.7.1' %}
@@ -139,7 +139,7 @@ loki:
 
 
 ##############################################
-##### FOR LUCH IN DOCKER
+##### FOR RUNNING IN DOCKER
 loki:
   acme_account: example.com
   image: grafana/loki:2.5.0
