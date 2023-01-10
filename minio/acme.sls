@@ -1,8 +1,16 @@
 {% if pillar["minio"] is defined %}
 {% if pillar["acme"] is defined and salt['file.directory_exists']('/opt/acme') %}
-{% set minio_user = salt['pillar.get']('minio:user') %}
-{% set minio_group = salt['pillar.get']('minio:group') %}
+{% set domain = salt['pillar.get']('minio:name', '$(hostname -f)') %}
+{% set minio_user = salt['pillar.get']('minio:user', 'minio') %}
+{% set minio_group = salt['pillar.get']('minio:group', 'minio') %}
 {% set acme = pillar['acme'].keys() | first %}
+
+  {%- if salt['pillar.get']('minio:user', 'minio') == 'root' %}
+{% set homedir = '/root' %}
+  {%- else %}
+{% set homedir = '/home/' + salt['pillar.get']('minio:user', 'minio') %}
+  {%- endif %}
+
 
 
 make_file_/opt/acme/home/{{ acme }}/verify_and_issue_for_minio.sh:
@@ -14,38 +22,48 @@ make_file_/opt/acme/home/{{ acme }}/verify_and_issue_for_minio.sh:
     - group: root
     - mode: 755
     - context:
-        minio_user: {{ minio_user }}
+        homedir: {{ homedir }}
         acme: {{ acme }}
+        domain: {{ domain }}
 
-/home/{{ minio_user }}/.minio/certs/cert.crt:
-  file.managed:
+create homedir for minio:
+  file.directory:
+    - names:
+      - {{ homedir }}/.minio/certs
+      - {{ homedir }}/.minio
+    - makedirs: True
+    - mode: 700
     - user: {{ minio_user }}
     - group: {{ minio_group }}
-    - mode: 0644
-
-/home/{{ minio_user }}/.minio/certs/private.key:
-  file.managed:
-    - user: {{ minio_user }}
-    - group: {{ minio_group }}
-    - mode: 0600
-
-/home/{{ minio_user }}/.minio/certs/ca.crt:
-  file.managed:
-    - user: {{ minio_user }}
-    - group: {{ minio_group }}
-    - mode: 0644
-
-/home/{{ minio_user }}/.minio/certs/public.crt:
-  file.managed:
-    - user: {{ minio_user }}
-    - group: {{ minio_group }}
-    - mode: 0644
 
 run_/opt/acme/home/{{ acme }}/verify_and_issue_for_minio.sh:
   cmd.run:
     - name: /opt/acme/home/{{ acme }}/verify_and_issue_for_minio.sh
     - shell: /bin/bash
 
-{%- endif %}
-{%- endif %}
+{{ homedir }}/.minio/certs/cert.crt:
+  file.managed:
+    - user: {{ minio_user }}
+    - group: {{ minio_group }}
+    - mode: 0644
 
+{{ homedir }}/.minio/certs/private.key:
+  file.managed:
+    - user: {{ minio_user }}
+    - group: {{ minio_group }}
+    - mode: 0600
+
+{{ homedir }}/.minio/certs/ca.crt:
+  file.managed:
+    - user: {{ minio_user }}
+    - group: {{ minio_group }}
+    - mode: 0644
+
+{{ homedir }}/.minio/certs/public.crt:
+  file.managed:
+    - user: {{ minio_user }}
+    - group: {{ minio_group }}
+    - mode: 0644
+
+{%- endif %}
+{%- endif %}
