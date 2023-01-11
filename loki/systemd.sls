@@ -1,4 +1,7 @@
 {% if pillar['loki'] is defined and pillar['loki'] is not none %}
+  {% if pillar["loki"]["nginx_gateway"] | default(false) %}
+    {% include "loki/gateway.sls" with context %}
+  {% else %}
 loki_dirs:
   file.directory:
     - names:
@@ -65,4 +68,5 @@ loki_systemd_3:
 loki_systemd_4:
   cmd.run:
     - name: systemctl restart loki
+  {% endif %}
 {% endif %}
