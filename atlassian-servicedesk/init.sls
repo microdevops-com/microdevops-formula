@@ -29,9 +29,20 @@ nginx_files_1:
             gzip_vary on;
             gzip_proxied any;
             client_max_body_size 1000m;
+  {%- if pillar["atlassian-servicedesk"]["nginx_forwards"] is defined %}
+    {%- for domain in pillar["atlassian-servicedesk"]["nginx_forwards"] %}
+            server {
+                listen 443 ssl;
+                server_name {{ domain }};
+                ssl_certificate /opt/acme/cert/{{ domain }}/fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/{{ domain }}/{{ domain }}.key;
+                return 301 https://{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}$request_uri;
+            }
+    {%- endfor %}
+  {%- endif %}
             server {
                 listen 80;
-                return 301 https://$host$request_uri;
+                return 301 https://{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}$request_uri;
             }
             server {
                 listen 443 ssl;
@@ -53,11 +64,19 @@ nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
+  {%- if pillar["atlassian-servicedesk"]["acme_configs"] is not defined %}
 nginx_cert:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["atlassian-servicedesk"]["acme_account"] }}/verify_and_issue.sh atlassian-servicedesk {{ pillar["atlassian-servicedesk"]["http_proxyName"] }}"
-
+  {%- else %}
+    {% for acme_config in pillar["atlassian-servicedesk"]["acme_configs"] %}
+nginx_cert_{{ loop.index }}:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ acme_config["name"] }}/verify_and_issue.sh atlassian-servicedesk {%- for domain in acme_config["domains"] %} {{ domain }} {%- endfor -%}"
+    {%- endfor%}
+  {%- endif %}
 nginx_reload:
   cmd.run:
     - runas: root
