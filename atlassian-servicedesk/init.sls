@@ -74,7 +74,7 @@ nginx_cert:
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme_config["name"] }}/verify_and_issue.sh atlassian-servicedesk {%-for domain in acme_config["domains"] %} {{ domain }} {% endfor -%}"
+    - name: "/opt/acme/home/{{ acme_config["name"] }}/verify_and_issue.sh atlassian-servicedesk {%- for domain in acme_config["domains"] %} {{ domain }} {% endfor -%}"
     {%- endfor%}
   {%- endif %}
 nginx_reload:
