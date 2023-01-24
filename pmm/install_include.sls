@@ -107,7 +107,7 @@ pmm-data_restore_script:
 
 pmm_nginx_reload_cron:
   cron.present:
-    - name: docker exec -it percona-{{ pillar["pmm"]["name"] }} nginx -s reload
+    - name: docker exec percona-{{ pillar["pmm"]["name"] }} nginx -s reload
     - identifier: pmm_nginx_reload
     - user: root
     - minute: 10
