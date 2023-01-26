@@ -141,7 +141,7 @@ app_{{ app_type }}_nginx_logrotate_file_{{ loop_index }}:
           rotate {{ app["nginx"]["log"]["rotate_count"]|default("31") }}
           {{ app["nginx"]["log"]["rotate_when"]|default("daily") }}
           missingok
-          create {{ app["nginx"]["log"]["log_mode"]|default("640") }} {{ app["nginx"]["log"]["log_user"]|default(_app_user) }} {{ app["nginx"]["log"]["log_group"]|default(_app_group) }}
+          create {{ app["nginx"]["log"]["log_mode"]|default("640") }} {{ app["nginx"]["log"]["log_user"]|default(_app_user)|replace("__APP_NAME__", app_name) }} {{ app["nginx"]["log"]["log_group"]|default(_app_group)|replace("__APP_NAME__", app_name) }}
           compress
           delaycompress
           postrotate

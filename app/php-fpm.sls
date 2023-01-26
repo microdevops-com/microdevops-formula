@@ -32,11 +32,11 @@
         {%- set _pool_log_rotate_when = app["pool"]["log"]["rotate_when"]|default("daily") %}
       {%- else %}
         {%- set _pool_log_file = default_pool_log_file %}
-        {%- set _pool_log_dir_user = _app_user %}
-        {%- set _pool_log_dir_group = _app_group %}
+        {%- set _pool_log_dir_user = _app_user|replace("__APP_NAME__", app_name) %}
+        {%- set _pool_log_dir_group = _app_group|replace("__APP_NAME__", app_name) %}
         {%- set _pool_log_dir_mode = "755" %}
-        {%- set _pool_log_log_user = _app_user %}
-        {%- set _pool_log_log_group = _app_group %}
+        {%- set _pool_log_log_user = _app_user|replace("__APP_NAME__", app_name) %}
+        {%- set _pool_log_log_group = _app_group|replace("__APP_NAME__", app_name) %}
         {%- set _pool_log_log_mode = "644" %}
         {%- set _pool_log_rotate_count = "31" %}
         {%- set _pool_log_rotate_when = "daily" %}
