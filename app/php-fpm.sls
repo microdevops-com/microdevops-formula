@@ -83,7 +83,7 @@ app_php-fpm_app_logrotate_file_{{ loop.index }}:
           rotate {{ _pool_log_rotate_count }}
           {{ _pool_log_rotate_when }}
           missingok
-          create {{ _pool_log_log_mode }} {{ _pool_log_log_user }} {{ _pool_log_log_group }}
+          create {{ _pool_log_log_mode }} {{ _pool_log_log_user|replace("__APP_NAME__", app_name) }} {{ _pool_log_log_group|replace("__APP_NAME__", app_name) }}
           compress
           delaycompress
           postrotate
