@@ -29,6 +29,13 @@ haproxy_cert_gen_2:
   cmd.run:
     - shell: /bin/bash
     - name: "cat {{ pillar["haproxy"]["ssl"]["cert"] }} {{ pillar["haproxy"]["ssl"]["key"] }} > {{ pillar["haproxy"]["ssl"]["pem"] }}"
+haproxy_pem_reload_cron:
+  cron.present:
+    - name: "cat {{ pillar["haproxy"]["ssl"]["cert"] }} {{ pillar["haproxy"]["ssl"]["key"] }} > {{ pillar["haproxy"]["ssl"]["pem"] }} && systemctl reload haproxy"
+    - identifier: haproxy_pem_reload
+    - user: root
+    - minute: 15
+    - hour: 6
   {% endif %}
 {% endif %}
 
@@ -42,5 +49,4 @@ haproxy_reload:
     - name: systemctl reload haproxy
     - onchanges:
         - file: /etc/haproxy/haproxy.cfg
-
 {% endif %}
