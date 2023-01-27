@@ -22,21 +22,21 @@
       {%- set default_pool_log_file = "/var/log/php/" ~ app_name ~ "/php" ~ app["pool"]["php_version"] ~ "-fpm-" ~ app_name ~ ".error.log" %}
       {%- if "log" in app["pool"] %}
         {%- set _pool_log_file = app["pool"]["log"]["error_log"]|replace("__APP_NAME__", app_name)|default(default_pool_log_file) %}
-        {%- set _pool_log_dir_user = app["pool"]["log"]["dir_user"]|default(_app_user) %}
-        {%- set _pool_log_dir_group = app["pool"]["log"]["dir_group"]|default(_app_group) %}
+        {%- set _pool_log_dir_user = app["pool"]["log"]["dir_user"]|default(_app_user)|replace("__APP_NAME__", app_name) %}
+        {%- set _pool_log_dir_group = app["pool"]["log"]["dir_group"]|default(_app_group)|replace("__APP_NAME__", app_name) %}
         {%- set _pool_log_dir_mode = app["pool"]["log"]["dir_mode"]|default("755") %}
-        {%- set _pool_log_log_user = app["pool"]["log"]["log_user"]|default(_app_user) %}
-        {%- set _pool_log_log_group = app["pool"]["log"]["log_group"]|default(_app_group) %}
+        {%- set _pool_log_log_user = app["pool"]["log"]["log_user"]|default(_app_user)|replace("__APP_NAME__", app_name) %}
+        {%- set _pool_log_log_group = app["pool"]["log"]["log_group"]|default(_app_group)|replace("__APP_NAME__", app_name) %}
         {%- set _pool_log_log_mode = app["pool"]["log"]["log_mode"]|default("644") %}
         {%- set _pool_log_rotate_count = app["pool"]["log"]["rotate_count"]|default("31") %}
         {%- set _pool_log_rotate_when = app["pool"]["log"]["rotate_when"]|default("daily") %}
       {%- else %}
         {%- set _pool_log_file = default_pool_log_file %}
-        {%- set _pool_log_dir_user = _app_user %}
-        {%- set _pool_log_dir_group = _app_group %}
+        {%- set _pool_log_dir_user = _app_user|replace("__APP_NAME__", app_name) %}
+        {%- set _pool_log_dir_group = _app_group|replace("__APP_NAME__", app_name) %}
         {%- set _pool_log_dir_mode = "755" %}
-        {%- set _pool_log_log_user = _app_user %}
-        {%- set _pool_log_log_group = _app_group %}
+        {%- set _pool_log_log_user = _app_user|replace("__APP_NAME__", app_name) %}
+        {%- set _pool_log_log_group = _app_group|replace("__APP_NAME__", app_name) %}
         {%- set _pool_log_log_mode = "644" %}
         {%- set _pool_log_rotate_count = "31" %}
         {%- set _pool_log_rotate_when = "daily" %}
@@ -83,7 +83,7 @@ app_php-fpm_app_logrotate_file_{{ loop.index }}:
           rotate {{ _pool_log_rotate_count }}
           {{ _pool_log_rotate_when }}
           missingok
-          create {{ _pool_log_log_mode }} {{ _pool_log_log_user }} {{ _pool_log_log_group }}
+          create {{ _pool_log_log_mode }} {{ _pool_log_log_user|replace("__APP_NAME__", app_name) }} {{ _pool_log_log_group|replace("__APP_NAME__", app_name) }}
           compress
           delaycompress
           postrotate

@@ -126,8 +126,8 @@ app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ loop.index }}
 app_{{ app_type }}_nginx_log_dir_{{ loop_index }}:
   file.directory:
     - name: {{ app["nginx"]["log"]["dir"]|replace("__APP_NAME__", app_name) }}
-    - user: {{ app["nginx"]["log"]["dir_user"]|default(_app_user) }}
-    - group: {{ app["nginx"]["log"]["dir_group"]|default(_app_group) }}
+    - user: {{ app["nginx"]["log"]["dir_user"]|default(_app_user)|replace("__APP_NAME__", app_name) }}
+    - group: {{ app["nginx"]["log"]["dir_group"]|default(_app_group)|replace("__APP_NAME__", app_name) }}
     - mode: {{ app["nginx"]["log"]["dir_mode"]|default("755") }}
     - makedirs: True
 
@@ -141,7 +141,7 @@ app_{{ app_type }}_nginx_logrotate_file_{{ loop_index }}:
           rotate {{ app["nginx"]["log"]["rotate_count"]|default("31") }}
           {{ app["nginx"]["log"]["rotate_when"]|default("daily") }}
           missingok
-          create {{ app["nginx"]["log"]["log_mode"]|default("640") }} {{ app["nginx"]["log"]["log_user"]|default(_app_user) }} {{ app["nginx"]["log"]["log_group"]|default(_app_group) }}
+          create {{ app["nginx"]["log"]["log_mode"]|default("640") }} {{ app["nginx"]["log"]["log_user"]|default(_app_user)|replace("__APP_NAME__", app_name) }} {{ app["nginx"]["log"]["log_group"]|default(_app_group)|replace("__APP_NAME__", app_name) }}
           compress
           delaycompress
           postrotate
