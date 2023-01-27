@@ -1,4 +1,26 @@
 minio:
+  disk_pool:
+{%- if grains['id'] == "minio1.example.com" %}
+    disk1: UUID=3c9f9a1f-a1b1-405b-8f52-7b68f6d3e7e9
+    disk2: UUID=e9c99c1d-d7a8-4e1e-a2b2-f5d6c9a8b9f7
+    disk3: UUID=0e82a7f8-8a19-48b2-b5a6-2c938aeb7f06
+    disk4: UUID=c1d29b3a-f3f7-4f3a-a724-9a3b7c5ddc36
+{%- elif grains['id'] == "minio2.example.com" %}
+    disk1: UUID=a2e8c4f7-4f4e-4f1c-9c98-9f2b5c6a1d1f
+    disk2: UUID=8f8f8b6a-7f9d-4c9f-8a9f-c1c1d1f1e1f1
+    disk3: UUID=f3e3d3c3-b2a2-111e-9a9b8b7b-6a6b5b4b
+    disk4: UUID=3b3c2c1c-dcdc-cccb-bcbb-abaa9a8a
+{%- elif grains['id'] == "minio3.example.com" %}
+    disk1: UUID=7a7b6b5b-4b3b2b1b-0b9b8b7b-6b5b4b3b
+    disk2: UUID=2b1b0b-bbbbabaa-9a8a7a6a-5a4a3a2a
+    disk3: UUID=1a0a-aaa9a8a7-a6a5a4a3-a2a1a0a
+    disk4: UUID=9a8a7a6a-5a4a3a2a-1a0a-aaa9a8a7
+{%- elif grains['id'] == "minio4.example.com" %}
+    disk1: UUID=a6a5a4a3-a2a1a0a-9a8a7a6a-5a4a3a2a
+    disk2: UUID=1a0a-aaa9a8a7-a6a5a4a3-a2a1a0a
+    disk3: UUID=9a8a7a6a-5a4a3a2a-1a0a-aaa9a8a7
+    disk4: UUID=a6a5a4a3-a2a1a0a-9a8a7a6a-5a4a3a2a
+{%- endif %}
   download_url: https://dl.min.io/server/minio/release/linux-amd64/minio
   install_path: /usr/local/bin/
   working_directory: /usr/local/
@@ -6,15 +28,13 @@ minio:
   user: minio
   group: minio
   limit_nofile: 65536
-  name: loki-minio.exmaple.com
-
+  name: minio.exmaple.com
+  ssl: false
   environment:
-    MINIO_VOLUMES: /usr/local/share/minio/
+    MINIO_VOLUMES: http://minio{1...4}.example.com:9000/usr/local/disk{1...4}
     MINIO_OPTS: '"--address :9000 --console-address :9001"'
     MINIO_ROOT_USER: admin
     MINIO_ROOT_PASSWORD: examplePassword
     MINIO_BROWSER: on
-    MINIO_KMS_KES_KEY_FILE: /home/minio/.minio/certs/private.key
-    MINIO_KMS_KES_CERT_FILE: /home/minio/.minio/certs/public.crt
-    MINIO_SERVER_URL: https://example.com:9000
-    MINIO_BROWSER_REDIRECT_URL: https://example.com:9001
+    MINIO_SERVER_URL: https://minio.exmaple.com:9000
+    MINIO_BROWSER_REDIRECT_URL: https://minio.exmaple.com:9001
