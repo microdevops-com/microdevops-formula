@@ -1,5 +1,5 @@
 {% if pillar["minio"] is defined %}
-{% if pillar["acme"] is defined and salt['file.directory_exists']('/opt/acme') %}
+{% if pillar["minio"]["ssl"] | default(true) and pillar["acme"] is defined and salt['file.directory_exists']('/opt/acme') %}
 {% set domain = salt['pillar.get']('minio:name', '$(hostname -f)') %}
 {% set minio_user = salt['pillar.get']('minio:user', 'minio') %}
 {% set minio_group = salt['pillar.get']('minio:group', 'minio') %}
