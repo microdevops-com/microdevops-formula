@@ -3,10 +3,10 @@
 {% set minio_group = salt['pillar.get']('minio:group', 'minio') %}
 {% set minio_download_url = salt['pillar.get']('minio:download_url', 'https://dl.min.io/server/minio/release/linux-amd64/minio') %}
 {% set minio_install_path = salt['pillar.get']('minio:install_path', '/usr/local/bin/') %}
-{% set dir_volumes = salt['pillar.get']('minio:environment:MINIO_VOLUMES') %}
+{% set working_directory = salt['pillar.get']('minio:working_directory', '/usr/local/') %}
 
-
-{{ dir_volumes }}:
+  {% if "http" not in salt['pillar.get']('minio:environment:MINIO_VOLUMES') %}
+{{ salt['pillar.get']('minio:environment:MINIO_VOLUMES') }}:
   file.directory:
     - user: {{ minio_user }}
     - group: {{ minio_group }}
@@ -15,6 +15,8 @@
     - recurse:
       - user
       - group
+  {% endif %}
+
 
 minio_binary:
   file.managed:
@@ -30,8 +32,29 @@ minio_binary:
         until: True
         interval: 60
         splay: 10
-#    - unless:
-#        # asserts minio is on our path
-#        - which minio
 
+
+  {% if pillar["minio"]["disk_pool"] is defined %}
+    {%- for folder, device in pillar["minio"]["disk_pool"].items() %}
+mount_{{ loop.index }}:
+  mount.mounted:
+    - name: {{ working_directory }}{{ folder }}
+    - device: {{ device }}
+    - fstype: none
+    - opts: "defaults,noatime"
+    - dump: 0
+    - pass_num: 2
+    - persist: True
+    - mkmnt: True
+    {%- endfor %}
+set_permissions:
+  file.directory:
+    - name: {{ working_directory }}
+    - user: {{ minio_user }}
+    - group: {{ minio_group }}
+    - mode: 755
+    - recurse:
+      - user
+      - group
+  {%- endif %}
 {%- endif %}

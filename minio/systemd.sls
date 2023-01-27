@@ -37,13 +37,14 @@ minio_etc_default:
       - {{ key }}{{ val }}
 {% endfor %}
 
-
-minio_enable_service:
-  service.enabled:
-    - name: minio
-
-minio_start_service:
+minio_service_enable_and_start:
   service.running:
     - name: minio
+    - enable: true
+
+minio_service_restart:
+  cmd.run:
+    - name: systemctl restart minio
+    - shell: /bin/bash
 
 {%- endif %}

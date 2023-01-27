@@ -1,4 +1,10 @@
 haproxy:
+  ppa: 'vbernat/haproxy-2.6'
+  ssl:
+    domain: {{ grains['id'] }}
+    cert: /opt/acme/cert/{{ grains['id'] }}/{{ grains['id'] }}.key
+    key: /opt/acme/cert/{{ grains['id'] }}/fullchain.cer
+    pem: /opt/acme/cert/{{ grains['id'] }}/{{ grains['id'] }}.pem
   config: |
       global
       log /dev/log    local0
@@ -34,6 +40,17 @@ haproxy:
       errorfile 502 /etc/haproxy/errors/502.http
       errorfile 503 /etc/haproxy/errors/503.http
       errorfile 504 /etc/haproxy/errors/504.http
+
+    listen stats
+      bind *:8080 ssl crt /opt/acme/cert/example.com/example.com.pem
+      stats enable
+      stats auth admin:p@$$w0Rd
+      stats admin if TRUE
+      stats hide-version
+      stats refresh 3s
+      stats show-node
+      stats uri /
+
     listen mysql-slave1.prd.example.com
       bind 0.0.0.0:3306
       mode tcp
