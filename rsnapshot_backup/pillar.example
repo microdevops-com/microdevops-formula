@@ -97,6 +97,8 @@ rsnapshot_backup:
           - type: MYSQL # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
               - test
+        #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
+        #
         #mysql_noevents: True # optional, remove --events from dump cmd
         #mysqldump_args: # optional, pass additional arguments to mysqldump
         #  --ignore-table=dbname.table1
@@ -128,6 +130,7 @@ rsnapshot_backup:
               - postgres
               - template0
               - template1
+        #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
         #pg_dump_args: # optional, pass additional arguments to pg_dump_args, only for py version
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location, only for py version
@@ -141,6 +144,7 @@ rsnapshot_backup:
           - type: MONGODB # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
               - config
+        #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
         #mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
         #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location, only for py version
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
