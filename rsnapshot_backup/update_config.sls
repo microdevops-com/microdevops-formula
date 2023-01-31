@@ -303,6 +303,10 @@ rsnapshot_backup_yaml:
           exclude: {{ host_backups_item["exclude"] }}
           {%- endif %}
           # only for py everything below
+          {%- if "dump_prefix_cmd" in host_backups_item %}
+          dump_prefix_cmd: {{ host_backups_item["dump_prefix_cmd"] }}
+          {%- endif %}
+          #
           {%- if "mysql_dump_dir" in host_backups_item %}
           mysql_dump_dir: {{ host_backups_item["mysql_dump_dir"] }}
           {%- endif %}
