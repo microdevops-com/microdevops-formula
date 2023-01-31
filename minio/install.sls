@@ -40,7 +40,7 @@ mount_{{ loop.index }}:
   mount.mounted:
     - name: {{ working_directory }}{{ folder }}
     - device: {{ device }}
-    - fstype: none
+    - fstype: xfs
     - opts: "defaults,noatime"
     - dump: 0
     - pass_num: 2
