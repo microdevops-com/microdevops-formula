@@ -571,6 +571,9 @@ clamd_whitelist_ign2_{{ loop.index }}:
   {% endif %}
 
   {% if pillar["mailcow"]["postfix"] is defined and "extra_cf" in pillar["mailcow"]["postfix"] %}
+postfix_extra_cf_touch:
+  file.touch:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/extra.cf
     {%- for var_key, var_val in pillar["mailcow"]["postfix"]["extra_cf"].items() %}
 postfix_extra_cf_{{ loop.index }}:
   file.replace:
