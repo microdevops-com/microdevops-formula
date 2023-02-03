@@ -11,6 +11,6 @@ cmd_check_alert:
         severity: fatal
       checks:
         salt-minion:
-          cmd: docker run --rm -it alpine true
+          cmd: docker run --rm alpine true
           service: service
           resource: __hostname__:docker
