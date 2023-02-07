@@ -3,7 +3,7 @@ Description=MinIO
 Documentation=https://docs.min.io
 Wants=network-online.target
 After=network-online.target
-AssertFileIsExecutable={{ install_path }}minio
+AssertFileIsExecutable={{ minio_install_path }}minio
 
 [Service]
 WorkingDirectory={{ working_directory }}
@@ -14,7 +14,7 @@ ProtectProc=invisible
 
 EnvironmentFile={{ env_file }}
 ExecStartPre=/bin/bash -c "if [ -z \"${MINIO_VOLUMES}\" ]; then echo \"Variable MINIO_VOLUMES not set in {{ env_file }}\"; exit 1; fi"
-ExecStart={{ install_path }}minio server $MINIO_OPTS $MINIO_VOLUMES
+ExecStart={{ minio_install_path }}minio server $MINIO_OPTS $MINIO_VOLUMES
 
 # Let systemd restart this service always
 Restart=always
