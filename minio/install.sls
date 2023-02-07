@@ -17,7 +17,7 @@
       - group
   {% endif %}
 
-
+  {% if "deb" not in salt['pillar.get']('minio') %}
 minio_binary:
   file.managed:
     - name: {{ minio_install_path }}minio
@@ -32,6 +32,12 @@ minio_binary:
         until: True
         interval: 60
         splay: 10
+  {% else %}
+install_minio_from_deb:
+  pkg.installed:
+    - sources:
+      - minio: {{ salt['pillar.get']('minio:deb') }}
+  {% endif %}
 
 
   {% if pillar["minio"]["disk_pool"] is defined %}
