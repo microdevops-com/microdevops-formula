@@ -3,7 +3,7 @@
 {% set minio_group = salt['pillar.get']('minio:group', 'minio') %}
 {% set minio_limit_nofile = salt['pillar.get']('minio:limit_nofile', '65536') %}
 {% set environment = salt['pillar.get']('minio:environment') %}
-{% set install_path = salt['pillar.get']('minio:install_path', '/usr/local/bin/') %}
+{% set minio_install_path = salt['pillar.get']('minio:install_path', '/usr/local/bin/') %}
 {% set working_directory = salt['pillar.get']('minio:working_directory', '/usr/local/') %}
 {% set env_file = salt['pillar.get']('minio:env_file', '/etc/default/minio') %}
 
@@ -20,9 +20,14 @@ minio_systemd_service:
         minio_user: {{ minio_user }}
         minio_group: {{ minio_group }}
         minio_limit_nofile: {{ minio_limit_nofile }}
-        install_path: {{ install_path }}
+        minio_install_path: {{ minio_install_path }}
         working_directory: {{ working_directory }}
         env_file: {{ env_file }}
+
+systemctl_daemon_reload:
+  cmd.run:
+    - name: systemctl daemon-reload
+    - shell: /bin/bash
 
 
 minio_etc_default:
