@@ -13,7 +13,7 @@ server:
     #client_auth_type: VerifyClientCertIfGiven
 #}
 positions:
-  filename: /tmp/positions.yaml
+  filename: {{ pillar['promtail']['positions'] | default('/tmp/positions.yaml') }}
 clients:
   - url: {{ pillar['promtail']['loki']['url'] }}/loki/api/v1/push
     basic_auth:
