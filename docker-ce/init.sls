@@ -1,3 +1,3 @@
 include:
-  - .docker-ce
-  - .compose
+  - docker-ce.docker-ce
+  - docker-ce.compose
