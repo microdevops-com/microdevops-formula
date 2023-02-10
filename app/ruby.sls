@@ -61,6 +61,10 @@ app_ruby_app_rvm_bundle_install_{{ loop.index }}:
     - runas: {{ _app_user }}
       {%- if "bundle_install_cmd" in app["rvm"] %}
     - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && {{ app["rvm"]["bundle_install_cmd"] }}
+      {%- elif app["rvm"]["gemset_create"] == "True" and "bundle_install_cmd" in app["rvm"] %}
+    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use --create {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && {{ app["rvm"]["bundle_install_cmd"] }}
+      {%- elif app["rvm"]["gemset_create"] == "True" %}
+    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use --create {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && bundle install
       {%- else %}
     - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && bundle install
       {%- endif %}
