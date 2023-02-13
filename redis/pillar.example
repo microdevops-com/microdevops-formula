@@ -12,8 +12,9 @@ redis:
 
 
 redis:
-  keep_existing_conf: False
-  disable_thp: True
+  keep_existing_conf: True
+  disable_thp: False
+  manage_limits: False
   maxclients: 10000
   redis_conf: |
     replicaof 1.2.3.4 6379
