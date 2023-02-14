@@ -12,7 +12,7 @@ pmm:
   gf_path_provisioning: {{ gf_path_provisioning }}
   config: |
     [server]
-    root_url = https://pmm.example.com/graph/
+    root_url = https://pmm.example.com/graph/ # /graph/ is required for Grafana to work properly
     enable_gzip = true
     [dashboards]
     # Path to the default home dashboard. If this value is empty, then Grafana uses StaticRootPath + "dashboards/home.json"
