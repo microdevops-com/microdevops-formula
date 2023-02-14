@@ -1,0 +1,13 @@
+{
+   "Version" : "2012-10-17",
+   "Statement" : [
+{%- for record in statement %}
+      {
+         "Effect" : "{{ record["effect"] | default("Allow") }}",
+         "Action" : [ {{ record["action"] | default('"s3:*"') }} ],
+         "Resource" : "{{ record["resource"] | default("arn:aws:s3:::*")  }}"{%- if "condition" in record %},
+         "Condition" : { {{ record["condition"] }} }{%- endif %}
+      }{{ "," if not loop.last else "" }}
+{%- endfor %}
+   ]
+}
