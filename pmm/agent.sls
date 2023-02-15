@@ -11,6 +11,7 @@ configure repositories:
 
 install pmm agent:
   pkg.installed:
+    - refresh: True
     - pkgs:
       - pmm2-client
 
