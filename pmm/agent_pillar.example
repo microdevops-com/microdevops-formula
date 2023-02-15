@@ -1,0 +1,17 @@
+pmm_agent:
+  pmm_host: pmm-server.example.com
+  pmm_host: admin                      ## Optional. Default is `admin`
+  pmm_password: XXXXXXXXXXXXXXXXXXX
+  services:
+    mysql:
+      enabled: True
+      user: pmm                        ## Optional. Default is `pmm`
+      password: YYYYYYYYYYYYYYYYY
+    haproxy:
+      enabled: False
+      port: 8404
+    mongodb:
+      enabled: False
+      username: mongoadmin             ## Optional. Default is `mongoadmin`
+      password: qazWSX123
+      cluster: clustername             ## Optional
