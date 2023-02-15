@@ -1,7 +1,8 @@
+{% import_yaml "pmm/pmm-server_example_com.sls" as pmm_server %}
 pmm_agent:
-  pmm_host: pmm-server.example.com
-  pmm_host: admin                      ## Optional. Default is `admin`
-  pmm_password: XXXXXXXXXXXXXXXXXXX
+  pmm_host: {{ pmm_server["pmm"]["name"] }}
+  pmm_user: admin                      ## Optional. Default is `admin`
+  pmm_password: {{ pmm_server["pmm"]["admin_password"] }}
   services:
     mysql:
       enabled: True
