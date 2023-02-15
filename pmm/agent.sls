@@ -26,7 +26,7 @@ setup pmm agent:
     {%- if pillar["pmm_agent"]["services"]["mysql"] is defined and pillar["pmm_agent"]["services"]["mysql"]["enabled"] %}
     {% set mysql_user = salt['pillar.get']('pmm_agent:services:mysql:user', 'pmm') %}
     {% set mysql_password = salt['pillar.get']('pmm_agent:services:mysql:password') %}
-    {% set mysql_socket = salt['pillar.get']('pmm_agent:services:mysql:socket', '$(mysql -s -e "select @@socket" | awk 2)') %}
+    {% set mysql_socket = salt['pillar.get']('pmm_agent:services:mysql:socket', '$(mysql -se "select @@socket" | awk 2)') %}
     {% set pmm_users_existence = salt["cmd.shell"]('mysql -sse "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = \'{{ pmm_user }}\')"') %}
 
       {% if pmm_users_existence == 0 %}
