@@ -1,4 +1,13 @@
 {% if pillar['promtail'] is defined and pillar['promtail'] is not none %}
+
+  {% if pillar["promtail"]["scrape_configs"] is defined and pillar["promtail"]["config"] is defined %}
+
+pillar must contain either "promtail.config" or "promtail.scrape_configs" block:
+  test.fail_without_changes:
+    - name: Pillar must contain either "promtail.config" or "promtail.scrape_configs" block.
+
+  {% else %}
+
 promtail_data_dirs:
   file.directory:
     - names:
@@ -9,6 +18,7 @@ promtail_data_dirs:
     - group: 0
     - makedirs: True
 
+    {% if pillar["promtail"]["scrape_configs"] is defined %}
 promtail_config:
   file.managed:
     - name: /opt/promtail/etc/promtail.yaml
@@ -24,8 +34,29 @@ promtail_config:
             - labels:
                 job: varlogs
                 __path__: /var/log/*log
+    {% elif pillar["promtail"]["config"] is defined %}
+      {% if pillar["promtail"]["loki"] is defined or pillar["promtail"]["positions"] is defined %}
+when pillar contain "pillar.config" block:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - warnings: |
+        When pillar contain "promtail.config" block, the "promtail.positions", "promtail.loki" blocks are IGNORED
+      {% endif %}
+promtail_config:
+  file.serialize:
+    - name: /opt/promtail/etc/promtail.yaml
+    - user: 0
+    - group: 0
+    - mode: 644
+    - serializer: yaml
+    - dataset_pillar: promtail:config
+    - serializer_opts:
+      - sort_keys: False
+    {% endif %}
 
-  {% if 'docker' in pillar['promtail'] %}
+    {% if 'docker' in pillar['promtail'] %}
 promtail_image:
   cmd.run:
     - name: docker pull {{ pillar['promtail']['docker']['image'] }}
@@ -41,13 +72,13 @@ promtail_container:
         - 127.0.0.1:9080:9080/tcp
     - binds:
         - /opt/promtail/etc/promtail.yaml:/etc/promtail/promtail.yaml
-  {%- for bind in pillar['promtail']['docker']['binds'] %}
+    {%- for bind in pillar['promtail']['docker']['binds'] %}
         - {{ bind['bind'] }}
-  {%- endfor %}
+    {%- endfor %}
     - watch:
         - /opt/promtail/etc/promtail.yaml
     - command: -config.file=/etc/promtail/promtail.yaml
-  {% else %}
+    {% else %}
 
 {#
 nginx_cert:
@@ -113,5 +144,6 @@ promtail_systemd_4:
     - onchanges:
       - file: /etc/systemd/system/promtail.service
       - file: /opt/promtail/etc/promtail.yaml
+    {% endif %}
   {% endif %}
 {% endif %}
