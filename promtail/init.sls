@@ -80,13 +80,6 @@ promtail_container:
     - command: -config.file=/etc/promtail/promtail.yaml
     {% else %}
 
-{#
-nginx_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["promtail"]["acme_account"] }}/verify_and_issue.sh promtail {{ host }}"
-#}
-
 promtail_binary_1:
   archive.extracted:
     - name: /opt/promtail/bin
@@ -119,13 +112,6 @@ promtail_systemd_1:
         Restart=on-failure
         [Install]
         WantedBy=multi-user.target
-
-{#
-promtail_systemd_2:
-  file.symlink:
-    - name: /etc/systemd/system/promtail.service
-    - target: /opt/promtail/etc/systemd/promtail.service
-#}
 
 systemd-reload:
   cmd.run:
