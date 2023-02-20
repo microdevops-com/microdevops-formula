@@ -71,8 +71,8 @@ haproxy:
     domain: {{ grains['id'] }}
     cert: /opt/acme/cert/{{ grains['id'] }}/{{ grains['id'] }}.key
     key: /opt/acme/cert/{{ grains['id'] }}/fullchain.cer
-    pem: /opt/acme/cert/{{ grains['id'] }}/{{ grains['id'] }}.pem      #### USE ONLY pillar["haproxy"]["ssl"]["pem"] or pillar["haproxy"]["ssl"]["pemdir"]
-    #pemdir: /opt/acme/cert/{{ grains['id'] }}/pem/                #### USE ONLY pillar["haproxy"]["ssl"]["pemdir"] or pillar["haproxy"]["ssl"]["pem"]
+    pem: /opt/acme/cert/{{ grains['id'] }}/{{ grains['id'] }}.pem      #### USE ONLY pillar["haproxy"]["ssl"]["pem"]     or  pillar["haproxy"]["ssl"]["pemdir"]
+    #pemdir: /opt/acme/cert/{{ grains['id'] }}/pem/                    #### USE ONLY pillar["haproxy"]["ssl"]["pemdir"]  or  pillar["haproxy"]["ssl"]["pem"]
   config: |
       global
       log /dev/log    local0
