@@ -63,7 +63,7 @@ haproxy:
 
 
 
-### LEGASY
+### LEGACY
 
 haproxy:
   ppa: 'vbernat/haproxy-2.6'
