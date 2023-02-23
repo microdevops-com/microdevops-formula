@@ -55,3 +55,13 @@ sleep 600
 salt-ssh -E "loki-minio[1-4].tst.example.com" cmd.run "systemctl stop minio"
 salt-ssh -E "loki-minio[1-8].tst.example.com" cmd.run "echo 'set server minio-data/loki-minio1 state ready' | socat stdio /run/haproxy/admin.sock; echo 'set server minio-data/loki-minio2 state ready' | socat stdio /run/haproxy/admin.sock; echo 'set server minio-data/loki-minio3 state ready' | socat stdio /run/haproxy/admin.sock; echo 'set server minio-data/loki-minio4 state ready' | socat stdio /run/haproxy/admin.sock" 
 ```
+
+## Ingest the test log file to loki with promtail
+
+## Compare the line count in the test log file and loki
+
+```
+export LOKI_ORG_ID=loki-cluster
+export LOKI_ADDR=https://loki-gateway1.tst.example.com
+logcli instant-query 'count_over_time({filename=~"/mnt/generated-.*"} [240h])'
+```
