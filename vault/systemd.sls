@@ -84,7 +84,7 @@ vault_service_enable_and_start:
     - name: vault
     - enable: true
 
-container_restart:
+vault_restart:
   cmd.run:
     - name: sleep 5; systemctl restart vault
     - onchanges:
