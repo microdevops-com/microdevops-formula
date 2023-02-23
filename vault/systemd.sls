@@ -34,7 +34,7 @@ vault_data_dir:
       - /opt/vault/data
     - dir_mode: 755
     - file_mode: 600
-    - user: vault
+    - user: vault 
     - group: vault
     - recurse:
       - user
@@ -77,14 +77,14 @@ cert_permissions_cron:
     - user: root
     - minute: 0
     - hour: 1
-  {% endif %}
+  {% endif %} 
 
 vault_service_enable_and_start:
   service.running:
     - name: vault
     - enable: true
 
-container_restart:
+vault_restart:
   cmd.run:
     - name: sleep 5; systemctl restart vault
     - onchanges:
