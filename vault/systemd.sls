@@ -34,7 +34,7 @@ vault_data_dir:
       - /opt/vault/data
     - dir_mode: 755
     - file_mode: 600
-    - user: vault 
+    - user: vault
     - group: vault
     - recurse:
       - user
