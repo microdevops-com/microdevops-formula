@@ -24,6 +24,21 @@ minio_systemd_service:
         working_directory: {{ working_directory }}
         env_file: {{ env_file }}
 
+  {% if salt['pillar.get']('minio:delayed_start_for') is defined %}
+{% set delayed_start_for = salt['pillar.get']('minio:delayed_start_for') %}
+minio_systemd_service_override_for_delayed_start:
+  file.managed:
+    - name: /etc/systemd/system/minio.service.d/override.conf
+    - template: jinja
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: |
+        [Service]
+        ExecStartPre=
+        ExecStartPre=/bin/bash -c "if [ -z \"${MINIO_VOLUMES}\" ]; then echo \"Variable MINIO_VOLUMES not set in /etc/default/minio\"; exit 1; fi; /bin/sleep {{ delayed_start_for }}"
+  {% endif %}
+
 systemctl_daemon_reload:
   cmd.run:
     - name: systemctl daemon-reload
