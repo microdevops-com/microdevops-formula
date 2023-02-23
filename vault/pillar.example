@@ -38,8 +38,6 @@ ufw:
 vault:
   name: {{ grains['id'] }}
   acme_account: example.org
-  docker-ce_version: 5:20.10.9
-  image: vault
   env_vars:
     VAULT_ADDR: "https://{{ grains['id'] }}:8200"
   config: |
@@ -78,9 +76,7 @@ vault:
 vault:
   name: {{ nodename }}
   acme_account: example.com
-  docker-ce_version: 5:20.10.9
-  image: vault
-    env_vars:
+  env_vars:
     VAULT_ADDR: "https://{{ nodename }}:8200"
   config: |
     ui = true
@@ -106,9 +102,7 @@ vault:
 vault:
   name: {{ nodename }}
   acme_account: example.com
-  docker-ce_version: 5:20.10.9
-  image: vault
-    env_vars:
+  env_vars:
     VAULT_ADDR: "https://{{ nodename }}:8200"
   config: |
     ui = true
