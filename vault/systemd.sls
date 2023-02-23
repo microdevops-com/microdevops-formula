@@ -77,7 +77,7 @@ cert_permissions_cron:
     - user: root
     - minute: 0
     - hour: 1
-  {% endif %} 
+  {% endif %}
 
 vault_service_enable_and_start:
   service.running:
