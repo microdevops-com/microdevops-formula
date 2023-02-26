@@ -79,15 +79,33 @@ cert_permissions_cron:
     - hour: 1
   {% endif %}
 
+disable_core_dump:
+  file.managed:
+    - name: /lib/systemd/system/vault.service.d/disable-core-dump.conf
+    - mode: 644
+    - user: root
+    - group: root
+    - makedirs: True
+    - contents: |
+        [Service]
+        LimitCORE=0
+
+systemctl daemon-reload:
+  cmd.run:
+    - name: systemctl daemon-reload
+    - shell: /bin/bash
+
 vault_service_enable_and_start:
   service.running:
     - name: vault
     - enable: true
 
-vault_restart:
+vault_service_reload:
   cmd.run:
-    - name: sleep 5; systemctl restart vault
+    - name: sleep 5; systemctl reload vault
     - onchanges:
         - file: /etc/vault.d/vault.hcl
+        - file: /etc/vault.d/vault.env
+        - file: /lib/systemd/system/vault.service.d/disable-core-dump.conf
 
 {% endif %}
