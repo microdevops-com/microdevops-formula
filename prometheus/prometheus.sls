@@ -224,17 +224,14 @@ prometheus_blackbox-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
       {%- endif %}
 
 prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
-  file.serialize:
+  file.managed:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
+    - mode: 644
     - user: root
     - group: root
-    - mode: 644
-    - show_changes: True
-    - create: True
-    - merge_if_exists: False
-    - formatter: yaml
-    - dataset: {{ instance['config'] }}
-    
+    - contents: |
+        {{ instance['config'] | indent(8) }}
+
 docker_network_{{ loop.index }}_{{ i_loop.index }}:
   docker_network.present:
     - name: prometheus-{{ domain['name'] }}-{{ instance['name'] }}
