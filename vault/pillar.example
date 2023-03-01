@@ -36,7 +36,7 @@ ufw:
 {%- endif %}
 
 vault:
-  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXX'
+  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXXXX'
   unseal_keys:
     - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
     - 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='
@@ -101,7 +101,7 @@ vault:
 {% set nodename = grains["id"] %}
 
 vault:
-  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXX'
+  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXXXX'
   unseal_keys:
     - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
     - 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='
@@ -109,7 +109,7 @@ vault:
     - 'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD='
     - 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE='
   acme:
-    enable: false
+    enable: true
     domain: {{ nodename }}
   snapshots:
     enable_raft: True
@@ -148,7 +148,7 @@ vault:
 {% set nodename = grains["id"]  %}
 
 vault:
-  privileged_token: 'hvs.n928n9n1nyjnhkjGJIgkjGkX'
+  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXXXX'
   unseal_keys:
     - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
     - 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='
@@ -156,7 +156,7 @@ vault:
     - 'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD='
     - 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE='
   acme:
-    enable: false
+    enable: true
     domain: {{ nodename }}
   audit:
     enable: true
