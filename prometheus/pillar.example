@@ -12,7 +12,7 @@ prometheus:
           auth:
             - developer1: password1
             - developer2: password2
-          config:
+          config: |
             global:
               scrape_interval:     15s
               evaluation_interval: 15s
