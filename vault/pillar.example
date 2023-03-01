@@ -36,14 +36,33 @@ ufw:
 {%- endif %}
 
 vault:
+  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXXXX'
+  unseal_keys:
+    - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+    - 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='
+    - 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC='
+    - 'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD='
+    - 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE='
   name: {{ grains['id'] }}
-  acme_account: example.org
+  acme:
+    enable: true
+    domain: {{ grains['fqdn'] }}
+  {%- if storage == "raft" %}
+  snapshots:
+    enable_raft: True
+  {%- endif %}
+  audit:
+    enable: true
+    logfile: /var/log/vault_audit.log
   env_vars:
-    VAULT_ADDR: "https://{{ grains['id'] }}:8200"
+    VAULT_ADDR: "https://{{ grains['fqdn'] }}:8200"
+    VAULT_API_ADDR: "https://{{ grains['fqdn'] }}:8200"
+    VAULT_CLUSTER_ADDR: "https://{{ grains['fqdn'] }}:8201"
   config: |
     ui = true
     {%- if storage == "raft" %}
     storage "raft" {
+      performance_multiplier = 1
       path = "/vault/data"
       node_id = "{{ grains['id'] }}"
       {%- for key, val in vault_nodes.items() %}{%- if grains['id'] != key %}
@@ -61,12 +80,20 @@ vault:
     listener "tcp" {
       address = "0.0.0.0:8200"
       cluster_address = "0.0.0.0:8201"
-      #tls_disable = "true"
+      tls_disable = "false"
       tls_cert_file = "/vault/certs/vault_{{ grains['id'] }}_fullchain.cer"
       tls_key_file  = "/vault/certs/vault_{{ grains['id'] }}_key.key"
+       telemetry {
+        unauthenticated_metrics_access = true
+      }
     }
-    api_addr = "https://{{ grains['id'] }}:8200"
-    cluster_addr = "https://{{ grains['id'] }}:8201"
+    telemetry {
+      disable_hostname = true
+      prometheus_retention_time = "12h"
+    }
+    enable_response_header_hostname = true
+    enable_response_header_raft_node_id = true
+   
 
 ###############################################################
 ## SIMPLE PILLAR FOR LEADER NODE WITH INTEGRATED RAFT STORAGE
@@ -74,8 +101,21 @@ vault:
 {% set nodename = grains["id"] %}
 
 vault:
-  name: {{ nodename }}
-  acme_account: example.com
+  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXXXX'
+  unseal_keys:
+    - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+    - 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='
+    - 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC='
+    - 'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD='
+    - 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE='
+  acme:
+    enable: true
+    domain: {{ nodename }}
+  snapshots:
+    enable_raft: True
+  audit:
+    enable: true
+    logfile: /var/log/vault_audit.log
   env_vars:
     VAULT_ADDR: "https://{{ nodename }}:8200"
   config: |
@@ -87,12 +127,20 @@ vault:
     listener "tcp" {
       address = "0.0.0.0:8200"
       cluster_address = "0.0.0.0:8201"
-      #tls_disable = "true"
+      tls_disable = "false"
       tls_cert_file = "/vault/certs/vault_{{ nodename }}_fullchain.cer"
       tls_key_file  = "/vault/certs/vault_{{ nodename }}_key.key"
+       telemetry {
+        unauthenticated_metrics_access = true
+      }
     }
-    api_addr = "https://{{ nodename }}:8200"
-    cluster_addr = "https://{{ nodename }}:8201"
+    telemetry {
+      disable_hostname = true
+      prometheus_retention_time = "12h"
+    }
+    enable_response_header_hostname = true
+    enable_response_header_raft_node_id = true
+
 
 ###############################################################
 ## SIMPLE PILLAR FOR NODE WITH CONSUL STORAGE
@@ -100,8 +148,19 @@ vault:
 {% set nodename = grains["id"]  %}
 
 vault:
-  name: {{ nodename }}
-  acme_account: example.com
+  privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXXXX'
+  unseal_keys:
+    - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+    - 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='
+    - 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC='
+    - 'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD='
+    - 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE='
+  acme:
+    enable: true
+    domain: {{ nodename }}
+  audit:
+    enable: true
+    logfile: /var/log/vault_audit.log
   env_vars:
     VAULT_ADDR: "https://{{ nodename }}:8200"
   config: |
@@ -113,9 +172,16 @@ vault:
     listener "tcp" {
       address = "0.0.0.0:8200"
       cluster_address = "0.0.0.0:8201"
-      #tls_disable = "true"
+      tls_disable = "false"
       tls_cert_file = "/vault/certs/vault_{{ nodename }}_fullchain.cer"
       tls_key_file  = "/vault/certs/vault_{{ nodename }}_key.key"
+       telemetry {
+        unauthenticated_metrics_access = true
+      }
     }
-    api_addr = "https://{{ nodename }}:8200"
-    cluster_addr = "https://{{ nodename }}:8201"
+    telemetry {
+      disable_hostname = true
+      prometheus_retention_time = "12h"
+    }
+    enable_response_header_hostname = true
+    enable_response_header_raft_node_id = true
