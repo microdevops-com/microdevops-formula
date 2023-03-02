@@ -29,10 +29,8 @@ vault:
   acme:
     enable: true
     domain: {{ grains['fqdn'] }}
-  {%- if storage == "raft" %}
   snapshots:
     enable_raft: True
-  {%- endif %}
   audit:
     enable: true
     logfile: /var/log/vault_audit.log
