@@ -44,6 +44,7 @@ when pillar contain "pillar.config" block:
     - warnings: |
         When pillar contain "promtail.config" block, the "promtail.positions", "promtail.loki" blocks are IGNORED
       {% endif %}
+{#
 promtail_config:
   file.serialize:
     - name: /opt/promtail/etc/promtail.yaml
@@ -54,6 +55,15 @@ promtail_config:
     - dataset_pillar: promtail:config
     - serializer_opts:
       - sort_keys: False
+#}
+promtail_config:
+  file.managed:
+    - name: /opt/promtail/etc/promtail.yaml
+    - mode: 644
+    - user: 0
+    - group: 0
+    - contents: |
+        {{ pillar['promtail']['config'] | indent(8) }}
     {% endif %}
 
     {% if 'docker' in pillar['promtail'] %}
