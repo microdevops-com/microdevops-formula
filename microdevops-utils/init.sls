@@ -44,6 +44,14 @@ microdevops-utils_install_requirements:
   cmd.run:
     - name: /opt/microdevops/misc/install_requirements.sh
 
+  {%- if "force_python" in pillar["microdevops-utils"] %}
+microdevops-utils_shebang_python_switcher:
+  file.managed:
+    - name: /opt/microdevops/misc/shebang_python_switcher.conf
+    - contents: {{ pillar["microdevops-utils"]["force_python"] | yaml_dquote }}
+
+  {%- endif %}
+
 {% else %}
 microdevops-utils_nothing_done_info:
   test.configurable_test_state:
