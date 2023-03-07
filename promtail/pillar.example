@@ -5,7 +5,7 @@
 promtail:
   binary:
     link: https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip
-  config:
+  config: |
     server:
       http_listen_port: 9080
       grpc_listen_port: 0
