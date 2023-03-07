@@ -249,7 +249,7 @@
             },
             "query": {
               "params": [
-                {{ panel_swap_usage_alert_conditions_query_params | default('"A","1m","now"')
+                {{ panel_swap_usage_alert_conditions_query_params | default('"A","1m","now"') }}
               ]
             },
             "reducer": {
