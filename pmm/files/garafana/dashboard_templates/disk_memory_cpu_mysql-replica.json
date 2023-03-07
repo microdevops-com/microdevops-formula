@@ -232,6 +232,123 @@
       }
     },
     {
+      "title": "[{{ node_name }}] Swap Usage",
+      "id": 16,
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_swap_usage_alert_conditions_evaluator_params | default(0) }}
+              ],
+              "type": "{{ panel_swap_usage_alert_conditions_evaluator_type | default('gt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_swap_usage_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_swap_usage_alert_conditions_query_params | default('"A","1m","now"')
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "{{ panel_free_memory_alert_conditions_reducer_type | default('min') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "{{ panel_swap_usage_alert_frequency | default('1m') }}",
+        "frequency": "{{ panel_swap_usage_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "name": "[{{ node_name }}] Swap Usage!",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 4,
+      "fillGradient": 10,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 7
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.10",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:400",
+          "alias": "Swap Usage",
+          "color": "#E02F44"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (node_name) (max_over_time(node_memory_SwapTotal_bytes{node_name=~\"mysql-master1.ultrapartners.servers.prd.oxtech.org\"}[10s]) - max_over_time(node_memory_SwapFree_bytes{node_name=~\"mysql-master1.ultrapartners.servers.prd.oxtech.org\"}[10s]))",
+          "interval": "",
+          "legendFormat": "Swap Usage",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:449",
+          "format": "decbytes",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:450",
+          "format": "percent",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
