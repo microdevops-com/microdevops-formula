@@ -313,7 +313,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg by (node_name) (max_over_time(node_memory_SwapTotal_bytes{node_name=~\"mysql-master1.ultrapartners.servers.prd.oxtech.org\"}[10s]) - max_over_time(node_memory_SwapFree_bytes{node_name=~\"mysql-master1.ultrapartners.servers.prd.oxtech.org\"}[10s]))",
+          "expr": "avg by (node_name) (max_over_time(node_memory_SwapTotal_bytes{node_name=~\"{{ node_name }}\"}[10s]) - max_over_time(node_memory_SwapFree_bytes{node_name=~\"{{ node_name }}\"}[10s]))",
           "interval": "",
           "legendFormat": "Swap Usage",
           "refId": "A"
