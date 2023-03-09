@@ -258,18 +258,26 @@ nextcloud_container_{{ loop.index }}:
     {%- for var_key, var_val in domain["env_vars"].items() %}
         - {{ var_key }}: {{ var_val }}
     {%- endfor %}
-
+    {% if "php_fpm" in domain and "pm.max_children" in domain["php_fpm"] %}
+nextcloud_php-fpm_set_pm.max_children_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec nextcloud-{{ domain["name"] }} bash -c "sed -Ei  's/^ *pm\.max_children\ =.*$/pm.max_children = {{ domain["php_fpm"]["pm.max_children"] }}/g' /usr/local/etc/php-fpm.d/www.conf"
+    {% endif %}
 nextcloud_container_install_libmagickcore_{{ loop.index }}:
   cmd.run:
-    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install libmagickcore-6.q16-6-extra -y'
+    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install libmagickcore-6.q16-6-extra iproute2 -y'
 
 nextcloud_config_default_phone_region_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'sleep 10; export PHP_MEMORY_LIMIT=512M; php occ config:system:set default_phone_region --value="{{ domain["default_phone_region"] }}"'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'sleep 10; php occ config:system:set default_phone_region --value="{{ domain["default_phone_region"] }}"'
 
 nextcloud_config_overwrite_cli_url_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php /var/www/html/occ --no-warnings config:system:set overwrite.cli.url --value="{{ domain["overwrite_cli_url"] }}"'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php /var/www/html/occ --no-warnings config:system:set overwrite.cli.url --value="{{ domain["overwrite_cli_url"] }}"'
+
+nextcloud_missing_indexes_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php /var/www/html/occ db:add-missing-indices'
 
 nextcloud_cron_{{ loop.index }}:
   cron.present:
@@ -281,30 +289,30 @@ nextcloud_cron_{{ loop.index }}:
     {%- if "onlyoffice" in domain %}
 nextcloud_config_onlyoffice_1_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:install onlyoffice || true'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install onlyoffice || true'
 
 nextcloud_config_onlyoffice_2_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value={{ domain["onlyoffice"]["DocumentServerUrl"] }}'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value={{ domain["onlyoffice"]["DocumentServerUrl"] }}'
 
 nextcloud_config_onlyoffice_3_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value={{ domain["onlyoffice"]["DocumentServerInternalUrl"] }}'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value={{ domain["onlyoffice"]["DocumentServerInternalUrl"] }}'
 
 nextcloud_config_onlyoffice_4_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice"]["StorageUrl"] }}'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice"]["StorageUrl"] }}'
 
     {%- endif %}
     {%- if "user_saml" in domain %}
 
 nextcloud_config_user_saml_1_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:install user_saml || true'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install user_saml || true'
 
 nextcloud_config_user_saml_2_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings app:enable user_saml'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable user_saml'
 
 nextcloud_config_user_saml_3_{{ loop.index }}:
   file.serialize:
@@ -316,7 +324,11 @@ nextcloud_config_user_saml_3_{{ loop.index }}:
 
 nextcloud_config_user_saml_4_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'export PHP_MEMORY_LIMIT=512M; php occ --no-warnings config:import < user_saml_config.json'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:import < user_saml_config.json'
+
+nextcloud_remove_config_user_saml_{{ loop.index }}:
+  file.absent:
+    - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
 
     {%- endif %}
   {%- endfor %}

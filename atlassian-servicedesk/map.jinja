@@ -1,0 +1,18 @@
+{% import_yaml 'atlassian-servicedesk/defaults.yaml' as default_settings %}
+{% set servicedesk = salt['pillar.get']('atlassian-servicedesk', default=default_settings.get('atlassian-servicedesk'), merge=True) %}
+{% set java_home = salt['pillar.get']('java_home') %}
+
+{% do servicedesk.update({
+  'url': servicedesk.get('url', 'https://www.atlassian.com/software/jira/downloads/binary/atlassian-servicedesk-' + servicedesk.version + '.tar.gz'),
+  'url_hash': servicedesk.get('url_hash', 'https://www.atlassian.com/software/jira/downloads/binary/atlassian-servicedesk-' + servicedesk.version + '.tar.gz.md5'),
+  'pid': servicedesk.dir + '/home/servicedesk.pid',
+  'java_home': java_home,
+  'dirs': {
+    'scripts': servicedesk.dir + '/scripts',
+    'home': servicedesk.dir + '/home',
+    'extract': servicedesk.dir + '/extract',
+    'install': servicedesk.dir + '/install',
+    'temp': servicedesk.dir + '/temp',
+    'current_install': servicedesk.dir ~ '/extract/atlassian-jira-servicedesk-' + servicedesk.version + '-standalone'
+  }
+}) %}

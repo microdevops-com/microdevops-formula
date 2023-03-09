@@ -8,7 +8,7 @@ docker_install_01:
   file.managed:
     - name: /etc/docker/daemon.json
     - contents: |
-        {"iptables": false}
+        { "dns": ["1.1.1.1", "8.8.8.8", "8.8.4.4"], "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
 
 docker_install_1:
   pkgrepo.managed:
@@ -75,6 +75,10 @@ nginx_files_1:
                 ssl_certificate_key /opt/acme/cert/grafana_{{ domain['name'] }}_key.key;
     {%- for instance in domain['instances'] %}
                 location /{{ instance['name'] }}/ {
+                    proxy_connect_timeout       300;
+                    proxy_send_timeout          300;
+                    proxy_read_timeout          300;
+                    send_timeout                300;
                     proxy_http_version 1.1;
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-Proto $scheme;
@@ -101,7 +105,7 @@ nginx_cert_{{ loop.index }}:
     
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
-grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
+grafana_dirs_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - names:
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc
@@ -111,12 +115,7 @@ grafana_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/notifiers
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/provisioning/plugins
       - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/log
-    - mode: 755
-    - makedirs: True
-
-grafana_data_dir_{{ loop.index }}_{{ i_loop.index }}:
-  file.directory:
-    - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data
+      - /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/data
     - mode: 755
     - makedirs: True
 
@@ -128,6 +127,15 @@ grafana_config_{{ loop.index }}_{{ i_loop.index }}:
     - mode: 644
     - contents: {{ instance['config'] | yaml_encode }}
 
+      {%- if instance['ldap_toml'] is defined and instance['ldap_toml'] is not none %}
+ldap_toml_{{ loop.index }}_{{ i_loop.index }}:
+  file.managed:
+    - name: /opt/grafana/{{ domain['name'] }}/{{ instance['name'] }}/etc/ldap.toml
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: {{ instance['ldap_toml'] | yaml_encode }}
+      {%- endif %}
       {%- if instance['datasources'] is defined and instance['datasources'] is not none %}
 grafana_datasources_{{ loop.index }}_{{ i_loop.index }}:
   file.serialize:
@@ -140,6 +148,21 @@ grafana_datasources_{{ loop.index }}_{{ i_loop.index }}:
     - merge_if_exists: False
     - formatter: yaml
     - dataset: {{ instance['datasources'] }}
+      {%- endif %}
+
+      {%- if "image_renderer" in instance and instance["image_renderer"]["external"] %}
+gf_image_renderer_pull_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: 'docker pull grafana/grafana-image-renderer:{{ instance["image_renderer"]["version"] }}'
+gf_image_renderer_run_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: grafana_image_renderer-{{ domain["name"] }}-{{ instance["name"] }}
+    - user: root
+    - image: 'grafana/grafana-image-renderer:{{ instance["image_renderer"]["version"] }}'
+    - detach: True
+    - restart_policy: unless-stopped
+    - publish:
+        - {{ instance["image_renderer"]["port"] }}:8081/tcp
       {%- endif %}
 
 grafana_image_{{ loop.index }}_{{ i_loop.index }}:
@@ -170,10 +193,11 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
     - log_driver: {{ instance['docker_logging']['driver'] }}
     - log_opt: {{ instance['docker_logging']['options'] }}
       {%- endif %}
-
+      {%- if "image_renderer" not in instance or not instance["image_renderer"]["external"] %}
 install_grafana_image_render_components_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker exec -t grafana-{{ domain['name'] }}-{{ instance['name'] }} bash -c 'apt update && apt install libnss3 libgbm1 libappindicator3-1 libxshmfence-dev libasound2 -y'
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 

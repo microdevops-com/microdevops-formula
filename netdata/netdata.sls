@@ -10,7 +10,7 @@ remove_old_type_netdata:
   {%- set netdata_mini = pillar["netdata"].get("mini", False) %}
   {%- set postgresql = pillar["netdata"].get("postgresql", False) %}
   {%- set sensors = pillar["netdata"].get("sensors", False) %}
-  {%- set hostname_under = grains["fqdn"]|replace(".", "_") %}
+  {%- set hostname_under = grains["id"]|replace(".", "_") %}
 
   {% if grains["oscodename"] not in ["precise"] and not ("skip-install-required-packages" in pillar["netdata"] and pillar["netdata"]["skip-install-required-packages"]) %}
 # Basic depencies

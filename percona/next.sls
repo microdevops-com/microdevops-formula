@@ -95,6 +95,7 @@ percona_remove_limits:
         LimitNOFILE=infinity
         LimitMEMLOCK=infinity
         OOMScoreAdjust=-500
+        ExecStartPre=/usr/bin/install -g mysql -o mysql -d /var/run/mysqld
     - require_in:
       - pkg: percona_server
   module.run:

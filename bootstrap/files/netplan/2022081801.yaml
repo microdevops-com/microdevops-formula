@@ -1,0 +1,41 @@
+# Simple server with local net on eth1
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      match:
+        macaddress: {{ mac_wan }}
+      dhcp4: no
+      dhcp6: no
+      addresses:
+        - {{ ipv4_address }}
+        - {{ ipv6_address }}
+      routes:
+        - on-link: true
+          to: 0.0.0.0/0
+          via: {{ ipv4_gw }}
+      gateway6: {{ ipv6_gw }}
+      set-name: eth0
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+          - 2001:4860:4860::8888
+          - 2001:4860:4860::8844
+          - 2606:4700:4700::1111
+          - 2606:4700:4700::1001
+    
+    eth1:
+      dhcp4: no
+      dhcp6: no
+      match:
+        macaddress: {{ mac_lan }}
+      set-name: eth1
+      addresses:
+        - {{ ipv4_lan_address }}
+

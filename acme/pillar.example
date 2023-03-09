@@ -8,3 +8,4 @@ acme:
     args: "--dns dns_cf" # agrs to use with acme.sh
     ca_server: zerossl # optional, could be one of zerossl, letsencrypt, letsencrypttest, buypass, buypasstest, sslcom. Take a look at https://github.com/acmesh-official/acme.sh/search?q=CA_NAMES
     post_install_cmd: "--register-account -m devops@example.com" # needed for zerossl for example
+    #chown: gitlab-runner:gitlab-runner # optional, chown -R the whole /opt/acme to user:group, useful for usage with gitlab-runner

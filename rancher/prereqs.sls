@@ -7,7 +7,7 @@
       {%- endfor %}
 
       # nginx hosts only
-      {%- if grains["fqdn"] in rancher_val["nginx_hosts"] %}
+      {%- if grains["id"] in rancher_val["nginx_hosts"] %}
 nginx_deps:
   pkg.latest:
     - refresh: True
@@ -57,7 +57,7 @@ nginx_reload:
       {%- endif %}
 
       # nodes and command_hosts
-      {%- if grains["fqdn"] in rancher_val["command_hosts"] or grains["fqdn"] in node_list %}
+      {%- if grains["id"] in rancher_val["command_hosts"] or grains["id"] in node_list %}
 kubectl_repo:
   pkgrepo.managed:
     - humanname: Kubernetes Repository
@@ -107,7 +107,7 @@ rancher_cli_install_3:
       {%- endif %}
 
       # command hosts only
-      {%- if grains["fqdn"] in rancher_val["command_hosts"] %}
+      {%- if grains["id"] in rancher_val["command_hosts"] %}
 cluster_dir:
   file.directory:
     - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}
@@ -184,7 +184,7 @@ cluster_file_3:
       {%- endif %}
 
       # nodes only
-      {%- if grains["fqdn"] in node_list %}
+      {%- if grains["id"] in node_list %}
         {%- for node in rancher_val["nodes"] %}
 hosts_file_node_{{ loop.index }}:
   host.present:

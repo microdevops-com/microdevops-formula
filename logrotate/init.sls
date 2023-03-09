@@ -8,4 +8,20 @@ logrotate_config_{{ loop.index }}:
 
   {%- endfor %}
 
+  {%- if pillar["logrotate"]["custom_scripts"] is defined %}
+  
+    {%- for custom_script in pillar["logrotate"]["custom_scripts"] %}
+logrotate_custom_script_{{ loop.index }}:
+  file.managed:
+    - name: {{ custom_script["path"] }}
+    - contents: {{ custom_script["contents"] | yaml_encode }}
+    - user: root
+    - group: root
+    - mode: 755
+    - makedirs: True
+
+    {%- endfor %}
+
+  {%- endif %}
+
 {% endif %}

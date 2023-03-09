@@ -1,4 +1,4 @@
-{% if pillar["ufw"] is defined and pillar["_errors"] is not defined %}
+{% if pillar["ufw"] is defined and pillar["_errors"] is not defined and not ("disabled" in pillar["ufw"] and pillar["ufw"]["disabled"]) %}
 
   # Import deprecated ufw_simple rules if enabled
   {%- if "import_ufw_simple" in pillar["ufw"] and pillar["ufw"]["import_ufw_simple"] and pillar["ufw_simple"] is defined %}
@@ -191,6 +191,12 @@ ufw_before_rules_managed:
   {%- else %}
         custom_filter: "# empty"
   {%- endif %}
+    # custom_raw_rules
+  {%- if "custom" in pillar["ufw"] and "raw_rules" in pillar["ufw"]["custom"] %}
+        custom_raw_rules: {{ pillar["ufw"]["custom"]["raw_rules"] | yaml_encode }}
+  {%- else %}
+        custom_raw_rules: "# empty"
+  {%- endif %}
 
   # Fill src rules with ufw commands to process next
 ufw_user_rules_src_managed:
@@ -356,6 +362,11 @@ ufw_nothing_done_info:
     - comment: |
         ERROR: There are pillar errors, so nothing has been done.
         {{ pillar["_errors"] | json() }}
+
+  {%- elif pillar["ufw"] is defined and "disabled" in pillar["ufw"] and pillar["ufw"]["disabled"] %}
+ufw_disable:
+  cmd.run:
+    - name: "which ufw && ufw disable || true"
 
   {%- else %}
 ufw_nothing_done_info:

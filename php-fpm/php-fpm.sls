@@ -23,19 +23,19 @@ php-fpm_5_5_modules_installed:
 php-fpm_5_5_modules_ioncube_1:
   file.managed:
     - name: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+    - makedirs: True
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_5.5.so'
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_5.5.so'
+    - skip_verify: True
 
 php-fpm_5_5_modules_ioncube_2:
   file.managed:
     - name: '/etc/php5/mods-available/ioncube.ini'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
-    - template: jinja
-    - defaults:
-        path: '/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so'
+    - contents: |
+        zend_extension=/usr/lib/php5/20121212/ioncube_loader_lin_5.5.so
 
 php-fpm_5_5_modules_ioncube_3:
   file.symlink:
@@ -43,6 +43,7 @@ php-fpm_5_5_modules_ioncube_3:
     - target: '/etc/php5/mods-available/ioncube.ini'
             {%- endif %}
           {%- endfor %}
+
         {%- endif %}
       {%- endif %}
     {%- endif %}
@@ -78,20 +79,20 @@ php-fpm_5_6_modules_installed:
             {%- if (pkg_name == 'php5.6-ioncube') %}
 php-fpm_5_6_modules_ioncube_1:
   file.managed:
-    - name: '/usr/lib/php/20131226/ioncube_loader_lin_5.6.so'
+    - name: '/usr/lib/php/5.6-ioncube/ioncube_loader_lin_5.6.so'
+    - makedirs: True
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_5.6.so'
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_5.6.so'
+    - skip_verify: True
 
 php-fpm_5_6_modules_ioncube_2:
   file.managed:
     - name: '/etc/php/5.6/mods-available/ioncube.ini'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
-    - template: jinja
-    - defaults:
-        path: '/usr/lib/php/20131226/ioncube_loader_lin_5.6.so'
+    - contents: |
+        zend_extension=/usr/lib/php/5.6-ioncube/ioncube_loader_lin_5.6.so
 
 php-fpm_5_6_modules_ioncube_3:
   file.symlink:
@@ -99,6 +100,7 @@ php-fpm_5_6_modules_ioncube_3:
     - target: '/etc/php/5.6/mods-available/ioncube.ini'
             {%- endif %}
           {%- endfor %}
+
         {%- endif %}
       {%- endif %}
     {%- endif %}
@@ -134,28 +136,28 @@ php-fpm_7_0_modules_installed:
             {%- if (pkg_name == 'php7.0-ioncube') %}
 php-fpm_7_0_modules_ioncube_1:
   file.managed:
-    - name: '/usr/lib/php/20151012/ioncube_loader_lin_7.0.so'
+    - name: '/usr/lib/php/7.0-ioncube/ioncube_loader_lin_7.0.so'
+    - makedirs: True
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.0.so'
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_7.0.so'
+    - skip_verify: True
 
 php-fpm_7_0_modules_ioncube_2:
   file.managed:
     - name: '/etc/php/7.0/mods-available/ioncube.ini'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
-    - template: jinja
-    - defaults:
-        path: '/usr/lib/php/20151012/ioncube_loader_lin_7.0.so'
+    - contents: |
+        zend_extension=/usr/lib/php/7.0-ioncube/ioncube_loader_lin_7.0.so
 
 php-fpm_7_0_modules_ioncube_3:
   file.symlink:
     - name: '/etc/php/7.0/fpm/conf.d/00-ioncube.ini'
     - target: '/etc/php/7.0/mods-available/ioncube.ini'
-
             {%- endif %}
           {%- endfor %}
+
         {%- endif %}
       {%- endif %}
     {%- endif %}
@@ -190,28 +192,28 @@ php-fpm_7_1_modules_installed:
             {%- if (pkg_name == 'php7.1-ioncube') %}
 php-fpm_7_1_modules_ioncube_1:
   file.managed:
-    - name: '/usr/lib/php/20160505/ioncube_loader_lin_7.1.so'
+    - name: '/usr/lib/php/7.1-ioncube/ioncube_loader_lin_7.1.so'
+    - makedirs: True
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.1.so'
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_7.1.so'
+    - skip_verify: True
 
 php-fpm_7_1_modules_ioncube_2:
   file.managed:
     - name: '/etc/php/7.1/mods-available/ioncube.ini'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
-    - template: jinja
-    - defaults:
-        path: '/usr/lib/php/20160505/ioncube_loader_lin_7.1.so'
+    - contents: |
+        zend_extension=/usr/lib/php/7.1-ioncube/ioncube_loader_lin_7.1.so
 
 php-fpm_7_1_modules_ioncube_3:
   file.symlink:
     - name: '/etc/php/7.1/fpm/conf.d/00-ioncube.ini'
     - target: '/etc/php/7.1/mods-available/ioncube.ini'
-
             {%- endif %}
           {%- endfor %}
+
         {%- endif %}
       {%- endif %}
     {%- endif %}
@@ -246,28 +248,28 @@ php-fpm_7_2_modules_installed:
             {%- if (pkg_name == 'php7.2-ioncube') %}
 php-fpm_7_2_modules_ioncube_1:
   file.managed:
-    - name: '/usr/lib/php/20160505/ioncube_loader_lin_7.2.so'
+    - name: '/usr/lib/php/7.2-ioncube/ioncube_loader_lin_7.2.so'
+    - makedirs: True
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.2.so'
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_7.2.so'
+    - skip_verify: True
 
 php-fpm_7_2_modules_ioncube_2:
   file.managed:
     - name: '/etc/php/7.2/mods-available/ioncube.ini'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
-    - template: jinja
-    - defaults:
-        path: '/usr/lib/php/20160505/ioncube_loader_lin_7.2.so'
+    - contents: |
+        zend_extension=/usr/lib/php/7.2-ioncube/ioncube_loader_lin_7.2.so
 
 php-fpm_7_2_modules_ioncube_3:
   file.symlink:
     - name: '/etc/php/7.2/fpm/conf.d/00-ioncube.ini'
     - target: '/etc/php/7.2/mods-available/ioncube.ini'
-
             {%- endif %}
           {%- endfor %}
+
         {%- endif %}
       {%- endif %}
     {%- endif %}
@@ -303,28 +305,28 @@ php-fpm_7_3_modules_installed:
             {%- if (pkg_name == 'php7.3-ioncube') %}
 php-fpm_7_3_modules_ioncube_1:
   file.managed:
-    - name: '/usr/lib/php/20180731/ioncube_loader_lin_7.3.so'
+    - name: '/usr/lib/php/7.3-ioncube/ioncube_loader_lin_7.3.so'
+    - makedirs: True
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.3.so'
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_7.3.so'
+    - skip_verify: True
 
 php-fpm_7_3_modules_ioncube_2:
   file.managed:
     - name: '/etc/php/7.3/mods-available/ioncube.ini'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
-    - template: jinja
-    - defaults:
-        path: '/usr/lib/php/20180731/ioncube_loader_lin_7.3.so'
+    - contents: |
+        zend_extension=/usr/lib/php/7.3-ioncube/ioncube_loader_lin_7.3.so
 
 php-fpm_7_3_modules_ioncube_3:
   file.symlink:
     - name: '/etc/php/7.3/fpm/conf.d/00-ioncube.ini'
     - target: '/etc/php/7.3/mods-available/ioncube.ini'
-
             {%- endif %}
           {%- endfor %}
+
         {%- endif %}
       {%- endif %}
     {%- endif %}
@@ -360,28 +362,28 @@ php-fpm_7_4_modules_installed:
             {%- if (pkg_name == 'php7.4-ioncube') %}
 php-fpm_7_4_modules_ioncube_1:
   file.managed:
-    - name: '/usr/lib/php/20180731/ioncube_loader_lin_7.4.so'
+    - name: '/usr/lib/php/7.4-ioncube/ioncube_loader_lin_7.4.so'
+    - makedirs: True
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube_loader_lin_7.4.so'
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_7.4.so'
+    - skip_verify: True
 
 php-fpm_7_4_modules_ioncube_2:
   file.managed:
     - name: '/etc/php/7.4/mods-available/ioncube.ini'
     - user: root
     - group: root
-    - source: 'salt://php-fpm/files/ioncube/ioncube.ini'
-    - template: jinja
-    - defaults:
-        path: '/usr/lib/php/20180731/ioncube_loader_lin_7.4.so'
+    - contents: |
+        zend_extension=/usr/lib/php/7.4-ioncube/ioncube_loader_lin_7.4.so
 
 php-fpm_7_4_modules_ioncube_3:
   file.symlink:
     - name: '/etc/php/7.4/fpm/conf.d/00-ioncube.ini'
     - target: '/etc/php/7.4/mods-available/ioncube.ini'
-
             {%- endif %}
           {%- endfor %}
+
         {%- endif %}
       {%- endif %}
     {%- endif %}
@@ -439,8 +441,34 @@ php-fpm_8_1_modules_installed:
   pkg.installed:
     - pkgs:
           {%- for pkg_name in pillar['php-fpm']['modules']['php8_1'] %}
-            {%- if (pkg_name != 'php8.1-ioncube') %} # TODO: now (2022-01-19 12:41) there is no ionCube for php8.1
+            {%- if (pkg_name != 'php8.1-ioncube') %} # TODO: now (2022-10-14 12:41) there is no ionCube for php8.1
       - {{ pkg_name }}
+            {%- endif %}
+          {%- endfor %}
+
+          {%- for pkg_name in pillar['php-fpm']['modules']['php8_1'] %}
+            {%- if (pkg_name == 'php8.1-ioncube') %}
+php-fpm_8_1_modules_ioncube_1:
+  file.managed:
+    - name: '/usr/lib/php/8.1-ioncube/ioncube_loader_lin_8.1.so'
+    - makedirs: True
+    - user: root
+    - group: root
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_8.1.so'
+    - skip_verify: True
+
+php-fpm_8_1_modules_ioncube_2:
+  file.managed:
+    - name: '/etc/php/8.1/mods-available/ioncube.ini'
+    - user: root
+    - group: root
+    - contents: |
+        zend_extension=/usr/lib/php/8.1-ioncube/ioncube_loader_lin_8.1.so
+
+php-fpm_8_1_modules_ioncube_3:
+  file.symlink:
+    - name: '/etc/php/8.1/fpm/conf.d/00-ioncube.ini'
+    - target: '/etc/php/8.1/mods-available/ioncube.ini'
             {%- endif %}
           {%- endfor %}
 

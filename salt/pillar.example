@@ -1,3 +1,8 @@
+# vi: set ft=yaml:
+
+# If you get ValueError: RSA key format is not supported on minion, fix:
+# pip3 install --upgrade pycryptodomex
+
 salt:
 
   master:
@@ -63,8 +68,11 @@ salt:
       gitlab_url: https://gitlab.example.com
       gitlab_runner_name: salt1.example.com
       registration_token: xxxxxxxxxxxxxxxxxxxx
+      concurrent: 16
 
   minion:
+    #install_root: /opt/salt # optional, install minion configs to alternative location, useful for having additional minion if primary is managed by other system
+    #systemd_unit_name: salt-minion-in-opt # optional, create additional unit to run minion from alternative location, use with install_root
     version: 3001
     release: 3001.4 # optional specific release of version to install (only for windows)
     hosts: # add static records for salt masters
@@ -86,7 +94,7 @@ salt:
       master_tries: -1
       ping_interval: 1
       grains:
-        fqdn: {{ grains['fqdn'] }}
+        fqdn: {{ grains['id'] }}
     grains_file_rm: True # optionally remove grains file, if grains are managed inside main config
     pki:
       minion:

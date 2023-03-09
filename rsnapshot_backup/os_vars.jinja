@@ -1,110 +1,183 @@
 {%
 set data_expand = {
-  'UBUNTU': ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws'],
-  'DEBIAN': ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws'],
-  'CENTOS': ['/etc','/home','/root','/var/spool/cron','/var/lib/rpm','/usr/local','/opt/sysadmws']
+  "UBUNTU": ["/etc","/home","/root","/var/spool/cron","/var/lib/dpkg","/usr/local","/opt/sysadmws","/opt/microdevops"],
+  "DEBIAN": ["/etc","/home","/root","/var/spool/cron","/var/lib/dpkg","/usr/local","/opt/sysadmws","/opt/microdevops"],
+  "CENTOS": ["/etc","/home","/root","/var/spool/cron","/var/lib/rpm","/usr/local","/opt/sysadmws","/opt/microdevops"]
 }
 %}
 {%
 set db_ps = {
-  'ubuntu': {
-    'MYSQL': '/usr/sbin/mysqld',
-    'POSTGRESQL': 'bin/postgres -D',
-    'MONGODB': '/usr/bin/mongod'
+  "ubuntu": {
+    "MYSQL": "/usr/sbin/mysqld",
+    "POSTGRESQL": "bin/postgres -D",
+    "MONGODB": "/usr/bin/mongod"
+  },
+  "centos": {
+    "MYSQL": "/mysqld",
+    "POSTGRESQL": "bin/postgres -D",
+    "MONGODB": "/usr/bin/mongod"
   }
 }
 %}
-{% do db_ps.update({'precise': db_ps['ubuntu']}) %}
-{% do db_ps.update({'trusty': db_ps['ubuntu']}) %}
-{% do db_ps.update({'xenial': db_ps['ubuntu']}) %}
-{% do db_ps.update({'stretch': db_ps['ubuntu']}) %}
-{% do db_ps.update({'bionic': db_ps['ubuntu']}) %}
-{% do db_ps.update({'focal': db_ps['ubuntu']}) %}
-{% do db_ps.update({'jammy': db_ps['ubuntu']}) %}
+{% do db_ps.update({"precise": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"trusty": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"xenial": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"stretch": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"bionic": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"focal": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"jammy": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"CentOS Linux 7 (Core)": db_ps["centos"]}) %}
+{% do db_ps.update({"CentOS Linux 8 (Core)": db_ps["centos"]}) %}
 {%
 set data_dirs_to_find = {
-  'ubuntu': [
-    'find / -maxdepth 1 -type d',
-    'find /opt -maxdepth 1 -type d',
-    'find /usr -maxdepth 1 -type d',
-    'find /var -maxdepth 1 -type d',
-    'find /var/spool/cron -maxdepth 0 -type d'
+  "ubuntu": [
+    "find / -maxdepth 1 -type d",
+    "find /opt -maxdepth 1 -type d",
+    "find /usr -maxdepth 1 -type d",
+    "find /var -maxdepth 1 -type d",
+    "find /var/spool/cron -maxdepth 0 -type d"
   ]
 }
 %}
-{% do data_dirs_to_find.update({'precise': data_dirs_to_find['ubuntu']}) %}
-{% do data_dirs_to_find.update({'trusty': data_dirs_to_find['ubuntu']}) %}
-{% do data_dirs_to_find.update({'xenial': data_dirs_to_find['ubuntu']}) %}
-{% do data_dirs_to_find.update({'stretch': data_dirs_to_find['ubuntu']}) %}
-{% do data_dirs_to_find.update({'bionic': data_dirs_to_find['ubuntu']}) %}
-{% do data_dirs_to_find.update({'focal': data_dirs_to_find['ubuntu']}) %}
-{% do data_dirs_to_find.update({'jammy': data_dirs_to_find['ubuntu']}) %}
+{% do data_dirs_to_find.update({"precise": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"trusty": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"xenial": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"stretch": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"bionic": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"focal": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"jammy": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"CentOS Linux 7 (Core)": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"CentOS Linux 8 (Core)": data_dirs_to_find["ubuntu"]}) %}
 {#
 We list here only dirs that usually do not have to be backed up completely. For example, we check subdirs of /opt, but do not usually backup the whole /opt.
 https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard and good sense used as reference.
 #}
 {%
 set data_dirs_to_skip = {
-  'ubuntu': [
-    '/',
-    '/.gem',
-    '/bin',
-    '/boot',
-    '/dev',
-    '/lib',
-    '/lib64',
-    '/lib32',
-    '/libx32',
-    '/lost+found',
-    '/media',
-    '/mnt',
-    '/opt',
-    '/opt/acme',
-    '/opt/certbot',
-    '/opt/containerd',
-    '/opt/eff.org',
-    '/opt/netdata',
-    '/opt/sensu-plugins-ruby',
-    '/proc',
-    '/run',
-    '/sbin',
-    '/snap',
-    '/sys',
-    '/tmp',
-    '/usr',
-    '/usr/bin',
-    '/usr/config',
-    '/usr/games',
-    '/usr/include',
-    '/usr/lib',
-    '/usr/lib64',
-    '/usr/lib32',
-    '/usr/libx32',
-    '/usr/libexec',
-    '/usr/sbin',
-    '/usr/share',
-    '/usr/src',
-    '/var',
-    '/var/backups',
-    '/var/cache',
-    '/var/lib',
-    '/var/local',
-    '/var/crash',
-    '/var/lock',
-    '/var/log',
-    '/var/mail',
-    '/var/opt',
-    '/var/run',
-    '/var/snap',
-    '/var/spool',
-    '/var/tmp'
+  "ubuntu": [
+    "/",
+    "/.gem",
+    "/bin",
+    "/boot",
+    "/dev",
+    "/lib",
+    "/lib64",
+    "/lib32",
+    "/libx32",
+    "/lost+found",
+    "/media",
+    "/mnt",
+    "/opt",
+    "/opt/acme",
+    "/opt/certbot",
+    "/opt/containerd",
+    "/opt/eff.org",
+    "/opt/netdata",
+    "/opt/sensu-plugins-ruby",
+    "/opt/promtail",
+    "/proc",
+    "/run",
+    "/sbin",
+    "/snap",
+    "/sys",
+    "/tmp",
+    "/usr",
+    "/usr/bin",
+    "/usr/config",
+    "/usr/games",
+    "/usr/include",
+    "/usr/lib",
+    "/usr/lib64",
+    "/usr/lib32",
+    "/usr/libx32",
+    "/usr/libexec",
+    "/usr/sbin",
+    "/usr/share",
+    "/usr/src",
+    "/var",
+    "/var/backups",
+    "/var/cache",
+    "/var/lib",
+    "/var/local",
+    "/var/crash",
+    "/var/lock",
+    "/var/log",
+    "/var/mail",
+    "/var/opt",
+    "/var/run",
+    "/var/snap",
+    "/var/spool",
+    "/var/tmp"
+  ],
+  "centos": [
+    "/",
+    "/.gem",
+    "/bin",
+    "/boot",
+    "/dev",
+    "/lib",
+    "/lib64",
+    "/lib32",
+    "/libx32",
+    "/lost+found",
+    "/media",
+    "/mnt",
+    "/opt",
+    "/opt/acme",
+    "/opt/certbot",
+    "/opt/remi",
+    "/opt/containerd",
+    "/opt/eff.org",
+    "/opt/netdata",
+    "/opt/sensu-plugins-ruby",
+    "/opt/promtail",
+    "/proc",
+    "/run",
+    "/sbin",
+    "/sys",
+    "/tmp",
+    "/usr",
+    "/usr/bin",
+    "/usr/config",
+    "/usr/games",
+    "/usr/include",
+    "/usr/lib",
+    "/usr/lib64",
+    "/usr/lib32",
+    "/usr/libx32",
+    "/usr/libexec",
+    "/usr/sbin",
+    "/usr/share",
+    "/usr/src",
+    "/var",
+    "/var/account",
+    "/var/backups",
+    "/var/cache",
+    "/var/db",
+    "/var/empty",
+    "/var/hotcopy",
+    "/var/lib",
+    "/var/local",
+    "/var/crash",
+    "/var/cpanel",
+    "/var/kerberos",
+    "/var/lock",
+    "/var/log",
+    "/var/mail",
+    "/var/opt",
+    "/var/run",
+    "/var/snap",
+    "/var/spool",
+    "/var/tmp"
   ]
 }
 %}
-{% do data_dirs_to_skip.update({'precise': data_dirs_to_skip['ubuntu']}) %}
-{% do data_dirs_to_skip.update({'trusty': data_dirs_to_skip['ubuntu']}) %}
-{% do data_dirs_to_skip.update({'xenial': data_dirs_to_skip['ubuntu']}) %}
-{% do data_dirs_to_skip.update({'stretch': data_dirs_to_skip['ubuntu']}) %}
-{% do data_dirs_to_skip.update({'bionic': data_dirs_to_skip['ubuntu']}) %}
-{% do data_dirs_to_skip.update({'focal': data_dirs_to_skip['ubuntu']}) %}
-{% do data_dirs_to_skip.update({'jammy': data_dirs_to_skip['ubuntu']}) %}
+{% do data_dirs_to_skip.update({"precise": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"trusty": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"xenial": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"stretch": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"bionic": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"focal": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"jammy": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"CentOS Linux 7 (Core)": data_dirs_to_skip["centos"]}) %}
+{% do data_dirs_to_skip.update({"CentOS Linux 8 (Core)": data_dirs_to_skip["centos"]}) %}

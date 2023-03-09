@@ -5,7 +5,7 @@
 #  - reboot
 #
 # Requirements:
-# - You need to set up acme.sh beforehand, see sysadmws-formula/acme.
+# - You need to set up acme.sh beforehand, see sysadmws-formula/acme, if you are using acme certs.
 # - GitLab in LXD requires permissions as defined in docker profile.
 #
 # Here are the steps needed to connect google auth: https://docs.gitlab.com/ee/integration/google.html
@@ -18,10 +18,28 @@ gitlab_repo:
     - file: /etc/apt/sources.list.d/gitlab.list
     - key_url: https://packages.gitlab.com/gitlab/gitlab-{{ pillar["gitlab"]["distribution"] }}/gpgkey
 
+  {%- if "acme_account" in pillar["gitlab"] %}
 gitlab_acme_run:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["domain"] }}"
+
+  {%- else %}
+gitlab_ssl_certificate:
+  file.managed:
+    - name: {{ pillar["gitlab"]["ssl_certificate"]["file"] }}
+    - makedirs: True
+    - mode: 0644
+    - contents: {{ pillar["gitlab"]["ssl_certificate"]["contents"] | yaml_encode }}
+
+gitlab_ssl_certificate_key:
+  file.managed:
+    - name: {{ pillar["gitlab"]["ssl_certificate_key"]["file"] }}
+    - makedirs: True
+    - mode: 0600
+    - contents: {{ pillar["gitlab"]["ssl_certificate_key"]["contents"] | yaml_encode }}
+
+  {%- endif %}
 
 gitlab_env:
   environ.setenv:
@@ -42,10 +60,28 @@ gitlab_dirs:
       - /etc/gitlab/nginx/conf.d
 
   {%- if "redirect" in pillar["gitlab"] %}
+    {%- if "acme_account" in pillar["gitlab"]["redirect"] %}
 gitlab_redirect_acme_run:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["gitlab"]["redirect"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["redirect"]["domain"] }}"
+
+    {%- else %}
+gitlab_redirect_ssl_certificate:
+  file.managed:
+    - name: {{ pillar["gitlab"]["redirect"]["ssl_certificate"]["file"] }}
+    - makedirs: True
+    - mode: 0644
+    - contents: {{ pillar["gitlab"]["redirect"]["ssl_certificate"]["contents"] | yaml_encode }}
+
+gitlab_redirect_ssl_certificate_key:
+  file.managed:
+    - name: {{ pillar["gitlab"]["redirect"]["ssl_certificate_key"]["file"] }}
+    - makedirs: True
+    - mode: 0600
+    - contents: {{ pillar["gitlab"]["redirect"]["ssl_certificate_key"]["contents"] | yaml_encode }}
+
+    {%- endif %}
 
 gitlab_nginx_redirect:
   file.managed:
@@ -55,21 +91,45 @@ gitlab_nginx_redirect:
           listen 80;
           listen 443 ssl;
           server_name {{ pillar["gitlab"]["redirect"]["domain"] }};
+    {%- if "acme_account" in pillar["gitlab"]["redirect"] %}
           ssl_certificate /opt/acme/cert/gitlab_{{ pillar["gitlab"]["redirect"]["domain"] }}_fullchain.cer;
           ssl_certificate_key /opt/acme/cert/gitlab_{{ pillar["gitlab"]["redirect"]["domain"] }}_key.key;
+    {%- else %}
+          ssl_certificate {{ pillar["gitlab"]["redirect"]["ssl_certificate"]["file"] }};
+          ssl_certificate_key {{ pillar["gitlab"]["redirect"]["ssl_certificate_key"]["file"] }};
+    {%- endif %}
           return 301 https://{{ pillar["gitlab"]["domain"] }}$request_uri;
         }
+    {%- if "acme_account" in pillar["gitlab"]["redirect"] %}
     - require:
       - cmd: gitlab_redirect_acme_run
+    {%- endif %}
 
   {%- endif %}
 
   {%- if "mattermost" in pillar["gitlab"] %}
+    {%- if "acme_account" in pillar["gitlab"]["mattermost"] %}
 gitlab_mattermost_acme_run:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ pillar["gitlab"]["mattermost"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["mattermost"]["domain"] }}"
 
+    {%- else %}
+gitlab_mattermost_ssl_certificate:
+  file.managed:
+    - name: {{ pillar["gitlab"]["mattermost"]["ssl_certificate"]["file"] }}
+    - makedirs: True
+    - mode: 0644
+    - contents: {{ pillar["gitlab"]["mattermost"]["ssl_certificate"]["contents"] | yaml_encode }}
+
+gitlab_mattermost_ssl_certificate_key:
+  file.managed:
+    - name: {{ pillar["gitlab"]["mattermost"]["ssl_certificate_key"]["file"] }}
+    - makedirs: True
+    - mode: 0600
+    - contents: {{ pillar["gitlab"]["mattermost"]["ssl_certificate_key"]["contents"] | yaml_encode }}
+
+    {%- endif %}
   {%- endif %}
 
 gitlab_config:
@@ -78,8 +138,13 @@ gitlab_config:
     - contents: |
         external_url 'https://{{ pillar["gitlab"]["domain"] }}'
         nginx['redirect_http_to_https'] = true
+  {%- if "acme_account" in pillar["gitlab"] %}
         nginx['ssl_certificate'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_fullchain.cer"
         nginx['ssl_certificate_key'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_key.key"
+  {%- else %}
+        nginx['ssl_certificate'] = "{{ pillar["gitlab"]["ssl_certificate"]["file"] }}"
+        nginx['ssl_certificate_key'] = "{{ pillar["gitlab"]["ssl_certificate_key"]["file"] }}"
+  {%- endif %}
         nginx['custom_nginx_config'] = "include /etc/gitlab/nginx/conf.d/*.conf;"
   {%- if "postgresql" in pillar["gitlab"] %}
         postgresql['listen_address'] = '*'
@@ -130,8 +195,13 @@ gitlab_config:
         registry['enable'] = true
         registry_external_url 'https://{{ pillar["gitlab"]["domain"] }}:5001'
         registry['registry_http_addr'] = "localhost:5000"
+  {%- if "acme_account" in pillar["gitlab"] %}
         registry_nginx['ssl_certificate'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_fullchain.cer"
         registry_nginx['ssl_certificate_key'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["domain"] }}_key.key"
+  {%- else %}
+        registry_nginx['ssl_certificate'] = "{{ pillar["gitlab"]["ssl_certificate"]["file"] }}"
+        registry_nginx['ssl_certificate_key'] = "{{ pillar["gitlab"]["ssl_certificate_key"]["file"] }}"
+  {%- endif %}
         gitlab_rails['registry_path'] = "/var/lib/gitlab_docker_registry"
         gitlab_rails['artifacts_enabled'] = true
         gitlab_rails['artifacts_path'] = "/var/lib/gitlab_artifacts"
@@ -141,8 +211,16 @@ gitlab_config:
   {%- if "mattermost" in pillar["gitlab"] %}
         mattermost_external_url 'https://{{ pillar["gitlab"]["mattermost"]["domain"] }}'
         mattermost_nginx['redirect_http_to_https'] = true
+    {%- if "acme_account" in pillar["gitlab"]["mattermost"] %}
         mattermost_nginx['ssl_certificate'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["mattermost"]["domain"] }}_fullchain.cer"
         mattermost_nginx['ssl_certificate_key'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["mattermost"]["domain"] }}_key.key"
+    {%- else %}
+        mattermost_nginx['ssl_certificate'] = "{{ pillar["gitlab"]["mattermost"]["ssl_certificate"]["file"] }}"
+        mattermost_nginx['ssl_certificate_key'] = "{{ pillar["gitlab"]["mattermost"]["ssl_certificate_key"]["file"] }}"
+    {%- endif %}
+  {%- endif %}
+  {%- if "config_additions" in pillar["gitlab"] %}
+        {{ pillar["gitlab"]["config_additions"] | indent(8) }}
   {%- endif %}
 
 # Fix the issue when doing clean install with EXTERNAL_URL set - it will wait indefinately for service to start
@@ -158,15 +236,19 @@ gitlab_pkg:
     - refresh: True
     - pkgs:
       - gitlab-{{ pillar["gitlab"]["distribution"] }}
+    {%- if "acme_account" in pillar["gitlab"] %}
     - require:
       - cmd: gitlab_acme_run
+    {%- endif %}
   {%- else %}
   pkg.installed:
     - refresh: True
     - pkgs:
       - gitlab-{{ pillar["gitlab"]["distribution"] }}: '{{ pillar["gitlab"]["version"] }}*'
+    {%- if "acme_account" in pillar["gitlab"] %}
     - require:
       - cmd: gitlab_acme_run
+    {%- endif %}
   {%- endif %}
 
 gitlab_reconfigure:
@@ -178,7 +260,9 @@ gitlab_reconfigure:
       - file: /etc/gitlab/nginx/conf.d/redirect.conf
   {%- endif %}
     - require:
+  {%- if "acme_account" in pillar["gitlab"] %}
       - cmd: gitlab_acme_run
+  {%- endif %}
       - pkg: gitlab_pkg
 
 gitlab_restart:
@@ -190,7 +274,9 @@ gitlab_restart:
       - file: /etc/gitlab/nginx/conf.d/redirect.conf
   {%- endif %}
     - require:
+  {%- if "acme_account" in pillar["gitlab"] %}
       - cmd: gitlab_acme_run
+  {%- endif %}
       - pkg: gitlab_pkg
 
   {%- if "cron" in pillar["gitlab"] %}
@@ -225,6 +311,7 @@ gitlab_cron_clean_job_artifacts:
 gitlab_ssh_git_config:
   file.managed:
     - name: /etc/ssh/sshd_config.d/gitlab.conf
+    - makedirs: True
     - contents: |
         Match User git
           AuthorizedKeysCommand /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-shell-authorized-keys-check git %u %k
@@ -236,5 +323,13 @@ gitlab_ssh_git_apply:
     - name: systemctl reload ssh.service
     - onchanges:
       - file: /etc/ssh/sshd_config.d/gitlab.conf
+
+gitlab_nginx_reload_cron:
+  cron.present:
+    - name: gitlab-ctl restart nginx
+    - identifier: gitlab_nginx_reload
+    - user: root
+    - minute: 15
+    - hour: 12
 
 {% endif %}

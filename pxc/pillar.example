@@ -1,0 +1,122 @@
+# vi: set ft=yaml:
+
+# This state helps to prepare cluster nodes for PXC (Percona XtraDB Cluster)
+
+# Recommended node setup:
+# - No swap
+# - Dedicated partitions:
+#   - /var/backups 20G+
+#   - /var/log/mysql 100G+
+#   - /var/lib/mysql
+# - No continuous trim (discard) for partitions, use just simple default mount
+#   /dev/vg_mdX/backups /var/backups ext4 defaults 0 0
+#   /dev/vg_mdX/mysql-data /var/lib/mysql ext4 defaults 0 0
+#   /dev/vg_mdX/mysql-logs /var/log/mysql ext4 defaults 0 0
+
+# Cleanup with dedicated partitions:
+# systemctl stop mysql
+# umount /var/lib/mysql /var/log/mysql
+# apt-get purge -y percona-xtradb-cluster-server
+# mkdir /var/lib/mysql /var/log/mysql
+# mount /var/lib/mysql; mount /var/log/mysq
+# Remove contents of /var/lib/mysql, /var/log/mysq if needed
+
+pxc:
+  root_password: xxxxxxxxxxxxxxxxxxxxxxx
+  clustercheck_password: xxxxxxxxxxxxxxxxxxxxxxx
+  pmm_password: xxxxxxxxxxxxxxxxxxxxxxx
+  repos:
+    tools: release
+    pmm2-client: release
+    mysql-shell: release
+    pxc-80: release
+  pkgs:
+    percona-toolkit: latest
+    pmm2-client: latest
+    percona-xtrabackup-80: latest
+    percona-mysql-shell: latest
+{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com"] %}
+    percona-xtradb-cluster: 1:8.0.27-18-1.focal
+{% elif grains["id"] in ["mysql-slave1.example.com"] %}
+    percona-server-common: 8.0.27-18-1.focal
+    percona-server-client: 8.0.27-18-1.focal
+    percona-server-server: 8.0.27-18-1.focal
+{% endif %}
+  
+{% if grains["id"] in ["pxc1.example.com", "pxc2.example.com", "pxc3.example.com"] %}
+  debconf:
+    percona-xtradb-cluster-server:
+      percona-xtradb-cluster-server/root-pass:
+        type: password
+        value: __root_password__ # use __root_password__ to replace with root_password pillar
+      percona-xtradb-cluster-server/re-root-pass:
+        type: password
+        value: __root_password__ # use __root_password__ to replace with root_password pillar
+      percona-xtradb-cluster-server/default-auth-override:
+        type: select
+        value: Use Legacy Authentication Method (Retain MySQL 5.x Compatibility)
+
+  clustercheck_install: True
+
+  configs:
+
+    dirs:
+      - /etc/mysql/pxc
+
+    /etc/mysql/pxc/cluster.cnf: |
+      [mysqld]
+      wsrep_cluster_name=example-com
+      ...
+
+    /etc/mysql/pxc/common.cnf: |
+      [mysqld]
+      transaction-isolation=READ-COMMITTED
+      ...
+
+    /etc/mysql/pxc/node.cnf: |
+      [mysqld]
+  {%- if grains["id"] in ["pxc1.example.com"] %}
+      server-id=101
+      ...
+  {%- endif %}
+  ...
+
+    /etc/mysql/pxc/replica.cnf: |
+      [mysqld]
+      replicate-do-db=db1
+      ...
+
+{% elif grains["id"] in ["mysql-slave1.example.com"] %}
+  debconf:
+    percona-server-server:
+      percona-server-server/re-root-pass:
+        type: password
+        value: __root_password__
+      percona-server-server/root_password_again:
+        type: password
+        value: __root_password__
+      percona-server-server/root-pass:
+        type: password
+        value: __root_password__
+      percona-server-server/root_password:
+        type: password
+        value: __root_password__
+      percona-server-server/default-auth-override:
+        type: select
+        value: Use Legacy Authentication Method (Retain MySQL 5.x Compatibility)
+{% endif %}
+
+  databases:
+    exampledb:
+      character_set: utf8mb4 # optional, utf8mb4 is used by default, you cannot change this param if db is already created
+      collate: utf8mb4_unicode_ci # optional, utf8mb4_unicode_ci is used by default, you cannot change this param if db is already created
+  users:
+    exampleuser:
+      host: '%'
+      password: xxxxxxxxxxxxxxxxxxxxxx
+      grants:
+        "`exampledb`.*":
+          - ALL PRIVILEGES
+          #- ALL PRIVILEGES WITH GRANT OPTION
+        "*.*":
+          - ALL PRIVILEGES

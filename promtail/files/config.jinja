@@ -4,16 +4,9 @@
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
-{#
-  http_tls_config:
-    cert_file: /opt/acme/cert/promtail_{{ host }}_fullchain.cer
-    key_file: /opt/acme/cert/promtail_{{ host }}_key.key
-    client_ca_file: /opt/acme/cert/promtail_{{ host }}_ca.cer
-    client_auth_type: RequireAndVerifyClientCert
-    #client_auth_type: VerifyClientCertIfGiven
-#}
+
 positions:
-  filename: /tmp/positions.yaml
+  filename: {{ pillar['promtail']['positions'] | default('/tmp/positions.yaml') }}
 clients:
   - url: {{ pillar['promtail']['loki']['url'] }}/loki/api/v1/push
     basic_auth:

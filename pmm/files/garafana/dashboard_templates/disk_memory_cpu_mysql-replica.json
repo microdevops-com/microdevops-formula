@@ -1,0 +1,986 @@
+{
+  "title": "{{ board_name | default(node_name) }}",
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "title": "Disk Space and Memory",
+      "type": "row"
+    },
+    {
+      "title": "[{{ node_name }}] Disk Space Usage",
+      "id": 2,
+      "alert": {
+        "name": "[{{ node_name }}] Disk Space Usage {{ panel_disk_space_usage_alert_conditions_evaluator_type | default('gt') }} {{ panel_disk_space_usage_alert_conditions_evaluator_params | default(0.8) * 100 }}%",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_disk_space_usage_alert_conditions_evaluator_params | default(0.8) }}
+              ],
+              "type": "{{ panel_disk_space_usage_alert_conditions_evaluator_type | default('gt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_disk_space_usage_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_disk_space_usage_alert_conditions_query_params |default('"A","5m","now"') }}
+              ]
+            },
+            "reducer": {
+              "type": "{{ panel_disk_space_usage_alert_conditions_reducer_type | default('max') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "{{ panel_disk_space_usage_alert_frequency | default('1m') }}",
+        "executionErrorState": "alerting",
+        "for": "{{ panel_disk_space_usage_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 10,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "max by (node_name) (1 - (max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m]) or max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m])) / \n(max_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m]) or\nmax_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m])))",
+          "interval": "",
+          "legendFormat": "Disk Space Usage",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:392",
+          "format": "percentunit",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:393",
+          "format": "percentunit",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "title": "[{{ node_name }}] Free Memory",
+      "id": 3,
+      "alert": {
+        "name": "[{{ node_name }}] Free Memory {{ panel_free_memory_alert_conditions_evaluator_type | default('lt') }} {{ panel_free_memory_alert_conditions_evaluator_params | default(10) }}%",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_free_memory_alert_conditions_evaluator_params | default(10) }}
+              ],
+              "type": "{{ panel_free_memory_alert_conditions_evaluator_type | default('lt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_free_memory_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_free_memory_alert_conditions_query_params | default('"A","1m","now"') }}
+              ]
+            },
+            "reducer": {
+              "type": "{{ panel_free_memory_alert_conditions_reducer_type | default('min') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "{{ panel_free_memory_alert_frequency | default('1m') }}",
+        "executionErrorState": "alerting",
+        "for": "{{ panel_free_memory_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 4,
+      "fillGradient": 10,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 7,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:400",
+          "alias": "Memory available",
+          "color": "#37872D"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "100 - (clamp_min(avg by (node_name) (((avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s])) - ((avg_over_time(node_memory_MemFree_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_MemFree_bytes{node_name=~\"{{ node_name }}\"}[10s]))+ \n(avg_over_time(node_memory_Buffers_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_Buffers_bytes{node_name=~\"{{ node_name }}\"}[10s])) + \n(avg_over_time(node_memory_Cached_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_Cached_bytes{node_name=~\"{{ node_name }}\"}[10s]))))),0) /\n\n\navg by (node_name) (avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s]) or avg_over_time(node_memory_MemTotal_bytes{node_name=~\"{{ node_name }}\"}[10s])) * 100)",
+          "interval": "",
+          "legendFormat": "Memory available",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:449",
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:450",
+          "format": "percent",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "title": "[{{ node_name }}] Swap Usage",
+      "id": 16,
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_swap_usage_alert_conditions_evaluator_params | default(0) }}
+              ],
+              "type": "{{ panel_swap_usage_alert_conditions_evaluator_type | default('gt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_swap_usage_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_swap_usage_alert_conditions_query_params | default('"A","1m","now"') }}
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "{{ panel_free_memory_alert_conditions_reducer_type | default('min') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "{{ panel_swap_usage_alert_frequency | default('1m') }}",
+        "frequency": "{{ panel_swap_usage_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "name": "[{{ node_name }}] Swap Usage!",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 4,
+      "fillGradient": 10,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 7
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.10",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:400",
+          "alias": "Swap Usage",
+          "color": "#E02F44"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (node_name) (max_over_time(node_memory_SwapTotal_bytes{node_name=~\"{{ node_name }}\"}[10s]) - max_over_time(node_memory_SwapFree_bytes{node_name=~\"{{ node_name }}\"}[10s]))",
+          "interval": "",
+          "legendFormat": "Swap Usage",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:449",
+          "format": "decbytes",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:450",
+          "format": "percent",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "title": "CPU",
+      "type": "row"
+    },
+    {
+      "title": "[{{ node_name }}] CPU Usage",
+      "id": 4,
+      "alert": {
+        "name": "[{{ node_name }}] CPU Usage {{ panel_cpu_usage_alert_conditions_evaluator_type | default('gt') }} {{ panel_cpu_usage_alert_conditions_evaluator_params | default(30) }}%",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_cpu_usage_alert_conditions_evaluator_params | default(30) }}
+              ],
+              "type": "{{ panel_cpu_usage_alert_conditions_evaluator_type | default('gt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_cpu_usage_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_cpu_usage_alert_conditions_query_params | default('"A","1m","now"') }}
+              ]
+            },
+            "reducer": {
+              "type": "{{ panel_cpu_usage_alert_conditions_reducer_type | default('last') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "{{ panel_cpu_usage_alert_frequency | default('30s') }}",
+        "executionErrorState": "alerting",
+        "for": "{{ panel_cpu_usage_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 7,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 8
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 0.5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:1142",
+          "alias": "user",
+          "color": "#1F60C4"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (node_name,mode) (clamp_max(((avg by (mode) ( (clamp_max(rate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"user\"}[1m]),1)) or (clamp_max(irate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"user\"}[5m]),1)) ))*100 or (avg_over_time(node_cpu_average{node_name=~\"{{ node_name }}\", mode!=\"total\", mode=\"user\"}[1m]) or avg_over_time(node_cpu_average{node_name=~\"{{ node_name }}\", mode!=\"total\", mode=\"user\"}[5m]))),100))",
+          "interval": "1",
+          "legendFormat": "user",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:90",
+          "format": "percent",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:91",
+          "format": "short",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "title": "[{{ node_name }}] CPU IOWait",
+      "id": 5,
+      "alert": {
+        "name": "[{{ node_name }}] CPU IOWait {{ panel_cpu_iowait_alert_conditions_evaluator_type | default('gt') }} {{ panel_cpu_iowait_alert_conditions_evaluator_params | default(0.2) * 100 }}%",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_cpu_iowait_alert_conditions_evaluator_params | default(0.2) }}
+              ],
+              "type": "{{ panel_cpu_iowait_alert_conditions_evaluator_type | default('gt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_cpu_iowait_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_cpu_iowait_alert_conditions_query_params | default('"A","5m","now"') }}
+              ]
+            },
+            "reducer": {
+              "type": "{{ panel_cpu_iowait_alert_conditions_reducer_type | default('avg') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "{{ panel_cpu_iowait_alert_frequency | default('1m') }}",
+        "executionErrorState": "alerting",
+        "for": "{{ panel_cpu_iowait_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 7,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 7,
+        "y": 8
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 0.5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:118",
+          "alias": "CPU iowait",
+          "color": "#C4162A"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "clamp_max(max by () (sum  by (cpu) ( (clamp_max(rate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"iowait\"}[1m]),1)) or (clamp_max(irate(node_cpu_seconds_total{node_name=~\"{{ node_name }}\",mode=\"iowait\"}[5m]),1)) )),1)",
+          "interval": "",
+          "legendFormat": "CPU iowait",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:90",
+          "format": "percentunit",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:91",
+          "format": "short",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    }
+{%- if panel_mysql_replication_enable | default(false) %},
+    {
+      "id": 6,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "title": "Replication",
+      "type": "row"
+    },
+    {
+      "title": "[{{ node_name }}] MYSQL Replica Status",
+      "id": 7,
+      "alert": {
+        "name": "[{{ node_name }}] MYSQL Replica IS NOT RUNNING",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_mysql_replication_status_alert_conditions_evaluator_params | default(0.5) }}
+              ],
+              "type": "{{ panel_mysql_replication_status_alert_conditions_evaluator_type | default('lt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_mysql_replication_status_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_mysql_replication_status_alert_conditions_query_params | default('"A","10s","now"') }}
+              ]
+            },
+            "reducer": {
+              "type": "{{ panel_mysql_replication_status_alert_conditions_reducer_type | default('last') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "{{ panel_mysql_replication_status_alert_frequency | default('10s') }}",
+        "executionErrorState": "alerting",
+        "for": "{{ panel_mysql_replication_status_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 10,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 15
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:201",
+          "alias": "Replication is running",
+          "color": "#8F3BB8"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "\tmin(\n\t\t(min_over_time(mysql_slave_status_slave_io_running{service_name=~\"{{ node_name }}-mysql\"}[1m])),\n\t\t(min_over_time(mysql_slave_status_slave_sql_running{service_name=~\"{{ node_name }}-mysql\"}[1m]))\n\t)",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Replication is running",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:3988",
+          "format": "short",
+          "label": "",
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:3989",
+          "format": "short",
+          "logBase": 1,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "title": "[{{ node_name }}] MYSQL Replica Lag",
+      "id": 8,
+      "alert": {
+        "name": "[{{ node_name }}] MYSQL Replica Lag {{ panel_mysql_replication_lag_alert_conditions_evaluator_type | default('gt') }} {{ panel_mysql_replication_lag_alert_conditions_evaluator_params | default(60) }}s",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_mysql_replication_lag_alert_conditions_evaluator_params | default(60) }}
+              ],
+              "type": "{{ panel_mysql_replication_lag_alert_conditions_evaluator_type | default('gt') }}"
+            },
+            "operator": {
+              "type": "{{ panel_mysql_replication_lag_alert_conditions_operator_type | default('and') }}"
+            },
+            "query": {
+              "params": [
+                {{ panel_mysql_replication_lag_alert_conditions_query_params | default('"A","1m","now"') }}
+              ]
+            },
+            "reducer": {
+              "type": "{{ panel_mysql_replication_lag_alert_conditions_reducer_type | default('max') }}"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "{{ panel_mysql_replication_lag_alert_frequency | default('1m') }}",
+        "executionErrorState": "alerting",
+        "for": "{{ panel_mysql_replication_lag_alert_pending_for | default('0m') }}",
+        "handler": 1,
+        "noDataState": "no_data"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "decimals": 0,
+      "description": "",
+      "fill": 10,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 7,
+        "y": 15
+      },
+      "hiddenSeries": false,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+
+      "pointradius": 4,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:628",
+          "alias": "Replica lag",
+          "color": "#B877D9"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "clamp_min(avg by (service_name) (\n(max_over_time(mysql_slave_status_seconds_behind_master{service_name=~\"{{ node_name }}-mysql\"}[30s]) or max_over_time(mysql_slave_status_seconds_behind_master{service_name=~\"{{ node_name }}-mysql\"}[30s])) - (max_over_time(mysql_slave_status_sql_delay{service_name=~\"{{ node_name }}-mysql\"}[30s]) or max_over_time(mysql_slave_status_sql_delay{service_name=~\"{{ node_name }}-mysql\"}[30s]))\n),0)",
+          "hide": false,
+          "instant": false,
+          "interval": "10",
+          "legendFormat": "Replica lag",
+          "refId": "A"
+        }
+      ],
+      "tooltip": {
+        "shared": true,
+        "sort": 0,  
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:89",
+          "decimals": 2,
+          "format": "s",
+          "logBase": 1,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:90",
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    }
+{%- endif %}
+{%- if is_mysql_server | default(true) %},
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 13,
+      "panels": [],
+      "title": "General",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_server_uptime_threshold_alert_conditions_evaluator_params | default(300) }}
+              ],
+              "type": "lt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "0m",
+        "frequency": "10s",
+        "handler": 1,
+        "name": "[{{ node_name }}] MySQL server restarted",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": {{ panel_server_uptime_threshold_alert_conditions_evaluator_params | default(300) }}
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 22
+      },
+      "id": 11,
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "hidden",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (service_name) (mysql_global_status_uptime{service_name=~\"{{ node_name }}-mysql\"})",
+          "interval": "5m",
+          "legendFormat": "Server uptime",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "lt",
+          "value": {{ panel_server_uptime_threshold_alert_conditions_evaluator_params | default(300) }},
+          "visible": true
+        }
+      ],
+      "title": "[{{ node_name }}] Server Uptime",
+      "type": "timeseries"
+    }
+{%- endif %}
+  ],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "version": 0
+}

@@ -571,6 +571,9 @@ clamd_whitelist_ign2_{{ loop.index }}:
   {% endif %}
 
   {% if pillar["mailcow"]["postfix"] is defined and "extra_cf" in pillar["mailcow"]["postfix"] %}
+postfix_extra_cf_touch:
+  file.touch:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/extra.cf
     {%- for var_key, var_val in pillar["mailcow"]["postfix"]["extra_cf"].items() %}
 postfix_extra_cf_{{ loop.index }}:
   file.replace:
@@ -579,6 +582,13 @@ postfix_extra_cf_{{ loop.index }}:
     - repl: '{{ var_key }} = {{ var_val }}'
     - append_if_not_found: True
     {%- endfor %}
+  {% endif %}
+
+  {% if pillar["mailcow"]["postfix"] is defined and "header_checks" in pillar["mailcow"]["postfix"] %}
+postfix_header_checks:
+  file.managed:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/header_checks
+    - contents: {{ pillar["mailcow"]["postfix"]["header_checks"] | yaml_encode }}
   {% endif %}
 
 mailcow_docker_compose_up:

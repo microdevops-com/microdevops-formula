@@ -1,4 +1,7 @@
-{% if pillar["app"] is defined and "docker" in pillar["app"] %}
+{% if pillar["app"] is defined and "docker" in pillar["app"] and "apps" in pillar["app"]["docker"] %}
+
+  {%- include "app/_pkg.sls" with context %}
+
 docker_install_00:
   file.directory:
     - name: /etc/docker
@@ -47,7 +50,7 @@ docker_install_4:
   {%- if pillar["app"]["docker"]["networks"] is mapping %}
 
     {%- for net_name, net_params in pillar["app"]["docker"]["networks"].items() %}
-      {%- if not "deploy_only" in pillar["app"]["docker"] or net_name in pillar["app"]["docker"]["deploy_only"] %}
+      {%- if not "deploy_only" in pillar["app"]["docker"] or net_name == pillar["app"]["docker"]["deploy_only"] %}
 docker_network_{{ loop.index }}:
   docker_network.present:
     - name: {{ net_name }}
@@ -71,7 +74,7 @@ docker_network_{{ loop.index }}:
   {%- endif %}
 
   {%- for app_name, app in pillar["app"]["docker"]["apps"].items() %}
-    {%- if not "deploy_only" in pillar["app"]["docker"] or app_name in pillar["app"]["docker"]["deploy_only"] %}
+    {%- if not "deploy_only" in pillar["app"]["docker"] or app_name == pillar["app"]["docker"]["deploy_only"] %}
 docker_app_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app["home"] }}
@@ -112,7 +115,16 @@ docker_app_container_{{ loop.index }}:
       {%- if "command" in app %}
     - command : {{ app["command"] }}
       {%- endif %}
-
+      {%- if "volumes" in app %}
+    - volumes:
+        {%- for volume in app["volumes"] %}
+      - {{ volume }}
+        {%- endfor %}
+      {%- endif %}
+      {%- if "volumes_from" in app %}
+    - volumes_from: {{ app["volumes_from"] }}
+      {%- endif %}
+      
       {%- if app["exec_after_deploy"] is defined %}
 docker_app_container_exec_{{ loop.index }}:
   cmd.run:

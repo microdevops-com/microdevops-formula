@@ -1,0 +1,2 @@
+microdevops-utils:
+  version: latest

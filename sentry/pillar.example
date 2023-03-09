@@ -1,81 +1,159 @@
 # vi: set ft=yaml:
 
-# sentry
-pkg:
-  supervisor:
-    when: 'PKG_BEFORE_DEPLOY'
-    states:
-      - pkg_installed:
-          1:
-            - pkgs:
-                - supervisor
-
-pyenv:
-  versions:
-    python-2.7.14: True
-
-nginx:
-  enabled: True
-  reload: True
-  configs: 'sentry/files/nginx'
-  www_dir: '/var/www'
-  forward:
-    sentry:
-      enabled: True
-      server_name: 'sentry.example.com'
-      proxy_to: '127.0.0.1:9000'
-      ssl:
-        acme: True
-      allow_hosts: # sentry / location will be limited by nginx to those ip, while ~ /api/([\w_-]+/)?store will be open to everyone
-      - '1.2.3.4'
-      - '4.3.2.1'
-
 sentry:
-  enabled: True
-  pyenv_version: '2.7.14'
-  secret: 'xxx'
-  url: 'https://sentry.example.com'
-  admin_email: 'admin@example.com'
-  admin_password: 'adminpass'
+  acme_account: example.com
+  acme_domain: sentry.example.com
+  version: 22.11.0
+  secret: "secretsecretsecretsecretsecretsecretsecretsecretse" # cat /dev/urandom | tr -dc 'abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*(-_=+)' | fold -w 50 | head -n 1 # see https://github.com/getsentry/sentry/blob/22.11.0/src/sentry/runner/settings.py#L14
+  url: https://sentry.example.com
+  admin_email: admin@example.com
+  admin_password: xxxxxxxxxxxxxxxxxx
+  enhance_image_sh: |
+    apt-get update
+    apt-get install -y gcc libsasl2-dev python-dev libldap2-dev libssl-dev
+    pip install django-auth-ldap
+    pip install sentry-ldap-auth
   config:
+    single_organization: True
     features:
       auth_register: True
       projects_plugins: True
     email:
-      backend: 'smtp'
-      host: 'smtp.gmail.com'
+      backend: smtp
+      host: smtp.gmail.com
       port: 587
-      username: 'sentry@example.com'
-      password: 'gmailmailpass'
+      username: sentry@example.com
+      password: xxxxxxxxxxxxxxxxxx
       tls: True
-      from: root@localhost
+      from: sentry@example.com
       enable_replies: False
       reply_hostname: ''
-    db:
-      engine: 'sentry.db.postgres'
-      host: 'localhost'
-      port: '5432'
-      user: 'sentry'
-      password: 'dbpass'
-      name: 'sentry'
-      autocommit: True
-    big_ints: True
-    single_organization: True
-    cache: 'sentry.cache.redis.RedisCache'
-    broker_url: 'redis://localhost:6379'
-    rate_limits: 'sentry.ratelimits.redis.RedisRateLimiter'
-    buffer: 'sentry.buffer.redis.RedisBuffer'
-    quota: 'sentry.quotas.redis.RedisQuota'
-    tsdb: 'sentry.tsdb.redis.RedisTSDB'
-    digests: 'sentry.digests.backends.redis.RedisBackend'
     web:
-      proxy: False
-      host: '0.0.0.0'
-      port: 9000
-      workers: 10
-      protocol: 'http'
-    redis_clusters:
-      host: 127.0.0.1
-      port: 6379
-  plugins: # Unofficial plugins only, official come with sentry-plugins, sentry-telegram already adopted
-    - sentry-xxx
+      ssl: True
+    google_auth: # https://develop.sentry.dev/self-hosted/sso/
+      client_id: 012345678999-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+      client_secret: ABCDEF-1q2w3e4r5t6y7u8i9o0pASDFGHJK
+    general:
+      options:
+        system:
+          event_retention_days: 90 # optional
+    ldap:
+      enabled: True
+      sentry_conf_py: |
+        ################################################
+        #                   LDAP AUTH                  #
+        # https://github.com/Banno/getsentry-ldap-auth #
+        ################################################
+        import ldap
+        from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+        AUTH_LDAP_SERVER_URI = 'ldaps://ldap.example.com'
+        AUTH_LDAP_BIND_DN = 'uid=ldap_reader,cn=users,dc=example,dc=com'
+        AUTH_LDAP_BIND_PASSWORD = 'Secret123'
+        AUTH_LDAP_USER_SEARCH = LDAPSearch(
+          'cn=users,dc=example,dc=com',
+          ldap.SCOPE_SUBTREE,
+          '(uid=%(user)s)',
+        )
+        AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+          'cn=groups,dc=example,dc=com',
+          ldap.SCOPE_SUBTREE,
+          '(objectClass=groupOfNames)'
+        )
+        AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
+        AUTH_LDAP_REQUIRE_GROUP = 'cn=sentry,cn=groups,dc=example,dc=com'
+        AUTH_LDAP_DENY_GROUP = None
+        AUTH_LDAP_USER_ATTR_MAP = {
+          'username': 'uid',
+          'name': 'cn',
+          'email': 'mail'
+        }
+        AUTH_LDAP_FIND_GROUP_PERMS = True
+        AUTH_LDAP_CACHE_GROUPS = False
+        AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+        AUTH_LDAP_DEFAULT_SENTRY_comANIZATION = u'example'
+        AUTH_LDAP_SENTRY_SUBSCRIBE_BY_DEFAULT = True
+        AUTH_LDAP_DEFAULT_EMAIL_DOMAIN = 'example.com'
+        #AUTH_LDAP_MIRROR_GROUPS = True,
+        AUTH_LDAP_SENTRY_GROUP_ROLE_MAPPING = {
+          'owner': ['admins'],
+          'admin': [],
+          'member': ['sentry'],
+        }
+        AUTH_LDAP_SENTRY_comANIZATION_ROLE_TYPE = 'member'
+        AUTH_LDAP_SENTRY_comANIZATION_GLOBAL_ACCESS = True
+        AUTH_LDAP_SENTRY_USERNAME_FIELD = 'uid'
+        AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + (
+          'sentry_ldap_auth.backend.SentryLdapBackend',
+        )
+        import logging
+        logger = logging.getLogger('django_auth_ldap')
+        logger.addHandler(logging.StreamHandler())
+        logger.addHandler(logging.FileHandler(r"/data/ldap2.log"))
+        logger.setLevel('DEBUG')
+  # Warning: membership management, dsn keys setting etc. is not supported by Sentry API or sentry cmds, so it is done using postgresql direct access
+  # https://docs.sentry.io/api/
+  organization_creation_rate_limit_to_0: True
+  auth_token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  users: # optional, use state.apply sentry.users_and_orgs
+    - email: admin@example.com # admin user is duplicated here to create auth token
+      password: password # optional, --no-password used if missing
+      superuser: True # optional
+      staff: True # optional
+      auth_tokens: # optional
+        - scope_list: '{event:admin,event:read,member:read,org:read,project:read,project:releases,team:read,event:write,org:admin,member:admin,alerts:read,org:integrations,team:write,project:write,project:admin,team:admin,alerts:write,member:write,org:write}'
+          token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 64 | head -n 1
+    - email: not_really_email # strict email format is not required, you can just name here, useful for creating pseudo users with auth token access for sentry-cli
+      auth_tokens:
+        - scope_list: '{project:read,team:read,project:releases,event:read,event:write,org:read,member:read}'
+          token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  organizations: # optional, use state.apply sentry.users_and_orgs
+    - name: Example
+      slug: example
+      members: # optional
+        - email: admin@example.com
+          role: owner
+        - email: not_really_email
+          role: member
+      teams: # optional
+        - name: Team
+          slug: team
+          members:
+            - admin@example.com
+            - not_really_email
+      projects: # optional
+        - name: Project
+          slug: project
+          teams:
+            - team # you can assign several teams for the project, but it should have at least one team assigned to be created
+          auto_resolve_issues_30_days: True # optional
+          platform: other # optional
+          dsn: # optional
+            - label: Default
+              public: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1 # cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1
+              secret: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1 # cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1
+  webhooks:
+    matrix: # optional, if necessary, you can install only a webhook using sentry.matrix-webhook
+      use_roman_k_fork: True # optional, you can build locally a docker image from a forked and modified repository by Roma Kasyanchuk
+      repo: https://github.com/kraicdesign/matrix-sentry-webhooks.git # repo for build
+      image: docker.local/sentry-matrix-webhook # original image: matrixdotorg/matrix-sentry-webhooks:latest
+      acme_account: example.com
+      acme_domain: sentry-matrix-webhook.example.com
+      env_vars:
+        APP_PORT: 3000
+        APP_TIMEOUT: 1000
+        SENTRY_CLIENT_SECRET: 'yyyyyyyyyyyyyyyyyy'
+        SENTRY_INCLUDE_TAGS: 'brand,BRAND,DOMAIN'
+        MATRIX_HOMESERVER_URL: 'https://example.ems.host'
+        MATRIX_ROOMS: 'room1/!aaaaaaaaaaaaaaaaaa:example.com|room2/!bbbbbbbbbbbbbbbbbb:example.com|room3/!cccccccccccccccccc:example.com|room4/!ddddddddddddddddd:example.com'
+        MATRIX_TOKEN: 'zzzzzzzzzzzzzzzzzz'
+        MATRIX_USER: '@sentry:example.com'
+    telegram: # optional, if necessary, you can install only a webhook using sentry.telegram-webhook
+      repo: https://github.com/microdevops-com/sentry-telegram-webhook.git
+      image: docker.local/sentry-telegram-webhook
+      container_name: sentry-telegram-webhook
+      acme_account: example.com
+      acme_domain: sentry-telegram-webhook.example.com
+      local_port: 8000
+      env_vars:
+        TOKEN: xxxxxxxxx:xxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        CHANNEL_ID: -11111111111

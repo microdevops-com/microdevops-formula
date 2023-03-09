@@ -1,124 +1,154 @@
 # vi: set ft=yaml:
 
-# backup1.domain.com - an example to backup data from two servers to central backup server
 rsnapshot_backup:
-  backup_server: True
+  #python: True # optional, switch pipeline to run py version of rsnapshot_backup, sh+awk is default version for now
   sources:
-    srv1.domain.com:
+    srv1.example.com:
+      - type: ... # gereic params for all types
+        #validate_hostname: False # optional, disable remote ssh hostname check (for backup types that use ssh)
+                              # good if you need to to check if backup storage dir is mounted, avoid using single and double quotes
+                              # beware - it will be executed for each item in data, so make separate backup item to exec only once
+        #rsync_args: # optional, args of rsync inside rsnapshot, useful for excludes or rsync tuning
+                     # --exclude=/root/junk_dir --exclude=/opt/another_junk_dir # to exclude 
+                     # --rsync-path="ionice -c 3 nice rsync" # limit rsync with Idle IO class and be nice with CPU
+                     # --bwlimit=20M # limit rsync data transfer
+        #connect_user: toor # optional, root by default, user for ssh or native rsync connect
+        #exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes
+                            # beware - it will be executed for each item in data, so make separate backup item to exec only once
+        #exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes
+                           # beware - it will be executed for each item in data, so make separate backup item to exec only once
+        #before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully
+        #retain_hourly: N # optional, hourly rotations disabled by default
+        #retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
+        #retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
+        #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
+        #retries: N # optional, if rsnapshot fails, try N times more
+                    # beware - retries work only on rsnapshot sync command, remote DB dumps are not being retried, it is hard to implement and makes no sense practically
+        #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call
+                               # ionice -c 3 nice # to make rssnapshot more gentle with io
+        backups: # mandatory
+          - host: backup1.example.com # backup from remote server
+            path: /var/backups/srv1.example.com # where to store backup
+            #connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
+            #connect: 1.2.3.4:873 # optional, native rsync connect with ip or name and port, if not used rsync connects to 873 port by default
+            #priority: -1 # optional, priority (order) of this backup in config on the backup server, any signed integer, items are sorted by priority from minus to plus
+                          # default priority is 0, if you need some item to be first in backup order, just add priority: -1, for example
+            #before_backup_check: # optional, overrides before_backup_check definition of higher level
+            #retain_hourly: N # optional, overrides retain definition of higher level
+            #retain_daily: N # optional, overrides retain definition of higher level
+            #retain_weekly: N # optional, overrides retain definition of higher level
+            #retain_monthly: N # optional, overrides retain definition of higher level
+            #rsnapshot_prefix_cmd: # optional, overrides prefix definition of higher level
+          - host: srv1.example.com # backup from server itself (local backup)
+            path: /var/backups/srv1.example.com
       - type: RSYNC_SSH # rsync over ssh
         data:
-          - UBUNTU # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws']
-          - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws']
-          - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/rpm','/usr/local','/opt/sysadmws']
+          - UBUNTU # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws','/opt/microdevops']
+          - DEBIAN # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/dpkg','/usr/local','/opt/sysadmws','/opt/microdevops']
+          - CENTOS # special meaning, expands to list ['/etc','/home','/root','/var/spool/cron','/var/lib/rpm','/usr/local','/opt/sysadmws','/opt/microdevops']
           - /some/path
-        checks: # all checks are optional, RSYNC_SSH supports these check types
+        #exclude: # optional, exclude some components from expanded list
+        #  - /root
+        checks: # all checks are optional
           - type: .backup # check special .backup files in data roots, files are put there before backup by rsnapshot_backup.put_check_files
+                          # .backup checks work with RSYNC_SSH and RSYNC_NATIVE type backup items
           - type: s3/.backup # put .backup file to s3 bucket for the same purposes
-            s3_bucket: bucket_name # mandatory for this check type
-            s3_path: path_within_bucket # mandatory
-            s3_keyid: xxx # mandatory
-            s3_key: yyy # mandatory
+            s3_bucket: bucket_name
+            s3_path: path_within_bucket
+            s3_keyid: xxx
+            s3_key: yyy
           - type: FILE_AGE # check newest file age and other params, useful to monitor that fresh dumps exist
-            last_file_age: N # mandatory for this check type, files can be no more N days old
-            min_file_size: N # mandatory, files can be no less than N size in bytes
-            files_total: N # mandatory, there should be no less than N files of this type
-            file_type: 'regexp' # mandatory, regexp which will be matched agains unix command 'file' output
-            files_mask: 'regexp' # mandatory, regexp for find command
-        backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
-            connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
-            priority: -1 # optional, priority (order) of this backup in json config on the end server, -10 priority first, then -9 .. -1, then no priority, then 1 .. 10
-            before_backup_check: # optional, the same as below but overrides before_backup_check per backup host
-        validate_hostname: False # optional, disable remote ssh hostname check
-        retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
-        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
-        rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
-        connect_user: toor # optional, root by default, user for ssh connect
-        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-      - type: MYSQL_SSH # dump mysql over ssh, then rsync dump folder over ssh
+                          # FILE_AGE checks work with RSYNC_SSH and RSYNC_NATIVE type backup items
+            files_mask: 'regexp' # regexp for find command
+            last_file_age: N # files found can be no more N days old
+            min_file_size: N # files found can be no less than N size in bytes
+            file_type: 'regexp' # regexp which will be matched against unix command 'file' output
+            files_total: N # there should be no less than N files found
+            files_total_max: N # optional, there should be no more than N files found
+      - type: RSYNC_NATIVE # native rsync proto, mainly to backup Windows
+        data:
+          - /Share1/Some/Path
+          - /Share2/Other/Path
+        checks:
+          - type: .backup # .backup can have path modifiers per data item, useful for putting check files on Windows
+            data: /Share1/Some/Path # optional, set params for specific data item
+            path: C:\Some Actual\Windows Path\Some\Path # dot backup files can have real path substituted by matching data key
+          - type: .backup
+            data: /Share2/Other/Path # optional, set params for specific data item
+            path: D:\Completely Another\Windows Path\Other\Path # dot backup files can have real path substituted by matching data key
+          - type: FILE_AGE # FILE_AGE also can have path modifiers per data item
+            data: /Share1/Some/Path # optional, set params for specific data item
+            last_file_age: 3
+            min_file_size: 1000000000
+            files_total: 3
+            file_type: '(data|executable)'
+            files_mask: '123.+_321\..+\.DOC'
+        connect_password: secret # mandatory, plain text native rsync auth
+        #native_txt_check: True # optional, check for .backup text file in the root of source
+                                # useful if you want to ensure the data is present and not sync empty dir if removable disk gone for example
+        #native_10h_limit: True # optional, limit time for the execution of rsync to 10 hours
+      - type: MYSQL_SSH # dump mysql over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, MYSQL_SSH supports only MYSQL check type
           - type: MYSQL # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
               - test
-        backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
-            connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
-            priority: -1 # optional, priority
-        mysql_noevents: True # optional, remove --events from dump cmd
-        validate_hostname: False # optional, disable remote ssh hostname check
-        retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
-        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
-        rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
-        connect_user: toor # optional, root by default, user for ssh connect
-        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        mysqldump_args: # optional, pass additional arguments to mysqldump
-          --ignore-table=dbname.table1
-          --ignore-table=dbname.table2
-      - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump folder over ssh
+        #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
+        #
+        #mysql_noevents: True # optional, remove --events from dump cmd
+        #mysqldump_args: # optional, pass additional arguments to mysqldump
+        #  --ignore-table=dbname.table1
+        #  --ignore-table=dbname.table2
+        #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location, only for py version
+        #
+        #mysql_dump_type: xtrabackup # override default native mysqldump type, only for py version
+        #xtrabackup_throttle: 20 # optional, override default IO limit 20 MB
+        #xtrabackup_parallel: 2 # optional, override default --parallel=2
+        #xtrabackup_compress_threads: 2 # optional, override default --compress-threads=2
+        #xtrabackup_args: # optional, pass additional arguments to xtrabackup
+        #
+        #mysql_dump_type: mysqlsh # override default native mysqldump type, only for py version
+        #mysqlsh_connect_args: --user=root --password=xxx # mandatory for mysqlsh, it cannot use standard my.cnf like files
+        #mysqlsh_args: --compatibility=strip_definers # optional, add any additional mysqlsh args, this example compatibility arg is recommended
+                                                      # use --excludeTables=db1.table1,db2.table2 to exclude specific tables/views
+        #mysqlsh_max_rate: 20M # optional, override default IO limit 20 MB
+        #mysqlsh_bytes_per_chunk: 100M # optional, override default 100 MB chunk size, dumped tables are splitted to chunks
+        #mysqlsh_threads: 2 # optional, override default 2 mysqlsh threads
+      - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, POSTGRESQL_SSH supports only POSTGRESQL check type
           - type: POSTGRESQL # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
               - postgres
               - template0
               - template1
-        backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
-            connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
-            priority: -1 # optional, priority
-        postgresql_noclean: False # add --clean by default to pg dump
-        validate_hostname: False # optional, disable remote ssh hostname check
-        retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
-        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
-        rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
-        connect_user: toor # optional, root by default, user for ssh connect
-        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-      - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump folder over ssh
+        #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
+        #pg_dump_args: # optional, pass additional arguments to pg_dump_args, only for py version
+        #postgresql_noclean: True # optional, remove --clean from pg dump
+        #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location, only for py version
+      - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
           - db1
+        #exclude: # optional, exclude some databases from backup
+        #  - db1
         checks: # optional, MONGODB_SSH supports only MONGODB check type
           - type: MONGODB # check dumps for freshness by looking into the signature and check real data inside dumps
             empty_db: # database list to exclude from checking real data in dumps
               - config
-        backups:
-          - host: backup1.domain.com # on which server backup is performed
-            path: /var/backups/srv1.domain.com # where to store backup
-            connect: 1.2.3.4:22 # optional, ssh connect with ip or name and port
-            priority: -1 # optional, priority
-        validate_hostname: False # optional, disable remote ssh hostname check
-        retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
-        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
-        rsync_args: --some-arg # optional, args of rsync inside rsnapshot, useful for rsync tuning with db backups
-        mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
-        connect_user: toor # optional, root by default, user for ssh connect
-        before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully, good if you need to to check if backup storage dir is mounted, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
-        exec_after_rsync: # optional, script to execute via ssh after rsync, avoid using single and double quotes, beware - it will be executed for each item in data, so make separate backup item to exec only once
+        #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
+        #mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
+        #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location, only for py version
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
-        data: # list folders or db types here
+        data: # list dirs or db types here
           - UBUNTU
           - /test
           - POSTGRESQL
@@ -126,84 +156,3 @@ rsnapshot_backup:
           - MONGODB
         local_backups_suppress_reason: Some reason # will suppress local backup not found error if set, reason text is just for documentation purposes
         remote_backups_suppress_reason: Some reason # will suppress remote backup not found error if set, reason text is just for documentation purposes
-      - type: SUPPRESS_COVERAGE
-        data:
-          - /test1 # suppress local backups for /test1
-        local_backups_suppress_reason: Some reason
-      - type: SUPPRESS_COVERAGE
-        data:
-          - /test2 # suppress remote backups for /test2
-        remote_backups_suppress_reason: Some reason
-      - type: SUPPRESS_COVERAGE
-        data:
-          - /test3 # suppress local and remote backups for /test3
-        local_backups_suppress_reason: Some reason
-        remote_backups_suppress_reason: Some reason
-    winsrv1.domain.com:
-      - type: RSYNC_NATIVE
-        data:
-          - /Share1/Some/Path
-          - /Share2/Other/Path
-        checks:
-          - type: .backup # .backup can have path modifiers per data item, useful for putting check files on Windows
-            data: /Share1/Some/Path # dot backup files can have real path substituted by matching data key
-            path: C:\Some Actual\Windows Path\Some\Path
-          - type: .backup
-            data: /Share2/Other/Path
-            path: D:\Completely Another\Windows Path\Other\Path
-          - type: s3/.backup # put .backup file to s3 bucket for the same purposes
-            s3_bucket: bucket_name # mandatory for this check type
-            s3_path: path_within_bucket # mandatory
-            s3_keyid: xxx # mandatory
-            s3_key: yyy # mandatory
-          - type: FILE_AGE # check newest file age and other params, useful to monitor that fresh dumps exist
-            last_file_age: N # mandatory for this check type, files can be no more N days old
-            min_file_size: N # mandatory, files can be no less than N size in bytes
-            files_total: N # mandatory, there should be no less than N files of this type
-            file_type: 'regexp' # mandatory, regexp which will be matched agains unix command 'file' output
-            files_mask: 'regexp' # mandatory, regexp for find command
-          - type: FILE_AGE # FILE_AGE also can have path modifiers per data item
-            data: /Share1/Some/Path # set params for specific data item
-            last_file_age: 3
-            min_file_size: 1000000000
-            files_total: 3
-            file_type: '(data|executable)'
-            files_mask: '123.+_321\..+\.DOC'
-          - type: FILE_AGE
-            data: /Share2/Other/Path
-            last_file_age: 1
-            min_file_size: 1
-            files_total: 1
-            file_type: 'text'
-            files_mask: 'test\.txt'
-        backups:
-          - host: backup1.domain.com
-            path: /var/backups/winsrv1.domain.com
-            connect: 1.2.3.4:873 # optional, native rsync connect with ip or name and port, if not used rsync connects to 873 port by default
-            priority: -1 # optional, priority
-        connect_user: toor # optional, root by default, user for native rsync connect
-        connect_password: secret # mandatory, plain text native rsync auth
-        native_txt_check: True # optional, check for .backup text file in the root of source, useful if you want to ensure the data is present and not sync empty folder if removable disk gone for example
-        native_10h_limit: True # optional, limit time for the execution of rsync to 10 hours
-        retain_hourly: N # optional, hourly rotations disabled by default
-        retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
-        retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
-        rsync_args: --exclude=/root/junk_folder --exclude=/opt/another_junk_folder # optional, args of rsync inside rsnapshot, useful for excludes
-
-# multi backup server example
-# srv1.domain.com, backup1.domain.com should see tha same pillar data
-rsnapshot_backup:
-  sources:
-    srv1.domain.com:
-      - type: RSYNC_SSH
-        data:
-          - UBUNTU
-          - /srv
-        checks:
-          - type: .backup
-        backups:
-          - host: srv1.domain.com
-            path: /var/backups/srv1.domain.com
-          - host: backup1.domain.com
-            path: /var/backups/srv1.domain.com

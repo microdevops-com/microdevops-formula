@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<jira-database-config>
+  <name>defaultDS</name>
+  <delegator-name>default</delegator-name>
+  <database-type>{{ config.db.type }}</database-type>
+  <schema-name>{{ config.db.schema }}</schema-name>
+  <jdbc-datasource>
+    <url>{{ config.db.url }}</url>
+    <driver-class>org.postgresql.Driver</driver-class>
+    <username>{{ config.db.username }}</username>
+    <password>{{ config.db.password }}</password>
+    <connection-properties>tcpKeepAlive=true;socketTimeout=240</connection-properties>
+
+    <pool-min-size>20</pool-min-size>
+    <pool-max-size>20</pool-max-size>
+    <pool-max-wait>30000</pool-max-wait>
+    <pool-max-idle>20</pool-max-idle>
+    <pool-remove-abandoned>true</pool-remove-abandoned>
+    <pool-remove-abandoned-timeout>300</pool-remove-abandoned-timeout>
+
+    <validation-query>select version();</validation-query>
+    <min-evictable-idle-time-millis>60000</min-evictable-idle-time-millis>
+    <time-between-eviction-runs-millis>300000</time-between-eviction-runs-millis>
+
+    <pool-test-on-borrow>false</pool-test-on-borrow>
+    <pool-test-while-idle>true</pool-test-while-idle>
+  </jdbc-datasource>
+</jira-database-config>

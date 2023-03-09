@@ -1,27 +1,52 @@
 # This file is just Python, with a touch of Django which means
 # you can inherit and tweak settings to your hearts content.
 
-from sentry.conf.server import *
+from sentry.conf.server import *  # NOQA
 
-import os.path
 
-CONF_ROOT = {{ salt['pillar.get']('sentry:config:conf_root', 'os.path.dirname(__file__)') }}
+# Generously adapted from pynetlinux: https://github.com/rlisagor/pynetlinux/blob/e3f16978855c6649685f0c43d4c3fcf768427ae5/pynetlinux/ifconfig.py#L197-L223
+def get_internal_network():
+    import ctypes
+    import fcntl
+    import math
+    import socket
+    import struct
+
+    iface = b"eth0"
+    sockfd = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ifreq = struct.pack(b"16sH14s", iface, socket.AF_INET, b"\x00" * 14)
+
+    try:
+        ip = struct.unpack(
+            b"!I", struct.unpack(b"16sH2x4s8x", fcntl.ioctl(sockfd, 0x8915, ifreq))[2]
+        )[0]
+        netmask = socket.ntohl(
+            struct.unpack(b"16sH2xI8x", fcntl.ioctl(sockfd, 0x891B, ifreq))[2]
+        )
+    except IOError:
+        return ()
+    base = socket.inet_ntoa(struct.pack(b"!I", ip & netmask))
+    netmask_bits = 32 - int(round(math.log(ctypes.c_uint32(~netmask).value + 1, 2), 1))
+    return "{0:s}/{1:d}".format(base, netmask_bits)
+
+
+INTERNAL_SYSTEM_IPS = (get_internal_network(),)
+
 
 DATABASES = {
-    'default': {
-        'ENGINE': '{{ salt['pillar.get']('sentry:config:db:engine', 'sentry.db.postgres') }}',
-        'NAME': '{{ salt['pillar.get']('sentry:config:db:name', 'sentry') }}',
-        'USER': '{{ salt['pillar.get']('sentry:config:db:user', 'postgres') }}',
-        'PASSWORD': '{{ salt['pillar.get']('sentry:config:db:password', '') }}',
-        'HOST': '{{ salt['pillar.get']('sentry:config:db:host', '') }}',
-        'PORT': '{{ salt['pillar.get']('sentry:config:db:port', '') }}',
-        'AUTOCOMMIT': {{ salt['pillar.get']('sentry:config:db:autocommit', 'True') }},
-        'ATOMIC_REQUESTS': False,
+    "default": {
+        "ENGINE": "sentry.db.postgres",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "",
+        "HOST": "postgres",
+        "PORT": "",
     }
 }
+
 # You should not change this setting after your database has been created
 # unless you have altered all schemas first
-SENTRY_USE_BIG_INTS = {{ salt['pillar.get']('sentry:config:big_ints', 'True') }},
+SENTRY_USE_BIG_INTS = True
 
 # If you're expecting any kind of real traffic on Sentry, we highly recommend
 # configuring the CACHES and Redis settings
@@ -32,8 +57,43 @@ SENTRY_USE_BIG_INTS = {{ salt['pillar.get']('sentry:config:big_ints', 'True') }}
 
 # Instruct Sentry that this install intends to be run by a single organization
 # and thus various UI optimizations should be enabled.
-SENTRY_SINGLE_ORGANIZATION = {{ salt['pillar.get']('sentry:config:single_organization', 'True') }}
-DEBUG = {{ salt['pillar.get']('sentry:config:debug', 'False') }}
+SENTRY_SINGLE_ORGANIZATION = {{ salt["pillar.get"]("sentry:config:single_organization", True) }}
+
+SENTRY_OPTIONS["system.event-retention-days"] = int(
+    env("SENTRY_EVENT_RETENTION_DAYS", "{{ salt["pillar.get"]("sentry:config:general:options:system:event_retention_days", 90) }}")
+)
+
+#########
+# Redis #
+#########
+
+# Generic Redis configuration used as defaults for various things including:
+# Buffers, Quotas, TSDB
+
+SENTRY_OPTIONS["redis.clusters"] = {
+    "default": {
+        "hosts": {0: {"host": "redis", "password": "", "port": "6379", "db": "0"}}
+    }
+}
+
+#########
+# Queue #
+#########
+
+# See https://develop.sentry.dev/services/queue/ for more
+# information on configuring your queue broker and workers. Sentry relies
+# on a Python framework called Celery to manage queues.
+
+rabbitmq_host = None
+if rabbitmq_host:
+    BROKER_URL = "amqp://{username}:{password}@{host}/{vhost}".format(
+        username="guest", password="guest", host=rabbitmq_host, vhost="/"
+    )
+else:
+    BROKER_URL = "redis://:{password}@{host}:{port}/{db}".format(
+        **SENTRY_OPTIONS["redis.clusters"]["default"]["hosts"][0]
+    )
+
 
 #########
 # Cache #
@@ -42,29 +102,27 @@ DEBUG = {{ salt['pillar.get']('sentry:config:debug', 'False') }}
 # Sentry currently utilizes two separate mechanisms. While CACHES is not a
 # requirement, it will optimize several high throughput patterns.
 
-# If you wish to use memcached, install the dependencies and adjust the config
-# as shown:
-#
-#   pip install python-memcached
-#
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-#         'LOCATION': ['127.0.0.1:11211'],
-#     }
-# }
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.MemcachedCache",
+        "LOCATION": ["memcached:11211"],
+        "TIMEOUT": 3600,
+    }
+}
 
 # A primary cache is required for things such as processing events
-SENTRY_CACHE = '{{ salt['pillar.get']('sentry:config:cache', 'sentry.cache.redis.RedisCache') }}'
+SENTRY_CACHE = "sentry.cache.redis.RedisCache"
 
-#########
-# Queue #
-#########
+DEFAULT_KAFKA_OPTIONS = {
+    "bootstrap.servers": "kafka:9092",
+    "message.max.bytes": 50000000,
+    "socket.timeout.ms": 1000,
+}
 
-# See https://docs.sentry.io/on-premise/server/queue/ for more
-# information on configuring your queue broker and workers. Sentry relies
-# on a Python framework called Celery to manage queues.
-BROKER_URL = '{{ salt['pillar.get']('sentry:config:broker_url', 'redis://localhost:6379') }}'
+SENTRY_EVENTSTREAM = "sentry.eventstream.kafka.KafkaEventStream"
+SENTRY_EVENTSTREAM_OPTIONS = {"producer_configuration": DEFAULT_KAFKA_OPTIONS}
+
+KAFKA_CLUSTERS["default"] = DEFAULT_KAFKA_OPTIONS
 
 ###############
 # Rate Limits #
@@ -72,7 +130,8 @@ BROKER_URL = '{{ salt['pillar.get']('sentry:config:broker_url', 'redis://localho
 
 # Rate limits apply to notification handlers and are enforced per-project
 # automatically.
-SENTRY_RATELIMITER = '{{ salt['pillar.get']('sentry:config:rate_limits', 'sentry.ratelimits.redis.RedisRateLimiter') }}'
+
+SENTRY_RATELIMITER = "sentry.ratelimits.redis.RedisRateLimiter"
 
 ##################
 # Update Buffers #
@@ -82,7 +141,8 @@ SENTRY_RATELIMITER = '{{ salt['pillar.get']('sentry:config:rate_limits', 'sentry
 # database and the storage API. They will greatly improve efficiency on large
 # numbers of the same events being sent to the API in a short amount of time.
 # (read: if you send any kind of real data to Sentry, you should enable buffers)
-SENTRY_BUFFER = '{{ salt['pillar.get']('sentry:config:buffer', 'sentry.buffer.redis.RedisBuffer') }}'
+
+SENTRY_BUFFER = "sentry.buffer.redis.RedisBuffer"
 
 ##########
 # Quotas #
@@ -91,7 +151,7 @@ SENTRY_BUFFER = '{{ salt['pillar.get']('sentry:config:buffer', 'sentry.buffer.re
 # Quotas allow you to rate limit individual projects or the Sentry install as
 # a whole.
 
-SENTRY_QUOTAS = '{{ salt['pillar.get']('sentry:config:quota', 'sentry.quotas.redis.RedisQuota') }}'
+SENTRY_QUOTAS = "sentry.quotas.redis.RedisQuota"
 
 ########
 # TSDB #
@@ -100,7 +160,15 @@ SENTRY_QUOTAS = '{{ salt['pillar.get']('sentry:config:quota', 'sentry.quotas.red
 # The TSDB is used for building charts as well as making things like per-rate
 # alerts possible.
 
-SENTRY_TSDB = '{{ salt['pillar.get']('sentry:config:tsdb', 'sentry.tsdb.redis.RedisTSDB') }}'
+SENTRY_TSDB = "sentry.tsdb.redissnuba.RedisSnubaTSDB"
+
+#########
+# SNUBA #
+#########
+
+SENTRY_SEARCH = "sentry.search.snuba.EventsDatasetSnubaSearchBackend"
+SENTRY_SEARCH_OPTIONS = {}
+SENTRY_TAGSTORE_OPTIONS = {}
 
 ###########
 # Digests #
@@ -108,34 +176,111 @@ SENTRY_TSDB = '{{ salt['pillar.get']('sentry:config:tsdb', 'sentry.tsdb.redis.Re
 
 # The digest backend powers notification summaries.
 
-SENTRY_DIGESTS = '{{ salt['pillar.get']('sentry:config:digests', 'sentry.digests.backends.redis.RedisBackend') }}'
+SENTRY_DIGESTS = "sentry.digests.backends.redis.RedisBackend"
 
 ##############
 # Web Server #
 ##############
 
+SENTRY_WEB_HOST = "0.0.0.0"
+SENTRY_WEB_PORT = 9000
+SENTRY_WEB_OPTIONS = {
+    "http": "%s:%s" % (SENTRY_WEB_HOST, SENTRY_WEB_PORT),
+    "protocol": "uwsgi",
+    # This is needed in order to prevent https://github.com/getsentry/sentry/blob/c6f9660e37fcd9c1bbda8ff4af1dcfd0442f5155/src/sentry/services/http.py#L70
+    "uwsgi-socket": None,
+    "so-keepalive": True,
+    # Keep this between 15s-75s as that's what Relay supports
+    "http-keepalive": 15,
+    "http-chunked-input": True,
+    # the number of web workers
+    "workers": 3,
+    "threads": 4,
+    "memory-report": False,
+    # Some stuff so uwsgi will cycle workers sensibly
+    "max-requests": 100000,
+    "max-requests-delta": 500,
+    "max-worker-lifetime": 86400,
+    # Duplicate options from sentry default just so we don't get
+    # bit by sentry changing a default value that we depend on.
+    "thunder-lock": True,
+    "log-x-forwarded-for": False,
+    "buffer-size": 32768,
+    "limit-post": 209715200,
+    "disable-logging": True,
+    "reload-on-rss": 600,
+    "ignore-sigpipe": True,
+    "ignore-write-errors": True,
+    "disable-write-exception": True,
+}
+
+###########
+# SSL/TLS #
+###########
+
 # If you're using a reverse SSL proxy, you should enable the X-Forwarded-Proto
-# header and uncomment the following settings
-{% if salt['pillar.get']('sentry:config:web:ssl', False) == True %}
+# header and enable the settings below
+{% if salt["pillar.get"]("sentry:config:web:ssl", False) == True %}
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 {% endif %}
+# End of SSL/TLS settings
 
+########
+# Mail #
+########
 
-# If you're not hosting at the root of your web server,
-# you need to uncomment and set it to the path where Sentry is hosted.
-# FORCE_SCRIPT_NAME = '/sentry'
+SENTRY_OPTIONS["mail.list-namespace"] = env('SENTRY_MAIL_HOST', 'localhost')
+SENTRY_OPTIONS["mail.from"] = f"sentry@{SENTRY_OPTIONS['mail.list-namespace']}"
 
-SENTRY_WEB_HOST = '{{ salt['pillar.get']('sentry:config:web:host', '0.0.0.0') }}'
-SENTRY_WEB_PORT = {{ salt['pillar.get']('sentry:config:web:port', '9000') }}
-SENTRY_WEB_OPTIONS = {
-    'workers': {{ salt['pillar.get']('sentry:config:web:workers', '3') }},  # the number of web
-    'protocol': '{{ salt['pillar.get']('sentry:config:web:protocol', 'uwsgi') }}',
-}
+############
+# Features #
+############
 
+SENTRY_FEATURES["projects:sample-events"] = False
+SENTRY_FEATURES["auth:register"] = {{ salt["pillar.get"]("sentry:config:features:auth_register", False) }}
+SENTRY_FEATURES.update(
+    {
+        feature: True
+        for feature in (
+            "organizations:discover",
+            "organizations:events",
+            "organizations:global-views",
+            "organizations:incidents",
+            "organizations:integrations-issue-basic",
+            "organizations:integrations-issue-sync",
+            "organizations:invite-members",
+            "organizations:metric-alert-builder-aggregate",
+            "organizations:sso-basic",
+            "organizations:sso-rippling",
+            "organizations:sso-saml2",
+            "organizations:performance-view",
+            "organizations:advanced-search",
+            "projects:custom-inbound-filters",
+            "projects:data-forwarding",
+            "projects:discard-groups",
+            "projects:plugins",
+            "projects:rate-limits",
+            "projects:servicehooks",
+        )
+    }
+)
 
-SENTRY_FEATURES = {
-    'auth:register': {{ salt['pillar.get']('sentry:config:features:auth_register', 'False') }},
-    'projects:plugins': {{ salt['pillar.get']('sentry:config:features:projects_plugins', 'True') }},
-}
+#######################
+# MaxMind Integration #
+#######################
+
+GEOIP_PATH_MMDB = '/geoip/GeoLite2-City.mmdb'
+
+#########################
+# Bitbucket Integration #
+#########################
+
+# BITBUCKET_CONSUMER_KEY = 'YOUR_BITBUCKET_CONSUMER_KEY'
+# BITBUCKET_CONSUMER_SECRET = 'YOUR_BITBUCKET_CONSUMER_SECRET'
+
+{%- if "ldap" in pillar["sentry"]["config"] and salt["pillar.get"]("sentry:config:ldap:enabled", False) %}
+{{ salt["pillar.get"]("sentry:config:ldap:sentry_conf_py") }}
+{%- endif %}

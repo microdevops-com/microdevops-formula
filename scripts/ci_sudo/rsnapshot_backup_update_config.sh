@@ -1,20 +1,21 @@
 #!/bin/bash
-GRAND_EXIT=0
 
-if [ "_$1" = "_" ]; then
+if [[ "_$1" == "_" ]]; then
 	echo ERROR: needed args missing: use rsnapshot_backup_update_config.sh TARGET
 	exit 1
 fi
 
+GRAND_EXIT=0
 SALT_TARGET=$1
-	
 OUT_FILE="/srv/scripts/ci_sudo/$(basename $0)_${SALT_TARGET}.out"
 
 rm -f ${OUT_FILE}
 exec > >(tee ${OUT_FILE})
 exec 2>&1
 
-( set -x ; stdbuf -oL -eL  bash -c "salt --force-color -t 300 ${SALT_TARGET} state.apply rsnapshot_backup.update_config queue=True" ) || GRAND_EXIT=1
+set -x
+salt --force-color -t 300 ${SALT_TARGET} state.apply rsnapshot_backup.update_config queue=True || GRAND_EXIT=1
+set +x
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1

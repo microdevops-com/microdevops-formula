@@ -1,3 +1,62 @@
+{%- set promtail_version = "2.7.3" -%}
+{%- set host = grains['fqdn'] -%}
+{%- set loki_server = "loki.example.com" -%}
+
+promtail:
+  binary:
+    link: https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip
+  config: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+    positions:
+      filename: /opt/promtail/etc/positions.yaml
+    clients:
+      - url: https://{{ loki_server }}/loki/api/v1/push
+        tenant_id: loki-cluster
+        backoff_config:
+          max_retries: 20
+    limits_config:
+      readline_rate_enabled: true
+      readline_rate_drop: false
+    scrape_configs:
+    - job_name: test
+      pipeline_stages:
+      - json:
+          expressions:
+            timestamp: datetime
+      - timestamp:
+          source: timestamp
+          format: '02/Jan/2006:15:04:05 -0700'
+          location: UTC
+      static_configs:
+      - labels:
+          job: test
+          host: {{ host }}
+          __path__: /mnt/generated*log
+    - job_name: multiline-test
+      static_configs:
+      - labels:
+          job: test-log-files
+          test_lable: test-log-file
+          host: {{ host }}
+          __path__: /tmp/*test.log
+      pipeline_stages:
+       - multiline:
+           firstline: '^SOL:'
+           max_wait_time: 3s
+       - regex:
+           # Flag (?s:.*) needs to be set for regex stage to capture full traceback log in the extracted map.
+           expression: '^SOL: (?P<message>(?s:.*))$'
+       - output:
+           source: message
+
+
+
+
+
+### LEGASY PILLAR
+
 {%- set host = "server1.example.com" -%}
 promtail:
   loki:
@@ -7,7 +66,6 @@ promtail:
       password: <password>
   binary:
     link: https://github.com/grafana/loki/releases/download/v2.3.0/promtail-linux-amd64.zip
-    hash: 48968d6299ebc24d1b4eee7b9b55c5c1
   docker:
     image: grafana/promtail:2.3.0
     binds:

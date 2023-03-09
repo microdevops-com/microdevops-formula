@@ -1,27 +1,163 @@
 # https://github.com/percona/pmm-doc/blob/main/docs/_images/PMM_Architecture_Client_Server.jpg
-
+{% set gf_path_var_lib = '/var/lib/grafana' %}
+{% set gf_path_provisioning = '/etc/grafana/provisioning'  %}
 pmm:
   docker-ce_version: 5:20.10.8*
   acme_account: example.com
-  servername: pmm.example.com
-  domains:
-    - name: pmm.example.com
-      instances:
-        - name: pmm-server
-          plugins: grafana-image-renderer
-          image: percona/pmm-server:2
-          config: |
-            [server]
-            root_url = https://pmm.example.com/graph/
-            serve_from_sub_path = true
-            [auth.gitlab]
-            enabled = true
-            allow_sign_up = true
-            client_id = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-            client_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-            scopes = read_api
-            auth_url = https://gitlab.example.com/oauth/authorize
-            token_url = https://gitlab.example.com/oauth/token
-            api_url = https://gitlab.example.com/api/v4
-            allowed_groups = pmm
-
+  name: pmm.example.com
+  admin_password: 'XXXXXXXXXXXXXXXX'
+  plugins: grafana-image-renderer
+  image: percona/pmm-server:2.26
+  gf_path_var_lib: {{ gf_path_var_lib }}
+  gf_path_provisioning: {{ gf_path_provisioning }}
+  config: |
+    [server]
+    root_url = https://pmm.example.com/graph/ # /graph/ is required for Grafana to work properly
+    enable_gzip = true
+    [dashboards]
+    # Path to the default home dashboard. If this value is empty, then Grafana uses StaticRootPath + "dashboards/home.json"
+    default_home_dashboard_path = /usr/share/percona-dashboards/panels/pmm-app/dist/dashboards/Insight/Home_Dashboard.json
+    [users]
+    # Path to a custom home page. Users are only redirected to this if the default home dashboard is used. It should match a frontend route and contain a leading slash.
+    home_page = d/pmm-home/home-dashboard
+    [paths]
+    # Directory where grafana will automatically scan and look for plugins
+    plugins = /srv/grafana/plugins
+    provisioning = {{ gf_path_provisioning }}
+    [plugins]
+    # Enter a comma-separated list of plugin identifiers to identify plugins that are allowed to be loaded even if they lack a valid signature.
+    allow_loading_unsigned_plugins = vertamedia-clickhouse-datasource,pmm-app,pmm-check-panel-home,pmm-update,pmm-qan-app-panel,pmm-pt-summary-panel,pmm-pt-summary-datasource
+    [auth.gitlab]
+    enabled = true
+    allow_sign_up = true
+    client_id = 7a08f6925bece27edabd5b9611ad6cdc639e1806ac1686001501098aa7770052
+    client_secret = 1fb4662fc6bd9c07b07dbea683361328412d0fb808beaf81c4c234bd7f5b1c2e
+    scopes = read_api
+    auth_url = https://gitlab.example.com/oauth/authorize
+    token_url = https://gitlab.example.com/oauth/token
+    api_url = https://gitlab.example.com/api/v4
+    allowed_groups = pmm
+    [unified_alerting]
+    enabled = false
+    [alerting]
+    enabled = true
+  env_vars:
+    DISABLE_UPDATES: true
+  datasources:
+    apiVersion: 1
+    datasources:
+      - name: "prometheus.example.org"
+        type: prometheus
+        access: proxy
+        url: https://prometheus.example.com
+        basicAuth: true
+        basicAuthUser: username
+        basicAuthPassword: XXXXXXXXXXXXXXXXXXXXXXX
+        editable: true
+  notifiers:
+    apiVersion: 1
+    notifiers:
+      - name: telegram1
+        type: telegram
+        uid: telega1
+        org_id: 1
+        is_default: true
+        send_reminder: false
+        disable_resolve_message: false
+        settings:
+          chatid: '-123456789'
+          uploadImage: true
+          bottoken: '1234567890:XXXXXXXXX-YYYYYYYYYYYYYYYY-ZZZZZZZZ'
+  dashboards:
+    provisioning_config:
+      apiVersion: 1
+      providers:
+        - name: dashboards
+          orgId: 1
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          allowUiUpdates: true
+          options:
+            path: {{ gf_path_var_lib }}/dashboards
+            foldersFromFilesStructure: true
+    dashboard_definitions_defaults:                                     # Optional. Here you can set default values for all boards and panels on the server.
+                                                                        # These variables can also be set in the context of each individual board.
+      is_mysql_server:                                                  true
+#
+      panel_disk_space_usage_alert_conditions_evaluator_params:         0.8
+      panel_disk_space_usage_alert_conditions_evaluator_type:           'gt'
+      panel_disk_space_usage_alert_conditions_operator_type:            'and'
+      panel_disk_space_usage_alert_conditions_query_params:             '"A","5m","now"'
+      panel_disk_space_usage_alert_conditions_reducer_type:             'max'
+      panel_disk_space_usage_alert_frequency:                           '1m'
+      panel_disk_space_usage_alert_pending_for:                         '0m'
+#
+      panel_free_memory_alert_conditions_evaluator_params:              10
+      panel_free_memory_alert_conditions_evaluator_type:                'lt'
+      panel_free_memory_alert_conditions_operator_type:                 'and'
+      panel_free_memory_alert_conditions_query_params:                  '"A","1m","now"'
+      panel_free_memory_alert_conditions_reducer_type:                  'min'
+      panel_free_memory_alert_frequency:                                '1m'
+      panel_free_memory_alert_pending_for:                              '0m'
+#
+      panel_cpu_usage_alert_conditions_evaluator_params:                30
+      panel_cpu_usage_alert_conditions_evaluator_type:                  'gt'
+      panel_cpu_usage_alert_conditions_operator_type:                   'and'
+      panel_cpu_usage_alert_conditions_query_params:                    '"A","1m","now"'
+      panel_cpu_usage_alert_conditions_reducer_type:                    'last'
+      panel_cpu_usage_alert_frequency:                                  '30s'
+      panel_cpu_usage_alert_pending_for:                                '1m'
+#
+      panel_cpu_iowait_alert_conditions_evaluator_params:               0.2
+      panel_cpu_iowait_alert_conditions_evaluator_type:                 'gt'
+      panel_cpu_iowait_alert_conditions_operator_type:                  'and'
+      panel_cpu_iowait_alert_conditions_query_params:                   '"A","5m","now"'
+      panel_cpu_iowait_alert_conditions_reducer_type:                   'avg'
+      panel_cpu_iowait_alert_frequency:                                 '1m'
+      panel_cpu_iowait_alert_pending_for:                               '0m'
+#
+      panel_mysql_replication_enable:                                   false
+      panel_mysql_replication_status_alert_conditions_evaluator_params: 0.5
+      panel_mysql_replication_status_alert_conditions_evaluator_type:   'lt'
+      panel_mysql_replication_status_alert_conditions_query_params:     '"A","10s","now"'
+      panel_mysql_replication_status_alert_conditions_operator_type:    'and'
+      panel_mysql_replication_status_alert_conditions_reducer_type:     'last'
+      panel_mysql_replication_status_alert_frequency:                   '10s'
+      panel_mysql_replication_status_alert_pending_for:                 '0m'
+#
+      panel_mysql_replication_lag_alert_conditions_evaluator_params:    60
+      panel_mysql_replication_lag_alert_conditions_evaluator_type:      'gt'
+      panel_mysql_replication_lag_alert_conditions_operator_type:       'and'
+      panel_mysql_replication_lag_alert_conditions_query_params:        '"A","1m","now"'
+      panel_mysql_replication_lag_alert_conditions_reducer_type:        'max'
+      panel_mysql_replication_lag_alert_frequency:                      '1m'
+      panel_mysql_replication_lag_alert_pending_for:                    '0m'
+#
+      panel_pxc_size_title:                                             'Percona XtraDB Cluster size'
+      panel_pxc_size_alert_conditions_evaluator_params:                 3
+      panel_pxc_size_alert_conditions_evaluator_type:                   'lt'
+      panel_pxc_size_alert_conditions_operator_type:                    'and'
+      panel_pxc_size_alert_conditions_query_params:                     '"A","10s","now"'
+      panel_pxc_size_alert_conditions_reducer_type:                     'min'
+      panel_pxc_size_alert_frequency:                                   '10s'
+      panel_pxc_size_alert_pending_for:                                 '0m'
+    dashboard_definitions:
+      - template: salt://pmm/files/garafana/dashboard_templates/disk_memory_cpu_mysql-replica.json
+        {%- set folder = 'DATA-CENTER-NAME' %}
+        {%- set node_name = 'node1.example.com' %}
+        path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ node_name }}.json
+        context:
+          node_name: {{ node_name }}
+          board_name: 'my-board-name'                                                   # Optional. Default is "{{ node_name }}"
+      - template: salt://pmm/files/garafana/dashboard_templates/pxc_size.json
+        {%- set folder = 'DATA-CENTER-NAME' %}
+        {%- set brand = 'PREFIX-EXAMPLE' %}
+        {%- set wsrep_cluster_name = 'pxc-example-cluster' %}
+        {%- set pxc_cluster_size = 4 %}
+        path: {{ gf_path_var_lib }}/dashboards/{{ folder }}/{{ wsrep_cluster_name }}.json
+        context:
+          wsrep_cluster_name: {{ wsrep_cluster_name }}
+          board_name: '{{ brand }} Percona XtraDB Cluster'                              # Optional. Default is "{{ wsrep_cluster_name ~ 'Percona XtraDB Cluster' }}"
+          panel_pxc_size_title: '{{ brand }} PXCluster size'                            # Optional. Default is "Percona XtraDB Cluster size'"
+          panel_pxc_size_alert_conditions_evaluator_params: {{ pxc_cluster_size }}      # Default is "3"

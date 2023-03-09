@@ -42,6 +42,7 @@ gitlab-runner_config:
     - contents: |
         concurrent = {{ pillar["gitlab-runner"]["concurrency"] }}
         check_interval = 0
+        shutdown_timeout = 0
         
         [session_server]
           session_timeout = 1800
@@ -73,5 +74,62 @@ gitlab-runner_project_{{ loop.index }}:
     - shell: /bin/bash
 
   {%- endfor %}
+
+  {%- if "keys" in pillar["gitlab-runner"] %}
+gitlab-runner_ssh_dir:
+  file.directory:
+    - name: /home/gitlab-runner/.ssh
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0700
+
+    {%- for key_name, key_params in pillar["gitlab-runner"]["keys"].items() %}
+gitlab-runner_ssh_key_priv_{{ loop.index }}:
+  file.managed:
+    - name: /home/gitlab-runner/.ssh/{{ key_name }}
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0600
+    - contents: {{ key_params["priv"] | yaml_encode }}
+
+gitlab-runner_ssh_key_pub_{{ loop.index }}:
+  file.managed:
+    - name: /home/gitlab-runner/.ssh/{{ key_name }}.pub
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0644
+    - contents: {{ key_params["pub"] | yaml_encode }}
+
+    {%- endfor %}
+
+  {%- endif %}
+
+  {%- if "docker_clean_cron" in pillar["gitlab-runner"] %}
+# Put clean script in gitlab-runner home
+gitlab-runner_docker_clean_script:
+  file.managed:
+    - name: /home/gitlab-runner/docker-clean.sh
+    - user: gitlab-runner
+    - group: gitlab-runner
+    - mode: 0755
+    - contents: |
+        #!/bin/bash
+        docker stop $(docker ps -a -q)
+        docker rm $(docker ps -a -q)
+        docker rmi $(docker image ls -a -q)
+        docker image prune -f
+        docker image prune -f -a
+        docker volume prune -f
+
+# Add cron job
+gitlab-runner_docker_clean_cron:
+  cron.present:
+    - identifier: docker-clean
+    - user: gitlab-runner
+    - minute: {{ pillar["gitlab-runner"]["docker_clean_cron"]["minute"] }}
+    - hour: {{ pillar["gitlab-runner"]["docker_clean_cron"]["hour"] }}
+    - name: /home/gitlab-runner/docker-clean.sh
+
+  {%- endif %}
 
 {% endif %}

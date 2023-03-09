@@ -1,0 +1,25 @@
+sysctl:
+
+  config: # optional, to setup pkg with sysctl bin on non Ubuntu
+    pkg: procps
+
+  default: # default filename means default for the salt.states.sysctl state
+           # usually /etc/sysctl.d/99-salt.conf
+    vm.swappiness: 20
+    net.ipv4.tcp_syncookies: 0
+    net.core.somaxconn: 4096
+    net.ipv4.tcp_max_syn_backlog: 8192
+
+  /etc/sysctl.d/99-file.conf:  # filename
+    fs.file-max: 100000        # values
+
+
+# Minimal viable examples
+
+sysctl:
+  /etc/sysctl.conf:
+    vm.swappiness: 10
+
+sysctl:
+  default:
+    vm.swappiness: 10

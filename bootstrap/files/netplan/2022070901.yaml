@@ -1,0 +1,23 @@
+# Azure VM
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp6: false
+      dhcp4-overrides:
+        route-metric: 100
+        use-dns: no
+      match:
+        driver: hv_netvsc
+        macaddress: {{ mac_eth0 }}
+      set-name: eth0
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1

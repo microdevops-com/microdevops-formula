@@ -1,0 +1,112 @@
+# Servers.com Dedicated with 2 addresses
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ext0:
+      optional: true
+      match:
+        macaddress: {{ mac_ext0 }}
+      dhcp4: no
+      dhcp6: no
+    ext1:
+      optional: true
+      match:
+        macaddress: {{ mac_ext1 }}
+      dhcp4: no
+      dhcp6: no
+    int0:
+      optional: true
+      match:
+        macaddress: {{ mac_int0 }}
+      dhcp4: no
+      dhcp6: no
+    int1:
+      optional: true
+      match:
+        macaddress: {{ mac_int1 }}
+      dhcp4: no
+      dhcp6: no
+  bonds:
+    agge:
+      interfaces:
+        - ext0
+        - ext1
+      macaddress: {{ mac_ext0 }}
+      mtu: 1500
+      parameters:
+        mode: 802.3ad
+        mii-monitor-interval: 100
+        down-delay: 200
+        up-delay: 200
+        lacp-rate: slow
+        transmit-hash-policy: layer3+4
+      dhcp4: no
+      dhcp6: no
+    aggi:
+      interfaces:
+        - int0
+        - int1
+      macaddress: {{ mac_int0 }}
+      mtu: 1500
+      parameters:
+        mode: 802.3ad
+        mii-monitor-interval: 100
+        down-delay: 200
+        up-delay: 200
+        lacp-rate: slow
+        transmit-hash-policy: layer3+4
+      dhcp4: no
+      dhcp6: no
+  bridges:
+    bre:
+      interfaces:
+        - agge
+      macaddress: {{ mac_ext0 }}
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - {{ ipv4_ext_address_1 }}
+        - {{ ipv4_ext_address_2 }}
+      routes:
+        - on-link: true
+          to: 0.0.0.0/0
+          via: {{ ipv4_ext_gw }}
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+          - 2001:4860:4860::8888
+          - 2001:4860:4860::8844
+          - 2606:4700:4700::1111
+          - 2606:4700:4700::1001
+    bri:
+      interfaces:
+        - aggi
+      macaddress: {{ mac_int0 }}
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - {{ ipv4_int_address }}
+      routes:
+        - on-link: true
+          to: 10.0.0.0/8
+          via: {{ ipv4_int_gw }}
+        - on-link: true
+          to: 192.168.0.0/16
+          via: {{ ipv4_int_gw }}
+        - on-link: true
+          to: 188.42.208.0/21
+          via: {{ ipv4_int_gw }}
+    brh:
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - 10.0.10.1/24

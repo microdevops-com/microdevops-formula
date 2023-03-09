@@ -1,3 +1,5 @@
+# vi: set ft=yaml:
+
 pyenv:
   versions:
     python-3.7.8: True
@@ -14,6 +16,16 @@ postgres:
     - postgresql-server-dev-11
   postgresconf: |-
     listen_addresses = '*'
+    shared_buffers = 4GB
+    work_mem = 4GB
+    maintenance_work_mem = 2GB
+    synchronous_commit = off
+    commit_delay = 10000
+    max_wal_size = 4GB
+    min_wal_size = 2GB
+    checkpoint_completion_target = 0.9
+    effective_cache_size = 4GB
+    default_statistics_target = 500
   pg_hba.conf: salt://postgres/templates/pg_hba.conf.j2
   acls:
     - ["local", "all", "alerta"]
@@ -39,6 +51,13 @@ postgres:
 
 alerta:
   domain: alerta.example.com
+  acme_account: example.com
+  #alias: # optional
+  #  domain: alerta.olddomain.com
+  #  acme_account: olddomain.com
+  #redirect: # optional
+  #  domain: alerta.olddomain.com
+  #  acme_account: olddomain.com
   version: v8.7.0
   webui_source: salt://alerta/files/v8.7.0/alerta-webui.tar.gz # patched version with customer, group autocomplete and customer sort
   db:
@@ -48,7 +67,6 @@ alerta:
     name: alerta
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
   cli_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1
-  acme_account: example.com
   uwsgi:
     processes: 30
     listen: 1500
@@ -95,7 +113,7 @@ alerta:
     ```
 {% endraw %}
 
-  config: |
+  config: | # https://github.com/alerta/alerta/blob/master/alerta/settings.py https://github.com/alerta/alerta-docs/blob/master/configuration.rst
     DASHBOARD_URL = 'https://alerta.example.com/'
 
     AUTH_REQUIRED = True
@@ -109,7 +127,9 @@ alerta:
     CUSTOMER_VIEWS = True
 
     SITE_LOGO_URL = 'https://example.com/uploads/example.png'
-    DATE_FORMAT_LONG_DATE = 'yyyy-MM-dd HH:mm:ss.sss'
+    DATE_FORMAT_LONG_DATE = 'YYYY-MM-DD HH:mm:ss Z'
+    DATE_FORMAT_MEDIUM_DATE = 'YYYY-MM-DD HH:mm'
+    DATE_FORMAT_SHORT_TIME = 'HH:mm'
     DEFAULT_AUDIO_FILE = '/audio/alert_high-intensity.ogg'
 
     API_KEY_EXPIRE_DAYS = 36500 # 100 years
@@ -138,20 +158,20 @@ alerta:
 
     COLOR_MAP = {
         'severity': {
-            'fatal': 'blue',
-            'security': 'blue',
-            'critical': 'red',
-            'major': 'orange',
-            'minor': 'yellow',
-            'warning': 'dodgerblue',
-            'ok': '#00CC00',
-            'normal': '#00CC00',
-            'cleared': '#00CC00',
-            'indeterminate': 'lightblue',
-            'informational': '#00CC00',
-            'debug': '#9D006D',
-            'trace': '#7554BF',
-            'unknown': 'silver'
+            'fatal': '#8f4df7',
+            'security': '#d323eb',
+            'critical': '#fa3e3e',
+            'major': '#faae20',
+            'minor': '#fae848',
+            'warning': '#fa7d3e',
+            'ok': '#5de35d',
+            'normal': '#5de35d',
+            'cleared': '#5de35d',
+            'indeterminate': '#6fc5ed',
+            'informational': '#66edbe',
+            'debug': '#e32bab',
+            'trace': '#7456b8',
+            'unknown': '#d3dcde'
         },
         'text': 'black',
         'highlight': 'skyblue'
@@ -178,3 +198,5 @@ alerta:
     TELEGRAM_CHAT_ID_PER_CUSTOMER = {
         'Example': '-xxxxxxxxxxxxx',
     }
+
+    SORT_LIST_BY = ['severity', 'customer', 'status', 'resource']

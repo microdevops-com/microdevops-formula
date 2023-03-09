@@ -1,0 +1,19 @@
+{% import_yaml "pmm/pmm-server_example_com.sls" as pmm_server %}
+pmm_agent:
+  pmm_host: {{ pmm_server["pmm"]["name"] }}
+  pmm_user: admin                           ## Optional. Default is `admin`
+  pmm_password: {{ pmm_server["pmm"]["admin_password"] }}
+  services:
+    mysql:
+      enabled: True
+      user: pmm                             ## Optional. Default is `pmm`
+      password: YYYYYYYYYYYYYYYYY
+      socket: /var/run/mysqld/mysqld.sock   ## Optional. Default is  `$(mysql -se "select @@socket" | awk 2)`
+    haproxy:
+      enabled: False
+      port: 8404
+    mongodb:
+      enabled: False
+      username: mongoadmin                  ## Optional. Default is `mongoadmin`
+      password: qazWSX123
+      cluster: clustername                  ## Optional

@@ -1,4 +1,7 @@
+# vi: set ft=yaml:
+
 ufw:
+  #disabled: True # optional, explicitly disable ufw
   loglevel: "off" # off by default, do not remove quotes - otherwise Salt will make False instead of off
   import_ufw_simple: False # import deprecated ufw_simple state pillar
   allow: # allow/deny/reject/limit
@@ -83,3 +86,9 @@ ufw:
     filter: | # filter table, filter table is not flused, use ufw chains ufw-before-forward, ufw-before-input, ufw-before-output etc otherwise rules will duplicate on apply
       -A ufw-before-forward -s 10.0.0.10/32 -j ACCEPT
       -A ufw-before-forward -d 10.0.0.10/32 -j ACCEPT
+    raw_rules: | # add custom rule block to the bottom of the before.rules
+      *mangle # example for logging of ipsec traffic
+      -F
+      -A PREROUTING -m policy --dir in --pol ipsec -j NFLOG --nflog-group 16
+      -A POSTROUTING -m policy --dir out --pol ipsec -j NFLOG --nflog-group 16
+      COMMIT

@@ -28,6 +28,11 @@
 # kpartx -d /dev/vg_md2/virtual-machines_test.block
 # lxc start ...
 
+# apply only specific instances
+... state.apply lxd.instances pillar='{lxd: {only: {"instance1.example.com"}}}'
+# and allow stop and start for changes to apply
+... state.apply lxd.instances pillar='{lxd: {only: {"instance1.example.com"}, allow_stop_start: True}}'
+
 
 lxd:
   password: randompassword
@@ -218,8 +223,3 @@ lxd:
         - bionic_salt_minion.sh:
           - salt1.example.com
           - 3000
-
-# set only specific instances
-... state.apply lxd.instances pillar='{lxd: {only: {"instance1.example.com"}}}'
-# and allow stop and start for changes to apply
-... state.apply lxd.instances pillar='{lxd: {only: {"instance1.example.com"}, allow_stop_start: True}}'

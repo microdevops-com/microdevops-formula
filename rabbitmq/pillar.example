@@ -1,27 +1,15 @@
 # vi: set ft=yaml:
 
-# These bugs are has workarounds in formula code now, deprecated.
-#
-# Salt has a bug for RabbitMQ 3.8+ user management, quick ugly fix:
-# edit /usr/lib/python2.7/dist-packages/salt/modules/rabbitmq.py:
-# change cmd = ('rabbit_auth_backend_internal:check_user_login'
-# to     cmd = ('rabbit_auth_backend_internal:user_login_authentication'
-#
-# Also short hostname must be resolved to the same host, otherwise it will fail to start.
-# rabbitmq1 -> other server
-# rabbitmq1.xxx.domain.com -> this server
-# = fail
-# You shoud add record to /etc/hosts:
-# 127.0.1.1   rabbitmq1
-
 rabbitmq:
   config: # optional
     - 'key = val' # see https://github.com/rabbitmq/rabbitmq-server/blob/v3.7.x/docs/rabbitmq.conf.example, each item is copied as is
   admin:
     name: root
     password: USE_YOUR_OWN
-  management_domain: rabbit.example.com # if rabbitmq_management is enabled, get acme.sh cert for this domain and setup for rabbitmq (you cannot use 443 port because of permissions)
-  management_port: 15672
+  management_domain: rabbit.example.com # if rabbitmq_management is enabled, acme is used for cert request, see acme state
+  subjectAltNames: 'www.rabbit.example.com rabbit1.example.com' #specify all additional domains separated by a space that should be in the ssl certificate
+  management_port: 15672 # you cannot use 443 port because of privileges
+  acme_account: example.com # acme state account
   plugins: # optional
     - rabbitmq_management
   vhosts:

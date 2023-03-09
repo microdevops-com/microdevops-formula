@@ -1,0 +1,19 @@
+atlassian-servicedesk:
+  catalina_opts: -Xms1536m -Xmx1536m
+  crowd:
+    session.isauthenticated: session.isauthenticated
+    session.lastvalidation: session.lastvalidation
+    session.tokenkey: session.tokenkey
+    session.validationinterval: 2
+  crowdSSO: false
+  db:
+    password: servicedesk-password
+    schema: public
+    type: postgres72
+    url: jdbc:postgresql://localhost:5432/servicedesk
+    username: servicedesk
+  dir: /opt/atlassian/servicedesk
+  group: servicedesk
+  managedb: true
+  user: servicedesk
+  version: 8.2.4

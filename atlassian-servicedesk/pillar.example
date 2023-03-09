@@ -1,0 +1,33 @@
+atlassian-servicedesk:
+  addon:
+    source: 'salt://atlassian/addon/atlassian-addon-v1.2.3/atlassian-addon.addon'
+    target: '/opt/atlassian/atlassian-addon.addon'
+    javaopts: '-javaagent:/opt/atlassian/atlassian-addon.addon'
+  version: 5.1.0
+  acme_configs:
+    - name: example_com
+      domains:
+        - jsm.example.com
+    - name: new-exmpl3_com
+      domains:
+        - jsm.new-exmpl3.com
+        - jsm1.new-exmpl3.com
+        - jsm2.new-exmpl3.com
+  nginx_forwards:
+    - jsm.example.com
+    - jsm1.new-exmpl3.com
+    - jsm2.new-exmpl3.com
+  dir: /opt/atlassian/jsm
+  user: jsm
+  group: jsm
+  http_port: 8080
+  http_scheme: https
+  http_proxyName: jsm.new-exmpl3.com
+  http_proxyPort: 443
+  catalina_opts: -Xms1536m -Xmx6144m
+  db:
+    type: postgres72
+    schema: public
+    url: jdbc:postgresql://localhost:5432/jsm-example
+    username: jsm-example
+    password: ZXXXXXXzzzZZ
