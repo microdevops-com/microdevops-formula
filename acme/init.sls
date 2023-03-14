@@ -85,7 +85,6 @@ acme_verify_and_issue_{{ loop.index }}:
           echo openssl verify OK
         fi
 
-
 symlink for backwards compatibility {{ loop.index }}:
   file.symlink:
     - name: /opt/acme/home/{{ acme_acc }}/verify_and_issue.sh
