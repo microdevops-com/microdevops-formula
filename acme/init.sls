@@ -12,7 +12,6 @@ acme_acc_dirs_{{ loop.index }}:
       - /opt/acme/{{ acme_acc }}/git
       - /opt/acme/{{ acme_acc }}/home
       - /opt/acme/{{ acme_acc }}/config
-      - /opt/acme/home/{{ acme_acc }}
     - makedirs: True
 
 acme_git_{{ loop.index }}:
@@ -89,6 +88,7 @@ symlink for backwards compatibility {{ loop.index }}:
   file.symlink:
     - name: /opt/acme/home/{{ acme_acc }}/verify_and_issue.sh
     - target: /opt/acme/{{ acme_acc }}/home/verify_and_issue.sh
+    - makedirs: True
     - force: True
 
     {%- set a_loop = loop %}
