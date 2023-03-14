@@ -12,6 +12,7 @@ acme_acc_dirs_{{ loop.index }}:
       - /opt/acme/{{ acme_acc }}/git
       - /opt/acme/{{ acme_acc }}/home
       - /opt/acme/{{ acme_acc }}/config
+      - /opt/acme/home/{{ acme_acc }}
     - makedirs: True
 
 acme_git_{{ loop.index }}:
@@ -84,11 +85,12 @@ acme_verify_and_issue_{{ loop.index }}:
           echo openssl verify OK
         fi
 
+
 symlink for backwards compatibility {{ loop.index }}:
   file.symlink:
     - name: /opt/acme/home/{{ acme_acc }}/verify_and_issue.sh
     - target: /opt/acme/{{ acme_acc }}/home/verify_and_issue.sh
-    - makedirs: True
+    - force: True
 
     {%- set a_loop = loop %}
     {%- for var_key, var_val in acme_params["vars"].items() %}
@@ -107,7 +109,12 @@ acme_chown_{{ loop.index }}:
 
     {%- endif %}
 
-ACME Cron for {{ acme_acc }}:
+Remove old ACME Cron for {{ acme_acc }}:
+  cron.absent:
+    - name: '"/opt/home/{{ acme_acc }}"/acme.sh --cron --home "/opt/acme/home/{{ acme_acc }}" --config-home "/opt/acme/config/{{ acme_acc }}" > /dev/null'
+    - user: root
+
+Create ACME Cron for {{ acme_acc }}:
   cron.present:
     - name: /opt/acme/{{ acme_acc }}/home/acme.sh --cron --home "/opt/acme/{{ acme_acc }}/home" --config-home "/opt/acme/{{ acme_acc }}/config" > /dev/null
     - identifier: ACME for {{ acme_acc }}
