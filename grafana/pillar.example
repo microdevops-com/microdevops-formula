@@ -1,13 +1,19 @@
 grafana:
   docker-ce_version: 5:20.10.8*
-  acme_account: example.com
+  acme_configs:
+    - name: example.com
+      domains:
+        - grafana.example.com
+    - name: another-example.com
+      domains:
+        - grafana.another-example.com
   domains:
     - name: grafana.example.com
       default_instance: prod # optional, redirect to this instance if exist, make html list if not
       instances:
         - name: prod
           port: 3000
-          image: grafana/grafana
+          image: grafana/grafana:9.4.3-ubuntu
           admin_password: xxx
           install_plugins: grafana-clock-panel,grafana-simple-json-datasource
           image_renderer:
@@ -48,7 +54,7 @@ grafana:
             callback_url = https://grafana.example.com/prod/
         - name: dev
           port: 3001
-          image: grafana/grafana
+          image: grafana/grafana-oss:latest-ubuntu
           admin_password: xxx
           install_plugins: grafana-clock-panel,grafana-simple-json-datasource
           docker_logging:
@@ -98,3 +104,32 @@ grafana:
             [[servers.group_mappings]]
             group_dn = "cn=grafana,cn=groups,dc=example,dc=com"
             org_role = "Viewer"
+    - name: grafana.another-example.com
+      default_instance: prod # optional, redirect to this instance if exist, make html list if not
+      instances:
+        - name: prod
+          port: 3002
+          image: grafana/grafana:8.5.3-ubuntu
+          admin_password: xxx
+          install_plugins: grafana-clock-panel,grafana-simple-json-datasource
+          image_renderer:
+            external: true
+            version: latest
+            {% set renderer_port = 8083 %}
+            port: {{ renderer_port }}
+          config: |
+            instance_name = grafana.another-example.com-prod
+            [server]
+            root_url = https://grafana.another-example.com/prod
+            serve_from_sub_path = true
+            [database]
+            url = postgres://another-grafana-prod:xxx@grafana1.example.com:5432/another-grafana-prod
+            [log]
+            level = info
+            mode = console file
+            filters = rendering:debug
+            [rendering]
+            server_url = http://{{ grains['fqdn'] }}:{{ renderer_port }}/render
+            callback_url = https://grafana.another-example.com/prod/
+            [unified_alerting.screenshots]
+            capture = true
