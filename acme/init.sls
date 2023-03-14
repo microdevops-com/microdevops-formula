@@ -110,7 +110,7 @@ acme_chown_{{ loop.index }}:
 
 Remove old ACME Cron for {{ acme_acc }}:
   cron.absent:
-    - name: '"/opt/home/{{ acme_acc }}"/acme.sh --cron --home "/opt/acme/home/{{ acme_acc }}" --config-home "/opt/acme/config/{{ acme_acc }}" > /dev/null'
+    - name: '"/opt/acme/home/{{ acme_acc }}"/acme.sh --cron --home "/opt/acme/home/{{ acme_acc }}" --config-home "/opt/acme/config/{{ acme_acc }}" > /dev/null'
     - user: root
 
 Create ACME Cron for {{ acme_acc }}:
