@@ -89,20 +89,30 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['port'] }}/;
                 }
     {%- endfor %}
-  {%- endfor %}
             }
+  {%- endfor %}
         }
 
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
-  {%- for domain in pillar['grafana']['domains'] %}
+  {%- if pillar["grafana"]["acme_configs"] is defined and pillar["grafana"]["acme_account"] is not defined %}
+    {% for acme_config in pillar["grafana"]["acme_configs"] %}
 nginx_cert_{{ loop.index }}:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["grafana"]["acme_account"] }}/verify_and_issue.sh grafana {{ domain['name'] }}"
-    
+    - name: "/opt/acme/{{ acme_config["name"] }}/home/verify_and_issue.sh grafana {%- for domain in acme_config["domains"] %} {{ domain }} {%- endfor -%}"
+    {%- endfor%}
+  {%- endif %}
+  {%- for domain in pillar['grafana']['domains'] %}
+    {%- if pillar["grafana"]["acme_configs"] is not defined and pillar["grafana"]["acme_account"] is defined %}
+nginx_cert_{{ loop.index }}:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/{{ pillar["grafana"]["acme_account"] }}/home/verify_and_issue.sh grafana {{ domain['name'] }}"
+    {%- endif %}
+   
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
 grafana_dirs_{{ loop.index }}_{{ i_loop.index }}:
