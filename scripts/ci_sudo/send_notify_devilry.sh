@@ -101,6 +101,7 @@ elif [[ -n "$SALT_CMD" ]]; then
 fi
 
 # Do not send SALT_CMD_DECODED in attributes as it may contain quotes, check original command in job logs if needed
+# We cannot get environment, location and description within pipeline, so we use hardcoded values
 if [[ "$NOTIFY_SEND" == "1" ]]; then
 	echo '{
 		"severity": "'${NOTIFY_SEVERITY}'",
@@ -111,6 +112,9 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 		"group": "'${SALT_MINION}'",
 		"text": "'${NOTIFY_TEXT}'",
 		"origin": ".gitlab-ci.yml",
+		"environment": "infra",
+		"location": "Pipeline",
+		"description": "Pipeline",
 		"correlate": '${NOTIFY_CORRELATE}',
 		"attributes": {
 			"salt_minion": "'${SALT_MINION}'",
