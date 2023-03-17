@@ -77,7 +77,11 @@ elif [[ -n "$SALT_CMD" ]]; then
 	if [[ "$CI_JOB_STATUS" == "failed" || "$CHECK_ALIVE_MINIONS" == "failed" ]]; then
 
 		# Consider any failure as major
-		NOTIFY_SEVERITY=major
+		if [[ -n "$SEVERITY_OVERRIDE" ]]; then
+			NOTIFY_SEVERITY=$SEVERITY_OVERRIDE
+		else
+			NOTIFY_SEVERITY=major
+		fi
 		NOTIFY_SEND=1
 		NOTIFY_EVENT=pipeline_salt_cmd_failed
 		NOTIFY_VALUE=failed
