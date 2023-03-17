@@ -113,10 +113,10 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 		"text": "'${NOTIFY_TEXT}'",
 		"origin": ".gitlab-ci.yml",
 		"environment": "infra",
-		"location": "Pipeline",
-		"description": "Pipeline",
 		"correlate": '${NOTIFY_CORRELATE}',
 		"attributes": {
+			"location": "Pipeline",
+			"description": "Pipeline",
 			"salt_minion": "'${SALT_MINION}'",
 			"salt_timeout": "'${SALT_TIMEOUT}'",
 			"salt_cmd_safe": "'${SALT_CMD_SAFE}'",
