@@ -233,7 +233,7 @@ app:
           #sites_enabled_dir: /etc/nginx/sites-enabled
 
   docker:
-    docker-ce_version: 18.06.1
+    docker-ce_version: 18.06.1 # optional, do not manage docker installation if omitted
     networks:
       proto:
         subnet: 172.18.0.0/24
