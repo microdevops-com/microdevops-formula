@@ -235,7 +235,7 @@
       "title": "[{{ node_name }}] Swap Usage",
       "id": 16,
       "alert": {
-        "alertRuleTags": {},
+        "name": "[{{ node_name }}] Swap Usage!",
         "conditions": [
           {
             "evaluator": {
@@ -253,19 +253,16 @@
               ]
             },
             "reducer": {
-              "params": [],
-              "type": "{{ panel_free_memory_alert_conditions_reducer_type | default('min') }}"
+              "type": "{{ panel_swap_usage_alert_conditions_reducer_type | default('min') }}"
             },
             "type": "query"
           }
         ],
+        "frequency": "{{ panel_swap_usage_alert_pending_for | default('1m') }}",
         "executionErrorState": "alerting",
         "for": "{{ panel_swap_usage_alert_frequency | default('1m') }}",
-        "frequency": "{{ panel_swap_usage_alert_pending_for | default('0m') }}",
         "handler": 1,
-        "name": "[{{ node_name }}] Swap Usage!",
-        "noDataState": "no_data",
-        "notifications": []
+        "noDataState": "no_data"
       },
       "aliasColors": {},
       "bars": true,
@@ -291,12 +288,10 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.3.10",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -314,7 +309,7 @@
         {
           "exemplar": true,
           "expr": "avg by (node_name) (max_over_time(node_memory_SwapTotal_bytes{node_name=~\"{{ node_name }}\"}[10s]) - max_over_time(node_memory_SwapFree_bytes{node_name=~\"{{ node_name }}\"}[10s]))",
-          "interval": "",
+          "interval": "1",
           "legendFormat": "Swap Usage",
           "refId": "A"
         }
@@ -327,8 +322,7 @@
       "type": "graph",
       "xaxis": {
         "mode": "time",
-        "show": true,
-        "values": []
+        "show": true
       },
       "yaxes": [
         {
