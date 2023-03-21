@@ -21,6 +21,17 @@ asterisk_depencies_installed:
       - sngrep
 
 
+pyst2_pip_install:
+  pip.installed:
+    - name: pyst2
+    - reload_modules: True
+
+PyMySQL_pip_install:
+  pip.installed:
+    - name: PyMySQL            
+    - reload_modules: True
+
+
 asterisk_source:
   archive.extracted:
     - name: /usr/src
@@ -138,6 +149,21 @@ replace_/etc/default/asterisk:
     - dir_mode: 755
     - file_mode: 664
   {%- endif %}
+
+
+  {% if pillar["asterisk"]["files"]["/var/lib/asterisk/agi-bin"] is defined %}
+/var/lib/asterisk/agi-bin:        
+  file.recurse:
+    - name: /var/lib/asterisk/agi-bin
+    - source: {{ pillar["asterisk"]["files"]["/var/lib/asterisk/agi-bin"] }}
+    - include_empty: True
+    - clean: False
+    - user: {{ user }}
+    - group: {{ group }}
+    - dir_mode: 755
+    - file_mode: 755
+  {%- endif %}
+
 
 {%- endif %}
 
