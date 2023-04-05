@@ -77,7 +77,11 @@ elif [[ -n "$SALT_CMD" ]]; then
 	if [[ "$CI_JOB_STATUS" == "failed" || "$CHECK_ALIVE_MINIONS" == "failed" ]]; then
 
 		# Consider any failure as major
-		NOTIFY_SEVERITY=major
+		if [[ -n "$SEVERITY_OVERRIDE" ]]; then
+			NOTIFY_SEVERITY=$SEVERITY_OVERRIDE
+		else
+			NOTIFY_SEVERITY=major
+		fi
 		NOTIFY_SEND=1
 		NOTIFY_EVENT=pipeline_salt_cmd_failed
 		NOTIFY_VALUE=failed
@@ -101,6 +105,7 @@ elif [[ -n "$SALT_CMD" ]]; then
 fi
 
 # Do not send SALT_CMD_DECODED in attributes as it may contain quotes, check original command in job logs if needed
+# We cannot get environment, location and description within pipeline, so we use hardcoded values
 if [[ "$NOTIFY_SEND" == "1" ]]; then
 	echo '{
 		"severity": "'${NOTIFY_SEVERITY}'",
@@ -111,8 +116,11 @@ if [[ "$NOTIFY_SEND" == "1" ]]; then
 		"group": "'${SALT_MINION}'",
 		"text": "'${NOTIFY_TEXT}'",
 		"origin": ".gitlab-ci.yml",
+		"environment": "infra",
 		"correlate": '${NOTIFY_CORRELATE}',
 		"attributes": {
+			"location": "Pipeline",
+			"description": "Pipeline",
 			"salt_minion": "'${SALT_MINION}'",
 			"salt_timeout": "'${SALT_TIMEOUT}'",
 			"salt_cmd_safe": "'${SALT_CMD_SAFE}'",

@@ -1,5 +1,6 @@
 {% if pillar["app"] is defined and "docker" in pillar["app"] and "apps" in pillar["app"]["docker"] %}
 
+  {%- set app_type = "docker" %} # required for _pkg.sls
   {%- include "app/_pkg.sls" with context %}
 
 docker_install_00:
@@ -13,6 +14,7 @@ docker_install_01:
     - contents: |
         {"iptables": false}
 
+  {%- if pillar["app"]["docker"]["docker-ce_version"] is defined %}
 docker_install_1:
   pkgrepo.managed:
     - humanname: Docker CE Repository
@@ -46,6 +48,7 @@ docker_install_4:
     - name: systemctl restart docker
     - onchanges:
         - file: /etc/docker/daemon.json
+  {%- endif %}
 
   {%- if pillar["app"]["docker"]["networks"] is mapping %}
 

@@ -48,7 +48,7 @@ salt-ssh redis1.tst.example.com cmd.run "redis-cli flushall"
 salt-ssh -E "loki-minio[1-8].tst.example.com" cmd.run "systemctl stop minio; rm -rf /opt/minio/data/*/.*; rm -rf /opt/minio/data/*/*;"
 
 # Reinit minio
-salt-ssh -E "loki-minio[1-8].tst.oxtech.org" state.apply minio
+salt-ssh -E "loki-minio[1-8].tst.example.com" state.apply minio
 
 # Recreate buckets in minio
 salt-ssh loki-minio1.tst.example.com state.apply minio.buckets

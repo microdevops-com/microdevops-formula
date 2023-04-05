@@ -22,7 +22,7 @@ gitlab_repo:
 gitlab_acme_run:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["domain"] }}"
+    - name: "/opt/acme/{{ pillar["gitlab"]["acme_account"] }}/home/verify_and_issue.sh gitlab {{ pillar["gitlab"]["domain"] }}"
 
   {%- else %}
 gitlab_ssl_certificate:
