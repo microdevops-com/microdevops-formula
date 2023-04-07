@@ -15,9 +15,10 @@ unbound create config:
     - contents: |
         {{ pillar["unbound"]["config"] | indent(8) }}
 
+  {%- if pillar["unbound"]["root_hints"] is defined %}
 unbound download root.hints:
   file.managed:
-    - name: /var/lib/unbound/root.hints
+    - name: {{ pillar["unbound"]["root_hints"] }}
     - source: https://www.internic.net/domain/named.cache
     - skip_verify: True
     - makedirs: True
@@ -25,13 +26,14 @@ unbound download root.hints:
     - group: unbound
     - mode: 644
   cron.present:
-    - name: "curl -o /var/lib/unbound/root.hints https://www.internic.net/domain/named.root"
+    - name: "curl -o {{ pillar["unbound"]["root_hints"] }} https://www.internic.net/domain/named.root"
     - identifier: download root.hints for Unbound
     - user: root
     - minute: {{ range(6, 54) | random }}
     - hour: 1
     - daymonth: 1
     - month: '*/2'
+  {%- endif %}
 
   {%- if pillar["unbound"]["logfile"] is defined %}
 apparmor setup for write unbound logs to file:

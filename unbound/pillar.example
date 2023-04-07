@@ -1,63 +1,96 @@
 {% set logfile = "/var/log/unbound.log" %}
+{% set root_hints = "/var/lib/unbound/root.hints" %}
+
 unbound:
   logfile: {{ logfile }}
+  root_hints: {{ root_hints }}
   config: |
     server:
         # Specify the addresses on which the server listens to clients
         interface: 0.0.0.0
         port: 53
+        
         # Networks from which access to DNS is allowed
         access-control: 10.8.0.0/16 allow
         access-control: 1.2.3.4/32 allow
+        
         # Interface through which we will access the root zones
         outgoing-interface: 1.2.3.4
         outgoing-range: 1450
+        
         # enable outgoing connections via lower level protocols
         do-ip4: yes
         do-ip6: no
         do-udp: yes
         do-tcp: yes
+        
+        # Specify the location of the DNSSEC trust binding root file
         auto-trust-anchor-file: "/var/lib/unbound/root.key"
+        
+        # Specify the location of the list of root DNS servers
+        root-hints: "{{ root_hints }}"
+        
         # verbosity level 1 provides operational information (query statistics)
         # level 0 will send only errors to the log
         verbosity: 1
+        
+        # Enable logging of incoming DNS requests
         log-queries: yes
-        logfile: {{ logfile }}
+        
+        # log file location
+        logfile: "{{ logfile }}"
+        
         # Instruct not to duplicate event messages in the system log
         use-syslog: no
+        
         # Use human-readable timestamp format in the log
         log-time-ascii: yes
+        
         # Time to collect statistics in seconds
-        # statistics-interval: 60
+        #statistics-interval: 60
+        
         # Statistics is accumulated since the start time of Unbound
-        # statistics-cumulative: yes
+        #statistics-cumulative: yes
+        
         # Extended statistics. Displayed via Unbound-control
-        # extended-statistics: yes
+        #extended-statistics: yes
+        
         # Number of threads. It all depends on the number of CPU cores
         num-threads: 2
+        
         # Enable optimization for fast resource reallocation
         so-reuseport: yes
+        
         # This option enables updating records in the cache in the background.
         prefetch: yes
+        
         # Number of message cache slabs. Set to the number of CPU/threads
         msg-cache-slabs: 2
         num-queries-per-thread: 2048
+        
         # Size of the cache for DNS records
         rrset-cache-size: 128m
+        
         # Number of slabs to work with the cache. Set to the number of CPU/threads
         rrset-cache-slabs: 2
+        
         # Record with ttl greater than 3600 seconds is written to the cache with ttl equal to 3600
         cache-max-ttl: 3600
+        
         # Record with ttl less than 60 seconds is written to the cache with ttl equal to 60 seconds
         cache-min-ttl: 60
         infra-host-ttl: 120
+        
         # Set to the number of CPU/threads
         infra-cache-slabs: 4
+        
         # Number of records in the cache. Default is 10k
         infra-cache-numhosts: 120000
+        
         # Set all server responses (and cache records) to lowercase
         use-caps-for-id: yes
         do-daemonize: no
+        
         # Hide software information in response to queries
         hide-identity: yes
         hide-version: yes
