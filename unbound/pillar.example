@@ -28,7 +28,7 @@ unbound:
         auto-trust-anchor-file: "/var/lib/unbound/root.key"
         
         # Specify the location of the list of root DNS servers
-        root-hints: {{ root_hints }}
+        root-hints: "{{ root_hints }}"
         
         # verbosity level 1 provides operational information (query statistics)
         # level 0 will send only errors to the log
@@ -38,7 +38,7 @@ unbound:
         log-queries: yes
         
         # log file location
-        logfile: {{ logfile }}
+        logfile: "{{ logfile }}"
         
         # Instruct not to duplicate event messages in the system log
         use-syslog: no
