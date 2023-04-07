@@ -120,3 +120,30 @@ pxc:
           #- ALL PRIVILEGES WITH GRANT OPTION
         "*.*":
           - ALL PRIVILEGES
+
+# 5.7 minimalistic example
+pxc:
+  root_password: xxxxxxxxxxxxxxxxxxxxxxx
+  pmm_password: xxxxxxxxxxxxxxxxxxxxxxx
+  repos:
+    tools: release
+    pmm2-client: release
+    mysql-shell: release
+    ps-57: release
+  pkgs:
+    percona-toolkit: latest
+    pmm2-client: latest
+    percona-mysql-shell: latest
+    percona-xtrabackup-24: latest
+    percona-server-common-5.7: latest
+    percona-server-client-5.7: latest
+    percona-server-server-5.7: latest
+
+  debconf:
+    percona-server-server-5.7:
+      percona-server-server-5.7/root-pass:
+        type: password
+        value: __root_password__
+      percona-server-server-5.7/re-root-pass:
+        type: password
+        value: __root_password__
