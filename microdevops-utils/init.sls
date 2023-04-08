@@ -1,6 +1,6 @@
 {% if pillar["microdevops-utils"] is defined and "version" in pillar["microdevops-utils"] and pillar["microdevops-utils"]["version"] == "latest" %}
 
-  {%- if grains["os"] in ["Ubuntu", "Debian"] and grains["oscodename"] != "precise" %}
+  {%- if grains["os"] in ["Ubuntu", "Debian"] and grains["oscodename"] not in ["precise", "trusty"] %}
 microdevops-utils_pkgrepo_sysadmws:
   pkgrepo.managed:
     - file: /etc/apt/sources.list.d/sysadmws.list
