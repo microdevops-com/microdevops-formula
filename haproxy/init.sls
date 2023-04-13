@@ -22,7 +22,8 @@ haproxy_config:
   {% if pillar["acme"] is defined %}
     {% if pillar["haproxy"]["ssl"]["acme_configs"] is defined %}
       {% for acme_config in pillar["haproxy"]["ssl"]["acme_configs"] %}
-haproxy_cert_{{ acme_config["name"] }}_gen_1:
+{% set cert_name = acme_config["domains"][0] %}
+haproxy_cert_{{ cert_name }}_gen_1:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ acme_config["name"] }}/verify_and_issue.sh haproxy {%- for domain in acme_config["domains"] %} {{ domain }} {%- endfor -%}"
@@ -32,23 +33,18 @@ create_pem_dir:
     - name: {{ acme_config["pemdir"] }}
     - user: root
     - group: root
-    - file_mode: 660
-    - dir_mode: 770
-    - recurse:
-      - user
-      - group
-      - mode
+    - file_mode: 664
+    - dir_mode: 775
     - makedirs: True
 
-{% set cert_name = acme_config["domains"][0] %}
-haproxy_cert_{{ acme_config["name"] }}_gen_2:
+haproxy_cert_{{ cert_name }}_gen_2:
   cmd.run:
     - shell: /bin/bash
-    - name: "cat /opt/acme/cert/{{ cert_name }}/{{ cert_name }}.key /opt/acme/cert/{{ cert_name }}/fullchain.cer > {{ acme_config["pemdir"] }}{{ cert_name }}.pem"
+    - name: "cat /opt/acme/cert/haproxy_{{ cert_name }}_key.key /opt/acme/cert/haproxy_{{ cert_name }}_fullchain.cer > {{ acme_config["pemdir"] }}{{ cert_name }}.pem"
 
-haproxy_{{ acme_config["name"] }}.pem_reload_cron:
+haproxy restart for pem reload cron:
   cron.present:
-    - name: "cat /opt/acme/cert/{{ cert_name }}/{{ cert_name }}.key /opt/acme/cert/{{ cert_name }}/fullchain.cer > {{ acme_config["pemdir"] }}{{ cert_name }}.pem && systemctl reload haproxy"
+    - name: "cat /opt/acme/cert/haproxy_{{ cert_name }}_key.key /opt/acme/cert/haproxy_{{ cert_name }}_fullchain.cer > {{ acme_config["pemdir"] }}{{ cert_name }}.pem && systemctl restart haproxy"
     - identifier: haproxy_{{ acme_config["name"] }}.pem_reload
     - user: root
     - minute: {{ range(6, 54) | random }}
@@ -61,28 +57,24 @@ haproxy_cert_gen_1:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh haproxy {{ pillar["haproxy"]["ssl"]["domain"] }}"
 
-    {% if  pillar["haproxy"]["ssl"]["pemdir"] is defined %}
+      {% if  pillar["haproxy"]["ssl"]["pemdir"] is defined %}
 create_pem_dir:
   file.directory:
     - name: {{ pillar["haproxy"]["ssl"]["pemdir"] }}
     - user: root
     - group: root
-    - file_mode: 660
-    - dir_mode: 770
-    - recurse:
-      - user
-      - group
-      - mode
+    - file_mode: 664
+    - dir_mode: 775
     - makedirs: True
-    {% endif %}
+      {% endif %}
 
 haproxy_cert_gen_2:
   cmd.run:
     - shell: /bin/bash
     - name: "cat {{ pillar["haproxy"]["ssl"]["cert"] }} {{ pillar["haproxy"]["ssl"]["key"] }} > {{ pillar["haproxy"]["ssl"]["pem"] }}"
-haproxy_pem_reload_cron:
+haproxy restart for pem reload cron:
   cron.present:
-    - name: "cat {{ pillar["haproxy"]["ssl"]["cert"] }} {{ pillar["haproxy"]["ssl"]["key"] }} > {{ pillar["haproxy"]["ssl"]["pem"] }} && systemctl reload haproxy"
+    - name: "cat {{ pillar["haproxy"]["ssl"]["cert"] }} {{ pillar["haproxy"]["ssl"]["key"] }} > {{ pillar["haproxy"]["ssl"]["pem"] }} && systemctl restart haproxy"
     - identifier: haproxy_pem_reload
     - user: root
     - minute: 15
@@ -96,9 +88,9 @@ haproxy_run:
     - name: haproxy
     - enable: True
 
-haproxy_reload:
+haproxy_restart:
   cmd.run:
-    - name: systemctl reload haproxy
+    - name: systemctl restart haproxy
     - onchanges:
         - file: /etc/haproxy/haproxy.cfg
 {% endif %}
