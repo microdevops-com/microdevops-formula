@@ -254,7 +254,7 @@ salt_master_gitlab-runner_register:
           --registration-token "{{ pillar["salt"]["master"]["gitlab-runner"]["registration_token"] }}" \
           --executor "shell" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
           --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
-          --locked --access-level "ref_protected"
+          --locked --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"] if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}
 
 salt_master_gitlab-runner_job_fail_on_clear_screen_fix:
   file.absent:
