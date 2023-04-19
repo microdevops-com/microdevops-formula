@@ -8,7 +8,7 @@ loki:
   extra_args: '-target=read'
   name: {{ name }}
   path_prefix: {{ path_prefix }}
-  separated_config: False   # Set True for creating separated nginx config, not rewrite nginx.conf
+  #separated_config: False # optional, set to True for creating separated nginx config instead of rewriting main nginx.conf
   binary:
     link: https://github.com/grafana/loki/releases/download/v{{ version  }}/loki-linux-amd64.zip
   config:
