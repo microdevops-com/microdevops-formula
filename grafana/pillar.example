@@ -1,5 +1,6 @@
 grafana:
   docker-ce_version: 5:20.10.8*
+  separated_config: False   # Set True for creating separated nginx config, not rewrite nginx.conf
   acme_configs:
     - name: example.com
       domains:

@@ -6,6 +6,83 @@ nginx_install:
     - pkgs:
       - nginx
 
+{% if "seprated_config" in pillar["loki"] and pillar["loki"]["seprated_config"] %}
+nginx_files_1:
+  file.managed:
+    - name: /etc/nginx/sites_available/loki.conf
+    - contents: |
+        upstream read {
+  {%- for reader in pillar["loki"]["readers"] %}
+          server {{ reader }} max_fails=1 fail_timeout=10;
+  {%- endfor %}
+        }
+        upstream write {
+  {%- for writer in pillar["loki"]["writers"] %}
+          server {{ writer }} max_fails=1 fail_timeout=10;
+  {%- endfor %}
+        }
+        upstream cluster {
+  {%- for reader in pillar["loki"]["readers"] %}
+          server {{ reader }} max_fails=1 fail_timeout=10;
+  {%- endfor %}
+  {%- for writer in pillar["loki"]["writers"] %}
+          server {{ writer }} max_fails=1 fail_timeout=10;
+  {%- endfor %}
+        }
+        upstream query-frontend {
+  {%- for query_frontend in pillar["loki"]["query_frontends"] %}
+          server {{ query_frontend }} max_fails=1 fail_timeout=10;
+  {%- endfor %}
+        }
+        server {
+          listen 80;
+          return 301 https://$host$request_uri;
+        }
+        server {
+          listen 443 ssl;
+          listen 3100 ssl;
+          ssl_certificate /opt/acme/cert/{{ pillar["loki"]["name"] }}/fullchain.cer;
+          ssl_certificate_key /opt/acme/cert/{{ pillar["loki"]["name"] }}/{{ pillar["loki"]["name"] }}.key;
+          location = /ring {
+              proxy_pass       http://cluster$request_uri;
+          }
+          location = /memberlist {
+              proxy_pass       http://cluster$request_uri;
+          }
+          location = /config {
+              proxy_pass       http://cluster$request_uri;
+          }
+          location = /metrics {
+              proxy_pass       http://cluster$request_uri;
+          }
+          location = /ready {
+              proxy_pass       http://cluster$request_uri;
+          }
+          location = /loki/api/v1/push {
+              proxy_pass       http://write$request_uri;
+          }
+          location = /loki/api/v1/tail {
+             proxy_pass       http://read$request_uri;
+             proxy_set_header Upgrade $http_upgrade;
+             proxy_set_header Connection "upgrade";
+          }
+          location ~ /loki/api/.* {
+             proxy_pass       http://query-frontend$request_uri;
+          }
+        }
+        server {
+          listen 3101 ssl;
+          ssl_certificate /opt/acme/cert/{{ pillar["loki"]["name"] }}/fullchain.cer;
+          ssl_certificate_key /opt/acme/cert/{{ pillar["loki"]["name"] }}/{{ pillar["loki"]["name"] }}.key;
+          location / {
+              proxy_pass       http://write$request_uri;
+          }
+        }
+nginx_symlink_1:
+  file.symlink:
+    - name: /etc/nginx/sites-available/loki.conf
+    - target: /etc/nginx/sites-enabled/loki.conf
+{% else %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
@@ -93,7 +170,7 @@ nginx_files_1:
             }
           }
         }
-
+{% endif %}
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
