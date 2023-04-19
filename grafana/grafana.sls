@@ -55,7 +55,7 @@ nginx_files_1:
             listen 80;
             return 301 https://$host$request_uri;
         }
-{%- for domain in pillar['grafana']['domains'] %}
+  {%- for domain in pillar['grafana']['domains'] %}
         server {
             listen 443 ssl;
             server_name {{ domain['name'] }};
@@ -80,7 +80,7 @@ nginx_files_1:
             }
     {%- endfor %}
           }
-{%- endfor %}
+  {%- endfor %}
 nginx_symlink_1:
   file.symlink:
     - name: /etc/nginx/sites-available/grafana.conf
