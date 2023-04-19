@@ -46,7 +46,7 @@ nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
-{% if pillar["seprated_config"] %}
+{% if "seprated_config" in pillar["grafana"] and pillar["grafana"]["seprated_config"] %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/sites-available/grafana.conf
