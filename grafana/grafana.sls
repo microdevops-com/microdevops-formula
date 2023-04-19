@@ -63,7 +63,7 @@ nginx_files_1:
             index index.html;
             ssl_certificate /opt/acme/cert/grafana_{{ domain['name'] }}_fullchain.cer;
             ssl_certificate_key /opt/acme/cert/grafana_{{ domain['name'] }}_key.key;
-            {%- for instance in domain['instances'] %}
+    {%- for instance in domain['instances'] %}
             location /{{ instance['name'] }}/ {
                 proxy_connect_timeout       300;
                 proxy_send_timeout          300;
@@ -78,8 +78,9 @@ nginx_files_1:
                 proxy_set_header Host $http_host;
                 proxy_pass http://localhost:{{ instance['port'] }}/;
             }
-            {%- endfor %}
-                    }
+    {%- endfor %}
+          }
+{%- endfor %}
 nginx_symlink_1:
   file.symlink:
     - name: /etc/nginx/sites-available/grafana.conf
