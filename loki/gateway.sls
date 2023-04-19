@@ -12,27 +12,27 @@ nginx_files_1:
     - name: /etc/nginx/sites_available/loki.conf
     - contents: |
         upstream read {
-{%- for reader in pillar["loki"]["readers"] %}
+  {%- for reader in pillar["loki"]["readers"] %}
           server {{ reader }} max_fails=1 fail_timeout=10;
-{%- endfor %}
+  {%- endfor %}
         }
         upstream write {
-{%- for writer in pillar["loki"]["writers"] %}
+  {%- for writer in pillar["loki"]["writers"] %}
           server {{ writer }} max_fails=1 fail_timeout=10;
-{%- endfor %}
+  {%- endfor %}
         }
         upstream cluster {
-{%- for reader in pillar["loki"]["readers"] %}
+  {%- for reader in pillar["loki"]["readers"] %}
           server {{ reader }} max_fails=1 fail_timeout=10;
-{%- endfor %}
-{%- for writer in pillar["loki"]["writers"] %}
+  {%- endfor %}
+  {%- for writer in pillar["loki"]["writers"] %}
           server {{ writer }} max_fails=1 fail_timeout=10;
-{%- endfor %}
+  {%- endfor %}
         }
         upstream query-frontend {
-{%- for query_frontend in pillar["loki"]["query_frontends"] %}
+  {%- for query_frontend in pillar["loki"]["query_frontends"] %}
           server {{ query_frontend }} max_fails=1 fail_timeout=10;
-{%- endfor %}
+  {%- endfor %}
         }
         server {
           listen 80;
