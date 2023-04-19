@@ -545,6 +545,12 @@ global_rcpt_whitelist_map:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/rspamd/custom/global_rcpt_whitelist.map'
     - contents: {{ pillar["mailcow"]["rspamd"]["global_rcpt_whitelist_map"] | yaml_encode }}
   {% endif %}
+  {% if pillar["mailcow"]["rspamd"] is defined and "ip_wl_map" in pillar["mailcow"]["rspamd"] %}
+ip_wl_map:
+  file.managed:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/rspamd/custom/ip_wl.map'
+    - contents: {{ pillar["mailcow"]["rspamd"]["ip_wl_map"] | yaml_encode }}
+  {% endif %}
 
   {% if pillar["mailcow"]["clamd"] is defined %}
     {% if "clamd_conf" in pillar["mailcow"]["clamd"] %}

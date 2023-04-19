@@ -35,6 +35,11 @@ mailcow:
       # /.+example\.com/i
     global_rcpt_whitelist_map: |
       # /.+example\.com/i
+    ip_wl_map: |
+      # IP whitelist
+      # # 127.0.0.1
+      # # 1.2.3.4
+      # # ...
   clamd:
     clamd_conf:
       DetectPUA: 'no'
