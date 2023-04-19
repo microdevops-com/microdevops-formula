@@ -46,7 +46,46 @@ nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
+{% if pillar["seprated_config"] %}
+nginx_files_1:
+  file.managed:
+    - name: /etc/nginx/sites-available/grafana.conf
+    - contents: |
+        server {
+            listen 80;
+            return 301 https://$host$request_uri;
+        }
+{%- for domain in pillar['grafana']['domains'] %}
+        server {
+            listen 443 ssl;
+            server_name {{ domain['name'] }};
+            root /opt/grafana/{{ domain['name'] }};
+            index index.html;
+            ssl_certificate /opt/acme/cert/grafana_{{ domain['name'] }}_fullchain.cer;
+            ssl_certificate_key /opt/acme/cert/grafana_{{ domain['name'] }}_key.key;
+            {%- for instance in domain['instances'] %}
+            location /{{ instance['name'] }}/ {
+                proxy_connect_timeout       300;
+                proxy_send_timeout          300;
+                proxy_read_timeout          300;
+                send_timeout                300;
+                proxy_http_version 1.1;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "Upgrade";
+                proxy_set_header Host $http_host;
+                proxy_pass http://localhost:{{ instance['port'] }}/;
+            }
+            {%- endfor %}
+                    }
+nginx_symlink_1:
+  file.symlink:
+    - name: /etc/nginx/sites-available/grafana.conf
+    - target: /etc/nginx/sites-enabled/grafana.conf
 
+{% else %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
@@ -92,7 +131,7 @@ nginx_files_1:
             }
   {%- endfor %}
         }
-
+{% endif %}
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
