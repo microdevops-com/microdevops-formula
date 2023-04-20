@@ -6,3 +6,4 @@ include:
 {% endif %}
   - .files
   - .root_password_hash
+  - .salt-ssh_cleaner
