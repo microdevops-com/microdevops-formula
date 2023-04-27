@@ -34,8 +34,8 @@ nginx_files_1:
             server {
                 listen 443 ssl;
                 server_name {{ domain }};
-                ssl_certificate /opt/acme/cert/{{ domain }}/fullchain.cer;
-                ssl_certificate_key /opt/acme/cert/{{ domain }}/{{ domain }}.key;
+                ssl_certificate /opt/acme/cert/atlassian-servicedesk_{{ domain }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/atlassian-servicedesk_{{ domain }}_key.key;
                 return 301 https://{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}$request_uri;
             }
     {%- endfor %}
@@ -47,8 +47,8 @@ nginx_files_1:
             server {
                 listen 443 ssl;
                 server_name {{ pillar["atlassian-servicedesk"]["http_proxyName"] }};
-                ssl_certificate /opt/acme/cert/{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}/fullchain.cer;
-                ssl_certificate_key /opt/acme/cert/{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}/{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}.key;
+                ssl_certificate /opt/acme/cert/atlassian-servicedesk_{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/atlassian-servicedesk_{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}_key.key;
                 client_max_body_size 200M;
                 client_body_buffer_size 128k;
                 location / {
