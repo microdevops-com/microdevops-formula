@@ -1,5 +1,51 @@
-{% if pillar["ufw"] is defined and pillar["_errors"] is not defined and not ("disabled" in pillar["ufw"] and pillar["ufw"]["disabled"]) %}
+{% if pillar["_errors"] is defined %}
+ufw_case_pillar_render_errors:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        ERROR: There are pillar errors, so nothing has been done.
+        {{ pillar["_errors"] | json() }}
 
+
+{% elif pillar["ufw"] is not defined or pillar["ufw"] is none %}
+ufw_case_no_pillar:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: Ufw state was not configured with pillar, so nothing has been done. But it is OK.
+
+
+{% elif pillar["ufw"] is defined and "not_managed" in pillar["ufw"] and pillar["ufw"]["not_managed"] %}
+ufw_case_not_managed:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: True
+    - comment: |
+        INFO: Ufw management was explicitly turned off by pillar.
+
+
+{% elif pillar["ufw"] is defined and "disabled" in pillar["ufw"] and pillar["ufw"]["disabled"] %}
+ufw_case_disabled:
+  cmd.run:
+    - name: "which ufw && ufw disable || true"
+
+
+{% elif pillar["ufw"] is defined and not (pillar["ufw"].keys() | intersect(["allow", "nat", "custom"])) %}
+ufw_case_no_allowrules_host_will_close_itself:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        INFO: Ufw state _was_ configured with pillar, but no allow/nat/custom rules defined, so host will close itself from world.
+
+
+{% elif pillar["ufw"] is defined %}
   # Import deprecated ufw_simple rules if enabled
   {%- if "import_ufw_simple" in pillar["ufw"] and pillar["ufw"]["import_ufw_simple"] and pillar["ufw_simple"] is defined %}
     # allow, deny, reject, limit
@@ -351,31 +397,4 @@ exec_after:
       - file: /etc/ufw/user6.rules
     {%- endif %}
   {% endif %}
-
-{% else %}
-  {%- if pillar["_errors"] is defined %}
-ufw_nothing_done_info:
-  test.configurable_test_state:
-    - name: nothing_done
-    - changes: False
-    - result: False
-    - comment: |
-        ERROR: There are pillar errors, so nothing has been done.
-        {{ pillar["_errors"] | json() }}
-
-  {%- elif pillar["ufw"] is defined and "disabled" in pillar["ufw"] and pillar["ufw"]["disabled"] %}
-ufw_disable:
-  cmd.run:
-    - name: "which ufw && ufw disable || true"
-
-  {%- else %}
-ufw_nothing_done_info:
-  test.configurable_test_state:
-    - name: nothing_done
-    - changes: False
-    - result: True
-    - comment: |
-        INFO: This state was not configured with pillar, so nothing has been done. But it is OK.
-
-  {%- endif %}
 {% endif %}
