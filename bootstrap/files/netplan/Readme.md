@@ -1,14 +1,22 @@
-## Naming convention
-
-```
-- -- separator
-_ -- in-word separator
-
-"ordering supplementary info" - "datacenter and server information" - "ifname and related info (up to next ifname)"
-
-99-htz-dedi-eth0-gw6-eth1-vlan
-            ^------^ ^-------^ - interface information
-   ^------^ - dc and server information
-^-^- ordering info
-
-```
+[Azure VM, eth0:gw;dhcp4](2022070901.yaml)  
+[Azure VM, ethX:gw;dhcp4](2022080201.yaml)  
+[Hetzner Dedicated, br0:gw, br1, br2:route](2021042601.yaml)  
+[Hetzner Dedicated, br0:gw, br1, br2:vlan](2020112903.yaml)  
+[Hetzner Dedicated, br0:gw, br1](2020112901.yaml)  
+[Hetzner Dedicated, br0:gw,1failover, br1](2022081201.yaml)  
+[Hetzner Dedicated, br0:gw;1failover;failover-default-src, br1](2022051701.yaml)  
+[Hetzner Dedicated, br0:gw;2failover;failover-default-src, br1](2022060601.yaml)  
+[Hetzner Dedicated, kubernetes, eth0:gw, eth1:vlan](2020112904.yaml)  
+[Hetzner VM, eth0:gw6, eth1:dhcp;gw](2021032801.yaml)  
+[Hetzner VM, eth0:gw;1floating;floating-default-src](2022080901.yaml)  
+[Hetzner VM, eth0:gw;1floating](2022061001.yaml)  
+[Hetzner VM, eth0:gw;dhcp4](2022111501.yaml)  
+[Hetzner VM, eth0:gw](2020120901.yaml)  
+[Hetzner VM, kubernetes, eth0:gw6, eth1](2020112902.yaml)  
+[Netshop Dedicated, br0:gw, br1](2022031101.yaml)  
+[Selectel Dedicated, br0:gw, br1](2021051801.yaml)  
+[Servers.com Dedicated, bonds, 2ip](2022072901.yaml)  
+[Servers.com Dedicated, bonds](2020122301.yaml)  
+[Servers.com VM, ensX:dhcp;gw](2021041301.yaml)  
+[Simple, eth0:gw, eth1](2022081801.yaml)  
+[Simple, eth0:gw;onlink](2022080801.yaml)  
