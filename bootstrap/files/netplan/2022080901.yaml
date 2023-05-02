@@ -13,10 +13,11 @@ network:
           on-link: true
           via: {{ ipv4_gw }}
           from: {{ ipv4_address_floating.split('/')[0] }}
+        - to: default
+          via: {{ ipv6_gw }}
       dhcp4: false
       dhcp4-overrides:
         use-dns: no
-      gateway6: {{ ipv6_gw }}
       match:
         macaddress: {{ mac_eth0 }}
       set-name: eth0

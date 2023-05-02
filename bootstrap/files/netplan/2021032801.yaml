@@ -9,7 +9,9 @@ network:
       dhcp4: true
       dhcp4-overrides:
         use-dns: no
-      gateway6: {{ ipv6_gw }}
+      routes:
+        - to: default
+          via: {{ ipv6_gw }}
       match:
         macaddress: {{ mac_eth0 }}
       set-name: eth0
