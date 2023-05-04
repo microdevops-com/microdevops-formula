@@ -86,6 +86,34 @@ pxc:
       replicate-do-db=db1
       ...
 
+
+  configs_ini:
+    separator: '='
+
+    /etc/mysql/pxc/common_ini.cnf:
+      '[mysqld]':
+        transaction-isolation: READ-COMMITTED
+        sql_mode: ''
+        skip-name-resolve:
+        
+        '### AUTH ###':
+          socket: /var/run/mysqld/mysqld.sock
+
+        '### INNODB ###':
+          innodb_autoinc_lock_mode: '2'
+
+    /etc/mysql/pxc/replica_ini.cnf:
+      '[mysqld]':
+        skip-slave-start: 
+          skip-slave-start:
+            skip-slave-start: {}
+        replicate-do-db: 
+          - db1
+          - db2
+          - db3
+
+
+
 {% elif grains["id"] in ["mysql-slave1.example.com"] %}
   debconf:
     percona-server-server:
