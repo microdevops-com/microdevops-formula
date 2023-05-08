@@ -29,9 +29,11 @@ network:
         search:
           - {{ bootstrap_network_domain }}
         addresses:
-{% if custom_resolvers is defined %}
-          {{ custom_resolvers }}
-{% else %}
+{%- if custom_resolvers is defined -%}
+    {%- for resolver in custom_resolvers %}
+          - {{ resolver }}
+    {%- endfor %}
+{%- else -%}
           - 8.8.8.8
           - 8.8.4.4
           - 1.1.1.1
