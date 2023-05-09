@@ -103,6 +103,7 @@ rsnapshot_backup:
         #mysqldump_args: # optional, pass additional arguments to mysqldump
         #  --ignore-table=dbname.table1
         #  --ignore-table=dbname.table2
+        #mysqldump_args: --force | pv --rate-limit 5m # or you can limit the speed of mysqldump using this trick, --force arg is meaningless here, used just to start value not with |
         #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location, only for py version
         #
         #mysql_dump_type: xtrabackup # override default native mysqldump type, only for py version
