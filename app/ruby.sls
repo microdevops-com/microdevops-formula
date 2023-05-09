@@ -12,6 +12,12 @@
       {%- set _app_group = app["group"]|replace("__APP_NAME__", app_name) %}
       {%- set _app_app_root = app["app_root"]|replace("__APP_NAME__", app_name) %}
 
+      {%- if app["user_home"] is defined %}
+        {%- set consider_user_home = app["user_home"]|replace("__APP_NAME__", app_name) %}
+      {%- else %}
+        {%- set consider_user_home = _app_app_root %}
+      {%- endif  %}
+
       {%- include "app/_user_and_source.sls" with context %}
 
       {%- if "npm" in app and "install" in app["npm"] %}
@@ -19,7 +25,7 @@
         {%- for pkg in app["npm"]["install"] %}
 app_ruby_app_npm_install_{{ i_loop.index}}_{{ loop.index }}:
   cmd.run:
-    - cwd: {{ _app_app_root }}
+    - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
     - name: npm install {{ pkg }}
 
@@ -31,7 +37,7 @@ app_ruby_app_npm_install_{{ i_loop.index}}_{{ loop.index }}:
 # Single User will take extra space for each app, but at least works.
 app_ruby_app_rvm_install_keys_{{ loop.index }}:
   cmd.run:
-    - cwd: {{ _app_app_root }}
+    - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
     - name: curl -sSL https://rvm.io/mpapis.asc | gpg --import - ; curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
 
@@ -39,30 +45,30 @@ app_ruby_app_rvm_install_keys_{{ loop.index }}:
 # If some libs are missing - it will show "Missing required packages:", add them to app:pkg pillar.
 app_ruby_app_rvm_install_{{ loop.index }}:
   cmd.run:
-    - cwd: {{ _app_app_root }}
+    - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
     - name: curl -sSL https://get.rvm.io | bash -s -- --autolibs=read-fail
 
 app_ruby_app_rvm_install_ruby_{{ loop.index }}:
   cmd.run:
-    - cwd: {{ _app_app_root }}
+    - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
     - name: rvm install {{ app["rvm"]["version"] }}
 
 app_ruby_app_rvm_update_bundler_{{ loop.index }}:
   cmd.run:
-    - cwd: {{ _app_app_root }}
+    - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
-    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && gem update bundler
+    - name: source {{ consider_user_home }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && gem update bundler
 
 app_ruby_app_rvm_bundle_install_{{ loop.index }}:
   cmd.run:
     - cwd: {{ app["rvm"]["bundle_install"]|replace("__APP_NAME__", app_name) }}
     - runas: {{ _app_user }}
       {%- if "bundle_install_cmd" in app["rvm"] %}
-    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && {{ app["rvm"]["bundle_install_cmd"] }}
+    - name: source {{ consider_user_home }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && {{ app["rvm"]["bundle_install_cmd"] }}
       {%- else %}
-    - name: source {{ _app_app_root }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && bundle install
+    - name: source {{ consider_user_home }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && bundle install
       {%- endif %}
 
       {%- endif %}
@@ -77,14 +83,14 @@ app_ruby_app_puma_root_{{ loop.index }}:
 
 app_ruby_app_puma_user_systemd_dir_{{ loop.index }}:
   file.directory:
-    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user
+    - name: {{ consider_user_home }}/.config/systemd/user
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - makedirs: True
 
 app_ruby_app_puma_user_systemd_unit_file_{{ loop.index }}:
   file.managed:
-    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user/puma-{{ app_name }}.service
+    - name: {{ consider_user_home }}/.config/systemd/user/puma-{{ app_name }}.service
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - contents: |
@@ -109,7 +115,7 @@ app_ruby_app_puma_user_systemd_unit_file_{{ loop.index }}:
 
 app_ruby_app_puma_user_systemd_unit_setup_{{ loop.index }}:
   cmd.run:
-    - cwd: {{ _app_app_root }}
+    - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
     - name: |
         export XDG_RUNTIME_DIR=/run/user/$(id -u {{ _app_user }})
@@ -128,14 +134,14 @@ app_ruby_app_unicorn_root_{{ loop.index }}:
 
 app_ruby_app_unicorn_user_systemd_dir_{{ loop.index }}:
   file.directory:
-    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user
+    - name: {{ consider_user_home }}/.config/systemd/user
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - makedirs: True
 
 app_ruby_app_unicorn_user_systemd_unit_file_{{ loop.index }}:
   file.managed:
-    - name: {{ app["user_home"] if "user_home" in app else _app_app_root }}/.config/systemd/user/unicorn-{{ app_name }}.service
+    - name: {{ consider_user_home }}/.config/systemd/user/unicorn-{{ app_name }}.service
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - contents: |
@@ -159,7 +165,7 @@ app_ruby_app_unicorn_user_systemd_unit_file_{{ loop.index }}:
 
 app_ruby_app_unicorn_user_systemd_unit_setup_{{ loop.index }}:
   cmd.run:
-    - cwd: {{ _app_app_root }}
+    - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
     - name: |
         export XDG_RUNTIME_DIR=/run/user/$(id -u {{ _app_user }})
