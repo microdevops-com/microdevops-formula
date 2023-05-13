@@ -26,8 +26,8 @@ rsnapshot_backup:
         #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
                     # beware - retries work only on rsnapshot sync command, remote DB dumps are not being retried, it is hard to implement and makes no sense practically
-        #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call
-                               # ionice -c 3 nice # to make rssnapshot more gentle with io
+        #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call, must include space if prefixing with nice or similar
+                               # "ionice -c 3 nice " # to make rssnapshot more gentle with io
         backups: # mandatory
           - host: backup1.example.com # backup from remote server
             path: /var/backups/srv1.example.com # where to store backup
