@@ -66,10 +66,10 @@ nginx_files_1:
                 auth_basic "Administrator’s Area";
                 auth_basic_user_file /etc/nginx/htpasswd;
                 location / {
-                    proxy_connect_timeout       300;
-                    proxy_send_timeout          300;
-                    proxy_read_timeout          300;
-                    send_timeout                300;
+                    proxy_connect_timeout       {{ pillar["loki"]["timeout"] | default(300) }};
+                    proxy_send_timeout          {{ pillar["loki"]["timeout"] | default(300) }};
+                    proxy_read_timeout          {{ pillar["loki"]["timeout"] | default(300) }};
+                    send_timeout                {{ pillar["loki"]["timeout"] | default(300) }};
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-Proto $scheme;
                     proxy_set_header X-Forwarded-For $remote_addr;
