@@ -1,4 +1,6 @@
 # vi: set ft=yaml:
+#
+# note on ionice + nice: full options not listed here as an example, but can be used like: ionice -c 2 -n 7 nice -n 7
 
 rsnapshot_backup:
   #python: True # optional, switch pipeline to run py version of rsnapshot_backup, sh+awk is default version for now
@@ -24,8 +26,8 @@ rsnapshot_backup:
         #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
                     # beware - retries work only on rsnapshot sync command, remote DB dumps are not being retried, it is hard to implement and makes no sense practically
-        #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call
-                               # ionice -c 3 nice # to make rssnapshot more gentle with io
+        #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call, must include space if prefixing with nice or similar
+                               # "ionice -c 3 nice " # to make rssnapshot more gentle with io
         backups: # mandatory
           - host: backup1.example.com # backup from remote server
             path: /var/backups/srv1.example.com # where to store backup
@@ -103,6 +105,7 @@ rsnapshot_backup:
         #mysqldump_args: # optional, pass additional arguments to mysqldump
         #  --ignore-table=dbname.table1
         #  --ignore-table=dbname.table2
+        #mysqldump_args: --force | pv --rate-limit 5m # or you can limit the speed of mysqldump using this trick, --force arg is meaningless here, used just to start value not with |
         #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location, only for py version
         #
         #mysql_dump_type: xtrabackup # override default native mysqldump type, only for py version

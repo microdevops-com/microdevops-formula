@@ -12,6 +12,12 @@
       {%- set _app_group = app["group"]|replace("__APP_NAME__", app_name) %}
       {%- set _app_app_root = app["app_root"]|replace("__APP_NAME__", app_name) %}
 
+      {%- if app["user_home"] is defined %}
+        {%- set consider_user_home = app["user_home"]|replace("__APP_NAME__", app_name) %}
+      {%- else %}
+        {%- set consider_user_home = _app_app_root %}
+      {%- endif  %}
+
       {%- include "app/_user_and_source.sls" with context %}
 
       {%- include "app/_setup_scripts.sls" with context %}

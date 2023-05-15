@@ -1,12 +1,8 @@
       {%- if not ("keep_user" in app and app["keep_user"]) %}
+
 app_{{ app_type }}_group_{{ loop_index }}:
   group.present:
     - name: {{ _app_group }}
-
-app_{{ app_type }}_user_homedir_{{ loop_index }}:
-  file.directory:
-    - name: {{ _app_app_root }}
-    - makedirs: True
 
 app_{{ app_type }}_user_{{ loop_index }}:
   user.present:
@@ -15,12 +11,8 @@ app_{{ app_type }}_user_{{ loop_index }}:
         {%- if "groups" in app %}
     - groups: {{ app["groups"] }}
         {%- endif %}
-        {%- if "user_home" in app %}
-    - home: {{ app["user_home"] }}
-        {%- else %}
-    - home: {{ _app_app_root }}
-        {%- endif %}
-    - createhome: True
+    - home: {{ consider_user_home }}
+    - createhome: False
         {% if app["pass"] == "!" %}
     - password: "{{ app["pass"] }}"
         {% else %}
@@ -32,6 +24,13 @@ app_{{ app_type }}_user_{{ loop_index }}:
         {%- endif %}
     - shell: {{ app["shell"] }}
     - fullname: {{ "application " ~ app_name }}
+
+app_{{ app_type }}_user_homedir_create_{{ loop_index }}:
+  file.directory:
+    - name: {{ consider_user_home }}
+    - user: {{ _app_user }}
+    - group: {{ _app_group }}
+    - makedirs: True
 
 app_{{ app_type }}_user_homedir_userown_{{ loop_index }}:
   file.directory:
@@ -54,7 +53,7 @@ app_{{ app_type }}_mkdir_{{ loop_index }}_{{ loop.index }}:
 
 app_{{ app_type }}_user_ssh_dir_{{ loop_index }}:
   file.directory:
-    - name: {{ _app_app_root }}/.ssh
+    - name: {{ consider_user_home }}/.ssh
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - mode: 700
@@ -66,14 +65,13 @@ app_{{ app_type }}_user_ssh_auth_keys_{{ loop_index }}:
   ssh_auth.present:
     - user: {{ _app_user }}
     - names: {{ app["app_auth_keys"] }}
-
       {%- endif %}
 
       {%- if "source" in app %}
         {%- if "repo_key" in app["source"] and "repo_key_pub" in app["source"] %}
 app_{{ app_type }}_user_ssh_id_{{ loop_index }}:
   file.managed:
-    - name: {{ _app_app_root }}/.ssh/id_repo
+    - name: {{ consider_user_home }}/.ssh/id_repo
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - mode: 0600
@@ -81,7 +79,7 @@ app_{{ app_type }}_user_ssh_id_{{ loop_index }}:
 
 app_{{ app_type }}_user_ssh_id_pub_{{ loop_index }}:
   file.managed:
-    - name: {{ _app_app_root }}/.ssh/id_repo.pub
+    - name: {{ consider_user_home }}/.ssh/id_repo.pub
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - mode: 0644
@@ -92,7 +90,7 @@ app_{{ app_type }}_user_ssh_id_pub_{{ loop_index }}:
         {%- if "ssh_config" in app["source"] %}
 app_{{ app_type }}_user_ssh_config_{{ loop_index }}:
   file.managed:
-    - name: {{ _app_app_root }}/.ssh/config
+    - name: {{ consider_user_home }}/.ssh/config
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - mode: 0600
@@ -127,7 +125,7 @@ app_{{ app_type }}_app_checkout_{{ loop_index }}:
           {%- endif %}
     - user: {{ _app_user }}
           {%- if "repo_key" in app["source"] and "repo_key_pub" in app["source"] %}
-    - identity: {{ _app_app_root }}/.ssh/id_repo
+    - identity: {{ consider_user_home }}/.ssh/id_repo
           {%- endif %}
           {%- if "extra_opts" in app["source"] %}
             {%- for opt in app["source"]["extra_opts"] %}
@@ -206,7 +204,7 @@ app_{{ app_type }}_app_sudo_{{ loop_index }}_{{ loop.index }}:
         {%- for ssh_key in app["ssh_keys"] %}
 app_{{ app_type }}_user_app_ssh_id_{{ loop_index }}_{{ loop.index }}:
   file.managed:
-    - name: {{ _app_app_root }}/.ssh/{{ ssh_key["file"] }}
+    - name: {{ consider_user_home }}/.ssh/{{ ssh_key["file"] }}
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - mode: 0600
@@ -214,22 +212,20 @@ app_{{ app_type }}_user_app_ssh_id_{{ loop_index }}_{{ loop.index }}:
 
 app_{{ app_type }}_user_app_ssh_id_pub_{{ loop_index }}_{{ loop.index }}:
   file.managed:
-    - name: {{ _app_app_root }}/.ssh/{{ ssh_key["file"] }}.pub
+    - name: {{ consider_user_home }}/.ssh/{{ ssh_key["file"] }}.pub
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - mode: 0644
     - contents: {{ ssh_key["pub"] | yaml_encode }}
-
         {%- endfor %}
       {%- endif %}
 
       {%- if "ssh_config" in app %}
 app_{{ app_type }}_user_app_ssh_config_{{ loop_index }}:
   file.managed:
-    - name: {{ _app_app_root }}/.ssh/config
+    - name: {{ consider_user_home }}/.ssh/config
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - mode: 0600
     - contents: {{ app["ssh_config"] | yaml_encode }}
-
       {%- endif %}

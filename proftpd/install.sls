@@ -81,6 +81,7 @@ create_config_file:
         AuthUserFile /etc/proftpd/ftpd.users
         AuthOrder mod_auth_file.c
         PassivePorts 65000 65534
+        LoadModule mod_sftp.c
         <IfModule mod_sftp.c>
           <VirtualHost 0.0.0.0>
                 SFTPEngine on
