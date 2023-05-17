@@ -264,6 +264,15 @@ salt_minion_update_restart:
 
     {%- endif %}
 
+    # Check systemd_unit_name
+    {%- if "systemd_unit_name" in pillar["salt"]["minion"] %}
+      {%- set systemd_unit_name = pillar["salt"]["minion"]["systemd_unit_name"] %}
+      {%- set salt_call_args = "-c " ~ install_root ~ "/etc/salt" %}
+    {%- else %}
+      {%- set systemd_unit_name = "salt-minion" %}
+      {%- set salt_call_args = "" %}
+    {%- endif %}
+
 salt_minion_config_restart:
   cmd.run:
     - name: |
