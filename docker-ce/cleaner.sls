@@ -8,5 +8,5 @@ docker-ce_image_prune_daily:
     - daymonth: '*'
     - month: '*'
     - dayweek: '*'
-    - cmd: $(which docker) image prune -a --force
+    - name: $(which docker) image prune -a --force
 {% endif %}
