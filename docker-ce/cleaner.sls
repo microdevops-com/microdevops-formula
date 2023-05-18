@@ -1,4 +1,4 @@
-{% if pillar["docker-ce"] is defined and pillar["docker-ce"]["daily_image_prune"] %}
+{% if pillar["docker-ce"] is defined and "daily_image_prune" in pillar["docker-ce"] and pillar["docker-ce"]["daily_image_prune"] %}
 docker-ce_image_prune_daily:
   cron.present:
     - identifier: docker_image_prune_daily
