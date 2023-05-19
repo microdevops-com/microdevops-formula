@@ -120,6 +120,7 @@ gitlab-runner_docker_clean_script:
         docker image prune -f
         docker image prune -f -a
         docker volume prune -f
+        docker builder prune -f -a
 
 # Add cron job
 gitlab-runner_docker_clean_cron:
