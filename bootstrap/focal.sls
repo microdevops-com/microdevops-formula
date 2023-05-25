@@ -66,6 +66,7 @@ pkg_latest:
       - net-tools
       - iputils-ping
       - bmon
+      - rasdaemon
       # build
       - build-essential
       - git
