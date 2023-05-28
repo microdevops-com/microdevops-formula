@@ -1,0 +1,60 @@
+bootstrap:
+  files:
+    managed:
+      files_group_name_1:
+        - name: /path/to/file # required, path to file on the server
+          source: salt://path/to/file # required, path to file on the salt master
+          contents: ...  # required, contents of the file, "source" and "contents" are mutually exclusive, "source" has precedence
+          #user: root # optional, default salt's user
+          #group: root # optional, default - salt's group
+          #mode: 644 # optional, default handled by salt
+          #dir_mode: 755 # optional, default handled by salt
+          #makedirs: False # optional, default False, create parent directories if not exists
+          #filetype: text # optional, default text, turns off jinja templating if set to "binary"
+          #values: # optional, default empty, pass the "defaults" values when file is templated with jinja
+           # key: value
+          ## for further readings refer to https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.managed
+
+          #apply: # optional, run arbitrary commands after file creation
+          #  - update-grub
+          #  - locale-gen
+
+    # directories are always created first by this state
+    directory:
+      dirs_group_name_1:
+        - name: /path/to/dir
+          #user: root # optional, default salt's user
+          #group: root # optional, default - salt's group
+          #recurse: [user, group, mode] # optional, default handled by salt
+          #dir_mode: 755 # optional, default handled by salt
+          #file_mode: 644 # optional, default handled by salt
+          #makedirs: False # optional, default False, create parent directories if not exists
+          #force: False # optional, if path exists and is not a directory, delete path and create the directory
+          ## for further readings refer to https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.directory
+          #apply: # optional, run arbitrary commands after file creation
+          #  - ps axu >> /path/to/dir/psaxu
+          #  - lsblk >> /path/to/dir/lsblk
+
+# some usage examples:
+bootstrap:
+  hostname: host1.domain.local
+  files:
+    managed:
+      netplan_and_grub:
+        - name: /etc/netplan/01-netcfg.yaml
+          source: salt://bootstrap/files/netplan/2022081201.yaml
+          mode: 0644
+          values:
+            wan_iface: enp1s0
+            mac: a1:b2:c3:d4:e5:f6
+            ipv4_address: 1.2.3.4/32
+            ipv4_failover_address: 4.5.6.7/32
+            ipv4_gw: 1.2.3.1
+            ipv6_address: fe80::59ea/64
+            ipv6_gw: fe80::1
+            bootstrap_network_domain: domain.local
+        - name: /etc/default/grub
+          source: salt://bootstrap/files/grub/focal_memory_swap
+          mode: 0644
+          apply:
+            - update-grub
