@@ -1,4 +1,18 @@
 bootstrap:
+  pkg:
+    installed:
+      pkgs:
+        <package name>: <version or "any" or "latest">
+        libhiredis-dev: 0.14.1-2
+        libmysqlclient-dev: any
+        libssl-dev: latest
+      sources:
+        <package name>:  <source>
+        nnn: https://ubuntu.pkgs.org/22.04/ubuntu-universe-amd64/nnn_4.3-1_amd64.deb.html
+        foo: salt://files/foo.deb
+        baz: ftp://someothersite.org/baz.deb
+        qux: /minion/path/to/qux.deb
+
   files:
     managed:
       files_group_name_1:
