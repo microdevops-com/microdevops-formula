@@ -11,5 +11,4 @@ cmd_check_alert:
     files:
       /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt:
         http_https: |
-          --dport 80
-          --dport 443
+          --dport 80,443
