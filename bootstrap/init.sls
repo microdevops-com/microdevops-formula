@@ -4,6 +4,7 @@ include:
 {% elif grains["osfinger"] == "CentOS Linux-7" %}
   - .centos7
 {% endif %}
+  - .pkg
   - .files
   - .root_password_hash
   - .salt-ssh_cleaner

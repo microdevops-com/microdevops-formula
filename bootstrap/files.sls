@@ -73,6 +73,8 @@ bootstrap_file_managed_{{ loop.index }}:
     - mode: {{ file.get("mode", "") }}
     - makedirs: {{ file.get("makedirs", "false") }}
     - dir_mode: {{ file.get("dir_mode", "")}}
+    - source_hash: {{ file.get("source_hash", "") }}
+    - skip_verify: {{ file.get("skip_verify", "") }}
 
     # do not template binary files
     {% if file.get("filetype", "text") == "text" %}
