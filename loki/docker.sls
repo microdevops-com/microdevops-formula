@@ -81,7 +81,7 @@ nginx_files_1:
   file.symlink:
     - name: /etc/nginx/sites-enabled/loki.conf
     - target: /etc/nginx/sites-available/loki.conf
-  {% elif %}
+  {% else %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
