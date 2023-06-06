@@ -221,6 +221,7 @@ loki:
   acme_account: example.com
   image: grafana/loki:2.5.0
   name: loki.example.com
+#  separated_nginx_config: True    # if you need not replace default nginx config and functionality
   auth_basic:
     username: <user>
     password: <password>
