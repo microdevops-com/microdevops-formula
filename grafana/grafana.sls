@@ -83,8 +83,8 @@ nginx_files_1:
   {%- endfor %}
 nginx_symlink_1:
   file.symlink:
-    - name: /etc/nginx/sites-available/grafana.conf
-    - target: /etc/nginx/sites-enabled/grafana.conf
+    - name: /etc/nginx/sites-enabled/grafana.conf
+    - target: /etc/nginx/sites-available/grafana.conf
 
 {% else %}
 nginx_files_1:
