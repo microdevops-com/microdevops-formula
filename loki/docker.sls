@@ -52,6 +52,36 @@ basic_auth:
     - password: {{ pillar["loki"]["auth_basic"]["password"] }}
     - htpasswd_file: /etc/nginx/htpasswd
 
+  {% if pillar['loki']['separated_nginx_config'] is defined and pillar['loki']['separated_nginx_config'] == "True" %}
+nginx_files_1:
+  file.managed:
+    - name: /etc/nginx/sites-available/loki.conf
+    - contents: |
+        server {
+            listen 443 ssl;
+            server_name {{ pillar["loki"]["name"] }};
+            ssl_certificate /opt/acme/cert/loki_{{ pillar["loki"]["name"] }}_fullchain.cer;
+            ssl_certificate_key /opt/acme/cert/loki_{{ pillar["loki"]["name"] }}_key.key;
+            auth_basic "Administrator’s Area";
+            auth_basic_user_file /etc/nginx/htpasswd;
+            location / {
+                proxy_connect_timeout       300;
+                proxy_send_timeout          300;
+                proxy_read_timeout          300;
+                send_timeout                300;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                proxy_set_header Host $http_host;
+                proxy_set_header Upgrade websocket;
+                proxy_set_header Connection Upgrade;
+                proxy_pass http://localhost:{{ pillar["loki"]["config"]["server"]["http_listen_port"] }}/;
+            }
+        }
+  file.symlink:
+    - name: /etc/nginx/sites-enabled/loki.conf
+    - target: /etc/nginx/sites-available/loki.conf
+  {% elif %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
@@ -105,7 +135,7 @@ nginx_files_1:
                 }
             }
         }
-
+  {% endif %}
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
