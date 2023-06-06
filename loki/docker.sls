@@ -52,7 +52,7 @@ basic_auth:
     - password: {{ pillar["loki"]["auth_basic"]["password"] }}
     - htpasswd_file: /etc/nginx/htpasswd
 
-  {% if pillar['loki']['separated_nginx_config'] is defined and pillar['loki']['separated_nginx_config'] == "True" %}
+  {% if pillar["loki"]["separated_nginx_config"] is defined and pillar["loki"]["separated_nginx_config"] %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/sites-available/loki.conf
