@@ -1,6 +1,8 @@
 grafana:
   docker-ce_version: 5:20.10.8*
   #separated_nginx_config: False # optional, set to True for creating separated nginx config instead of rewriting main nginx.conf
+  #nginx_allowed_ips: #for allow only whitelisted ips - works only with separated nginx config
+    #name: 'ip'
   acme_configs:
     - name: example.com
       domains:

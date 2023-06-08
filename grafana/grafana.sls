@@ -63,6 +63,12 @@ nginx_files_1:
             index index.html;
             ssl_certificate /opt/acme/cert/grafana_{{ domain['name'] }}_fullchain.cer;
             ssl_certificate_key /opt/acme/cert/grafana_{{ domain['name'] }}_key.key;
+        {% if pillar["grafana"]["nginx_allowed_ips"] is defined %}
+          {%- for name, ip in pillar["grafana"]["nginx_allowed_ips"].items() %}
+            allow {{ip}}; # {{name}}
+          {%- endfor %}
+            deny all;
+        {% endif %}
     {%- for instance in domain['instances'] %}
             location /{{ instance['name'] }}/ {
                 proxy_connect_timeout       300;
