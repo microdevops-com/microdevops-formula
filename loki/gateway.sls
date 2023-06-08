@@ -6,7 +6,7 @@ nginx_install:
     - pkgs:
       - nginx
 
-{% if "seprated_config" in pillar["loki"] and pillar["loki"]["seprated_nginx_config"] %}
+{% if "separated_nginx_config" in pillar["loki"] and pillar["loki"]["separated_nginx_config"] %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/sites_available/loki.conf
