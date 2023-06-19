@@ -18,9 +18,9 @@
     - dir_mode: 755
 
 
-make_file_/opt/acme/home/{{ acme }}/verify_and_issue_for_asterisk.sh:
+make_file_/opt/acme/{{ acme }}/home/verify_and_issue_for_asterisk.sh:
   file.managed:
-    - name: /opt/acme/home/{{ acme }}/verify_and_issue_for_asterisk.sh
+    - name: /opt/acme/{{ acme }}/home/verify_and_issue_for_asterisk.sh
     - source: salt://{{ slspath }}/files/scripts/verify_and_issue_for_asterisk.sh
     - user: root
     - group: root
@@ -32,9 +32,9 @@ make_file_/opt/acme/home/{{ acme }}/verify_and_issue_for_asterisk.sh:
         certificate_dir: {{ certificate_dir }}
         reloadcmd: {{ reloadcmd }}
 
-run_/opt/acme/home/{{ acme }}/verify_and_issue_for_asterisk.sh:
+run_/opt/acme/{{ acme }}/home/verify_and_issue_for_asterisk.sh:
   cmd.run:
-    - name: /opt/acme/home/{{ acme }}/verify_and_issue_for_asterisk.sh
+    - name: /opt/acme/{{ acme }}/home/verify_and_issue_for_asterisk.sh
     - shell: /bin/bash
 
 {% endif %}
