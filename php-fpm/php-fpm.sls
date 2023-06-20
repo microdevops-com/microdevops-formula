@@ -498,8 +498,6 @@ php-fpm_{{ k }}_timezone_{{ type }}:
       {%- endfor %}
     {%- endif %}
 
-  {%- endif %}
-{% endif %}
 
 
 #php 8.2
