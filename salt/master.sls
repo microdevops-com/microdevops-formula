@@ -208,6 +208,22 @@ salt_master_gitlab-runner_config_dir:
     - group: root
     - mode: 700
 
+  {%- if "concurrent" in pillar["salt"]["master"]["gitlab-runner"] %}
+    {%- if "salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
+      {%- set concurrent = pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|int + pillar["salt"]["master"]["gitlab-runner"]["salt-ssh"]|int %}
+      {%- set main_runner_limit = pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|int %}
+      {%- set saltssh_runner_limit = pillar["salt"]["master"]["gitlab-runner"]["salt-ssh"]|int %}
+    {%- else %}
+      {%- set concurrent = pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|int %}
+      {%- set main_runner_limit = pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|int %}
+    {%- endif %}
+  {%- elif "salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
+    {%- set concurrent = pillar["salt"]["master"]["gitlab-runner"]["salt-ssh"]|int %}
+    {%- set saltssh_runner_limit = pillar["salt"]["master"]["gitlab-runner"]["salt-ssh"]|int %}
+  {%- else %}
+    {%- set concurrent = 16 %}
+    {%- set main_runner_limit = 16 %}
+  {%- endif %}
 salt_master_gitlab-runner_config:
   file.managed:
     - name: /etc/gitlab-runner/config.toml
@@ -215,7 +231,7 @@ salt_master_gitlab-runner_config:
     - group: root
     - mode: 600
     - contents: |
-        concurrent = {{ pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|default("16") }}
+        concurrent = {{ concurrent }}
         check_interval = 0
         
         [session_server]
@@ -254,7 +270,21 @@ salt_master_gitlab-runner_register:
           --registration-token "{{ pillar["salt"]["master"]["gitlab-runner"]["registration_token"] }}" \
           --executor "shell" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
           --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
+          --limit {{ main_runner_limit }} \
           --locked --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"]|string if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}
+
+    {%- if "salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
+salt_master_gitlab-runner_register_salt-ssh:
+  cmd.run:
+    - name: |
+        gitlab-runner register --non-interactive --url "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_url"] }}/" \
+          --registration-token "{{ pillar["salt"]["master"]["gitlab-runner"]["registration_token"] }}" \
+          --executor "docker" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}_salt-ssh" \
+          --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}_salt-ssh" \
+          --limit {{ saltssh_runner_limit }} \
+          --locked --docker-privileged --docker-image 'docker:stable' --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"]|string if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}
+
+    {%- endif %}
 
 salt_master_gitlab-runner_job_fail_on_clear_screen_fix:
   file.absent:

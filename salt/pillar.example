@@ -70,6 +70,7 @@ salt:
       registration_token: xxxxxxxxxxxxxxxxxxxx
       concurrent: 16
       output_limit: 8192 # optional, increase job log size from default 4096 Kb, https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runners-section
+      #salt-ssh: 32 # optional, also install additional docker runner for salt-ssh hybrid mode on the samr master
 
   minion:
     #install_root: /opt/salt # optional, install minion configs to alternative location, useful for having additional minion if primary is managed by other system
