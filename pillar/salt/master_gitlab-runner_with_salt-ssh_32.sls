@@ -1,4 +1,6 @@
 salt:
   master:
     gitlab-runner:
-      salt-ssh: 32
+      salt-ssh:
+        concurrent: 32
+        tags: salt-ssh
