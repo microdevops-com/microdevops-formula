@@ -1,4 +1,4 @@
 salt:
   master:
     gitlab-runner:
-      salt-ssh: True
+      salt-ssh: 32
