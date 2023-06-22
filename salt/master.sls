@@ -280,7 +280,7 @@ salt_master_gitlab-runner_register_salt-ssh:
         gitlab-runner register --non-interactive --url "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_url"] }}/" \
           --registration-token "{{ pillar["salt"]["master"]["gitlab-runner"]["registration_token"] }}" \
           --executor "docker" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}_salt-ssh" \
-          --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"]["salt-ssh"]["tags"] }}" \
+          --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["salt-ssh"]["tags"] }}" \
           --limit {{ saltssh_runner_limit }} \
           --locked --docker-privileged --docker-image 'docker:stable' --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"]|string if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}
 
