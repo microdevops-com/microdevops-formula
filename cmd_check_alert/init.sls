@@ -109,6 +109,18 @@ sensu-plugins_pkg:
 
       {%- endif %}
 
+# On plugins like sensu-plugins-http we have error "oj requires Ruby version >= 2.7."
+# That error appeared when oj gem was updated to 3.14.0
+# So we need to fix oj gem version to 3.13.9
+sensu-plugins_fix_oj_gem:
+  cmd.run:
+      {% if grains["osarch"] in ["arm64"] %}
+    - name: source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install oj -v 3.13.9
+      {% else %}
+    - name: /opt/sensu-plugins-ruby/embedded/bin/gem install oj -v 3.13.9
+      {% endif %}
+    - shell: /bin/bash
+
       {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
