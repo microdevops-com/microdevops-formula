@@ -9,10 +9,12 @@ nextcloud:
         pm.max_children: 20
       default_phone_region: IL
       overwrite_cli_url: https://nextcloud.example.com
-      onlyoffice: # optional
+      onlyoffice: # optional. Use onlyoffice or collabora !!!
         DocumentServerUrl: https://onlyoffice.example.com/
         DocumentServerInternalUrl: https://onlyoffice.example.com/
         StorageUrl: https://nextcloud.example.com/
+      collabora:  # optional. Use collabora or onlyoffice !!!
+        DocumentServerUrl: https://collabora.example.com/
       user_saml:               ### YOU CAN USE THIS FOR SAML AUTH VIA KEYCLOAK
         general-allow_multiple_user_back_ends: 1
         general-uid_mapping: username
