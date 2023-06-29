@@ -295,6 +295,10 @@ nextcloud_config_onlyoffice_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install onlyoffice || true'
 
+nextcloud_config_onlyoffice_1_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable onlyoffice --force || true'
+
 nextcloud_config_onlyoffice_2_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value={{ domain["onlyoffice"]["DocumentServerUrl"] }}'
@@ -319,11 +323,15 @@ nextcloud_config_collabora_1_{{ loop.index }}:
 
 nextcloud_config_collabora_2_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments wopi_url --value {{ domain["collabora"]["DocumentServerUrl"] }}'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable --force richdocuments || true'
 
 nextcloud_config_collabora_3_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ richdocuments:activate-config'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments wopi_url --value {{ domain["collabora"]["DocumentServerUrl"] }}'
+
+nextcloud_config_collabora_4_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings richdocuments:activate-config'
 
     {%- endif %}
     {%- if "user_saml" in domain %}
