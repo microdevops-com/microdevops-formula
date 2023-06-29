@@ -97,7 +97,7 @@ nginx_files_1:
                 add_header X-Download-Options "noopen" always;
                 add_header X-Frame-Options "SAMEORIGIN" always;
                 add_header X-Permitted-Cross-Domain-Policies "none" always;
-                add_header X-Robots-Tag "none" always;
+                add_header X-Robots-Tag "noindex, nofollow" always;
                 add_header X-XSS-Protection "1; mode=block" always;
 
                 # Remove X-Powered-By, which is an information leak
@@ -207,7 +207,7 @@ nginx_files_1:
                     add_header X-Download-Options "noopen" always;
                     add_header X-Frame-Options "SAMEORIGIN" always;
                     add_header X-Permitted-Cross-Domain-Policies "none" always;
-                    add_header X-Robots-Tag "none" always;
+                    add_header X-Robots-Tag "noindex, nofollow" always;
                     add_header X-XSS-Protection "1; mode=block" always;
 
                     # Optional: Don't log access to assets
@@ -287,6 +287,10 @@ nextcloud_cron_{{ loop.index }}:
     - minute: "*/5"
 
     {%- if "onlyoffice" in domain %}
+nextcloud_config_onlyoffice_0_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:disable richdocuments || true'
+
 nextcloud_config_onlyoffice_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install onlyoffice || true'
@@ -302,6 +306,24 @@ nextcloud_config_onlyoffice_3_{{ loop.index }}:
 nextcloud_config_onlyoffice_4_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice"]["StorageUrl"] }}'
+
+    {%- endif %}
+    {%- if "collabora" in domain %}
+nextcloud_config_collabora_0_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:disable onlyoffice || true'
+
+nextcloud_config_collabora_1_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install richdocuments || true'
+
+nextcloud_config_collabora_2_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments wopi_url --value {{ domain["collabora"]["DocumentServerUrl"] }}'
+
+nextcloud_config_collabora_3_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ richdocuments:activate-config'
 
     {%- endif %}
     {%- if "user_saml" in domain %}
