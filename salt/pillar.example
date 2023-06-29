@@ -68,8 +68,11 @@ salt:
       gitlab_url: https://gitlab.example.com
       gitlab_runner_name: salt1.example.com
       registration_token: xxxxxxxxxxxxxxxxxxxx
-      concurrent: 16
+      concurrent: 16 # concurrency for the main runner
       output_limit: 8192 # optional, increase job log size from default 4096 Kb, https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runners-section
+      #salt-ssh:
+      #  concurrent: 32 # concurrency for salt-ssh runner
+      #  tags: salt-ssh # tag to assign to runner (on both masters)
 
   minion:
     #install_root: /opt/salt # optional, install minion configs to alternative location, useful for having additional minion if primary is managed by other system
