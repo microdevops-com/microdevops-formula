@@ -331,7 +331,11 @@ nextcloud_config_collabora_3_{{ loop.index }}:
 
 nextcloud_config_collabora_4_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings richdocuments:activate-config'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments wopi_allowlist --value {{ domain["collabora"]["wopi_allowlist"] }}'
+
+nextcloud_config_collabora_5_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ richdocuments:activate-config'
 
     {%- endif %}
     {%- if "user_saml" in domain %}
