@@ -286,6 +286,10 @@ nextcloud_cron_{{ loop.index }}:
     - user: root
     - minute: "*/5"
 
+nextcloud_update_all_applications_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:update --all'
+
     {%- if "onlyoffice" in domain %}
 nextcloud_config_onlyoffice_0_{{ loop.index }}:
   cmd.run:
