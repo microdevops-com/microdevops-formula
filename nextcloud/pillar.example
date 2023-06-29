@@ -15,6 +15,7 @@ nextcloud:
         StorageUrl: https://nextcloud.example.com/
       collabora:  # optional. Use collabora or onlyoffice !!!
         DocumentServerUrl: https://collabora.example.com/
+        wopi_allowlist: 11.22.33.44   # IP address of collabora.example.com
       user_saml:               ### YOU CAN USE THIS FOR SAML AUTH VIA KEYCLOAK
         general-allow_multiple_user_back_ends: 1
         general-uid_mapping: username
