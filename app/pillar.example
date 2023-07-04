@@ -20,11 +20,11 @@ app:
           - php7.4-zip
     # common for all app types
     apps:
-      someapp: # you can use __APP_NAME__ to substitute to app name in some of values here
+      someapp: # you can use __APP_NAME__ to substitute it to the app name in some of values here below
         logrotate: # optional, add custom logrotate config files
           - name: app_logs
             contents: |
-              /var/www/__APP_NAME__/src/log/*.log {
+              /var/www/__APP_NAME__/app/log/some.log {
                   daily
                   missingok
                   rotate 32
@@ -36,13 +36,13 @@ app:
         # only for python
         virtualenv:
           pyenv_version: 3.8.8
-          target: /opt/__APP_NAME__/venv
+          target: /var/www/__APP_NAME__/app/venv
         # only for php-fpm
         pool:
           #pool_template: salt://app/files/.../pool.conf # optional, by default uses salt://app/files/php-generic/pool.conf
           reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
           log: # optional pool log params
-            error_log: /var/www/__APP_NAME__/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
+            error_log: /var/www/__APP_NAME__/app/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
             dir_user: someapp
             dir_group: someapp
             dir_mode: 755
@@ -74,7 +74,7 @@ app:
           #  pm.max_children = 50
           #  pm.process_idle_timeout = 10s
           #  pm.max_requests = 500
-          #  php_admin_value[error_log] = /var/log/php/7.4-fpm/__APP_NAME__.error.log
+          #  php_admin_value[error_log] = /var/www/__APP_NAME__/app/log/php/__APP_NAME__.error.log
           #  php_admin_flag[log_errors] = on
           #  php_admin_flag[html_errors] = off
           #  php_admin_value[post_max_size] = 25M
@@ -82,22 +82,22 @@ app:
         # only for ruby
         rvm: # install rvm and specific ruby version for app
           version: 3.0.0 
-          bundle_install: /var/www/__APP_NAME__/src
+          bundle_install: /var/www/__APP_NAME__/app/src
           #bundle_install_cmd: bundle install --without development test # override default 'bundle install' command
           #gemset: gemset1 # optional, add @gemset1 to some commands, like rvm use {{ app["rvm"]["version"] }}@{{ app["rvm"]["gemset"] }}
         npm: # optional, install per app user
           install:
             - yarn
         puma: # optional, install puma app user level service
-          working_directory: /var/www/__APP_NAME__/src
-          exec_start: /var/www/__APP_NAME__/.rvm/wrappers/ruby-3.0.0/puma -C /var/www/__APP_NAME__/src/config/puma.rb
+          working_directory: /var/www/__APP_NAME__/app/src
+          exec_start: /var/www/__APP_NAME__/.rvm/wrappers/ruby-3.0.0/puma -C /var/www/__APP_NAME__/app/src/config/puma.rb
           rails_env: production
           #envs: # optional, additional unit envs
           #  ENV_NAME: env_value
         # common for all app types
         unicorn: # optional, install unicorn app user level service
-          working_directory: /var/www/__APP_NAME__/src
-          exec_start: /var/www/__APP_NAME__/.rvm/wrappers/ruby-3.0.0/unicorn_rails -c /var/www/__APP_NAME__/src/config/unicorn.rb -E production -D
+          working_directory: /var/www/__APP_NAME__/app/src
+          exec_start: /var/www/__APP_NAME__/.rvm/wrappers/ruby-3.0.0/unicorn_rails -c /var/www/__APP_NAME__/app/src/config/unicorn.rb -E production -D
           rails_env: production
           #envs: # optional, additional unit envs
           #  ENV_NAME: env_value
@@ -107,8 +107,11 @@ app:
         # - docker
         pass: '!'
         #enforce_password: False # optional, do not change pass if it was changed by user
-        app_root: /opt/__APP_NAME__ # /var/www/someapp, whatever
-        #user_home: /var/www/user # optional, e.g. to host several apps under one user
+        user_home: /var/www/__APP_NAME__ # optional, but recommended to set each time explicitly, if not set app_root is used
+                                         # this is actual linux user home
+                                         # useful to set one level higher than app_root to be able to host several apps under one linux user
+                                         # or separate app and other files
+        app_root: /var/www/__APP_NAME__/app # required, base for relative paths
         #keep_user: True # optional, turns off user management, intended to use with existing user on server
         #app_auth_keys: # optinal, ensure ssh keys for user
         #  - ssh-rsa AAAA...== rsa-key-19700101
@@ -135,7 +138,7 @@ app:
           #force_reset: False # optional, True by default
           #force_checkout: True # optional, not added by default
           #force_clone: True # optional, not added by default
-          target: /opt/__APP_NAME__/src
+          target: /var/www/__APP_NAME__/app/src
           rev: master # optional
           branch: master # optional
           #repo_key: | # optional, put key as .ssh/id_repo
@@ -154,24 +157,24 @@ app:
           #  - https_pass: xx-token-xx
         files: # optional
           src: salt://app/__APP_NAME__
-          dst: /opt/__APP_NAME__
+          dst: /var/www/__APP_NAME__/app
         files_source: # optional
-          - path: /opt/__APP_NAME__/.file
+          - path: /var/www/__APP_NAME__/app/.file
             mode: 0600
             source: salt://app/.file
         files_contents: # optional
-          - path: /opt/__APP_NAME__/.env
+          - path: /var/www/__APP_NAME__/app/.env
             mode: 0600
             contents: |
               export VAR1=value1
         setup_script_root: # optional
-          cwd: /opt/__APP_NAME__
+          cwd: /var/www/__APP_NAME__/app/src
           name: |
             set -e
             loginctl enable-linger someapp
             loginctl show-user someapp
         setup_script_app_user: #optional
-          cwd: /opt/__APP_NAME__
+          cwd: /var/www/__APP_NAME__/app/src
           name: |
             set -e
             cd src
@@ -210,27 +213,26 @@ app:
             php_version: 7.4 # e.g. for php-fpm apps
             key1: value1
             key2: value2
-          root: /var/www/__APP_NAME__/src/public
+          root: /var/www/__APP_NAME__/app/src/public
           redirects: # optional
             - domain: www.example.com
               vhost_config: salt://app/files/redirect/vhost.conf
               ssl:
                 acme_account: example.com
-          log:
-            access_log: /var/log/nginx/__APP_NAME__.access.log
-            error_log: /var/log/nginx/__APP_NAME__.error.log
-            # all below are optional
-            dir: /var/www/__APP_NAME__/log/nginx # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
+          log: # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
+            access_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.access.log
+            error_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.error.log
+            dir: /var/www/__APP_NAME__/app/log/nginx
             dir_mode: 755
             log_mode: 640
             dir_user: root
             dir_group: adm
             log_user: someapp
             log_group: someapp
-            rotate_count: 10
-            rotate_when: weekly
-          #sites_available_dir: /etc/nginx/sites-available
-          #sites_enabled_dir: /etc/nginx/sites-enabled
+            rotate_count: 31
+            rotate_when: daily
+          #sites_available_dir: /etc/nginx/sites-available # optional default location override
+          #sites_enabled_dir: /etc/nginx/sites-enabled # optional default location override
 
   docker:
     docker-ce_version: 18.06.1 # optional, do not manage docker installation if omitted
@@ -282,117 +284,3 @@ app:
         binds: []
         networks:
           - proto
-
-# legacy
-# app: php-fpm, python, static (static pages only, no backend)
-app:
-  php-fpm_apps|python_apps|static_apps: # fix to a type needed
-    app_1:
-      enabled: True
-      user: app_1
-      group: app_1
-      pass: '!'
-      #enforce_password: False # optional, do not change pass if it was changed by user
-      app_root: /var/www/app_1
-      #user_home: /var/www/user # optional, e.g. to host several apps under one user
-      #keep_user: True # optional, turns off user management. Intended to use with existing user on server
-      app_auth_keys: |
-        ssh-rsa AAAA...== rsa-key-19700101
-      shell: /bin/bash
-      nginx:
-        link_sites-enabled: True
-        reload: False # Usually restarting nginx on each app is not recommended, but it is ok for one app server setup flow
-        auth_basic: # optional basic auth
-          user: basicuser
-          pass: basicpassword
-          #omit_options: True # optionally disable auth for OPTIONS request method
-        vhost_config: app/example_php-fpm_app_1/vhost.conf
-        root: /var/www/app_1/src/public
-        server_name: example.com
-        server_name_301: www.example.com www2.example.com
-        access_log: /var/log/nginx/app_1.access.log
-        error_log: /var/log/nginx/app_1.error.log
-        log: # optional nginx log extended params, useful with paths other than in /var/log/nginx
-          dir: /var/www/app_1/log/nginx # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
-          dir_mode: 755 # default
-          log_mode: 640 # default
-          dir_user: root # default
-          dir_group: adm # default
-          log_user: app_1 # -> app:user by default
-          log_group: app_1 # -> app:group by default
-          rotate_count: 10 # 31 by default
-          rotate_when: weekly # daily by default
-        ssl: # commercial cert example
-          certs_dir: app/example_php-fpm_app_1/ssl # optional, those files will go to /etc/nginx/ssl/app_1 on minion, copy all cert files here and refer them below
-          ssl_cert: ssl/app_1/app_1.crt # mandatory, in terms of nginx, e.g. as for files above, or you can use absolute path
-          ssl_key: ssl/app_1/app_1.key # mandatory
-          ssl_chain: ssl/app_1/gd_bundle-g2-g1.crt # optional
-          certbot_for_301: True
-          certbot_email: admin@example.com
-        #ssl: # certbot example
-          #certbot: True
-          #certbot_email: admin@example.com
-        #ssl: # acme.sh example
-          #acme: True
-          #acme_account: example
-          #acme_run_ready: True
-        vhost_defaults:
-          key1: value1 # defaults for vhost config template
-          key2: value2
-      virtualenv: # python_apps only
-        pyenv_version: 3.6.7
-        target: /opt/alerta/app_1/venv
-      pool: # php-fpm_apps only
-        pool_config: app/example_php-fpm_app_1/pool.conf
-        reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
-        log: # optional pool log params
-          dir: /var/www/app_1/log/php # by default pool logs are in /var/log/php
-          dir_mode: 775 # default
-          log_mode: 664 # default
-          dir_user: root # default
-          dir_group: adm # default
-          log_user: app_1 # -> app:user by default
-          log_group: app_1 # -> app:group by default
-          rotate_count: 10 # 31 by default
-          rotate_when: weekly # daily by default
-        php_version: 5.6
-        pm: |
-          pm = dynamic
-          pm.max_children = 50
-          pm.start_servers = 20
-          pm.min_spare_servers = 10
-          pm.max_spare_servers = 40
-        php_admin: |
-          php_admin_flag[html_errors] = off
-          php_admin_value[post_max_size] = 25M
-          php_admin_value[upload_max_filesize] = 25M
-      source:
-        enabled: True
-        git: ssh://git@bitbucket.org/myorg/app_1
-        #force_reset: False # optional, True by default
-        #force_checkout: True # optional, not added by default
-        #force_clone: True # optional, not added by default
-        #hg: ssh://hg@bitbucket.org/myorg/app_1 # do not use simultaneously git and hg
-        rev: master # Remote repo branch or revision or tag to clone, like origin/{{ rev }}
-        target: /var/www/app_1/src
-        branch: master # Local clone branch, HG does not honor 'branch'
-        # use ssh-keygen -t ed25519, if possible since this improves readability
-        repo_key: |
-          -----BEGIN OPENSSH PRIVATE KEY-----
-          xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-          ...
-          xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=
-          -----END OPENSSH PRIVATE KEY-----
-        repo_key_pub: |
-          ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-        ssh_config: |
-          Host bitbucket.org
-            User git
-            Identityfile /var/www/app_2/.ssh/id_repo
-      files: # you can copy app configs from salt, not to store them in repo
-        src: app/example_php-fpm_app_1/files
-        dst: /var/www/app_1/src/public
-      setup_script: # e.g. after git pull to change permissions and create missing folders
-        cwd: /var/www/app_1/src
-        name: bash /var/www/app_1/src/etc/setup.sh
-
