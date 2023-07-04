@@ -1,0 +1,108 @@
+# vi: set ft=yaml:
+
+# Real life wordpress deployment example
+
+percona:
+  enabled: True
+  version: 8.0
+  root_password: xxxxxxxxxxxxxxxxxxxxxx
+  databases:
+    microdevopscom: {}
+  users:
+    microdevopscom:
+      host: localhost
+      password: xxxxxxxxxxxxxxxxxxxxxx
+      databases:
+        - database: microdevopscom
+          grant: ['all privileges']
+
+nginx:
+  configs: nginx/app_hosting
+
+app:
+  php-fpm:
+    versions:
+      7.4:
+        modules:
+          - php7.4-zip
+          - php7.4-intl
+          - php7.4-mbstring
+          - php7.4-mysql
+          - php7.4-soap
+          - php7.4-xml
+          - php7.4-bcmath
+          - php7.4-curl
+          - php7.4-gd
+          - php7.4-sqlite3
+    apps:
+      microdevopscom:
+        user: __APP_NAME__
+        group: __APP_NAME__
+        pass: '!'
+        user_home: /var/www/__APP_NAME__
+        app_root: /var/www/__APP_NAME__/app
+        shell: /bin/false
+        setup_script_app_user:
+          cwd: /var/www/__APP_NAME__/app
+          name: |
+            set -e
+            curl -sS https://wordpress.org/latest.tar.gz | tar zxf -
+        pool:
+          pool_template: salt://app/files/wp/pool.conf
+          reload: True
+          log:
+            error_log: /var/www/__APP_NAME__/app/log/php/__APP_NAME__.error.log
+            dir_user: __APP_NAME__
+            dir_group: __APP_NAME__
+            dir_mode: 755                                                                      
+            log_user: __APP_NAME__                                                         
+            log_group: __APP_NAME__
+            log_mode: 644          
+            rotate_count: 31                                                           
+            rotate_when: daily
+          php_version: 7.4
+          pm: |
+            pm = ondemand
+            pm.max_children = 50
+            pm.process_idle_timeout = 10s
+            pm.max_requests = 500
+          php_admin: |
+            php_admin_value[date.timezone] = Europe/Kiev
+            php_admin_flag[html_errors] = off
+            php_admin_value[post_max_size] = 25M
+            php_admin_value[upload_max_filesize] = 25M
+        nginx:
+          domain: microdevops.com
+          ssl:
+            acme_account: microdevops.com
+          link_sites-enabled: True
+          reload: True
+          vhost_config: salt://app/files/wp/vhost.conf
+          vhost_defaults:
+            php_version: 7.4
+          root: /var/www/__APP_NAME__/app/wordpress
+          redirects:
+            - domain: www.microdevops.com
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: microdevops.com
+            - domain: micro-devops.com
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: micro-devops.com
+            - domain: www.micro-devops.com
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: micro-devops.com
+          log:
+            access_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.access.log                                            
+            error_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.error.log
+            dir: /var/www/__APP_NAME__/app/log/nginx                                                                      
+            dir_mode: 755         
+            log_mode: 640          
+            dir_user: __APP_NAME__                                                             
+            dir_group: __APP_NAME__                                                        
+            log_user: __APP_NAME__ 
+            log_group: __APP_NAME__
+            rotate_count: 31                                                           
+            rotate_when: daily
