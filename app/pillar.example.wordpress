@@ -39,7 +39,7 @@ app:
         user: __APP_NAME__
         group: __APP_NAME__
         pass: '!'
-	user_home: /var/www/__APP_NAME__
+        user_home: /var/www/__APP_NAME__
         app_root: /var/www/__APP_NAME__/app
         shell: /bin/false
         setup_script_app_user:

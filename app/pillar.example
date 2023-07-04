@@ -43,14 +43,14 @@ app:
           reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
           log: # optional pool log params
             error_log: /var/www/__APP_NAME__/app/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
-            dir_user: someapp
-            dir_group: someapp
+            dir_user: __APP_NAME__
+            dir_group: __APP_NAME__
             dir_mode: 755
-            log_user: someapp
-            log_group: someapp
+            log_user: __APP_NAME__
+            log_group: __APP_NAME__
             log_mode: 644
             rotate_count: 31
-            rotate_when: weekly
+            rotate_when: daily
           php_version: 7.4
           config: |
             pm = dynamic
@@ -171,8 +171,8 @@ app:
           cwd: /var/www/__APP_NAME__/app/src
           name: |
             set -e
-            loginctl enable-linger someapp
-            loginctl show-user someapp
+            loginctl enable-linger __APP_NAME__
+            loginctl show-user __APP_NAME__
         setup_script_app_user: #optional
           cwd: /var/www/__APP_NAME__/app/src
           name: |
@@ -181,11 +181,11 @@ app:
             ~/venv/bin/python setup.py develop
             cd ..
             mkdir -p ~/.config/systemd/user
-            cp -f someapp.service ~/.config/systemd/user
-            export XDG_RUNTIME_DIR=/run/user/$(id -u someapp)
+            cp -f __APP_NAME__.service ~/.config/systemd/user
+            export XDG_RUNTIME_DIR=/run/user/$(id -u __APP_NAME__)
             systemctl --user daemon-reload
-            systemctl --user enable --now someapp.service
-            systemctl --user status someapp.service
+            systemctl --user enable --now __APP_NAME__.service
+            systemctl --user status __APP_NAME__.service
             # Another example line for ruby
             #source ~/.rvm/scripts/rvm && rvm use 3.0.0 && RAILS_ENV=production rails assets:precompile
         nginx: # optional
@@ -193,9 +193,9 @@ app:
           ssl: # optional
             acme_account: example.com
           #ssl: # standalone cert example
-          #  cert: ssl/someapp/someapp.crt # mandatory, in terms of nginx, e.g. as for files above, or you can use absolute path
-          #  key: ssl/someapp/someapp.key # mandatory
-          #  chain: ssl/someapp/gd_bundle-g2-g1.crt # optional
+          #  cert: ssl/__APP_NAME__/__APP_NAME__.crt # mandatory, in terms of nginx, e.g. as for files above, or you can use absolute path
+          #  key: ssl/__APP_NAME__/__APP_NAME__.key # mandatory
+          #  chain: ssl/__APP_NAME__/gd_bundle-g2-g1.crt # optional
           link_sites-enabled: True
           reload: False # Usually restarting nginx on each app is not recommended, but it is ok for one app server setup flow
           auth_basic: # optional basic auth
@@ -225,10 +225,10 @@ app:
             dir: /var/www/__APP_NAME__/app/log/nginx
             dir_mode: 755
             log_mode: 640
-            dir_user: root
-            dir_group: adm
-            log_user: someapp
-            log_group: someapp
+            dir_user: __APP_NAME__
+            dir_group: __APP_NAME__
+            log_user: __APP_NAME__
+            log_group: __APP_NAME__
             rotate_count: 31
             rotate_when: daily
           #sites_available_dir: /etc/nginx/sites-available # optional default location override
