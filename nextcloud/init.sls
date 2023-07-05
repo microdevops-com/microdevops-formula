@@ -288,7 +288,7 @@ nextcloud_cron_{{ loop.index }}:
 
 nextcloud_update_all_applications_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:update --all'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:update --all; sleep 10'
 
     {%- if "onlyoffice" in domain %}
 nextcloud_config_onlyoffice_0_{{ loop.index }}:
@@ -337,7 +337,13 @@ nextcloud_config_collabora_4_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments wopi_allowlist --value {{ domain["collabora"]["wopi_allowlist"] }}'
 
+      {%- if "doc_format" in domain["collabora"] %}
 nextcloud_config_collabora_5_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments doc_format --value {{ domain["collabora"]["doc_format"] }}'
+      {%- endif %}
+
+nextcloud_config_collabora_6_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ richdocuments:activate-config'
 
