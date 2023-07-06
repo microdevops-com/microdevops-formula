@@ -1,0 +1,43 @@
+rocketchat:
+  domains:
+{% set domain       = "rocketchat.example.com" %}
+{% set chat_version = "6.0"                    %}
+{% set mongodb_port = "27017"                  %}
+    - name: {{ domain }}
+      rocketchat:
+        internal_name: prod
+        internal_port: 3000
+        #image: registry.rocket.chat/rocketchat/rocket.chat:{{ chat_version }}
+        image: rocket.chat:{{ chat_version }}
+        labels:
+          - traefik.enable="true"
+          - traefik.http.routers.rocketchat.rule=Host(`{{ domain }}`)
+          - traefik.http.routers.rocketchat.tls="true"
+          - traefik.http.routers.rocketchat.entrypoints=https
+          - traefik.http.routers.rocketchat.tls.certresolver=le
+        env_vars:
+          MONGO_URL: mongodb://rocketchat-mongodb-{{ domain }}:{{ mongodb_port }}/rocketchat?replicaSet=rs0
+          MONGO_OPLOG_URL: mongodb://rocketchat-mongodb-{{ domain }}:{{ mongodb_port }}/local?replicaSet=rs0
+          ROOT_URL: https://{{ domain }}
+          PORT: 3000
+          #DEPLOY_METHOD: docker
+          #DEPLOY_PLATFORM: Linux
+          # https://docs.rocket.chat/setup-and-configure/accessing-your-workspace/creating-the-first-administrator
+          #INITIAL_USER: yes
+          ADMIN_USERNAME: rocketadmin
+          ADMIN_NAME: Administrator
+          ADMIN_PASS: qazWSX123
+          ADMIN_EMAIL: alex.k@oxtech.org
+          OVERWRITE_SETTING_Show_Setup_Wizard: completed
+          OVERWRITE_SETTING_Accounts_RegistrationForm: Disabled
+      mongodb:
+        image: docker.io/bitnami/mongodb:5.0
+        env_vars:
+          MONGODB_REPLICA_SET_MODE: primary
+          MONGODB_REPLICA_SET_NAME: rs0
+          MONGODB_PORT_NUMBER: {{ mongodb_port }}
+          MONGODB_INITIAL_PRIMARY_HOST: rocketchat-mongodb-{{ domain }}
+          MONGODB_INITIAL_PRIMARY_PORT_NUMBER: {{ mongodb_port }}
+          MONGODB_ADVERTISED_HOSTNAME: rocketchat-mongodb-{{ domain }}
+          MONGODB_ENABLE_JOURNAL: true
+          ALLOW_EMPTY_PASSWORD: yes
