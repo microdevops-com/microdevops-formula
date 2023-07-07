@@ -21,6 +21,12 @@ rocketchat:
           PORT: 3000
           #DEPLOY_METHOD: docker
           #DEPLOY_PLATFORM: Linux
+          SMTP_Protocol: smtps
+          SMTP_Host: mail.example.com
+          SMTP_Port: 465
+          SMTP_Username: rocketchat@example.com
+          SMTP_Password: YYYYYYYYYYY
+          From_Email: rocket@example.org
           # https://docs.rocket.chat/setup-and-configure/accessing-your-workspace/creating-the-first-administrator
           #INITIAL_USER: yes
           ADMIN_USERNAME: rocketadmin
