@@ -4,6 +4,15 @@ network:
   renderer: networkd
   ethernets:
     {{ wan_iface }}:
+      optional: true
+      match:
+        macaddress: {{ wan_mac }}
+      dhcp4: no
+      dhcp6: no
+    {{ extra_iface }}:
+      optional: true
+      match:
+        macaddress: {{ extra_mac }}
       dhcp4: no
       dhcp6: no
   bridges:
