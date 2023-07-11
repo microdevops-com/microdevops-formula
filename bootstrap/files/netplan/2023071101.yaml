@@ -19,7 +19,7 @@ network:
     br0:
       interfaces:
         - {{ wan_iface }}
-      macaddress: {{ mac }}
+      macaddress: {{ wan_mac }}
       dhcp4: no
       dhcp6: no
       parameters:
