@@ -1,0 +1,2 @@
+SUBSYSTEM=="net",ACTION=="add",DRIVERS=="?*",ATTR{address}=="{{ mac_eth0 }}",ATTR{type}=="1",KERNEL=="eth*",NAME="eth0"
+SUBSYSTEM=="net",ACTION=="add",DRIVERS=="?*",ATTR{address}=="{{ mac_eth1 }}",ATTR{type}=="1",KERNEL=="eth*",NAME="eth1"
