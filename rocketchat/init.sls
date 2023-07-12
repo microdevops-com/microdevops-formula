@@ -39,6 +39,9 @@ nginx_files_1:
             ssl_certificate_key /opt/acme/cert/rocketchat_{{ domain["name"] }}_key.key;
             client_max_body_size 200M;
             client_body_buffer_size 128k;
+            location = /robots.txt {
+              return 200 "User-agent: *\nDisallow: /\n";
+            }
             location / {
               proxy_pass http://{{ domain["rocketchat"]["internal_name"] }};
               proxy_set_header X-Forwarded-Host $host;
