@@ -6,7 +6,7 @@
 
 docker_pip_install:
   pip.installed:
-    - name: docker-py >= 1.10
+    - name: docker >= 6.1.2
     - reload_modules: True
   {%- endif %}
 
