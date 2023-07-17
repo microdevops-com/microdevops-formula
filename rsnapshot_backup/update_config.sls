@@ -105,6 +105,10 @@ rsnapshot_backup_conf:
           mongo_args: {{ host_backups_item["mongo_args"] }}
           {%- endif %}
           #
+          {%- if "mongodump_args" in host_backups_item %}
+          mongodump_args: {{ host_backups_item["mongodump_args"] }}
+          {%- endif %}
+          #
           {%- if "connect_user" in host_backups_item %}
           connect_user: {{ host_backups_item["connect_user"] }}
           {%- endif %}
@@ -275,6 +279,10 @@ rsnapshot_backup_yaml:
           #
           {%- if "mongo_args" in host_backups_item %}
           mongo_args: {{ host_backups_item["mongo_args"] }}
+          {%- endif %}
+          #
+          {%- if "mongodump_args" in host_backups_item %}
+          mongodump_args: {{ host_backups_item["mongodump_args"] }}
           {%- endif %}
           #
           {%- if "connect_user" in host_backups_item %}
