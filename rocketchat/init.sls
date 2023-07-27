@@ -33,7 +33,7 @@ nginx_files_1:
             server 127.0.0.1:{{ domain["rocketchat"]["internal_port"] }};
           }
           server {
-            listen 443 ssl;
+            listen {{ pillar["rocketchat"]["external_port"] | default(443) }} ssl;
             server_name {{ domain["name"] }};
             ssl_certificate /opt/acme/cert/rocketchat_{{ domain["name"] }}_fullchain.cer;
             ssl_certificate_key /opt/acme/cert/rocketchat_{{ domain["name"] }}_key.key;
