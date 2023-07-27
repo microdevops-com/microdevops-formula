@@ -24,10 +24,12 @@ nginx_files_1:
             default upgrade;
             ''      close;
           }
+    {%- if pillar["rocketchat"]["external_port"] is not defined %}
           server {
             listen 80;
             return 301 https://$host$request_uri;
           }
+    {%- endif %}
     {%- for domain in pillar["rocketchat"]["domains"] %}
           upstream {{ domain["rocketchat"]["internal_name"] }} {
             server 127.0.0.1:{{ domain["rocketchat"]["internal_port"] }};
