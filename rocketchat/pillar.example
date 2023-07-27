@@ -1,4 +1,5 @@
 rocketchat:
+  external_port: 3333     # optional
   domains:
 {% set domain       = "rocketchat.example.com" %}
 {% set chat_version = "6.0"                    %}
