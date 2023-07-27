@@ -24,21 +24,26 @@ nginx_files_1:
             default upgrade;
             ''      close;
           }
+    {%- if pillar["rocketchat"]["external_port"] is not defined %}
           server {
             listen 80;
             return 301 https://$host$request_uri;
           }
+    {%- endif %}
     {%- for domain in pillar["rocketchat"]["domains"] %}
           upstream {{ domain["rocketchat"]["internal_name"] }} {
             server 127.0.0.1:{{ domain["rocketchat"]["internal_port"] }};
           }
           server {
-            listen 443 ssl;
+            listen {{ pillar["rocketchat"]["external_port"] | default(443) }} ssl;
             server_name {{ domain["name"] }};
             ssl_certificate /opt/acme/cert/rocketchat_{{ domain["name"] }}_fullchain.cer;
             ssl_certificate_key /opt/acme/cert/rocketchat_{{ domain["name"] }}_key.key;
             client_max_body_size 200M;
             client_body_buffer_size 128k;
+            location = /robots.txt {
+              return 200 "User-agent: *\nDisallow: /\n";
+            }
             location / {
               proxy_pass http://{{ domain["rocketchat"]["internal_name"] }};
               proxy_set_header X-Forwarded-Host $host;
