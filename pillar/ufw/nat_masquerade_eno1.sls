@@ -1,5 +1,5 @@
 ufw:
   nat:
     masquerade:
-      nat_masquerade_eth0:
-        out: eth0
+      nat_masquerade_eno1:
+        out: eno1
