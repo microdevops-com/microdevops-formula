@@ -61,7 +61,10 @@ app_{{ app_type }}_acme_run_{{ loop_index }}:
 app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
   file.managed:
     - name: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
-    {%- set _nginx_vhost_config = app["nginx"]["vhost_config"]|replace("__APP_NAME__", app_name) %}
+    {%- if "vhost_contents" in app["nginx"] %}
+    - contents: {{ app["nginx"]["vhost_contents"] | replace("__APP_NAME__", app_name) }}
+    {%- else %}
+      {%- set _nginx_vhost_config = app["nginx"]["vhost_config"]|replace("__APP_NAME__", app_name) %}
     - source: {{ _nginx_vhost_config }}
     - template: jinja
     - defaults:
@@ -87,6 +90,7 @@ app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
         {{ def_key }}: {{ def_val|replace("__APP_NAME__", app_name)|yaml_encode }}
           {%- endfor %}
         {%- endif %}
+      {%- endif %}
 
         {%- if "redirects" in app["nginx"] %}
           {%- for redirect in app["nginx"]["redirects"] %}
