@@ -22,8 +22,8 @@ rsnapshot_backup:
         #before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully
         #retain_hourly: N # optional, hourly rotations disabled by default
         #retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        #retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
-        #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
+        #retain_weekly: N # optional, override default value 4, minimum 0 on second level of backup and further
+        #retain_monthly: N # optional, override default value 3, minimum 0 on second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
                     # beware - retries work only on rsnapshot sync command, remote DB dumps are not being retried, it is hard to implement and makes no sense practically
         #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call, must include space if prefixing with nice or similar
