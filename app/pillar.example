@@ -233,6 +233,16 @@ app:
             rotate_when: daily
           #sites_available_dir: /etc/nginx/sites-available # optional default location override
           #sites_enabled_dir: /etc/nginx/sites-enabled # optional default location override
+          #vhost_contents: |     # optional, instead of vhost_template you can set this pillar for the complete contents
+          #  server {            # please also note that in this case only the __APP_NAME__ variable will be replaced 
+          #    listen 443 ssl;
+          #    server_name __APP_NAME__.mydomain.tld;
+          #    ssl_certificate /etc/letsencrypt/live/__APP_NAME__/fullchain.pem;
+          #    ssl_certificate_key /etc/letsencrypt/live/__APP_NAME__/privkey.pem;
+          #
+          #    return 200 "PONG!";
+          #  }
+  
 
   docker:
     docker-ce_version: 18.06.1 # optional, do not manage docker installation if omitted
