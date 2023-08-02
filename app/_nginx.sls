@@ -61,10 +61,10 @@ app_{{ app_type }}_acme_run_{{ loop_index }}:
 app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
   file.managed:
     - name: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
-    {%- if "vhost_contents" in app["nginx"] %}
+        {%- if "vhost_contents" in app["nginx"] %}
     - contents: {{ app["nginx"]["vhost_contents"] | replace("__APP_NAME__", app_name) }}
-    {%- else %}
-      {%- set _nginx_vhost_config = app["nginx"]["vhost_config"]|replace("__APP_NAME__", app_name) %}
+        {%- else %}
+          {%- set _nginx_vhost_config = app["nginx"]["vhost_config"]|replace("__APP_NAME__", app_name) %}
     - source: {{ _nginx_vhost_config }}
     - template: jinja
     - defaults:
@@ -74,23 +74,23 @@ app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
         nginx_root: {{ _app_nginx_root }}
         access_log: {{ _app_nginx_access_log }}
         error_log: {{ _app_nginx_error_log }}
-        {%- if "ssl" in app["nginx"] %}
-          {%- if "acme_account" in app["nginx"]["ssl"] %}
+          {%- if "ssl" in app["nginx"] %}
+            {%- if "acme_account" in app["nginx"]["ssl"] %}
         ssl_cert: /opt/acme/cert/{{ app_name }}_{{ app["nginx"]["domain"] }}_fullchain.cer
         ssl_key: /opt/acme/cert/{{ app_name }}_{{ app["nginx"]["domain"] }}_key.key
-          {%- elif "cert" in app["nginx"]["ssl"] %}
+            {%- elif "cert" in app["nginx"]["ssl"] %}
         ssl_cert: {{ app["nginx"]["ssl"]["cert"]|replace("__APP_NAME__", app_name) }}
         ssl_key: {{ app["nginx"]["ssl"]["key"]|replace("__APP_NAME__", app_name) }}
         ssl_chain: {{ app["nginx"]["ssl"].get("chain", "")|replace("__APP_NAME__", app_name) }}
+            {%- endif %}
+          {%- endif %}
+        auth_basic_block: '{{ auth_basic_block }}'
+          {%- if "vhost_defaults" in app["nginx"] %}
+            {%- for def_key, def_val in app["nginx"]["vhost_defaults"].items() %}
+        {{ def_key }}: {{ def_val|replace("__APP_NAME__", app_name)|yaml_encode }}
+            {%- endfor %}
           {%- endif %}
         {%- endif %}
-        auth_basic_block: '{{ auth_basic_block }}'
-        {%- if "vhost_defaults" in app["nginx"] %}
-          {%- for def_key, def_val in app["nginx"]["vhost_defaults"].items() %}
-        {{ def_key }}: {{ def_val|replace("__APP_NAME__", app_name)|yaml_encode }}
-          {%- endfor %}
-        {%- endif %}
-      {%- endif %}
 
         {%- if "redirects" in app["nginx"] %}
           {%- for redirect in app["nginx"]["redirects"] %}
