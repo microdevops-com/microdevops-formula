@@ -1,0 +1,41 @@
+{% set jitsi_release           = "stable-8719" %}
+{% set jitsi_domain            = "jitsi.example.com" %}
+
+{% set JICOFO_AUTH_PASSWORD    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" %}
+{% set JVB_AUTH_PASSWORD       = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" %}
+{% set JIGASI_XMPP_PASSWORD    = "cccccccccccccccccccccccccccccccc" %}
+{% set JIBRI_RECORDER_PASSWORD = "dddddddddddddddddddddddddddddddd" %}
+{% set JIBRI_XMPP_PASSWORD     = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" %}
+
+jitsi:
+  domain: {{ jitsi_domain }}
+  web:
+    image: jitsi/web:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+  prosody:
+    image: jitsi/prosody:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      JICOFO_AUTH_PASSWORD: {{ JICOFO_AUTH_PASSWORD }}
+      JVB_AUTH_PASSWORD: {{ JVB_AUTH_PASSWORD }}
+      JIGASI_XMPP_PASSWORD: {{ JIGASI_XMPP_PASSWORD }}
+      JIBRI_RECORDER_PASSWORD: {{ JIBRI_RECORDER_PASSWORD }}
+      JIBRI_XMPP_PASSWORD: {{ JIBRI_XMPP_PASSWORD}}
+  jicofo:
+    image: jitsi/jicofo:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      JICOFO_AUTH_PASSWORD: {{ JICOFO_AUTH_PASSWORD }}
+      SENTRY_DSN: 0
+  jvb:
+    image: jitsi/jvb:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      JVB_ADVERTISE_IPS: 1.2.3.4
+      JVB_DISABLE_STUN: true
+      JVB_AUTH_PASSWORD: {{ JVB_AUTH_PASSWORD }}
+      SENTRY_DSN: 0
