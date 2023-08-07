@@ -129,7 +129,7 @@ snd_aloop_module_enable:
       - build-essential
       - linux-generic
   cmd.run:
-   - name: modprobe snd-aloop
+    - name: modprobe snd-aloop
   file.replace:
     - name: /etc/modules
     - pattern: '^snd-aloop$'
