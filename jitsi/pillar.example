@@ -6,6 +6,8 @@
 {% set JIGASI_XMPP_PASSWORD    = "cccccccccccccccccccccccccccccccc" %}
 {% set JIBRI_RECORDER_PASSWORD = "dddddddddddddddddddddddddddddddd" %}
 {% set JIBRI_XMPP_PASSWORD     = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" %}
+{% set JWT_APP_ID              = "ffffffffffffffffffffffffffffffff" %}
+{% set JWT_APP_SECRET          = "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" %}
 
 jitsi:
   domain: {{ jitsi_domain }}
@@ -39,3 +41,11 @@ jitsi:
       JVB_DISABLE_STUN: true
       JVB_AUTH_PASSWORD: {{ JVB_AUTH_PASSWORD }}
       SENTRY_DSN: 0
+  jibri:
+    image: jitsi/jibri:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      JIBRI_RECORDER_PASSWORD: {{ JIBRI_RECORDER_PASSWORD }}
+      JIBRI_XMPP_PASSWORD: {{ JIBRI_XMPP_PASSWORD}}
+      DISPLAY: ':0'
