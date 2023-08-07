@@ -123,11 +123,17 @@ jitsi_video_bridge_container:
       - docker_container: jitsi-prosody-{{ pillar["jitsi"]["domain"] }}
 
   {% if pillar["jitsi"]["jibri"] is defined %}
-snd-aloop_module_install:
+snd_aloop_module_install:
   pkg.installed:
     - pkgs:
       - build-essential 
       - linux-generic
+snd_aloop_module_enable:
+  file.replace:
+    - name: /etc/modules
+    - pattern: '^snd-aloop$'
+    - repl: snd-aloop
+    - append_if_not_found: True
 jitsi_broadcasting_infrastructure_container:
   docker_container.running:
     - name: jitsi-jibri-{{ pillar["jitsi"]["domain"] }}
