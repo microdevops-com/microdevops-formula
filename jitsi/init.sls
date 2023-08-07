@@ -123,6 +123,11 @@ jitsi_video_bridge_container:
       - docker_container: jitsi-prosody-{{ pillar["jitsi"]["domain"] }}
 
   {% if pillar["jitsi"]["jibri"] is defined %}
+snd-aloop_module_install:
+  pkg.installed:
+    - pkgs:
+      - build-essential 
+      - linux-generic
 jitsi_broadcasting_infrastructure_container:
   docker_container.running:
     - name: jitsi-jibri-{{ pillar["jitsi"]["domain"] }}
