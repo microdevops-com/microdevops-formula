@@ -122,4 +122,37 @@ jitsi_video_bridge_container:
     - require:
       - docker_container: jitsi-prosody-{{ pillar["jitsi"]["domain"] }}
 
+  {% if pillar["jitsi"]["jibri"] is defined %}
+snd_aloop_module_enable:
+  pkg.installed:
+    - pkgs:
+      - build-essential
+      - linux-generic
+  cmd.run:
+    - name: modprobe snd-aloop
+  file.replace:
+    - name: /etc/modules
+    - pattern: '^snd-aloop$'
+    - repl: snd-aloop
+    - append_if_not_found: True
+jitsi_broadcasting_infrastructure_container:
+  docker_container.running:
+    - name: jitsi-jibri-{{ pillar["jitsi"]["domain"] }}
+    - image: {{ pillar["jitsi"]["jibri"]["image"] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - binds:
+      - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/jibri:/config
+    - networks:
+      - jitsi
+    - cap_add:
+      - SYS_ADMIN
+    - shm_size: '2gb'
+    - environment:
+    {%- for var_key, var_val in pillar["jitsi"]["jibri"]["env_vars"].items() %}
+      - {{ var_key }}: {{ var_val }}
+    {%- endfor %}
+    - require:
+      - docker_container: jitsi-jicofo-{{ pillar["jitsi"]["domain"] }}
+  {% endif %}
 {% endif %}
