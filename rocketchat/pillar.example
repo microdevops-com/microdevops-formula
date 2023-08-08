@@ -34,8 +34,20 @@ rocketchat:
           ADMIN_NAME: Administrator
           ADMIN_PASS: XXXXXXXXX
           ADMIN_EMAIL: admin@example.com
-          OVERWRITE_SETTING_Show_Setup_Wizard: completed
-          OVERWRITE_SETTING_Accounts_RegistrationForm: Disabled
+          #OVERWRITE_SETTING_Show_Setup_Wizard: completed
+          #OVERWRITE_SETTING_Accounts_RegistrationForm: Disabled
+          ###############################################################################################################
+          ##                   -  JITSI APP  -
+          ## Install the Jitsi application from the application market
+          ## and use ijitsi_domain, jitsi_application_id, jitsi_application_secret to configure it.
+          ## After that, in the workspace settings, find video conferencing and set Jitsi as the default provider
+          ## https://docs.rocket.chat/use-rocket.chat/rocket.chat-conference-call/conference-call-admin-guide/jitsi-app
+          ## ############################################################################################################
+          jitsi_domain: jitsi.example.com
+          jitsi_auth_token: Enabled
+          jitsi_application_id: XXXXXXXXXXXXXXXXXXXXXXXX
+          jitsi_application_secret: YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+          VideoConf_Default_Provider: Jitsi
       mongodb:
         image: docker.io/bitnami/mongodb:5.0
         env_vars:
