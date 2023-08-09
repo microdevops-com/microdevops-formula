@@ -57,6 +57,19 @@ jitsi:
       SKIN_NAME: colibris
       SKIN_VARIANTS: super-light-toolbar super-light-editor light-background full-width-editor
       SUPPRESS_ERRORS_IN_PAD_TEXT: True
+  jigasi:
+    image: jitsi/jigasi:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      ENABLE_AUTH: 1
+      SENTRY_DSN: 0
+      JIGASI_SIP_URI: test@sip2sip.info
+      JIGASI_SIP_PASSWORD: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      JIGASI_SIP_SERVER: sip2sip.info
+      JIGASI_SIP_PORT: 5060
+      JIGASI_SIP_TRANSPORT: UDP
+      JIGASI_XMPP_PASSWORD: {{ JIGASI_XMPP_PASSWORD }}
   jibri:
     image: jitsi/jibri:{{ jitsi_release }}
     env_vars:

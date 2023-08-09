@@ -171,4 +171,26 @@ etherpad_container:
       - {{ var_key }}: {{ var_val }}
     {%- endfor %}
   {% endif %}
+  {% if pillar["jitsi"]["jigasi"] is defined %}
+jitsi_sip_gateway_container:
+  docker_container.running:
+    - name: jitsi-jigasi-{{ pillar["jitsi"]["domain"] }}
+    - image: {{ pillar["jitsi"]["jigasi"]["image"] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - binds:
+      - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/jigasi:/config
+      - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/transcripts:/tmp/transcripts
+    - publish:
+      - 20000-20050:20000-20050/udp
+    - networks:
+      - jitsi
+    - environment:
+    {%- for var_key, var_val in pillar["jitsi"]["jigasi"]["env_vars"].items() %}
+      - {{ var_key }}: {{ var_val }}
+    {%- endfor %}
+    - require:
+      - docker_container: jitsi-prosody-{{ pillar["jitsi"]["domain"] }}
+  {% endif %}
+
 {% endif %}
