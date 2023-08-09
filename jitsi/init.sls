@@ -155,4 +155,20 @@ jitsi_broadcasting_infrastructure_container:
     - require:
       - docker_container: jitsi-jicofo-{{ pillar["jitsi"]["domain"] }}
   {% endif %}
+  {% if pillar["jitsi"]["etherpad"] is defined %}
+etherpad_container:
+  docker_container.running:
+    - name: etherpad-{{ pillar["jitsi"]["domain"] }}
+    - image: {{ pillar["jitsi"]["etherpad"]["image"] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+      - jitsi:
+        - aliases:
+          - etherpad.meet.jitsi
+    - environment:
+    {%- for var_key, var_val in pillar["jitsi"]["etherpad"]["env_vars"].items() %}
+      - {{ var_key }}: {{ var_val }}
+    {%- endfor %}
+  {% endif %}
 {% endif %}
