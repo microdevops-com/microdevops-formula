@@ -211,12 +211,12 @@ salt_master_gitlab-runner_config_dir:
     # Hack to set value inside for loop
     {%- set concurrent = {"value": 16} %}
 
-    {%- do concurrent["value"].update(salt["pillar.get"]("salt:master:gitlab-runner:concurrent", 16)|int + salt["pillar.get"]("salt:master:gitlab-runner:salt-ssh:concurrent", 16)|int) %}
+    {%- do concurrent.update({"value": salt["pillar.get"]("salt:master:gitlab-runner:concurrent", 16)|int + salt["pillar.get"]("salt:master:gitlab-runner:salt-ssh:concurrent", 16)|int}) %}
 
 
     {%- if "additional_salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
       {%- for additional_runner in pillar["salt"]["master"]["gitlab-runner"]["additional_salt-ssh"] %}
-        {%- do concurrent["value"].update(concurrent["value"] + additional_runner["concurrent"]|default(16)|int) %}
+        {%- do concurrent.update({"value": concurrent["value"] + additional_runner["concurrent"]|default(16)|int}) %}
       {%- endfor %}
     {%- endif %}
 
