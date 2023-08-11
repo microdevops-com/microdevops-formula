@@ -1,0 +1,57 @@
+# Hetzner Dedicated, IPV4_ONLY=YES
+# with failover ips
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ wan_iface }}:
+      dhcp4: no
+      dhcp6: no
+  bridges:
+    br0:
+      interfaces:
+        - {{ wan_iface }}
+      macaddress: {{ mac }}
+      dhcp4: no
+      dhcp6: no
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - {{ ipv4_address }}
+      routes:
+{%- if failover_ips is defined -%}
+    {%- for failover_ip in failover_ips %}
+        - scope: link
+          to: {{ failover_ip }}
+    {%- endfor %}
+{%- else %}      
+        - on-link: true
+          to: 0.0.0.0/0
+          via: {{ ipv4_gw }}
+        - to: default
+          via: fe80::1
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+{%- if custom_resolvers is defined -%}
+    {%- for resolver in custom_resolvers %}
+          - {{ resolver }}
+    {%- endfor %}
+{%- else %}
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+          - 2001:4860:4860::8888
+          - 2001:4860:4860::8844
+          - 2606:4700:4700::1111
+          - 2606:4700:4700::1001
+{%- endif %}
+    br1:
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - 10.0.10.1/24
