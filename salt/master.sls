@@ -208,11 +208,15 @@ salt_master_gitlab-runner_config_dir:
     - group: root
     - mode: 700
 
-    {%- set concurrent = pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|default(16)|int + pillar["salt"]["master"]["gitlab-runner"]["salt-ssh"]["concurrent"]|default(16)|int %}
+    # Hack to set value inside for loop
+    {%- set concurrent = {} %}
+
+    {%- set concurrent["value"] = salt["pillar.get"]("salt:master:gitlab-runner:concurrent", 16)|int + salt["pillar.get"]("salt:master:gitlab-runner:salt-ssh:concurrent", 16)|int %}
+
 
     {%- if "additional_salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
       {%- for additional_runner in pillar["salt"]["master"]["gitlab-runner"]["additional_salt-ssh"] %}
-        {%- set concurrent = concurrent + additional_runner["concurrent"]|default(16)|int %}
+        {%- set concurrent["value"] = concurrent["value"] + additional_runner["concurrent"]|default(16)|int %}
       {%- endfor %}
     {%- endif %}
 
@@ -223,7 +227,7 @@ salt_master_gitlab-runner_config:
     - group: root
     - mode: 600
     - contents: |
-        concurrent = {{ concurrent }}
+        concurrent = {{ concurrent["value"] }}
         check_interval = 0
         
         [session_server]
