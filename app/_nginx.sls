@@ -50,78 +50,27 @@ app_{{ app_type }}_nginx_custom_htaccess_user_{{ loop_index }}_{{ file_loop.inde
           {%- endfor %}
         {%- endif %}
 
-        {%- if "ssl" in app["nginx"] and "acme_account" in app["nginx"]["ssl"] %}
-app_{{ app_type }}_acme_run_{{ loop_index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ app["nginx"]["ssl"]["acme_account"] }}/verify_and_issue.sh {{ app_name }} {{ app["nginx"]["domain"] }}"
-
-        {%- endif %}
-
-app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}:
-  file.managed:
-    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
-        {%- if "vhost_contents" in app["nginx"] %}
-    - contents: {{ app["nginx"]["vhost_contents"] | replace("__APP_NAME__", app_name) }}
-        {%- else %}
-          {%- set _nginx_vhost_config = app["nginx"]["vhost_config"]|replace("__APP_NAME__", app_name) %}
-    - source: {{ _nginx_vhost_config }}
-    - template: jinja
-    - defaults:
-        app_name: {{ app_name }}
-        app_root: {{ _app_app_root }}
-        domain: {{ app["nginx"]["domain"] }}
-        nginx_root: {{ _app_nginx_root }}
-        access_log: {{ _app_nginx_access_log }}
-        error_log: {{ _app_nginx_error_log }}
-          {%- if "ssl" in app["nginx"] %}
-            {%- if "acme_account" in app["nginx"]["ssl"] %}
-        ssl_cert: /opt/acme/cert/{{ app_name }}_{{ app["nginx"]["domain"] }}_fullchain.cer
-        ssl_key: /opt/acme/cert/{{ app_name }}_{{ app["nginx"]["domain"] }}_key.key
-            {%- elif "cert" in app["nginx"]["ssl"] %}
-        ssl_cert: {{ app["nginx"]["ssl"]["cert"]|replace("__APP_NAME__", app_name) }}
-        ssl_key: {{ app["nginx"]["ssl"]["key"]|replace("__APP_NAME__", app_name) }}
-        ssl_chain: {{ app["nginx"]["ssl"].get("chain", "")|replace("__APP_NAME__", app_name) }}
-            {%- endif %}
+        {%- with %}
+          {%- if not "acme_account" in app["nginx"]["ssl"] %}
+            {%- set ssl = app["nginx"].get("ssl",{}) %}
+            {%- include "app/_nginx/_vhost.sls" with context %}
+          {%- elif "acme_account" in app["nginx"]["ssl"] %}
+            {%- include "app/_nginx/acme.sls" with context %}
           {%- endif %}
-        auth_basic_block: '{{ auth_basic_block }}'
-          {%- if "vhost_defaults" in app["nginx"] %}
-            {%- for def_key, def_val in app["nginx"]["vhost_defaults"].items() %}
-        {{ def_key }}: {{ def_val|replace("__APP_NAME__", app_name)|yaml_encode }}
-            {%- endfor %}
-          {%- endif %}
-        {%- endif %}
+        {%- endwith %}
 
         {%- if "redirects" in app["nginx"] %}
           {%- for redirect in app["nginx"]["redirects"] %}
 
-            {%- if "ssl" in redirect and "acme_account" in redirect["ssl"] %}
-app_{{ app_type }}_acme_run_redirect_{{ loop_index }}_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ redirect["ssl"]["acme_account"] }}/verify_and_issue.sh {{ app_name }} {{ redirect["domain"] }}"
-
-            {%- endif %}
-
-app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ loop.index }}:
-  file.managed:
-    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}_redirect_{{ loop.index }}.conf
-    {%- set _redirect_vhost_config = redirect["vhost_config"]|replace("__APP_NAME__", app_name) %}
-    - source: {{ _redirect_vhost_config }}
-    - template: jinja
-    - defaults:
-        domain: {{ app["nginx"]["domain"] }}
-        redirect: {{ redirect["domain"] }}
-            {%- if "ssl" in redirect %}
-              {%- if "acme_account" in redirect["ssl"] %}
-        ssl_cert: /opt/acme/cert/{{ app_name }}_{{ redirect["domain"] }}_fullchain.cer
-        ssl_key: /opt/acme/cert/{{ app_name }}_{{ redirect["domain"] }}_key.key
-              {%- elif "cert" in redirect["ssl"] %}
-        ssl_cert: {{ redirect["ssl"]["cert"]|replace("__APP_NAME__", app_name) }}
-        ssl_key: {{ redirect["ssl"]["key"]|replace("__APP_NAME__", app_name) }}
-        ssl_chain: {{ redirect["ssl"].get("chain", "")|replace("__APP_NAME__", app_name) }}
-              {%- endif %}
-            {%- endif %}
+           {%- with %}
+             {%- set id = loop.index %}
+             {%- if not "acme_account" in redirect["ssl"] %}
+               {%- set ssl = redirect["ssl"].get("ssl",{}) %}
+               {%- include "app/_nginx/_vhost.sls" with context %}
+             {%- elif "acme_account" in redirect["ssl"] %}
+               {%- include "app/_nginx/acme.sls" with context %}
+             {%- endif %}
+           {%- endwith %}
 
           {%- endfor %}
         {%- endif %}
