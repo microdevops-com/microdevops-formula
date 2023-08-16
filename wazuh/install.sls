@@ -38,11 +38,9 @@ wazuh_clone_from_git:
     - target: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}
     - branch: {{ pillar["wazuh"]["release"] }}
 
-{% include "wazuh/includes/indexer_password_hash_update.sls" with context %}
-
 wazuh_certs_generation:
   cmd.run:
-    - name: '[ ! -f /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_indexer_ssl_certs/root-ca.key ]; docker-compose -f generate-indexer-certs.yml run --rm generator'
+    - name: '[ ! -f /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_indexer_ssl_certs/root-ca.key ] && docker-compose -f generate-indexer-certs.yml run --rm generator || true'
     - shell: /bin/bash
     - cwd: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node
 
@@ -82,10 +80,11 @@ docker_network:
   docker_network.present:
     - name: wazuh
 
-{% include "wazuh/includes/indexer.sls"          with context %}
-{% include "wazuh/includes/manager.sls"          with context %}
-{% include "wazuh/includes/dashboard.sls"        with context %}
-{% include "wazuh/includes/applying_changes.sls" with context %}
+{% include "wazuh/includes/indexer_password_hash_update.sls"  with context %}
+{% include "wazuh/includes/indexer.sls"                       with context %}
+{% include "wazuh/includes/manager.sls"                       with context %}
+{% include "wazuh/includes/dashboard.sls"                     with context %}
+{% include "wazuh/includes/applying_changes.sls"              with context %}
 
 cron_backup_ossec_conf:
   cron.present:
@@ -101,4 +100,5 @@ cron_wazuh_dashboard_restart_for_reload_acme_certificates:
     - user: root
     - minute: 0
     - hour: 1
+
 {% endif %}
