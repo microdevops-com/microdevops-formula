@@ -5,6 +5,102 @@ nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
+  {%- if pillar["collabora"]["nginx_sites_enabled"] | default(false) %}
+create nginx.conf:
+  file.managed:
+    - name: /etc/nginx/nginx.conf
+    - contents: |
+        user www-data;
+        worker_processes auto;
+        worker_rlimit_nofile 40000;
+        pid /run/nginx.pid;
+        include /etc/nginx/modules-enabled/*.conf;
+        events {
+            worker_connections 8192;
+        }
+        http {
+          sendfile on;
+          tcp_nopush on;
+          tcp_nodelay on;
+          keepalive_timeout 65;
+          types_hash_max_size 2048;
+          server_names_hash_bucket_size 64;
+          include /etc/nginx/mime.types;
+          default_type application/octet-stream;
+          ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+          ssl_prefer_server_ciphers on;
+          access_log /var/log/nginx/access.log;
+          error_log /var/log/nginx/error.log;
+          gzip on;
+          include /etc/nginx/conf.d/*.conf;
+          include /etc/nginx/sites-enabled/*;
+        }
+    {%- for domain in pillar["collabora"]["domains"] %}
+create /etc/nginx/sites-available/{{ domain["name"] }}.conf:
+  file.managed:
+    - name: /etc/nginx/sites-available/{{ domain["name"] }}.conf
+    - contents: |
+        {%- if pillar["collabora"]["external_port"] is not defined %}
+        server {
+          listen 80;
+          server_name {{ domain["name"] }};
+          return 301 https://$host$request_uri;
+        }
+        {%- endif %}
+        upstream {{ domain["name"] | replace(".","_") }} {
+          server 127.0.0.1:{{ domain["internal_port"] }};
+        }
+        server {
+          listen 443 ssl;
+          server_name {{ domain["name"] }};
+          ssl_certificate /opt/acme/cert/collabora_{{ domain["name"] }}_fullchain.cer;
+          ssl_certificate_key /opt/acme/cert/collabora_{{ domain["name"] }}_key.key;
+          # static files
+          location ^~ /browser {
+            proxy_pass http://{{ domain["name"] | replace(".","_") }};
+            proxy_set_header Host $http_host;
+          }
+          # WOPI discovery URL
+          location ^~ /hosting/discovery {
+            proxy_pass http://{{ domain["name"] | replace(".","_") }};
+            proxy_set_header Host $http_host;
+          }
+          # Capabilities
+          location ^~ /hosting/capabilities {
+            proxy_pass http://{{ domain["name"] | replace(".","_") }};
+            proxy_set_header Host $http_host;
+          }
+          # main websocket
+          location ~ ^/cool/(.*)/ws$ {
+            proxy_pass http://{{ domain["name"] | replace(".","_") }};
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "Upgrade";
+            proxy_set_header Host $http_host;
+            proxy_read_timeout 36000s;
+          }
+          # download, presentation and image upload
+          location ~ ^/(c|l)ool {
+            proxy_pass http://{{ domain["name"] | replace(".","_") }};
+            proxy_set_header Host $http_host;
+          }
+          # Admin Console websocket
+          location ^~ /cool/adminws {
+            proxy_pass http://{{ domain["name"] | replace(".","_") }};
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "Upgrade";
+            proxy_set_header Host $http_host;
+            proxy_read_timeout 36000s;
+          }
+        }
+
+create symlink /etc/nginx/sites-enabled/{{ domain["name"] }}.conf:
+  file.symlink:
+    - name: /etc/nginx/sites-enabled/{{ domain["name"] }}.conf
+    - target: /etc/nginx/sites-available/{{ domain["name"] }}.conf
+    - force: True
+    {%- endfor %}
+  
+  {%- else %}
 
 nginx_files_1:
   file.managed:
@@ -24,8 +120,8 @@ nginx_files_1:
               listen 80;
               return 301 https://$host$request_uri;
             }
-  {%- for domain in pillar["collabora"]["domains"] %}
-            upstream {{ domain["internal_name"] }} {
+    {%- for domain in pillar["collabora"]["domains"] %}
+            upstream {{ domain["name"] | replace(".","_") }} {
               server 127.0.0.1:{{ domain["internal_port"] }};
             }
             server {
@@ -35,22 +131,22 @@ nginx_files_1:
               ssl_certificate_key /opt/acme/cert/collabora_{{ domain["name"] }}_key.key;
               # static files
               location ^~ /browser {
-               proxy_pass http://{{ domain["internal_name"] }};
+               proxy_pass http://{{ domain["name"] | replace(".","_") }};
                proxy_set_header Host $http_host;
               }
               # WOPI discovery URL
               location ^~ /hosting/discovery {
-               proxy_pass http://{{ domain["internal_name"] }};
+               proxy_pass http://{{ domain["name"] | replace(".","_") }};
                proxy_set_header Host $http_host;
               }
               # Capabilities
               location ^~ /hosting/capabilities {
-               proxy_pass http://{{ domain["internal_name"] }};
+               proxy_pass http://{{ domain["name"] | replace(".","_") }};
                proxy_set_header Host $http_host;
               }
               # main websocket
               location ~ ^/cool/(.*)/ws$ {
-               proxy_pass http://{{ domain["internal_name"] }};
+               proxy_pass http://{{ domain["name"] | replace(".","_") }};
                proxy_set_header Upgrade $http_upgrade;
                proxy_set_header Connection "Upgrade";
                proxy_set_header Host $http_host;
@@ -58,21 +154,21 @@ nginx_files_1:
               }
               # download, presentation and image upload
               location ~ ^/(c|l)ool {
-               proxy_pass http://{{ domain["internal_name"] }};
+               proxy_pass http://{{ domain["name"] | replace(".","_") }};
                proxy_set_header Host $http_host;
               }
               # Admin Console websocket
               location ^~ /cool/adminws {
-               proxy_pass http://{{ domain["internal_name"] }};
+               proxy_pass http://{{ domain["name"] | replace(".","_") }};
                proxy_set_header Upgrade $http_upgrade;
                proxy_set_header Connection "Upgrade";
                proxy_set_header Host $http_host;
                proxy_read_timeout 36000s;
               }
             }
-  {%- endfor %}
+    {%- endfor %}
         }
-
+  {%- endif %}
 nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
