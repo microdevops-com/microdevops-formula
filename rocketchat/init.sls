@@ -13,10 +13,11 @@ create nginx.conf:
     - contents: |
         user www-data;
         worker_processes auto;
+        worker_rlimit_nofile 40000;
         pid /run/nginx.pid;
         include /etc/nginx/modules-enabled/*.conf;
         events {
-          worker_connections 768;
+            worker_connections 8192;
         }
         http {
           sendfile on;
@@ -81,6 +82,7 @@ create symlink /etc/nginx/sites-enabled/{{ domain["name"] }}.conf:
     - target: /etc/nginx/sites-available/{{ domain["name"] }}.conf
     - force: True
     {%- endfor %}
+  
   {%- else %}
 
 nginx_files_1:
