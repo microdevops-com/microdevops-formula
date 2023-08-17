@@ -1,11 +1,11 @@
 rocketchat:
+  nginx_sites_enabled: true
   external_port: 3333     # optional
   domains:
 {% set domain       = "rocketchat.example.com" %}
 {% set chat_version = "6.2.9"                  %}
     - name: {{ domain }}
       rocketchat:
-        internal_name: prod
         internal_port: 3000
         image: registry.rocket.chat/rocketchat/rocket.chat:{{ chat_version }}
         #image: rocket.chat:{{ chat_version }}
