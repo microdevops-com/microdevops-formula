@@ -1,4 +1,5 @@
 collabora:
+  nginx_sites_enabled: true
   domains:
     - name: collabora.example.com
       internal_name: prod
