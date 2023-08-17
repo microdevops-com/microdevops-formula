@@ -1,5 +1,6 @@
 nextcloud:
-  docker-ce_version: 5:20.10.7
+  nginx_sites_enabled: true
+  #docker-ce_version: 5:20.10.7         # Deprecated. Instead use Salt Formula "docker-ce"
   domains:
     - name: nextcloud.example.com
       internal_name: prd
