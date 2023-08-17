@@ -11,7 +11,7 @@ create nginx.conf:
   file.managed:
     - name: /etc/nginx/nginx.conf
     - contents: |
-        user www-data;
+        #user www-data;
         worker_processes auto;
         worker_rlimit_nofile 40000;
         pid /run/nginx.pid;
