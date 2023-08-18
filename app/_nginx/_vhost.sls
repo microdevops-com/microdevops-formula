@@ -10,16 +10,16 @@ Importing this file requires:
   - _app_nginx_root (string)
 
   - loop_index (int)
-  - loop_2_index (int)
+  - loop2_index (int)
 
   - ssl (dict)
   - app (dict) or redirect (dict)
 #}
 
 {%- if redirect is defined %}
-app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ id|default("0") }}:
+app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ loop2_index }}_{{ id|default("0") }}:
   file.managed:
-    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}_redirect_{{ loop_2_index }}.conf
+    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}_redirect_{{ loop2_index }}.conf
     - source: {{ redirect["vhost_config"]|replace("__APP_NAME__", app_name) }}
     - template: jinja
     - defaults:
@@ -31,7 +31,7 @@ app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ id|default("0
 
 {%- else %}
 
-app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}_{{ id|default("0") }}:
+app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}_{{ loop2_index }}_{{ id|default("0") }}:
   file.managed:
     - name: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
         {%- if "vhost_contents" in app["nginx"] %}
