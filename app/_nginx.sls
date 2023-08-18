@@ -51,27 +51,15 @@ app_{{ app_type }}_nginx_custom_htaccess_user_{{ loop_index }}_{{ file_loop.inde
         {%- endif %}
 
         {%- with %}
-          {%- if not "acme_account" in app["nginx"]["ssl"] %}
-            {%- set ssl = app["nginx"].get("ssl",{}) %}
-            {%- include "app/_nginx/_vhost.sls" with context %}
-          {%- elif "acme_account" in app["nginx"]["ssl"] %}
-            {%- include "app/_nginx/acme.sls" with context %}
-          {%- endif %}
+          {%- include "app/_nginx/acme.sls" with context %}
         {%- endwith %}
 
         {%- if "redirects" in app["nginx"] %}
           {%- for redirect in app["nginx"]["redirects"] %}
-
            {%- with %}
-             {%- set id = loop.index %}
-             {%- if not "acme_account" in redirect["ssl"] %}
-               {%- set ssl = redirect["ssl"].get("ssl",{}) %}
-               {%- include "app/_nginx/_vhost.sls" with context %}
-             {%- elif "acme_account" in redirect["ssl"] %}
-               {%- include "app/_nginx/acme.sls" with context %}
-             {%- endif %}
+             {%- set loop2_index = loop.index %}
+            {%- include "app/_nginx/acme.sls" with context %}
            {%- endwith %}
-
           {%- endfor %}
         {%- endif %}
 

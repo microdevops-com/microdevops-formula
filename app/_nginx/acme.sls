@@ -30,6 +30,10 @@ app_{{ app_type }}_acme_run_{{ loop_index }}_{{ loop2_index }}:
     {%- set ssl = {"cert":"/etc/ssl/certs/ssl-cert-snakeoil.pem","key":"/etc/ssl/private/ssl-cert-snakeoil.key"} %}
     {%- set id = 1 %}
     {%- include "app/_nginx/_vhost.sls" with context %}
+app_{{ app_type }}_nginx_link_sites_enabled_{{ loop_index }}_{{ loop2_index }}:
+  file.symlink:
+    - name: {{ _nginx_sites_enabled_dir }}/{{ app_name }}.conf
+    - target: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
 app_{{ app_type }}_nginx_reload_{{ loop_index }}_{{ loop2_index }}_{{ id }}:
   cmd.run:
     - shell: /bin/bash
