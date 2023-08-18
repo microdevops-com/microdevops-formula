@@ -6,6 +6,7 @@ Importing this file requires:
 
   - app_type (string)
   - app_name (string)
+  - filename (string)
   - _app_app_root (string)
   - _app_nginx_root (string)
 
@@ -19,12 +20,12 @@ Importing this file requires:
 {%- if redirect is defined %}
 app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ loop2_index }}_{{ id|default("0") }}:
   file.managed:
-    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}_redirect_{{ loop2_index }}.conf
+    - name: {{ _nginx_sites_available_dir }}/{{ filename }}
     - source: {{ redirect["vhost_config"]|replace("__APP_NAME__", app_name) }}
     - template: jinja
     - defaults:
         domain: {{ app["nginx"]["domain"] }}
-        redir_nginx_sites_available_direct: {{ redirect["domain"] }}
+        redirect: {{ redirect["domain"] }}
         ssl_cert: {{ ssl.get("cert","") | replace("__APP_NAME__", app_name) }}
         ssl_key: {{ ssl.get("key","") | replace("__APP_NAME__", app_name) }}
         ssl_chain: {{ ssl.get("chain","") | replace("__APP_NAME__", app_name) }}
@@ -33,7 +34,7 @@ app_{{ app_type }}_nginx_vhost_config_redirect_{{ loop_index }}_{{ loop2_index }
 
 app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}_{{ loop2_index }}_{{ id|default("0") }}:
   file.managed:
-    - name: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
+    - name: {{ _nginx_sites_available_dir }}/{{ filename }}
         {%- if "vhost_contents" in app["nginx"] %}
     - contents: {{ app["nginx"]["vhost_contents"] | replace("__APP_NAME__", app_name) }}
         {%- else %}

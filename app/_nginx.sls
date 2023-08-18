@@ -51,14 +51,15 @@ app_{{ app_type }}_nginx_custom_htaccess_user_{{ loop_index }}_{{ file_loop.inde
         {%- endif %}
 
         {%- with %}
-          {%- include "app/_nginx/acme.sls" with context %}
+          {%- set loop2_index = 0 %}
+          {%- include "app/_nginx/vhost_and_acme.sls" with context %}
         {%- endwith %}
 
         {%- if "redirects" in app["nginx"] %}
           {%- for redirect in app["nginx"]["redirects"] %}
            {%- with %}
-             {%- set loop2_index = loop.index %}
-            {%- include "app/_nginx/acme.sls" with context %}
+            {%- set loop2_index = loop.index %}
+            {%- include "app/_nginx/vhost_and_acme.sls" with context %}
            {%- endwith %}
           {%- endfor %}
         {%- endif %}
@@ -92,29 +93,10 @@ app_{{ app_type }}_nginx_logrotate_file_{{ loop_index }}:
 
         {%- endif %}
 
-        {%- if "link_sites-enabled" in app["nginx"] and app["nginx"]["link_sites-enabled"] %}
-app_{{ app_type }}_nginx_link_sites_enabled_{{ loop_index }}:
-  file.symlink:
-    - name: {{ _nginx_sites_enabled_dir }}/{{ app_name }}.conf
-    - target: {{ _nginx_sites_available_dir }}/{{ app_name }}.conf
-
-          {%- if "redirects" in app["nginx"] %}
-            {%- for redirect in app["nginx"]["redirects"] %}
-app_{{ app_type }}_nginx_link_sites_enabled_redirect_{{ loop_index }}_{{ loop.index }}:
-  file.symlink:
-    - name: {{ _nginx_sites_enabled_dir }}/{{ app_name }}_redirect_{{ loop.index }}.conf
-    - target: {{ _nginx_sites_available_dir }}/{{ app_name }}_redirect_{{ loop.index }}.conf
-
-            {%- endfor %}
-          {%- endif %}
-
-        {%- endif %}
-
-        {%- if (pillar["nginx_reload"] is defined and pillar["nginx_reload"]) or ("reload" in app["nginx"] and app["nginx"]["reload"]) %}
+        {%- if pillar.get("nginx_reload", false) or app["nginx"].get("reload",false) %}
 app_{{ app_type }}_nginx_reload_{{ loop_index }}:
   cmd.run:
     - name: "/usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
-
         {%- endif %}
 
 app_{{ app_type }}_nginx_reload_cron_{{ loop_index }}:
