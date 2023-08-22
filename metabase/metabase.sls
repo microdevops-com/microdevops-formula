@@ -73,6 +73,10 @@ nginx_files_1:
                 ssl_certificate_key /opt/acme/cert/metabase_{{ domain['name'] }}_key.key;
     {%- for instance in domain['instances'] %}
                 location /{{ instance['name'] }}/ {
+                    proxy_connect_timeout 300;
+                    proxy_read_timeout 300;
+                    proxy_send_timeout 300;
+                    proxy_buffering off;
                     proxy_pass http://localhost:{{ instance['port'] }}/;
                 }
     {%- endfor %}
