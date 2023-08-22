@@ -49,7 +49,7 @@ network:
         stp: false
       addresses:
         - 10.0.10.1/24
-{%- if failover_ips is defined -%}
+{%- if failover_ips is defined %}
       routes:
     {%- for failover_ip in failover_ips %}
         - scope: link
