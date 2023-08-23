@@ -22,5 +22,5 @@
 [Simple, eth0:gw, eth1](2022081801.yaml)  
 [Simple, eth0:gw;onlink](2022080801.yaml)  
 [Hetzner Dedicated, br0:gw, br1; IPV4_ONLY; enp rename to eth](2023071101.yaml)  
-[Smartape.net, eno1:gw4; IPV4_ONLY](2023073101.yaml)
+[Smartape.net, eno1:gw4; IPV4_ONLY](2023073101.yaml)  
 [Smartape.net, br0:gw4; IPV4_ONLY](2023082301.yaml)
