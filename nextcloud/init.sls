@@ -469,6 +469,12 @@ nextcloud_container_{{ loop.index }}:
     {%- for var_key, var_val in domain["env_vars"].items() %}
         - {{ var_key }}: {{ var_val }}
     {%- endfor %}
+
+nextcloud-available_{{ loop.index }}:
+  cmd.run:
+    - name: 'while ! curl -sL -u {{ domain["env_vars"]["NEXTCLOUD_ADMIN_USER"] }}:{{ domain["env_vars"]["NEXTCLOUD_ADMIN_PASSWORD"] }} https://{{ domain["name"] }}/ocs/v2.php/apps/serverinfo/api/v1/info?format=json | jq -r ".ocs.meta.statuscode"; do sleep 1; done'
+    - timeout: 60
+
     {% if "php_fpm" in domain and "pm.max_children" in domain["php_fpm"] %}
 nextcloud_php-fpm_set_pm.max_children_{{ loop.index }}:
   cmd.run:
