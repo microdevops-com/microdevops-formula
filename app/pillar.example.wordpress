@@ -61,12 +61,12 @@ app:
             rotate_count: 31                                                           
             rotate_when: daily
           php_version: 7.4
-          pm: |
+          config: |
             pm = ondemand
             pm.max_children = 50
             pm.process_idle_timeout = 10s
             pm.max_requests = 500
-          php_admin: |
+
             php_admin_value[date.timezone] = Europe/Kiev
             php_admin_flag[html_errors] = off
             php_admin_value[post_max_size] = 25M
