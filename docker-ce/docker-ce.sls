@@ -50,7 +50,7 @@ docker-ce_restart:
       - file: /etc/docker/daemon.json
 
   {%- if grains['oscodename'] == 'jammy' %}
-FIX. Install python packges. requests v2.25.1 and urllib3 v1.26.5:
+FIX. Install python packages. requests v2.25.1 and urllib3 v1.26.5:
   pip.installed:
     - names:
       - requests == 2.25.1
