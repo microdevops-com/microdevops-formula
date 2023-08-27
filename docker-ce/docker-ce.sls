@@ -49,9 +49,12 @@ docker-ce_restart:
     - onchanges:
       - file: /etc/docker/daemon.json
 
-  {% if grains['oscodename'] == 'jammy' %}
-fix:
-  cmd.run:
-    - name: 'pip uninstall requests urllib3 --yes -q; pip install requests==2.25.1 urllib3==1.26.5 -q'
-  {% endif %}
-{% endif %}
+  {%- if grains['oscodename'] == 'jammy' %}
+Install python packges. requests v2.25.1 and urllib3 v1.26.5:
+  pip.installed:
+    - names:
+      - requests == 2.25.1
+      - urllib3 == 1.26.5
+    - reload_modules: True
+  {%- endif %}
+{%- endif %}
