@@ -49,4 +49,9 @@ docker-ce_restart:
     - onchanges:
       - file: /etc/docker/daemon.json
 
+  {% if grains['oscodename'] == 'jammy' %}
+fix:
+  cmd.run:
+    - name: 'pip uninstall requests urllib3 --yes -q; pip install requests==2.25.1 urllib3==1.26.5 -q'
+  {% endif %}
 {% endif %}
