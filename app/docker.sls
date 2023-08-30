@@ -1,7 +1,9 @@
 {% if pillar["app"] is defined and "docker" in pillar["app"] and "apps" in pillar["app"]["docker"] %}
 
   {%- set app_type = "docker" %} # required for _pkg.sls
+
   {%- include "app/_pkg.sls" with context %}
+  {%- include "app/_pre_deploy.sls" with context %}
 
 docker_install_00:
   file.directory:
@@ -164,4 +166,7 @@ docker_app_container_cron_{{ i_loop.index }}_{{ loop.index }}:
       {%- endif %}
     {%- endif %}
   {%- endfor %}
+
+  {%- include "app/_post_deploy.sls" with context %}
+
 {% endif %}

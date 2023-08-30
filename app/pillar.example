@@ -8,6 +8,14 @@ app:
     default-libmysqlclient-dev: any # just make sure version is installed
     python2: latest # always install latest
     libgmp-dev: 2:6.2.0 # install specific version
+  #pre_deploy_cmd: # optional
+  #  cwd: /root
+  #  name: |
+  #    /opt/scripts/validate_data.sh
+  #post_deploy_cmd: # optional
+  #  cwd: /root
+  #  name: |
+  #    systemctl reload nginx.service
   #python|php-fpm|ruby|static: # choose one of app types
     # only for python
     pyenv: # to include pyenv state
@@ -242,7 +250,6 @@ app:
           #
           #    return 200 "PONG!";
           #  }
-  
 
   docker:
     docker-ce_version: 18.06.1 # optional, do not manage docker installation if omitted
