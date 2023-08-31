@@ -1,4 +1,4 @@
-# Hetzner Dedicated with 10Guplink(eth0+eth1), br0:gw, 1 FAILOVER_IP, IPV4_ONLY=YES
+# Hetzner Dedicated, 10Guplink(eth0+eth1), br0:gw, 1 FAILOVER_IP, IPV4_ONLY=YES
 network:
   version: 2
   renderer: networkd
