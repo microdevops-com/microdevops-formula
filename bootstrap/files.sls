@@ -36,7 +36,7 @@ bootstrap_file_directory_run_{{ loop.index }}_{{ a_loop.index }}:
   {%- set symlinks = [] %}
 
   {%- for sl in symlink.values() %}
-    {%- do symlink.extend(sl) %}
+    {%- do symlinks.extend(sl) %}
   {%- endfor %}
 
   {%- for sl in symlinks %}
