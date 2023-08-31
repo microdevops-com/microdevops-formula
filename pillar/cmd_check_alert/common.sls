@@ -1,3 +1,6 @@
+# bionic nvme fix:
+# apt install -t bionic-backports smartmontools
+
 {% if grains["osarch"] in ["arm64"] %}
   {%- set ruby_prefix = "source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/bin" %}
 {% else %}
