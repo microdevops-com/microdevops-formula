@@ -27,15 +27,14 @@ vault_cert:
 
 cert_permissions:
   cmd.run:
-    - name: /usr/bin/chown -R vault:vault  /opt/acme/cert/{{ pillar["vault"]["acme"]["domain"] }}/*
+    - name: /usr/bin/chown vault:vault /opt/acme/cert/vault_{{ pillar["vault"]["acme"]["domain"] }}*
 
 cert_permissions_cron:
   cron.present:
-    - name: /usr/bin/chown vault:vault -R /opt/acme/cert/{{ pillar["vault"]["acme"]["domain"] }}/*
+    - name: /usr/bin/chown vault:vault /opt/acme/cert/vault_{{ pillar["vault"]["acme"]["domain"] }}*
     - identifier: set permissions for vault certificate
     - user: root
     - minute: 0
-    - hour: 1
   {% endif %}
 vault_data_dir:
   file.directory:
