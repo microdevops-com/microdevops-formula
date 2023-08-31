@@ -138,10 +138,11 @@ vault_snapshot_raft_script:
         # snapshot if leader
         timestamp=$(date +'%y-%m-%d_%H-%M-%S')
         snapshots_dir={{ snapshots_dir }}
-        is_leader="$(curl -s {{ pillar['vault']['env_vars']['VAULT_ADDR'] }}/v1/sys/leader | jq --raw-output '.is_self')"
+        is_leader="$(curl -sk {{ pillar['vault']['env_vars']['VAULT_ADDR'] }}/v1/sys/leader | jq --raw-output '.is_self')"
         find $snapshots_dir -type f -mtime +{{ pillar["vault"]["snapshots"]["retention"] | default(1) }} -delete
         if ${is_leader}; then
           echo "make raft snapshot $snapshots_dir/vault_$timestamp.snap ..."
+          export VAULT_SKIP_VERIFY=true
           vault operator raft snapshot save ${snapshots_dir}/vault_${timestamp}.snap
         else
           echo "not leader, skipping raft snapshot."
