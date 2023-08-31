@@ -1,4 +1,5 @@
 {% if pillar["bootstrap"] is defined and "files" in pillar["bootstrap"] %}
+
 {% with %}
   {%- set directory = pillar["bootstrap"]["files"].get("directory", {}) %}
   {%- set dirs = [] %}
@@ -26,6 +27,28 @@ bootstrap_file_directory_run_{{ loop.index }}_{{ a_loop.index }}:
   cmd.run:
     - name: {{ cmd }}
     {%- endfor %}
+  {%- endfor %}
+
+{% endwith %}
+
+{% with %}
+  {%- set symlink = pillar["bootstrap"]["files"].get("symlink", {}) %}
+  {%- set symlinks = [] %}
+
+  {%- for sl in symlink.values() %}
+    {%- do symlinks.extend(sl) %}
+  {%- endfor %}
+
+  {%- for sl in symlinks %}
+bootstrap_symlink_{{ loop.index }}:
+  file.symlink:
+    - name: {{ sl["name"] }}
+    - target: {{ sl["target"] }}
+    - user: {{ sl.get("user", "") }}
+    - group: {{ sl.get("group", "") }}
+    - makedirs: {{ sl.get("makedirs", "false") }}
+    - force: {{ sl.get("force","") }}
+
   {%- endfor %}
 
 {% endwith %}

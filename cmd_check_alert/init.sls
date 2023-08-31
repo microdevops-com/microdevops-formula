@@ -127,6 +127,19 @@ sensu-plugins_install_{{ loop.index }}:
     - name: {% if grains["osarch"] in ["arm64"] %}source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/bin/{% endif %}sensu-install -p {{ plugin }}
     - shell: /bin/bash
 
+        {%- if plugin == "raid-checks" %}
+sensu-plugins_install_{{ loop.index }}_patch_raid_1:
+  file.managed:
+          {%- if grains["osarch"] not in ["arm64"] %}
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-raid-checks-3.0.0/bin/check-raid.rb
+          {%- else %}
+    - name: /usr/local/rvm/gems/ruby-2.4.0/gems/sensu-plugins-raid-checks-3.0.0/bin/check-raid.rb
+          {%- endif %}
+    - source: salt://cmd_check_alert/files/check-raid.rb
+    - create: False
+    - show_changes: True
+
+        {%- endif %}
         {%- if plugin == "disk-checks" %}
 sensu-plugins_install_{{ loop.index }}_patch_smart_1:
   file.managed:
