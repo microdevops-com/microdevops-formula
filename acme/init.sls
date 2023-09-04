@@ -63,6 +63,7 @@ acme_verify_and_issue_{{ loop.index }}:
           exit 1
         fi
         ACME_LOCAL_APP="$1"
+        ACME_LOCAL_DOMAIN="$2"
         printf -v DOMAINS -- " -d %s" "${@:2}"
 
         if openssl verify -CAfile /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_ca.cer /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; then
