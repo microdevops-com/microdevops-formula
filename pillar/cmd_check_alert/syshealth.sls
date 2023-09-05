@@ -49,3 +49,9 @@ cmd_check_alert:
             1: major
             2: critical
       {%- endif %}
+        coredump:
+          cmd: :; ! dmesg -T | grep -i "core dump" -m 10
+          service: os
+          resource: __hostname__:coredump
+          severity_per_retcode:
+            1: critical
