@@ -55,3 +55,9 @@ cmd_check_alert:
           resource: __hostname__:coredump
           severity_per_retcode:
             1: critical
+        segfault:
+          cmd: :; ! dmesg -T | grep -i "segfault" -m 10
+          service: os
+          resource: __hostname__:segfault
+          severity_per_retcode:
+            1: critical
