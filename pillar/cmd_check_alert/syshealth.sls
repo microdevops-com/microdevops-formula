@@ -50,12 +50,20 @@ cmd_check_alert:
             2: critical
       {%- endif %}
         coredump:
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
+          # We need to catch this only on host machines as containers share the kernel with the host
+          disabled: True
+{% endif %}
           cmd: :; ! dmesg -T | grep -i "core dump" -m 10
           service: os
           resource: __hostname__:coredump
           severity_per_retcode:
             1: critical
         segfault:
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
+          # We need to catch this only on host machines as containers share the kernel with the host
+          disabled: True
+{% endif %}
           cmd: :; ! dmesg -T | grep -i "segfault" -m 10
           service: os
           resource: __hostname__:segfault
