@@ -69,3 +69,10 @@ cmd_check_alert:
           resource: __hostname__:segfault
           severity_per_retcode:
             1: critical
+        pinggoogle:
+          cmd: ping -c4 google.com
+          service: os
+          resource: __hostname__:pinggoogle
+          severity_per_retcode:
+            1: critical
+            2: critical
