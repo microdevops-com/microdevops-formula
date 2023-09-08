@@ -37,7 +37,7 @@ wazuh_manager_container:
       - {{ var_key }}: {{ var_val }}
     {%- endfor %}
 
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"]["internal_options_conf"] %}
+  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
 {% include "wazuh/includes/internal_options_conf.sls"  with context %}
 
 reload_manager:
