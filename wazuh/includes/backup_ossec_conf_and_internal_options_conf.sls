@@ -1,4 +1,4 @@
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"]["internal_options_conf"] %}
+  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
 {% include "wazuh/includes/internal_options_conf.sls"  with context %}
   {% endif %}
 
