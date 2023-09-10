@@ -14,6 +14,7 @@ rsnapshot_backup:
                      # --exclude=/root/junk_dir --exclude=/opt/another_junk_dir # to exclude 
                      # --rsync-path="ionice -c 3 nice rsync" # limit rsync with Idle IO class and be nice with CPU
                      # --bwlimit=20M # limit rsync data transfer
+                     # --whole-file # useful for db dumps, they differ each time, delta algorithms are useless, improves speed
         #connect_user: toor # optional, root by default, user for ssh or native rsync connect
         #exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes
                             # beware - it will be executed for each item in data, so make separate backup item to exec only once
