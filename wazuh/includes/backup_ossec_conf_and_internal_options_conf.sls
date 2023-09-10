@@ -1,5 +1,5 @@
   {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
-{% include "wazuh/includes/internal_options_conf.sls"  with context %}
+{% include "wazuh/includes/internal_options_conf.sls" with context %}
   {% endif %}
 
 backup_ossec_conf_and_internal_options_conf:
