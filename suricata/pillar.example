@@ -1,0 +1,10 @@
+{% set public_ip = 1.2.3.4 %}
+{% set public_interface = "eth0" %}
+
+suricata:
+  config:
+    vars:
+      address-groups:
+        HOME_NET: "[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,{{ public_ip }}/32]"
+    af-packet:
+      - interface: {{ public_interface }}

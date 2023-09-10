@@ -17,6 +17,8 @@ wazuh:
       SSL_KEY: /etc/ssl/filebeat.key
       API_USERNAME: wazuh-wui
       API_PASSWORD: 'MyS3cr37P450r.*-'
+    internal_options_conf:
+      analysisd.decoder_order_size: 1024
   wazuh_indexer:
     image: wazuh/wazuh-indexer:{{ wazuh_release }}
     env_vars:

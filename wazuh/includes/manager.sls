@@ -36,3 +36,11 @@ wazuh_manager_container:
     {%- for var_key, var_val in pillar["wazuh"]["wazuh_manager"]["env_vars"].items() %}
       - {{ var_key }}: {{ var_val }}
     {%- endfor %}
+
+  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
+{% include "wazuh/includes/internal_options_conf.sls"  with context %}
+
+reload_manager:
+  cmd.run:
+    - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
+  {% endif %}
