@@ -1,6 +1,6 @@
 {% if pillar["nginx"] is defined %}
 
-  {% if pillar["nginx"]["ondrej_ppa"] %}
+  {% if pillar["nginx"].get("ondrej_ppa", False) %}
 nginx_ondrej_ppa_add:
   pkgrepo.managed:
     - name: deb https://ppa.launchpadcontent.net/ondrej/nginx/ubuntu {{ grains['oscodename'] }} main
@@ -14,7 +14,7 @@ nginx_ondrej_ppa_add:
 nginx_deps:
   pkg.installed:
     - pkgs:
-  {% if pillar["nginx"]["custom_set"] %}
+  {% if pillar["nginx"].get("custom_set", False) %}
       - nginx-{{ pillar["nginx"]["custom_set"] }}
   {% else %}
       - nginx
