@@ -20,26 +20,18 @@ cmd_check_alert:
           cmd: :; ! dmesg -T | grep -i "hardware.*error" -m 10
           service: os
           resource: __hostname__:hardware
-          severity_per_retcode:
-            1: critical
         hardware-nvme:
           cmd: :; ! dmesg -T | grep -i "nvme.*err" -m 10
           service: os
           resource: __hostname__:hardware-nvme
-          severity_per_retcode:
-            1: critical
         hardware-cpu-temperature-throttling:
           cmd: :; ! dmesg -T | grep -i -e "temperature above threshold" -e "cpu clock throttled" -m 10
           service: os
           resource: __hostname__:hardware-cpu-temperature-throttling
-          severity_per_retcode:
-            1: critical
         oom:
           cmd: :; ! dmesg -T | grep -i -e "Out of memory" -e "oom"
           service: os
           resource: __hostname__:oom
-          severity_per_retcode:
-            1: critical
       {%- if grains.get("oscodename","") not in ["precise"] %}
         zombie:
           cmd: {{ ruby_prefix }}/check-process.rb -s Z -W 0 -C 0 -w 10 -c 15
@@ -57,8 +49,6 @@ cmd_check_alert:
           cmd: :; ! dmesg -T | grep -i "core dump" -m 10
           service: os
           resource: __hostname__:coredump
-          severity_per_retcode:
-            1: critical
         segfault:
 {% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
           # We need to catch this only on host machines as containers share the kernel with the host
@@ -67,12 +57,7 @@ cmd_check_alert:
           cmd: :; ! dmesg -T | grep -i "segfault" -m 10
           service: os
           resource: __hostname__:segfault
-          severity_per_retcode:
-            1: critical
         pinggoogle:
           cmd: ping -c4 google.com
           service: os
           resource: __hostname__:pinggoogle
-          severity_per_retcode:
-            1: critical
-            2: critical
