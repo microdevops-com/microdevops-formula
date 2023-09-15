@@ -56,6 +56,12 @@ memcached-{{ instance }}-unit:
         [Install]
         WantedBy=multi-user.target    
 
+memcached-{{ instance }}-systemd-daemon-reload:
+  cmd.run:
+    - name: systemctl --system daemon-reload
+    - onchanges:
+      - file: memcached-{{ instance }}-unit
+
 memcached-{{ instance }}-running:
   service.running:
     - name: {{ service }}
