@@ -184,9 +184,6 @@ cmd_check_alert:
     cron:
       minute: '15'
       hour: '10'
-{% if grains["oscodename"] in ["focal", "jammy"] or (grains["oscodename"] == "bionic" and (grains["virtual"]|lower != "lxc" and grains["virtual"]|lower != "container")) %}
-    install_cvescan: True
-{% endif %}
     config:
       enabled: True
       limits:
@@ -196,17 +193,6 @@ cmd_check_alert:
         timeout: 60
         severity: minor
       checks:
-        cvescan:
-{% if not (grains["oscodename"] in ["focal", "jammy"] or (grains["oscodename"] == "bionic" and (grains["virtual"]|lower != "lxc" and grains["virtual"]|lower != "container"))) %}
-          disabled: True
-{% endif %}
-          cmd: CVESCAN_OUT=$(/root/.local/bin/cvescan -p all); if echo "${CVESCAN_OUT}" | grep -q -e "Fixes Available by.*apt-get upgrade.* 0$"; then echo "${CVESCAN_OUT}"; ( exit 0 ); else echo "${CVESCAN_OUT}"; ( exit 2 ); fi
-          severity_per_retcode:
-            1: warning
-            #2: security
-            2: minor
-          service: pkg
-          resource: __hostname__:cvescan
         yum_security:
 {% if grains["os_family"] != "RedHat" %}
           disabled: True
