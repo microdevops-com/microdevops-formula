@@ -1,4 +1,8 @@
 {% if pillar["docker-ce"] is defined %}
+  {%- set docker_ce = pillar["docker-ce"] %}
+{% endif %}
+
+{% if docker_ce is defined and "version" in docker_ce %}
 docker-ce_config_dir:
   file.directory:
     - name: /etc/docker
@@ -7,7 +11,7 @@ docker-ce_config_dir:
 docker-ce_config_file:
   file.managed:
     - name: /etc/docker/daemon.json
-    - contents: {{ pillar["docker-ce"]["daemon_json"] | yaml_encode }}
+    - contents: {{ docker_ce["daemon_json"] | yaml_encode }}
 
 docker-ce_repo:
   {%- if grains["os"] == "CentOS" %}
@@ -25,18 +29,14 @@ docker-ce_repo:
   {%- endif %}
 
 docker-ce_pkg:
-  {%- if pillar["docker-ce"]["version"] == "latest" %}
   pkg.latest:
     - refresh: True
     - pkgs:
+      - python3-docker
+  {%- if docker_ce["version"] == "latest" %}
       - docker-ce
-      - python3-docker
   {%- else %}
-  pkg.installed:
-    - refresh: True
-    - pkgs:
-      - docker-ce: '{{ pillar["docker-ce"]["version"] }}*'
-      - python3-docker
+      - docker-ce: '{{ docker_ce["version"] }}*'
   {%- endif %}
 
 docker-ce_service:
@@ -48,13 +48,4 @@ docker-ce_restart:
     - name: systemctl restart docker
     - onchanges:
       - file: /etc/docker/daemon.json
-
-  {%- if grains['oscodename'] == 'jammy' %}
-FIX. Install python packages. requests v2.25.1 and urllib3 v1.26.5:
-  pip.installed:
-    - names:
-      - requests == 2.25.1
-      - urllib3 == 1.26.5
-    - reload_modules: True
-  {%- endif %}
 {%- endif %}
