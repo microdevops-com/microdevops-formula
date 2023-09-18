@@ -1,3 +1,15 @@
+wazuh_api_username_update:
+  file.replace:
+    - name: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_dashboard/wazuh.yml
+    - pattern: 'username: .*$'
+    - repl: 'username: {{ pillar["wazuh"]["wazuh_dashboard"]["env_vars"]["API_USERNAME"] }}'
+
+wazuh_api_password_update:
+  file.replace:
+    - name: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_dashboard/wazuh.yml
+    - pattern: 'password: .*$'
+    - repl: 'password: "{{ pillar["wazuh"]["wazuh_dashboard"]["env_vars"]["API_PASSWORD"] }}"'
+
 pull_wazuh_dashboard:
   cmd.run:
     - name: docker pull {{ pillar["wazuh"]["wazuh_dashboard"]["image"] }}
