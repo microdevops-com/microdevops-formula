@@ -1,4 +1,4 @@
-{# COMMEMENTED TEMPORARILY
+{# TEMPORARILY COMMENTED
   {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
 {% include "wazuh/includes/internal_options_conf.sls" with context %}
   {% endif %}
