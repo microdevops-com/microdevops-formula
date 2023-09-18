@@ -1,7 +1,7 @@
-{%- for var_key, var_val in pillar["wazuh"]["wazuh_manager"]["internal_options_conf"].items() %}
-internal_options_conf_{{ loop.index }}:
+{%- for key, val in pillar["wazuh"]["wazuh_manager"]["internal_options_conf"].items() %}
+internal_options_conf_set_{{ key }}:
   file.replace:
     - name: '/opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/internal_options.conf'
-    - pattern: '^ *{{ var_key }}.*$'
-    - repl: '{{ var_key }} = {{ var_val }}'
+    - pattern: '^ *{{ key }}.*$'
+    - repl: '{{ key }} = {{ val }}'
 {%- endfor %}
