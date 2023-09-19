@@ -30,9 +30,4 @@ Enable shard allocation:
 {% include "wazuh/includes/dashboard.sls"                                   with context %}
 {% include "wazuh/includes/restore_internal_options_conf.sls"               with context %}
 {% include "wazuh/includes/applying_changes.sls"                            with context %}
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
-reload_manager:
-  cmd.run:
-    - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
-  {% endif %}
 {% endif %}
