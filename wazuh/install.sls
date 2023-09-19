@@ -36,7 +36,7 @@ wazuh_clone_from_git:
   git.cloned:
     - name: https://github.com/wazuh/wazuh-docker
     - target: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}
-    - branch: {{ pillar["wazuh"]["release"] }}
+    - branch: "v{{ pillar["wazuh"]["release"] }}"
 
 wazuh_certs_generation:
   cmd.run:
