@@ -34,13 +34,13 @@ wazuh_manager_container:
       - wazuh
     - environment:
     {%- for var_key, var_val in pillar["wazuh"]["wazuh_manager"]["env_vars"].items() %}
+      {%- if var_key not in ["INDEXER_USERNAME","IDEXER_URL","FILEBEAT_SSL_VERIFICATION_MODE","SSL_CERTIFICATE_AUTHORITIES","SSL_CERTIFICATE","SSL_KEY"] %}
       - {{ var_key }}: {{ var_val }}
+      {%- endif %}
     {%- endfor %}
-
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
-{% include "wazuh/includes/internal_options_conf.sls"  with context %}
-
-reload_manager:
-  cmd.run:
-    - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
-  {% endif %}
+      - INDEXER_USERNAME: admin
+      - IDEXER_URL: https://wazuh.indexer:9200
+      - FILEBEAT_SSL_VERIFICATION_MODE: full
+      - SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
+      - SSL_CERTIFICATE: /etc/ssl/filebeat.pem
+      - SSL_KEY: /etc/ssl/filebeat.key
