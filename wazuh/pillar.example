@@ -8,7 +8,7 @@
 
 wazuh:
   domain: {{ wazuh_domain }}
-  release: v{{ wazuh_release }}
+  release: {{ wazuh_release }}
   wazuh_manager:
     image: wazuh/wazuh-manager:{{ wazuh_release }}
     env_vars:

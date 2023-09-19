@@ -1,5 +1,6 @@
+{% import_yaml 'wazuh/wazuh-server_exmple_com.sls' as wazuh %}
 wazuhagent:
-  deb: 'https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.5.0-1_amd64.deb'
+  deb: "https://packages.wazuh.com/{{ wazuh['wazuh']['release'].split('.')[0] }}.x/apt/pool/main/w/wazuh-agent/wazuh-agent_{{ wazuh['wazuh']['release'] }}-1_amd64.deb"
   manager: wazuh.example.com
   group: default
   suricata: true             # If you need to add /var/log/suricata/eve.json to wazuh-agent configuration /var/ossec/etc/ossec.conf
