@@ -85,8 +85,8 @@ docker_network:
 {% include "wazuh/includes/manager.sls"               with context %}
 {% include "wazuh/includes/dashboard.sls"             with context %}
 {% include "wazuh/includes/applying_changes.sls"      with context %}
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
 {% include "wazuh/includes/internal_options_conf.sls" with context %}
+  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
 reload_manager:
   cmd.run:
     - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
