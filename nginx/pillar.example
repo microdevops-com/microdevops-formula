@@ -1,2 +1,4 @@
 nginx:
-  configs: nginx/app_hosting
+  configs: nginx/app_hosting # Mandatory, specified directory w/ predefined nginx.conf
+  ondrej_ppa: True # Optional, enabled support of custom repository from Ondřej Surý | Default: False
+  custom_set: 'extras' # Optional, let you install the custom nginx packages set | Allowed values: 'light', 'core', 'full', 'extras'
