@@ -28,4 +28,5 @@ Enable shard allocation:
 {% include "wazuh/includes/dashboard.sls"                                   with context %}
 {% include "wazuh/includes/restore_internal_options_conf.sls"               with context %}
 {% include "wazuh/includes/applying_changes.sls"                            with context %}
+
 {% endif %}
