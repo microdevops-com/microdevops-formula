@@ -21,9 +21,7 @@ Enable shard allocation:
     - name: "sleep 30; curl -sX PUT 'https://{{ pillar['wazuh']['domain'] }}:9200/_cluster/settings' -u 'admin:{{ pillar['wazuh']['wazuh_manager']['env_vars']['INDEXER_PASSWORD'] }}' -k -H 'Content-Type: application/json' -d '{\"persistent\": {\"cluster.routing.allocation.enable\": \"all\"}}'"
     - shell: /bin/bash
 
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
-{% include "wazuh/includes/internal_options_conf.sls" with context %}
-  {% endif %}
+{% include "wazuh/includes/internal_options_conf.sls"                       with context %}
 {% include "wazuh/includes/backup_ossec_conf_and_internal_options_conf.sls" with context %}
 {% include "wazuh/includes/internal_users_yml.sls"                          with context %}
 {% include "wazuh/includes/manager.sls"                                     with context %}
