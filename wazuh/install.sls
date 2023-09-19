@@ -80,15 +80,21 @@ docker_network:
   docker_network.present:
     - name: wazuh
 
-{% include "wazuh/includes/indexer_password_hash_update.sls"  with context %}
-{% include "wazuh/includes/indexer.sls"                       with context %}
-{% include "wazuh/includes/manager.sls"                       with context %}
-{% include "wazuh/includes/dashboard.sls"                     with context %}
-{% include "wazuh/includes/applying_changes.sls"              with context %}
+{% include "wazuh/includes/internal_users_yml.sls"    with context %}
+{% include "wazuh/includes/indexer.sls"               with context %}
+{% include "wazuh/includes/manager.sls"               with context %}
+{% include "wazuh/includes/dashboard.sls"             with context %}
+{% include "wazuh/includes/applying_changes.sls"      with context %}
+{% include "wazuh/includes/internal_options_conf.sls" with context %}
+  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
+reload_manager:
+  cmd.run:
+    - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
+  {% endif %}
 
 cron_backup_ossec_conf:
   cron.present:
-    - name: 'rsync -av /opt/wazuh/{{ pillar['wazuh']['domain'] }}/volumes/wazuh_etc/ossec.conf /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf; chown 1000:1000 /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf; chmod 644 /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf'
+    - name: 'rsync -qa /opt/wazuh/{{ pillar['wazuh']['domain'] }}/volumes/wazuh_etc/ossec.conf /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf; chown 1000:1000 /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf; chmod 644 /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf'
     - identifier: backup_ossec_conf
     - user: root
     - minute: '*/5'
@@ -100,5 +106,4 @@ cron_wazuh_dashboard_restart_for_reload_acme_certificates:
     - user: root
     - minute: 0
     - hour: 1
-
 {% endif %}

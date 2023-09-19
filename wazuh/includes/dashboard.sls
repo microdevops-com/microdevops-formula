@@ -1,3 +1,15 @@
+wazuh_api_username_update:
+  file.replace:
+    - name: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_dashboard/wazuh.yml
+    - pattern: 'username: .*$'
+    - repl: 'username: {{ pillar["wazuh"]["wazuh_dashboard"]["env_vars"]["API_USERNAME"] }}'
+
+wazuh_api_password_update:
+  file.replace:
+    - name: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_dashboard/wazuh.yml
+    - pattern: 'password: .*$'
+    - repl: 'password: "{{ pillar["wazuh"]["wazuh_dashboard"]["env_vars"]["API_PASSWORD"] }}"'
+
 pull_wazuh_dashboard:
   cmd.run:
     - name: docker pull {{ pillar["wazuh"]["wazuh_dashboard"]["image"] }}
@@ -20,8 +32,13 @@ wazuh_dashboard_container:
       - wazuh
     - environment:
     {%- for var_key, var_val in pillar["wazuh"]["wazuh_dashboard"]["env_vars"].items() %}
+      {%- if var_key not in ["DASHBOARD_USERNAME","INDEXER_USERNAME","WAZUH_API_URL"] %}
       - {{ var_key }}: {{ var_val }}
+      {%- endif %}
     {%- endfor %}
+      - DASHBOARD_USERNAME: kibanaserver
+      - INDEXER_USERNAME: admin
+      - WAZUH_API_URL: https://wazuh.manager
     - require:
       - docker_container: wazuh.indexer
     - links:

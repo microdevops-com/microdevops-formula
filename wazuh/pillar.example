@@ -1,6 +1,10 @@
-{% set wazuh_release        = "4.5.0" %}
-{% set wazuh_domain         = "wazuh.example.com" %}
-{% set wazuh_admin_pasword  = "XXXXXXXXXXXXXXXXX" %}
+{% set wazuh_release         = "4.5.2" %}
+{% set wazuh_domain          = "wazuh.example.com" %}
+
+{% set ADMIN_PASSWORD        = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" %}
+{% set KIBANASERVER_PASSWORD = "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" %}
+{% set API_USERNAME          = "wazuh-wui" %}
+{% set API_PASSWORD          = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ" %}
 
 wazuh:
   domain: {{ wazuh_domain }}
@@ -8,28 +12,63 @@ wazuh:
   wazuh_manager:
     image: wazuh/wazuh-manager:{{ wazuh_release }}
     env_vars:
-      INDEXER_URL: https://wazuh.indexer:9200
-      INDEXER_USERNAME: admin
-      INDEXER_PASSWORD: {{ wazuh_admin_pasword }}
-      FILEBEAT_SSL_VERIFICATION_MODE: full
-      SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
-      SSL_CERTIFICATE: /etc/ssl/filebeat.pem
-      SSL_KEY: /etc/ssl/filebeat.key
-      API_USERNAME: wazuh-wui
-      API_PASSWORD: 'MyS3cr37P450r.*-'
+      INDEXER_PASSWORD: {{ ADMIN_PASSWORD }}
+      API_USERNAME: {{ API_USERNAME }}
+      API_PASSWORD: {{ API_PASSWORD }}
     internal_options_conf:
       analysisd.decoder_order_size: 1024
   wazuh_indexer:
     image: wazuh/wazuh-indexer:{{ wazuh_release }}
     env_vars:
-      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      OPENSEARCH_JAVA_OPTS: -Xms4g -Xmx4g
   wazuh_dashboard:
     image: wazuh/wazuh-dashboard:{{ wazuh_release }}
     env_vars:
-      INDEXER_USERNAME: admin
-      INDEXER_PASSWORD: {{ wazuh_admin_pasword }}
-      WAZUH_API_URL: https://wazuh.manager
-      DASHBOARD_USERNAME: kibanaserver
-      DASHBOARD_PASSWORD: kibanaserver
-      API_USERNAME: wazuh-wui
-      API_PASSWORD: 'MyS3cr37P450r.*-'
+      INDEXER_PASSWORD: {{ ADMIN_PASSWORD }}
+      DASHBOARD_PASSWORD: {{ KIBANASERVER_PASSWORD }}
+      API_USERNAME: {{ API_USERNAME }}
+      API_PASSWORD: {{ API_PASSWORD }}
+  internal_users: |
+      ---
+      _meta:
+        type: "internalusers"
+        config_version: 2
+      admin:
+        password: "{{ ADMIN_PASSWORD }}"
+        reserved: true
+        backend_roles:
+        - "admin"
+        description: "Demo admin user"
+      kibanaserver:
+        password: "{{ KIBANASERVER_PASSWORD }}"
+        reserved: true
+        description: "Demo kibanaserver user"
+      kibanaro:
+        password: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        reserved: false
+        backend_roles:
+        - "kibanauser"
+        - "readall"
+        attributes:
+          attribute1: "value1"
+          attribute2: "value2"
+          attribute3: "value3"
+        description: "Demo kibanaro user"
+      logstash:
+        password: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        reserved: false
+        backend_roles:
+        - "logstash"
+        description: "Demo logstash user"
+      readall:
+        password: "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+        reserved: false
+        backend_roles:
+        - "readall"
+        description: "Demo readall user"
+      snapshotrestore:
+        password: "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
+        reserved: false
+        backend_roles:
+        - "snapshotrestore"
+        description: "Demo snapshotrestore user"
