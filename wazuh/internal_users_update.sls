@@ -7,9 +7,7 @@ stopped_containers:
       - wazuh.manager 
       - wazuh.indexer
 
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
-{% include "wazuh/includes/internal_options_conf.sls" with context %}
-  {% endif %}
+{% include "wazuh/includes/internal_options_conf.sls"                       with context %}
 {% include "wazuh/includes/backup_ossec_conf_and_internal_options_conf.sls" with context %}
 {% include "wazuh/includes/internal_users_yml.sls"                          with context %}
 {% include "wazuh/includes/indexer.sls"                                     with context %}
