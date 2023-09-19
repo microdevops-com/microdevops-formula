@@ -91,6 +91,7 @@ reload_manager:
   cmd.run:
     - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
   {% endif %}
+
 cron_backup_ossec_conf:
   cron.present:
     - name: 'rsync -qa /opt/wazuh/{{ pillar['wazuh']['domain'] }}/volumes/wazuh_etc/ossec.conf /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf; chown 1000:1000 /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf; chmod 644 /opt/wazuh/{{ pillar['wazuh']['domain'] }}/single-node/config/wazuh_cluster/wazuh_manager.conf'
