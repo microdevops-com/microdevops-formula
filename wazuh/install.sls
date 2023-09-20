@@ -62,6 +62,7 @@ wazuh_data_dirs_3:
     - names:
       - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc
       - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_logs
+      - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_stats
     - user: 101
     - group: 101
 wazuh_data_dirs_4:
@@ -71,7 +72,6 @@ wazuh_data_dirs_4:
       - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_var_multigroups
       - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_active_response
       - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_agentless
-      - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_stats
       - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/filebeat_var
     - user: 1000
     - group: 1000
