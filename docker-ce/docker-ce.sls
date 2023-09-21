@@ -13,13 +13,18 @@ docker-ce_config_file:
     - name: /etc/docker/daemon.json
     - contents: {{ docker_ce["daemon_json"] | yaml_encode }}
 
+docker-ce_repo_keyringdir:
+  file.directory:
+    - name: /etc/apt/keyrings
+    - user: root
+    - group: root
+
 docker-ce_repo:
 {% set opts  = {"keyurl":"https://download.docker.com/linux/ubuntu/gpg",
                 "listfile":"/etc/apt/sources.list.d/docker-ce.list",
                 "keyfile":"/etc/apt/keyrings/docker-ce.gpg"} %}
   pkg.installed:
     - pkgs: [wget, gpg]
-
   cmd.run:
     - name: |
         {% if "keyid" in opts %}
@@ -30,7 +35,6 @@ docker-ce_repo:
         gpg --batch --yes --no-tty --dearmor --output {{ opts["keyfile"] }} /tmp/key.asc
         {% endif %}
     - creates: {{ opts["keyfile"] }}
-
   file.managed:
     - name: {{ opts["listfile"] }}
     - contents: |
