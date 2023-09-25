@@ -230,7 +230,7 @@ app:
           log: # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
             access_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.access.log
             error_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.error.log
-            dir: /var/www/__APP_NAME__/app/log/nginx
+            dir: /var/www/__APP_NAME__/app/log/nginx # required, rotation will not work without this
             dir_mode: 755
             log_mode: 640
             dir_user: __APP_NAME__
