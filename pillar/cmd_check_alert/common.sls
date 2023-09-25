@@ -8,8 +8,9 @@
 {% endif %}
 cmd_check_alert:
   cpu:
-    cron: '*/3'
+    cron: '*'
     install_sensu-plugins:
+      - load-checks
       - cpu-checks
     config:
       enabled: True
@@ -20,14 +21,13 @@ cmd_check_alert:
         timeout: 60
         severity: major
       checks:
-        cpu-usage:
-          disabled: True
-          cmd: {{ ruby_prefix }}/check-cpu.rb -w 90 -c 95
+        load-average:
+          cmd: {{ ruby_prefix }}/check-load.rb --warn 3,1.8,1.2 --crit 5,3,2
           severity_per_retcode:
-            1: minor
-            2: major
+            1: critical
+            2: fatal
           service: cpu
-          resource: __hostname__:cpu-usage
+          resource: __hostname__:load-average
   memory:
     cron: '*/3'
     install_sensu-plugins:
