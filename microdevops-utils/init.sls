@@ -13,7 +13,13 @@ microdevops-utils_repo_sysadmws:
                 "listfile":"/etc/apt/sources.list.d/sysadmws.list",
                 "keyfile":"/etc/apt/keyrings/sysadmws.gpg"} %}
   pkg.installed:
-    - pkgs: [wget, gpg]
+    - pkgs: 
+        - wget
+  {%- if grains["oscodename"] in ["xenial"] %}
+        - gnupg2
+  {%- else %}
+        - gpg
+  {%- endif %}
   cmd.run:
     - name: |
         {% if "keyid" in opts %}
