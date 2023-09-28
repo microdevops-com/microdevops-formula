@@ -109,12 +109,47 @@ sensu-plugins_pkg:
 
       {%- endif %}
 
+# On plugins like sensu-plugins-http we have error "oj requires Ruby version >= 2.7."
+# That error appeared when oj gem was updated to 3.14.0
+# So we need to fix oj gem version to 3.13.9
+sensu-plugins_fix_oj_gem:
+  cmd.run:
+      {% if grains["osarch"] in ["arm64"] %}
+    - name: source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install oj -v 3.13.9
+      {% else %}
+    - name: /opt/sensu-plugins-ruby/embedded/bin/gem install oj -v 3.13.9
+      {% endif %}
+    - shell: /bin/bash
+
+# The same with ffi gem
+sensu-plugins_fix_ffi_gem:
+  cmd.run:
+      {% if grains["osarch"] in ["arm64"] %}
+    - name: source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install ffi -v 1.15.5
+      {% else %}
+    - name: /opt/sensu-plugins-ruby/embedded/bin/gem install ffi -v 1.15.5
+      {% endif %}
+    - shell: /bin/bash
+
       {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
     - name: {% if grains["osarch"] in ["arm64"] %}source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/bin/{% endif %}sensu-install -p {{ plugin }}
     - shell: /bin/bash
 
+        {%- if plugin == "raid-checks" %}
+sensu-plugins_install_{{ loop.index }}_patch_raid_1:
+  file.managed:
+          {%- if grains["osarch"] not in ["arm64"] %}
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-raid-checks-3.0.0/bin/check-raid.rb
+          {%- else %}
+    - name: /usr/local/rvm/gems/ruby-2.4.0/gems/sensu-plugins-raid-checks-3.0.0/bin/check-raid.rb
+          {%- endif %}
+    - source: salt://cmd_check_alert/files/check-raid.rb
+    - create: False
+    - show_changes: True
+
+        {%- endif %}
         {%- if plugin == "disk-checks" %}
 sensu-plugins_install_{{ loop.index }}_patch_smart_1:
   file.managed:
@@ -223,15 +258,6 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
       {%- endif %}
     {%- else %}
     - minute: "{{ check_group_params["cron"] }}"
-    {%- endif %}
-
-    {%- if "install_cvescan" in check_group_params %}
-      {%- if grains["oscodename"] in ["bionic", "focal", "jammy"] %}
-cvescan_installed_{{ loop.index }}:
-  cmd.run:
-    - name: pip3 install --user git+https://github.com/canonical/sec-cvescan
-
-      {%- endif %}
     {%- endif %}
 
     {%- if "files" in check_group_params %}

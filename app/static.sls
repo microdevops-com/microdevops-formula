@@ -3,6 +3,7 @@
   {%- set app_type = "static" %}
 
   {%- include "app/_pkg.sls" with context %}
+  {%- include "app/_pre_deploy.sls" with context %}
 
   {%- for app_name, app in pillar["app"]["static"]["apps"].items() %}
     {%- if not "deploy_only" in pillar["app"]["static"] or app_name == pillar["app"]["static"]["deploy_only"] %}
@@ -28,4 +29,7 @@
 
     {%- endif %}
   {%- endfor %}
+
+  {%- include "app/_post_deploy.sls" with context %}
+
 {% endif %}

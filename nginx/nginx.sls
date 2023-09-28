@@ -1,8 +1,24 @@
 {% if pillar["nginx"] is defined %}
+
+  {% if pillar["nginx"].get("ondrej_ppa", False) %}
+nginx_ondrej_ppa_add:
+  pkgrepo.managed:
+    - name: deb https://ppa.launchpadcontent.net/ondrej/nginx/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-nginx-{{ grains['oscodename'] }}.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: E5267A6C
+    - refresh: True
+  {% endif %}
+
 nginx_deps:
   pkg.installed:
     - pkgs:
+  {% if pillar["nginx"].get("custom_set", False) %}
+      - nginx-{{ pillar["nginx"]["custom_set"] }}
+  {% else %}
       - nginx
+  {% endif %}
 
 nginx_files_1:
   file.managed:

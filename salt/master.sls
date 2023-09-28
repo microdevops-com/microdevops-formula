@@ -208,6 +208,19 @@ salt_master_gitlab-runner_config_dir:
     - group: root
     - mode: 700
 
+    # Hack to set value inside for loop
+    {%- set concurrent = {"value": salt["pillar.get"]("salt:master:gitlab-runner:concurrent", 16)|int} %}
+
+    {%- if "salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
+      {%- do concurrent.update({"value": concurrent["value"] + salt["pillar.get"]("salt:master:gitlab-runner:salt-ssh:concurrent", 16)|int}) %}
+    {%- endif %}
+
+    {%- if "additional_salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
+      {%- for additional_runner in pillar["salt"]["master"]["gitlab-runner"]["additional_salt-ssh"] %}
+        {%- do concurrent.update({"value": concurrent["value"] + additional_runner["concurrent"]|default(16)|int}) %}
+      {%- endfor %}
+    {%- endif %}
+
 salt_master_gitlab-runner_config:
   file.managed:
     - name: /etc/gitlab-runner/config.toml
@@ -215,7 +228,7 @@ salt_master_gitlab-runner_config:
     - group: root
     - mode: 600
     - contents: |
-        concurrent = {{ pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|default("16") }}
+        concurrent = {{ concurrent["value"] }}
         check_interval = 0
         
         [session_server]
@@ -254,7 +267,36 @@ salt_master_gitlab-runner_register:
           --registration-token "{{ pillar["salt"]["master"]["gitlab-runner"]["registration_token"] }}" \
           --executor "shell" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
           --tag-list "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}" \
+          --limit {{ pillar["salt"]["master"]["gitlab-runner"]["concurrent"]|default(16)|int }} \
           --locked --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"]|string if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}
+
+    {%- if "salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
+salt_master_gitlab-runner_register_salt-ssh:
+  cmd.run:
+    - name: |
+        gitlab-runner register --non-interactive --url "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_url"] }}/" \
+          --registration-token "{{ pillar["salt"]["master"]["gitlab-runner"]["registration_token"] }}" \
+          --executor "docker" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}_salt-ssh" \
+          --tag-list "salt-ssh" \
+          --limit {{ pillar["salt"]["master"]["gitlab-runner"]["salt-ssh"]["concurrent"]|default(16)|int }} \
+          --locked --docker-privileged --docker-image 'docker:stable' --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"]|string if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}
+
+    {%- endif %}
+
+    {%- if "additional_salt-ssh" in pillar["salt"]["master"]["gitlab-runner"] %}
+      {%- for additional_runner in pillar["salt"]["master"]["gitlab-runner"]["additional_salt-ssh"] %}
+salt_master_gitlab-runner_register_additional_salt-ssh_{{ loop.index }}:
+  cmd.run:
+    - name: |
+        gitlab-runner register --non-interactive --url "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_url"] }}/" \
+          --registration-token "{{ additional_runner["registration_token"] }}" \
+          --executor "docker" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}_salt-ssh_{{ additional_runner["project"] }}" \
+          --tag-list "salt-ssh" \
+          --limit {{ additional_runner["concurrent"]|default(16)|int }} \
+          --locked --docker-privileged --docker-image 'docker:stable' --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"]|string if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}
+
+      {%- endfor %}
+    {%- endif %}
 
 salt_master_gitlab-runner_job_fail_on_clear_screen_fix:
   file.absent:

@@ -3,7 +3,6 @@
 # note on ionice + nice: full options not listed here as an example, but can be used like: ionice -c 2 -n 7 nice -n 7
 
 rsnapshot_backup:
-  #python: True # optional, switch pipeline to run py version of rsnapshot_backup, sh+awk is default version for now
   sources:
     srv1.example.com:
       - type: ... # gereic params for all types
@@ -14,6 +13,7 @@ rsnapshot_backup:
                      # --exclude=/root/junk_dir --exclude=/opt/another_junk_dir # to exclude 
                      # --rsync-path="ionice -c 3 nice rsync" # limit rsync with Idle IO class and be nice with CPU
                      # --bwlimit=20M # limit rsync data transfer
+                     # --whole-file # useful for db dumps, they differ each time, delta algorithms are useless, improves speed
         #connect_user: toor # optional, root by default, user for ssh or native rsync connect
         #exec_before_rsync: # optional, script to execute via ssh before rsync, avoid using single and double quotes
                             # beware - it will be executed for each item in data, so make separate backup item to exec only once
@@ -22,8 +22,8 @@ rsnapshot_backup:
         #before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully
         #retain_hourly: N # optional, hourly rotations disabled by default
         #retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        #retain_weekly: N # optional, override default value 4, minimum 1 on second level of backup and further
-        #retain_monthly: N # optional, override default value 3, minimum 1 on second level of backup and further
+        #retain_weekly: N # optional, override default value 4, minimum 0 on second level of backup and further
+        #retain_monthly: N # optional, override default value 3, minimum 0 on second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
                     # beware - retries work only on rsnapshot sync command, remote DB dumps are not being retried, it is hard to implement and makes no sense practically
         #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call, must include space if prefixing with nice or similar
@@ -149,6 +149,8 @@ rsnapshot_backup:
               - config
         #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
         #mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
+        #mongodump_args: --username root --password password --authenticationDatabase admin # optional, args for mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
+                                                                                            # if arga for mongo and mongodump are the same, you can use only mongo_args
         #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location, only for py version
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
         data: # list dirs or db types here

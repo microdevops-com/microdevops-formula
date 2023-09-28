@@ -1,15 +1,39 @@
 {% if pillar["microdevops-utils"] is defined and "version" in pillar["microdevops-utils"] and pillar["microdevops-utils"]["version"] == "latest" %}
 
   {%- if grains["os"] in ["Ubuntu", "Debian"] and grains["oscodename"] not in ["precise", "trusty"] %}
-microdevops-utils_pkgrepo_sysadmws:
-  pkgrepo.managed:
-    - file: /etc/apt/sources.list.d/sysadmws.list
-    - name: "deb https://repo.sysadm.ws/sysadmws-apt/ any main"
-    - keyid: 2E7DCF8C
-    - keyserver: keyserver.ubuntu.com
-    {%- if grains["osarch"] in ["arm64"] %}
-    - architectures: amd64
-    {%- endif %}
+
+microdevops-utils_repo_sysadmws_keyringdir:
+  file.directory:
+    - name: /etc/apt/keyrings
+    - user: root
+    - group: root
+
+microdevops-utils_repo_sysadmws:
+{% set opts  = {"keyid":"2E7DCF8C",
+                "listfile":"/etc/apt/sources.list.d/sysadmws.list",
+                "keyfile":"/etc/apt/keyrings/sysadmws.gpg"} %}
+  pkg.installed:
+    - pkgs: 
+        - wget
+  {%- if grains["oscodename"] in ["xenial"] %}
+        - gnupg2
+  {%- else %}
+        - gpg
+  {%- endif %}
+  cmd.run:
+    - name: |
+        {% if "keyid" in opts %}
+        gpg --keyserver keyserver.ubuntu.com --recv-keys {{ opts["keyid"] }}
+        gpg --batch --yes --no-tty --output {{ opts["keyfile"] }} --export {{ opts["keyid"] }}
+        {% elif "keyurl" in opts %}
+        wget -O /tmp/key.asc {{ opts["keyurl"] }}
+        gpg --batch --yes --no-tty --dearmor --output {{ opts["keyfile"] }} /tmp/key.asc
+        {% endif %}
+    - creates: {{ opts["keyfile"] }}
+  file.managed:
+    - name: {{ opts["listfile"] }}
+    - contents: |
+        deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://repo.sysadm.ws/sysadmws-apt/ any main
 
 microdevops-utils_pkg_latest_utils:
   pkg.latest:

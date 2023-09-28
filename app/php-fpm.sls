@@ -3,6 +3,7 @@
   {%- set app_type = "php-fpm" %}
 
   {%- include "app/_pkg.sls" with context %}
+  {%- include "app/_pre_deploy.sls" with context %}
 
   {%- if "versions" in pillar["app"]["php-fpm"] %}
     {%- set php_fpm = pillar["app"]["php-fpm"] %}
@@ -112,4 +113,7 @@ app_php-fpm_app_pool_reload_{{ loop.index }}:
 
     {%- endif %}
   {%- endfor %}
+
+  {%- include "app/_post_deploy.sls" with context %}
+
 {% endif %}

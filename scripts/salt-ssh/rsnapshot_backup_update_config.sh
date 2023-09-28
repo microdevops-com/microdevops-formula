@@ -25,6 +25,7 @@ set +x
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
+grep -q "CRITICAL" ${OUT_FILE} && GRAND_EXIT=1
 
 # Check out file for red color with shades 
 grep -q "\[0;31m" ${OUT_FILE} && GRAND_EXIT=1

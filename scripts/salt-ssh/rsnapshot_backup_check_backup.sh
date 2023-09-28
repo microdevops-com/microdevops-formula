@@ -42,21 +42,11 @@ fi
 set -x
 set -o pipefail
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
-	if salt-ssh --wipe ${SALT_SSH_EXTRA_OPTS} ${TARGET} pillar.get rsnapshot_backup:python | grep -q -e True; then
-		ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-			"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
-	else
-		ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-			"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A || GRAND_EXIT=1
-	fi
+	ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
+		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
 elif [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SALT" ]]; then
-	if salt-ssh --wipe ${SALT_SSH_EXTRA_OPTS} ${TARGET} pillar.get rsnapshot_backup:python | grep -q -e True; then
-		salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
-			"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
-	else
-		salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
-			"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/check_backup.sh 2'" | ccze -A || GRAND_EXIT=1
-	fi
+	salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
+		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
@@ -65,6 +55,7 @@ set +x
 
 # Check out file for errors
 grep -q "ERROR" ${OUT_FILE} && GRAND_EXIT=1
+grep -q "CRITICAL" ${OUT_FILE} && GRAND_EXIT=1
 
 # Check out file for red color with shades 
 grep -q "\[0;31m" ${OUT_FILE} && GRAND_EXIT=1

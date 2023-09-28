@@ -1,4 +1,8 @@
 {% if pillar["docker-ce"] is defined %}
+  {%- set docker_ce = pillar["docker-ce"] %}
+{% endif %}
+
+{% if docker_ce is defined and "version" in docker_ce %}
 docker-ce_config_dir:
   file.directory:
     - name: /etc/docker
@@ -7,36 +11,48 @@ docker-ce_config_dir:
 docker-ce_config_file:
   file.managed:
     - name: /etc/docker/daemon.json
-    - contents: {{ pillar["docker-ce"]["daemon_json"] | yaml_encode }}
+    - contents: {{ docker_ce["daemon_json"] | yaml_encode }}
+
+docker-ce_repo_keyringdir:
+  file.directory:
+    - name: /etc/apt/keyrings
+    - user: root
+    - group: root
 
 docker-ce_repo:
-  {%- if grains["os"] == "CentOS" %}
+{% set opts  = {"keyurl":"https://download.docker.com/linux/ubuntu/gpg",
+                "listfile":"/etc/apt/sources.list.d/docker-ce.list",
+                "keyfile":"/etc/apt/keyrings/docker-ce.gpg"} %}
+  pkg.installed:
+    - pkgs: [wget, gpg]
+  cmd.run:
+    - name: |
+        {% if "keyid" in opts %}
+        gpg --keyserver keyserver.ubuntu.com --recv-keys {{ opts["keyid"] }}
+        gpg --batch --yes --no-tty --output {{ opts["keyfile"] }} --export {{ opts["keyid"] }}
+        {% elif "keyurl" in opts %}
+        wget -O /tmp/key.asc {{ opts["keyurl"] }}
+        gpg --batch --yes --no-tty --dearmor --output {{ opts["keyfile"] }} /tmp/key.asc
+        {% endif %}
+    - creates: {{ opts["keyfile"] }}
   file.managed:
-    - name: /etc/yum.repos.d/docker-ce.repo
-    - source:
-      - https://download.docker.com/linux/centos/docker-ce.repo
-      - skip_verify: True
-  {%- else %}
-  pkgrepo.managed:
-    - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
-    - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/ubuntu/gpg
-  {%- endif %}
+    - name: {{ opts["listfile"] }}
+    - contents: |
+        deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
 
 docker-ce_pkg:
-  {%- if pillar["docker-ce"]["version"] == "latest" %}
+  {%- if docker_ce["version"] == "latest" %}
   pkg.latest:
     - refresh: True
     - pkgs:
-      - docker-ce
       - python3-docker
+      - docker-ce
   {%- else %}
   pkg.installed:
     - refresh: True
     - pkgs:
-      - docker-ce: '{{ pillar["docker-ce"]["version"] }}*'
       - python3-docker
+      - docker-ce: '{{ docker_ce["version"] }}*'
   {%- endif %}
 
 docker-ce_service:
@@ -48,5 +64,4 @@ docker-ce_restart:
     - name: systemctl restart docker
     - onchanges:
       - file: /etc/docker/daemon.json
-
-{% endif %}
+{%- endif %}

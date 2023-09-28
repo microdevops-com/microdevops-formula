@@ -1,5 +1,6 @@
 nextcloud:
-  docker-ce_version: 5:20.10.7
+  nginx_sites_enabled: true
+  #docker-ce_version: 5:20.10.7         # Deprecated. Use Salt Formula "docker-ce" instead
   domains:
     - name: nextcloud.example.com
       internal_name: prd
@@ -9,10 +10,14 @@ nextcloud:
         pm.max_children: 20
       default_phone_region: IL
       overwrite_cli_url: https://nextcloud.example.com
-      onlyoffice: # optional
+      onlyoffice: # optional. Use onlyoffice or collabora !!!
         DocumentServerUrl: https://onlyoffice.example.com/
         DocumentServerInternalUrl: https://onlyoffice.example.com/
         StorageUrl: https://nextcloud.example.com/
+      collabora:  # optional. Use collabora or onlyoffice !!!
+        DocumentServerUrl: https://collabora.example.com/
+        wopi_allowlist: 11.22.33.44   # IP address of collabora.example.com  https://docs.nextcloud.com/server/latest/admin_manual/office/configuration.html#wopi-settings
+        doc_format: ooxml             # optional. Use Office Open XML (OOXML) instead of OpenDocumen Format (ODF) by default for new files
       user_saml:               ### YOU CAN USE THIS FOR SAML AUTH VIA KEYCLOAK
         general-allow_multiple_user_back_ends: 1
         general-uid_mapping: username

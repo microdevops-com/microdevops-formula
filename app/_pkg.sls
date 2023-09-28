@@ -1,6 +1,7 @@
   {%- if "pkg" in pillar["app"] %}
+  # For app.mini, app.deploy this will be duplicated for each defined app type
+
   # Just install existing package to refresh db
-  # For app.mini, app.deploy this will be duplicated for ean app type, that's a workaround
 app_{{ app_type }}_pkg_refresh:
   pkg.installed:
     - refresh: True

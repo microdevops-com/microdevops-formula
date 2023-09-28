@@ -1,0 +1,59 @@
+rocketchat:
+  nginx_sites_enabled: true
+  external_port: 3333     # optional
+  domains:
+{% set domain       = "rocketchat.example.com" %}
+{% set chat_version = "6.2.9"                  %}
+    - name: {{ domain }}
+      rocketchat:
+        internal_port: 3000
+        image: registry.rocket.chat/rocketchat/rocket.chat:{{ chat_version }}
+        #image: rocket.chat:{{ chat_version }}
+        labels:
+          - traefik.enable="true"
+          - traefik.http.routers.rocketchat.rule=Host(`{{ domain }}`)
+          - traefik.http.routers.rocketchat.tls="true"
+          - traefik.http.routers.rocketchat.entrypoints=https
+          - traefik.http.routers.rocketchat.tls.certresolver=le
+        env_vars:
+          MONGO_URL: mongodb://rocketchat-mongodb-{{ domain }}/rocketchat?replicaSet=rs0
+          MONGO_OPLOG_URL: mongodb://rocketchat-mongodb-{{ domain }}/local?replicaSet=rs0
+          ROOT_URL: https://{{ domain }}
+          PORT: 3000
+          #DEPLOY_METHOD: docker
+          #DEPLOY_PLATFORM: Linux
+          SMTP_Protocol: smtps
+          SMTP_Host: mail.example.com
+          SMTP_Port: 465
+          SMTP_Username: rocketchat@example.com
+          SMTP_Password: YYYYYYYYYYY
+          From_Email: rocket@example.org
+          # https://docs.rocket.chat/setup-and-configure/accessing-your-workspace/creating-the-first-administrator
+          #INITIAL_USER: yes
+          ADMIN_USERNAME: rocketadmin
+          ADMIN_NAME: Administrator
+          ADMIN_PASS: XXXXXXXXX
+          ADMIN_EMAIL: admin@example.com
+          #OVERWRITE_SETTING_Show_Setup_Wizard: completed
+          #OVERWRITE_SETTING_Accounts_RegistrationForm: Disabled
+          ###############################################################################################################
+          ##                   -  JITSI APP  -
+          ## Install the Jitsi application from the application market
+          ## and use ijitsi_domain, jitsi_application_id, jitsi_application_secret to configure it.
+          ## After that, in the workspace settings, find video conferencing and set Jitsi as the default provider
+          ## https://docs.rocket.chat/use-rocket.chat/rocket.chat-conference-call/conference-call-admin-guide/jitsi-app
+          ## ############################################################################################################
+          jitsi_domain: jitsi.example.com
+          jitsi_auth_token: Enabled
+          jitsi_application_id: XXXXXXXXXXXXXXXXXXXXXXXX
+          jitsi_application_secret: YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+          VideoConf_Default_Provider: Jitsi
+      mongodb:
+        image: docker.io/bitnami/mongodb:5.0
+        env_vars:
+          MONGODB_REPLICA_SET_MODE: primary
+          MONGODB_REPLICA_SET_NAME: rs0
+          MONGODB_INITIAL_PRIMARY_HOST: rocketchat-mongodb-{{ domain }}
+          MONGODB_ADVERTISED_HOSTNAME: rocketchat-mongodb-{{ domain }}
+          MONGODB_ENABLE_JOURNAL: true
+          ALLOW_EMPTY_PASSWORD: yes

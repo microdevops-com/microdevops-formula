@@ -1,0 +1,80 @@
+{% set jitsi_release           = "stable-8719" %}
+{% set jitsi_domain            = "jitsi.example.com" %}
+
+{% set JICOFO_AUTH_PASSWORD    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" %}
+{% set JVB_AUTH_PASSWORD       = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" %}
+{% set JIGASI_XMPP_PASSWORD    = "cccccccccccccccccccccccccccccccc" %}
+{% set JIBRI_RECORDER_PASSWORD = "dddddddddddddddddddddddddddddddd" %}
+{% set JIBRI_XMPP_PASSWORD     = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" %}
+{% set JWT_APP_ID              = "ffffffffffffffffffffffffffffffff" %}
+{% set JWT_APP_SECRET          = "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" %}
+
+jitsi:
+  domain: {{ jitsi_domain }}
+  web:
+    image: jitsi/web:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      ETHERPAD_URL_BASE: http://etherpad.meet.jitsi:9001
+      ENABLE_AUTH: 1
+  prosody:
+    image: jitsi/prosody:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      JICOFO_AUTH_PASSWORD: {{ JICOFO_AUTH_PASSWORD }}
+      JVB_AUTH_PASSWORD: {{ JVB_AUTH_PASSWORD }}
+      JIGASI_XMPP_PASSWORD: {{ JIGASI_XMPP_PASSWORD }}
+      JIBRI_RECORDER_PASSWORD: {{ JIBRI_RECORDER_PASSWORD }}
+      JIBRI_XMPP_PASSWORD: {{ JIBRI_XMPP_PASSWORD}}
+      ENABLE_AUTH: 1
+      AUTH_TYPE: jwt
+      JWT_APP_ID: {{ JWT_APP_ID }}
+      JWT_APP_SECRET: {{ JWT_APP_SECRET }}
+  jicofo:
+    image: jitsi/jicofo:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      JICOFO_AUTH_PASSWORD: {{ JICOFO_AUTH_PASSWORD }}
+      SENTRY_DSN: 0
+      ENABLE_AUTH: 1
+      AUTH_TYPE: jwt
+  jvb:
+    image: jitsi/jvb:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      JVB_ADVERTISE_IPS: 1.2.3.4
+      JVB_DISABLE_STUN: true
+      JVB_AUTH_PASSWORD: {{ JVB_AUTH_PASSWORD }}
+      SENTRY_DSN: 0
+  etherpad:
+    image: etherpad/etherpad:1.8.6
+    env_vars:
+      TITLE: Video Meeting Document
+      DEFAULT_PAD_TEXT: Welcome comrades!!!
+      SKIN_NAME: colibris
+      SKIN_VARIANTS: super-light-toolbar super-light-editor light-background full-width-editor
+      SUPPRESS_ERRORS_IN_PAD_TEXT: True
+  jigasi:
+    image: jitsi/jigasi:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      ENABLE_AUTH: 1
+      SENTRY_DSN: 0
+      JIGASI_SIP_URI: test@sip2sip.info
+      JIGASI_SIP_PASSWORD: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      JIGASI_SIP_SERVER: sip2sip.info
+      JIGASI_SIP_PORT: 5060
+      JIGASI_SIP_TRANSPORT: UDP
+      JIGASI_XMPP_PASSWORD: {{ JIGASI_XMPP_PASSWORD }}
+  jibri:
+    image: jitsi/jibri:{{ jitsi_release }}
+    env_vars:
+      TZ: UTC
+      PUBLIC_URL: https://{{ jitsi_domain }}
+      JIBRI_RECORDER_PASSWORD: {{ JIBRI_RECORDER_PASSWORD }}
+      JIBRI_XMPP_PASSWORD: {{ JIBRI_XMPP_PASSWORD}}
+      DISPLAY: ':0'

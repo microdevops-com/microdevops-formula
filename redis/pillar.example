@@ -1,3 +1,8 @@
+sysctl:
+  default:
+    net.core.somaxconn: 65365
+    vm.overcommit_memory: 1
+
 redis:
   sentinel_conf: |
     bind 0.0.0.0
@@ -9,7 +14,6 @@ redis:
     sentinel deny-scripts-reconfig yes
     sentinel monitor mymaster 1.2.3.4 6379 2
     sentinel down-after-milliseconds mymaster 5000
-
 
 redis:
   keep_existing_conf: True

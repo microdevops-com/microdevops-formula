@@ -3,6 +3,7 @@
   {%- set app_type = "ruby" %}
 
   {%- include "app/_pkg.sls" with context %}
+  {%- include "app/_pre_deploy.sls" with context %}
 
   {%- for app_name, app in pillar["app"]["ruby"]["apps"].items() %}
     {%- if not "deploy_only" in pillar["app"]["ruby"] or app_name == pillar["app"]["ruby"]["deploy_only"] %}
@@ -182,4 +183,7 @@ app_ruby_app_unicorn_user_systemd_unit_setup_{{ loop.index }}:
 
     {%- endif %}
   {%- endfor %}
+
+  {%- include "app/_post_deploy.sls" with context %}
+
 {% endif %}

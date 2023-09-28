@@ -1,54 +1,16 @@
 {% if pillar["app"] is defined and "docker" in pillar["app"] and "apps" in pillar["app"]["docker"] %}
 
   {%- set app_type = "docker" %} # required for _pkg.sls
+
   {%- include "app/_pkg.sls" with context %}
-
-docker_install_00:
-  file.directory:
-    - name: /etc/docker
-    - mode: 700
-
-docker_install_01:
-  file.managed:
-    - name: /etc/docker/daemon.json
-    - contents: |
-        {"iptables": false}
+  {%- include "app/_pre_deploy.sls" with context %}
 
   {%- if pillar["app"]["docker"]["docker-ce_version"] is defined %}
-docker_install_1:
-  pkgrepo.managed:
-    - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains["os"]|lower }} {{ grains["oscodename"] }} stable
-    - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/{{ grains["os"]|lower }}/gpg
-
-docker_install_2:
-  pkg.installed:
-    - refresh: True
-    - reload_modules: True
-    - pkgs:
-        - docker-ce: "{{ pillar["app"]["docker"]["docker-ce_version"] }}*"
-  {%- if "300" in grains["saltversion"]|string %}
-        - python3-docker
-  {%- else %}
-        - python-docker
+    {%- set docker_ce = {"version": pillar["app"]["docker"]["docker-ce_version"],
+                         "daemon_json": '{"iptables": false}'} %}
+    {%- include "docker-ce/docker-ce.sls" with context %}
   {%- endif %}
 
-docker_pip_install:
-  pip.installed:
-    - name: docker-py >= 1.10
-    - reload_modules: True
-
-docker_install_3:
-  service.running:
-    - name: docker
-
-docker_install_4:
-  cmd.run:
-    - name: systemctl restart docker
-    - onchanges:
-        - file: /etc/docker/daemon.json
-  {%- endif %}
 
   {%- if pillar["app"]["docker"]["networks"] is mapping %}
 
@@ -164,4 +126,7 @@ docker_app_container_cron_{{ i_loop.index }}_{{ loop.index }}:
       {%- endif %}
     {%- endif %}
   {%- endfor %}
+
+  {%- include "app/_post_deploy.sls" with context %}
+
 {% endif %}

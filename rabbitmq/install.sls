@@ -11,28 +11,42 @@ rabbit_hosts:
     - names:
       - {{ grains["host"] }}
 
-erlang_repo:
-  pkgrepo.managed:
-    - humanname: Erlang Solutions
-    - name: deb https://packages.erlang-solutions.com/ubuntu {{ grains["oscodename"] }} contrib
-    - file: /etc/apt/sources.list.d/erlang-solutions.list
-    - key_url: https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc
-    - clean_file: True
+rabbitmq_rm_legacy_erlang_list:
+  file.absent:
+    - name: /etc/apt/sources.list.d/erlang-solutions.list
 
-erlang_pkg:
-  pkg.latest:
-    - refresh: True
-    - pkgs:
-        - erlang-nox
-        - erlang-base
+rabbitmq_repo:
+  pkg.installed:
+    - pkgs: [wget, gpg]
 
-rabbit_repo:
-  pkgrepo.managed:
-    - humanname: RabbitMQ Repository
-    - name: deb https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ {{ grains["oscodename"] }} main
-    - file: /etc/apt/sources.list.d/rabbitmq.list
-    - key_url: https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey
-    - clean_file: True
+  cmd.run:
+    - name: |
+        curl -1sLf https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA |  gpg --dearmor > /usr/share/keyrings/com.rabbitmq.team.gpg
+        curl -1sLf https://github.com/rabbitmq/signing-keys/releases/download/3.0/cloudsmith.rabbitmq-erlang.E495BB49CC4BBE5B.key | gpg --dearmor > /usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg
+        curl -1sLf https://github.com/rabbitmq/signing-keys/releases/download/3.0/cloudsmith.rabbitmq-server.9F4587F226208342.key | gpg --dearmor > /usr/share/keyrings/rabbitmq.9F4587F226208342.gpg
+    - creates:
+        - /usr/share/keyrings/com.rabbitmq.team.gpg
+        - /usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg
+        - /usr/share/keyrings/rabbitmq.9F4587F226208342.gpg
+
+  file.managed:
+    - name: /etc/apt/sources.list.d/rabbitmq.list
+    - contents: |
+        ## Provides modern Erlang/OTP releases
+        ##
+        deb [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu jammy main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu jammy main
+        # another mirror for redundancy
+        deb [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu jammy main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu jammy main
+
+        ## Provides RabbitMQ
+        ##
+        deb [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu jammy main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu jammy main
+        # another mirror for redundancy
+        deb [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu jammy main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu jammy main
 
 rabbit_pkg:
   pkg.latest:

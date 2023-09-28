@@ -62,6 +62,7 @@ bocker_build_matrix-sentry-webhooks:
     - name:  {{ pillar["sentry"]["webhooks"]["matrix"]["image"] }}
     - build: /opt/matrix-sentry-webhooks
     - tag: latest
+    - force: True
   {%- endif %}
 
 matrix-sentry-webhooks_container:

@@ -1,0 +1,16 @@
+# Smartape.net
+network:
+  ethernets:
+    eno1:
+      addresses:
+      - {{ ipv4_address }}
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+        - 8.8.8.8
+        - 1.1.1.1
+      routes:
+        - on-link: true
+          to: 0.0.0.0/0
+          via: {{ ipv4_gw }}

@@ -73,6 +73,10 @@ nginx_files_1:
                 ssl_certificate_key /opt/acme/cert/metabase_{{ domain['name'] }}_key.key;
     {%- for instance in domain['instances'] %}
                 location /{{ instance['name'] }}/ {
+                    proxy_connect_timeout 300;
+                    proxy_read_timeout 300;
+                    proxy_send_timeout 300;
+                    proxy_buffering off;
                     proxy_pass http://localhost:{{ instance['port'] }}/;
                 }
     {%- endfor %}
@@ -98,10 +102,15 @@ metabase_etc_dir_{{ loop.index }}_{{ i_loop.index }}:
     - mode: 755
     - makedirs: True
 
-    {% if instance['plugins'] is defined %}
+    {% if instance['plugins']['clickhouse'] is defined %}
 metabase_download_clickhouse_{{ loop.index }}_{{ i_loop.index }}:
-  cmd.run:
-    - name: wget https://github.com/enqueue/metabase-clickhouse-driver/releases/download/{{ instance['plugins']['clickhouse'] }}/clickhouse.metabase-driver.jar -O  /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar && chmod 2000 /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar
+  file.managed:
+    - name: /opt/metabase/{{ domain['name'] }}/{{ instance['name'] }}/plugins/clickhouse.metabase-driver.jar
+    - source: https://github.com/enqueue/metabase-clickhouse-driver/releases/download/{{ instance['plugins']['clickhouse'] }}/clickhouse.metabase-driver.jar
+    - skip_verify: True
+    - user: 2000
+    - group: 2000
+    - mode: 644
     {%endif%}
 
 metabase_image_{{ loop.index }}_{{ i_loop.index }}:

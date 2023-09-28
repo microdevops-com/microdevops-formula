@@ -1,3 +1,6 @@
+# bionic nvme fix:
+# apt install -t bionic-backports smartmontools
+
 {% if grains["osarch"] in ["arm64"] %}
   {%- set ruby_prefix = "source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/bin" %}
 {% else %}
@@ -5,8 +8,9 @@
 {% endif %}
 cmd_check_alert:
   cpu:
-    cron: '*/3'
+    cron: '*'
     install_sensu-plugins:
+      - load-checks
       - cpu-checks
     config:
       enabled: True
@@ -17,14 +21,13 @@ cmd_check_alert:
         timeout: 60
         severity: major
       checks:
-        cpu-usage:
-          disabled: True
-          cmd: {{ ruby_prefix }}/check-cpu.rb -w 90 -c 95
+        load-average:
+          cmd: {{ ruby_prefix }}/check-load.rb --warn 3,1.8,1.2 --crit 5,3,2
           severity_per_retcode:
-            1: minor
-            2: major
+            1: critical
+            2: fatal
           service: cpu
-          resource: __hostname__:cpu-usage
+          resource: __hostname__:load-average
   memory:
     cron: '*/3'
     install_sensu-plugins:
@@ -181,9 +184,6 @@ cmd_check_alert:
     cron:
       minute: '15'
       hour: '10'
-{% if grains["oscodename"] in ["focal", "jammy"] or (grains["oscodename"] == "bionic" and (grains["virtual"]|lower != "lxc" and grains["virtual"]|lower != "container")) %}
-    install_cvescan: True
-{% endif %}
     config:
       enabled: True
       limits:
@@ -193,17 +193,6 @@ cmd_check_alert:
         timeout: 60
         severity: minor
       checks:
-        cvescan:
-{% if not (grains["oscodename"] in ["focal", "jammy"] or (grains["oscodename"] == "bionic" and (grains["virtual"]|lower != "lxc" and grains["virtual"]|lower != "container"))) %}
-          disabled: True
-{% endif %}
-          cmd: CVESCAN_OUT=$(/root/.local/bin/cvescan -p all); if echo "${CVESCAN_OUT}" | grep -q -e "Fixes Available by.*apt-get upgrade.* 0$"; then echo "${CVESCAN_OUT}"; ( exit 0 ); else echo "${CVESCAN_OUT}"; ( exit 2 ); fi
-          severity_per_retcode:
-            1: warning
-            #2: security
-            2: minor
-          service: pkg
-          resource: __hostname__:cvescan
         yum_security:
 {% if grains["os_family"] != "RedHat" %}
           disabled: True

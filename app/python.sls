@@ -3,6 +3,7 @@
   {%- set app_type = "python" %}
 
   {%- include "app/_pkg.sls" with context %}
+  {%- include "app/_pre_deploy.sls" with context %}
 
   {%- if "pyenv" in pillar["app"]["python"] %}
     {%- set pyenv = pillar["app"]["python"]["pyenv"] %}
@@ -82,4 +83,7 @@ app_python_app_virtualenv_{{ loop.index }}:
 
     {%- endif %}
   {%- endfor %}
+
+  {%- include "app/_post_deploy.sls" with context %}
+
 {% endif %}
