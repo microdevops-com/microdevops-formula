@@ -20,6 +20,15 @@ nginx_deps:
       - nginx
   {% endif %}
 
+  {% if pillar["nginx"].get("enabled", True) %}
+nginx_enable:
+  service.running:
+    - name: nginx
+    - enable: True
+    - require:
+      - pkg: nginx_deps
+  {% endif %}
+
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
