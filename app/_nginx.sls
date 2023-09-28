@@ -96,7 +96,11 @@ app_{{ app_type }}_nginx_logrotate_file_{{ loop_index }}:
         {%- if pillar.get("nginx_reload", false) or app["nginx"].get("reload",false) %}
 app_{{ app_type }}_nginx_reload_{{ loop_index }}:
   cmd.run:
+          {%- if "reload_ulimit" in app["nginx"]  %}
+    - name: "ulimit -n {{ app["nginx"]["reload_ulimit"] && /usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
+          {%- else %}
     - name: "/usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
+          {%- endif %}
         {%- endif %}
 
 app_{{ app_type }}_nginx_reload_cron_{{ loop_index }}:
