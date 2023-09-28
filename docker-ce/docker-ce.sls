@@ -41,13 +41,17 @@ docker-ce_repo:
         deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
 
 docker-ce_pkg:
+  {%- if docker_ce["version"] == "latest" %}
   pkg.latest:
     - refresh: True
     - pkgs:
       - python3-docker
-  {%- if docker_ce["version"] == "latest" %}
       - docker-ce
   {%- else %}
+  pkg.installed:
+    - refresh: True
+    - pkgs:
+      - python3-docker
       - docker-ce: '{{ docker_ce["version"] }}*'
   {%- endif %}
 
