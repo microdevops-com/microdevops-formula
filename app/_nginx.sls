@@ -97,7 +97,7 @@ app_{{ app_type }}_nginx_logrotate_file_{{ loop_index }}:
 app_{{ app_type }}_nginx_reload_{{ loop_index }}:
   cmd.run:
           {%- if "reload_ulimit" in app["nginx"]  %}
-    - name: "ulimit -n {{ app["nginx"]["reload_ulimit"] && /usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
+    - name: "{{ app["nginx"]["nginx_reload_cmd_prefix"] }} && /usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
           {%- else %}
     - name: "/usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
           {%- endif %}

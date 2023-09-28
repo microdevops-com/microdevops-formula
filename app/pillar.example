@@ -217,7 +217,7 @@ app:
                   - user: basicuser
                     pass: basicpassword
           vhost_config: salt://app/files/__APP_NAME__/.../vhost.conf
-          #reload_ulimit: 1000000 # optional, sets ulimit for commands e.g. nginx -s reload
+          #nginx_reload_cmd_prefix: ulimit -n 1000000 # prefix for nginx test and reload commands
           vhost_defaults: # optional, defaults for vhost config template
             php_version: 7.4 # e.g. for php-fpm apps
             key1: value1
