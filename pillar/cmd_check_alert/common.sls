@@ -22,6 +22,9 @@ cmd_check_alert:
         severity: major
       checks:
         load-average:
+{% if grains["oscodename"] in ["precise"] %}
+          disabled: True
+{% endif %}
           cmd: {{ ruby_prefix }}/check-load.rb --warn 3,1.8,1.2 --crit 5,3,2
           severity_per_retcode:
             1: critical
