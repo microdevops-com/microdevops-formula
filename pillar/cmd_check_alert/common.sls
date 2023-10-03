@@ -50,8 +50,8 @@ cmd_check_alert:
 {% endif %}
           cmd: {{ ruby_prefix }}/check-memory-percent.rb -w 91 -c 95
           severity_per_retcode:
-            1: minor
-            2: major
+            1: critical
+            2: fatal
           service: memory
           resource: __hostname__:memory-percent
         swap-percent:
