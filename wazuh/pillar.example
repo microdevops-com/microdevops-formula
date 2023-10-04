@@ -28,7 +28,7 @@ wazuh:
           disabled: 'no'
         sca:
           enabled: 'yes'
-        vulnerability-detector:
+        vulnerability_detector:
           enabled: 'yes'
         syscheck:
           disabled: 'no'

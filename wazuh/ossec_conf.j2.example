@@ -102,7 +102,7 @@
   </sca>
 
   <vulnerability-detector>
-    <enabled>{{ values.vulnerability-detector.enabled }}</enabled>
+    <enabled>{{ values.vulnerability_detector.enabled }}</enabled>
     <interval>5m</interval>
     <min_full_scan_interval>6h</min_full_scan_interval>
     <run_on_start>yes</run_on_start>
