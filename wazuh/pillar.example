@@ -6,6 +6,10 @@
 {% set API_USERNAME          = "wazuh-wui" %}
 {% set API_PASSWORD          = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ" %}
 
+{% set SMTP_SERVER           = "smtp.gmail.com"       %}
+{% set SMTP_USERNAME         = "wazuh-user@gmail.com" %}
+{% set SMTP_PASSWORD         = "STRONGPASSWORD"       %}
+
 wazuh:
   domain: {{ wazuh_domain }}
   release: {{ wazuh_release }}
@@ -22,7 +26,7 @@ wazuh:
       values:
         global:
           smtp_server: wazuh.postfix
-          email_from: wazuh@example.com
+          email_from: {{ SMTP_USERNAME }}
           email_to: admin@example.com
         rootcheck:
           disabled: 'no'
@@ -33,9 +37,9 @@ wazuh:
         syscheck:
           disabled: 'no'
     postfix:
-      SMTP_SERVER: smtp.example.com
-      SMTP_USERNAME: wazuh@example.com
-      SMTP_PASSWORD: 'STRONGPASSWORD'
+      SMTP_SERVER: {{ SMTP_SERVER }}
+      SMTP_USERNAME: {{ SMTP_USERNAME }}
+      SMTP_PASSWORD: {{ SMTP_PASSWORD }}
   wazuh_indexer:
     image: wazuh/wazuh-indexer:{{ wazuh_release }}
     env_vars:
