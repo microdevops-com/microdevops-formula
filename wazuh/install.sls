@@ -86,11 +86,12 @@ docker_network:
 {% include "wazuh/includes/dashboard.sls"             with context %}
 {% include "wazuh/includes/applying_changes.sls"      with context %}
 {% include "wazuh/includes/internal_options_conf.sls" with context %}
-  {% if "internal_options_conf" in pillar["wazuh"]["wazuh_manager"] %}
-reload_manager:
+
+reload manager on changes in internal_options.conf:
   cmd.run:
     - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
-  {% endif %}
+    - watch:
+      - file: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/internal_options.conf
 
 cron_backup_ossec_conf:
   cron.present:

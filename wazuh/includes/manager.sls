@@ -1,3 +1,24 @@
+{%- if pillar["wazuh"]["wazuh_manager"]["postfix"] is defined %}
+pull_postfix_image:
+  cmd.run:
+    - name: docker pull juanluisbaptiste/postfix:1.7.1
+wazuh_postfix_container:
+  docker_container.running:
+    - name: wazuh.postfix
+    - hostname: wazuh.postfix
+    - image: juanluisbaptiste/postfix:1.7.1
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+      - wazuh
+    - environment:
+      - SMTP_SERVER: {{ pillar["wazuh"]["wazuh_manager"]["postfix"]["SMTP_SERVER"] }}
+      - SMTP_USERNAME: {{ pillar["wazuh"]["wazuh_manager"]["postfix"]["SMTP_USERNAME"] }}
+      - SMTP_PASSWORD: {{ pillar["wazuh"]["wazuh_manager"]["postfix"]["SMTP_PASSWORD"] }}
+      - SERVER_HOSTNAME: {{ grains["id"] }}
+      - ALWAYS_ADD_MISSING_HEADERS: "yes"
+{%- endif %}
+
 pull_wazuh_manager:
   cmd.run:
     - name: docker pull {{ pillar["wazuh"]["wazuh_manager"]["image"] }}
@@ -44,3 +65,23 @@ wazuh_manager_container:
       - SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
       - SSL_CERTIFICATE: /etc/ssl/filebeat.pem
       - SSL_KEY: /etc/ssl/filebeat.key
+
+{%- if pillar["wazuh"]["wazuh_manager"]["ossec_config"] is defined %}
+ossec_config:
+  file.managed:
+    - name: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/ossec.conf
+    - source: 
+        - {{ pillar["wazuh"]["wazuh_manager"]["ossec_config"]["template"] }}
+    - template: jinja
+    - user: 101
+    - group: 101
+    - mode: 660
+    - defaults:
+        values: {{ pillar["wazuh"]["wazuh_manager"]["ossec_config"]["values"] }}
+
+reload manager on changes in ossec.conf:
+  cmd.run:
+    - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
+    - watch:
+      - file: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/ossec.conf
+{%- endif %}
