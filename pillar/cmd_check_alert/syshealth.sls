@@ -54,7 +54,7 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-          cmd: :; ! dmesg -T | grep -i "segfault" -m 10 | grep -v -i -e "ebpf"
+          cmd: :; ! dmesg -T | grep -i "segfault" -m 10 | grep -v -i -e "ebpf" -e "netdata"
           service: os
           resource: __hostname__:segfault
         pinggoogle:

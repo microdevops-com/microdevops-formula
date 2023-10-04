@@ -217,6 +217,7 @@ app:
                   - user: basicuser
                     pass: basicpassword
           vhost_config: salt://app/files/__APP_NAME__/.../vhost.conf
+          #nginx_reload_cmd_prefix: ulimit -n 1000000 # prefix for nginx test and reload commands
           vhost_defaults: # optional, defaults for vhost config template
             php_version: 7.4 # e.g. for php-fpm apps
             key1: value1
@@ -230,7 +231,7 @@ app:
           log: # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
             access_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.access.log
             error_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.error.log
-            dir: /var/www/__APP_NAME__/app/log/nginx
+            dir: /var/www/__APP_NAME__/app/log/nginx # required if logs are stored outside of /var/log/nginx, rotation will not work without this
             dir_mode: 755
             log_mode: 640
             dir_user: __APP_NAME__

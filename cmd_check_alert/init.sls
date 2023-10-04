@@ -121,6 +121,16 @@ sensu-plugins_fix_oj_gem:
       {% endif %}
     - shell: /bin/bash
 
+# The same with ffi gem
+sensu-plugins_fix_ffi_gem:
+  cmd.run:
+      {% if grains["osarch"] in ["arm64"] %}
+    - name: source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install ffi -v 1.15.5
+      {% else %}
+    - name: /opt/sensu-plugins-ruby/embedded/bin/gem install ffi -v 1.15.5
+      {% endif %}
+    - shell: /bin/bash
+
       {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
