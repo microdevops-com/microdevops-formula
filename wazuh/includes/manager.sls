@@ -69,7 +69,9 @@ wazuh_manager_container:
 {%- if pillar["wazuh"]["wazuh_manager"]["ossec_config"] is defined %}
 ossec_config:
   file.managed:
-    - name: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/ossec.conf
+    - names: 
+        - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/ossec.conf
+        - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_cluster/wazuh_manager.conf
     - source: 
         - {{ pillar["wazuh"]["wazuh_manager"]["ossec_config"]["template"] }}
     - template: jinja
