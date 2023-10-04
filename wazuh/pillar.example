@@ -17,6 +17,25 @@ wazuh:
       API_PASSWORD: {{ API_PASSWORD }}
     internal_options_conf:
       analysisd.decoder_order_size: 1024
+    ossec_config:
+      template: salt://wazuh/ossec_conf.j2.example
+      values:
+        global:
+          smtp_server: wazuh.postfix
+          email_from: wazuh@example.com
+          email_to: admin@example.com
+        rootcheck:
+          disabled: 'no'
+        sca:
+          enabled: 'yes'
+        vulnerability-detector:
+          enabled: 'yes'
+        syscheck:
+          disabled: 'no'
+    postfix:
+      SMTP_SERVER: smtp.example.com
+      SMTP_USERNAME: wazuh@example.com
+      SMTP_PASSWORD: 'STRONGPASSWORD'
   wazuh_indexer:
     image: wazuh/wazuh-indexer:{{ wazuh_release }}
     env_vars:
