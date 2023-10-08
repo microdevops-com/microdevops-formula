@@ -69,10 +69,10 @@ wazuh_manager_container:
 {%- if pillar["wazuh"]["wazuh_manager"]["ossec_config"] is defined %}
 ossec_config:
   file.managed:
-    - names: 
+    - names:
         - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/ossec.conf
         - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/single-node/config/wazuh_cluster/wazuh_manager.conf
-    - source: 
+    - source:
         - {{ pillar["wazuh"]["wazuh_manager"]["ossec_config"]["template"] }}
     - template: jinja
     - user: 101
@@ -80,10 +80,26 @@ ossec_config:
     - mode: 660
     - defaults:
         values: {{ pillar["wazuh"]["wazuh_manager"]["ossec_config"]["values"] }}
+{%- endif %}
 
-reload manager on changes in ossec.conf:
+{%- if pillar["wazuh"]["wazuh_manager"]["local_rules_xml"] is defined %}
+local_rules_xml:
+  file.managed:
+    - names:
+        - /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/rules/local_rules.xml
+    - user: 101
+    - group: 101
+    - mode: 660
+    - contents_pillar: wazuh:wazuh_manager:local_rules_xml
+{%- endif %}
+
+reload manager on changes in ossec.conf or local_rules.xml:
   cmd.run:
     - name: docker exec wazuh.manager /var/ossec/bin/wazuh-control reload
-    - watch:
+    - onchanges:
+{%- if pillar["wazuh"]["wazuh_manager"]["local_rules_xml"] is defined %}
+      - file: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/rules/local_rules.xml
+{%- endif %}
+{%- if pillar["wazuh"]["wazuh_manager"]["ossec_config"] is defined %}
       - file: /opt/wazuh/{{ pillar["wazuh"]["domain"] }}/volumes/wazuh_etc/ossec.conf
 {%- endif %}
