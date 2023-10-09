@@ -9,4 +9,4 @@ cmd_check_alert:
     files:
       /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt:
         sftp: |
-          --dports 2226
+          --dport 2226
