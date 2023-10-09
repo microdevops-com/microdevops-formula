@@ -7,18 +7,32 @@ set_env_WAZUH_AGENT_GROUP:
   environ.setenv:
     - name: WAZUH_AGENT_GROUP
     - value: {{ pillar["wazuhagent"]["group"] | default('default') }}
-{#
-wazuh_agent_install:
-  pkg.installed:
-    - sources:
-      - wazuh_agent: {{ pillar["wazuhagent"]["deb"] }} 
-    - refresh: True
-    - skip_verify: True
-#}
 
+  {% if  grains['os'] in ['Ubuntu', 'Debian'] %}
 wazuh_agent_install:
   cmd.run:
     - name: "curl -so wazuh-agent.deb {{ pillar["wazuhagent"]["deb"] }} && sudo WAZUH_MANAGER='{{ pillar["wazuhagent"]["manager"] }}' dpkg -i ./wazuh-agent.deb && systemctl daemon-reload"
+  {% endif %}
+
+  {% if  grains['os'] == 'CentOS' %}
+wazuh_repo:
+  file.managed:
+    - name: /etc/yum.repos.d/wazuh.repo
+    - contents: |
+        [wazuh]
+        gpgcheck=1
+        gpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH
+        enabled=1
+        name=EL-\$releasever - Wazuh
+        baseurl=https://packages.wazuh.com/4.x/yum/
+        protect=1
+  cmd.run:
+    - name: rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+
+wazuh_agent_install:
+  cmd.run:
+    - name: "WAZUH_MANAGER='{{ pillar["wazuhagent"]["manager"] }}' yum install wazuh-agent -y; systemctl daemon-reload"
+  {% endif %}
 
 wazuh_agent_service_start:
   service.running:
