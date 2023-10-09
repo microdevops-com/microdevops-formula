@@ -14,9 +14,32 @@ inotify-tools install:
     - pkgs:
         - inotify-tools
 
+redis_repo_keyringdir:
+  file.directory:
+    - name: /etc/apt/keyrings
+    - user: root
+    - group: root
+
+redis_repo:
+{% set opts  = {"listfile":"/etc/apt/sources.list.d/redislabs-ubuntu-redis.list",
+                "keyfile":"/etc/apt/keyrings/redis.gpg",
+                "keyid": '60A0586666DE0BA4B481628ACC59E6B43FA6E3CA'} %}
+  pkg.installed:
+    - pkgs:
+      - gpg
+  cmd.run:
+    - name: |
+        {% if "keyid" in opts %}
+        gpg --keyserver keyserver.ubuntu.com --recv-keys {{ opts["keyid"] }}
+        gpg --batch --yes --no-tty --output {{ opts["keyfile"] }} --export {{ opts["keyid"] }}
+        {% endif %}
+    - creates: {{ opts["keyfile"] }}
+  file.managed:
+    - name: {{ opts["listfile"] }}
+    - contents: |
+        deb [signed-by={{ opts["keyfile"] }}] https://ppa.launchpadcontent.net/redislabs/redis/ubuntu {{ grains['oscodename'] }} main
+
 redis_install:
-  pkgrepo.managed:
-    - ppa: redislabs/redis
   pkg.latest:
     - refresh: True
     - reload_modules: True
