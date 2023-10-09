@@ -5,7 +5,7 @@ remove_old_type_netdata:
     - name: |
         [ -d /opt/netdata/git ] && ( service netdata stop; killall -9 netdata; rm -rf /opt/netdata ) || true
 
-    # Set some vars
+  # Set some vars
   {%- set netdata_seconds = pillar["netdata"]["seconds"] %}
   {%- set netdata_mini = pillar["netdata"].get("mini", False) %}
   {%- set postgresql = pillar["netdata"].get("postgresql", False) %}
@@ -34,22 +34,6 @@ netdata_depencies_installed_sensors_2:
     - pkgs:
       - libipmimonitoring-dev
       - freeipmi-tools
-
-hddtemp:
-  pkg:
-    - installed
-  service:
-    - enable: True
-    - running
-    - watch:
-      - pkg: hddtemp
-      - file: /etc/default/hddtemp
-
-/etc/default/hddtemp:
-  file.managed:
-    - source: salt://netdata/files/deps/hddtemp
-    - require:
-      - pkg: hddtemp
 
 smartmontools:
   pkg:
