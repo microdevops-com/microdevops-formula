@@ -1,4 +1,3 @@
-{% from "ufw/vars.jinja" import vars with context %}
 ufw:
   allow:
     postgresql_from_docker:
