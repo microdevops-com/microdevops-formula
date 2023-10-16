@@ -115,9 +115,20 @@ sensu-plugins_pkg:
 sensu-plugins_fix_oj_gem:
   cmd.run:
       {% if grains["osarch"] in ["arm64"] %}
-    - name: source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install oj -v 3.13.9
+    - name: |
+        source /usr/local/rvm/scripts/rvm
+        if /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem list | grep '^oj ' | grep '3.13.9'; then
+          echo oj 3.13.9 gem is already installed
+        else
+          /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install oj -v 3.13.9
+        fi
       {% else %}
-    - name: /opt/sensu-plugins-ruby/embedded/bin/gem install oj -v 3.13.9
+    - name: |
+        if /opt/sensu-plugins-ruby/embedded/bin/gem list | grep '^oj ' | grep '3.13.9'; then
+          echo oj 3.13.9 gem is already installed
+        else
+          /opt/sensu-plugins-ruby/embedded/bin/gem install oj -v 3.13.9
+        fi
       {% endif %}
     - shell: /bin/bash
 
@@ -125,9 +136,20 @@ sensu-plugins_fix_oj_gem:
 sensu-plugins_fix_ffi_gem:
   cmd.run:
       {% if grains["osarch"] in ["arm64"] %}
-    - name: source /usr/local/rvm/scripts/rvm && /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install ffi -v 1.15.5
+    - name: |
+        source /usr/local/rvm/scripts/rvm
+        if /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem list | grep '^ffi ' | grep '1.15.5'; then
+          echo ffi 1.15.5 gem is already installed
+        else
+          /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install ffi -v 1.15.5
+        fi
       {% else %}
-    - name: /opt/sensu-plugins-ruby/embedded/bin/gem install ffi -v 1.15.5
+    - name: |
+        if /opt/sensu-plugins-ruby/embedded/bin/gem list | grep '^ffi ' | grep '1.15.5'; then
+          echo ffi 1.15.5 gem is already installed
+        else
+          /opt/sensu-plugins-ruby/embedded/bin/gem install ffi -v 1.15.5
+        fi
       {% endif %}
     - shell: /bin/bash
 
