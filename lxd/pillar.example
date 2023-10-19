@@ -21,6 +21,13 @@
 #   Then type `cls` to clear screen.
 #   Then type `FS0:\EFI\BOOT\BOOTX64.EFI` to load from iso, you also need to push any key immediately after this command.
 #
+# - To configure network manually on Windows install:
+#   - Wait till the screen with "Let's connect you to a network" appears.
+#   - Push `Shift+F10` to open command prompt.
+#   - `netsh interface ip set address name="Local Area Connection" static 10.0.0.2 255.255.255.0 10.0.0.1 1`
+#   - `netsh interface ip set dns "Local Area Connection" static 192.168.0.200`
+#   - Ofcourse you need to change IP addresses according to your network.
+#
 # - Useful docs:
 #   Agent notes: https://discuss.linuxcontainers.org/t/running-windows-vm-in-lxd-is-there-an-lxd-agent-for-winodws/11792
 #   How to install Windows: https://discuss.linuxcontainers.org/t/how-to-run-a-windows-virtual-machine-on-lxd-on-linux/10397
