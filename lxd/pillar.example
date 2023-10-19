@@ -15,6 +15,7 @@
 #   - Run X11 server on your PC.
 #   - SSH from your PC to the server with VM as root and enable X11 forwarding in SSH.
 #   - Check that `DISPLAY` variable is set in SSH session, like `localhost:10.0`.
+#   - `lxc console xxx --type=vga` - this will open console in X11 window.
 #
 # - You need to catch with `lxc console xxx --type=vga` the first seconds of start to push any key to load from iso.
 #   If you didn't catch the first seconds, wait while PXE etc timeouts and EUFI shell loads.
