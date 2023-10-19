@@ -26,7 +26,7 @@ hosts_present_{{ loop.index }}:
 
 
   {%- if "absent" in pillar["hosts"] %}
-    {%- for ip, rest in pillar["hosts"]["present"].items() %}
+    {%- for ip, rest in pillar["hosts"]["absent"].items() %}
       {%- if rest is mapping and 'names' in rest %}
 hosts_absent_{{ loop.index }}:
   host.absent:
