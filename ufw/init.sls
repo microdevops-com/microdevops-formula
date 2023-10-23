@@ -110,7 +110,7 @@ ufw_ip_fwd_managed_file_1:
     - mode: 0644
     - template: jinja
     - defaults:
-  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) %}
+  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) or ("forwarding" in pillar["ufw"] and pillar["ufw"]["forwarding"]) %}
         IP_FWD: |
           net/ipv4/ip_forward=1
           net/ipv6/conf/default/forwarding=1
@@ -129,7 +129,7 @@ ufw_ip_fwd_managed_file_2:
     - mode: 0644
     - template: jinja
     - defaults:
-  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) %}
+  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) or ("forwarding" in pillar["ufw"] and pillar["ufw"]["forwarding"]) %}
         DEFAULT_FORWARD_POLICY: ACCEPT
         IPT_MODULES: nf_conntrack_ftp nf_nat_ftp nf_conntrack_netbios_ns
   {%- else %}
