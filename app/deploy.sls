@@ -3,6 +3,7 @@ include:
   - hosts
   - acme
   - docker-ce
+  - pkg.pkg
   - pkg.before_deploy
 {% if pillar["postgres"] is defined and pillar["postgres"] is not none %}
   {%- if pillar["postgres"]["client"] is defined and pillar["postgres"]["client"] %}
