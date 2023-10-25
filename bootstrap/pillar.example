@@ -62,6 +62,9 @@ bootstrap:
   tz:
     tz: Etc/UTC
     utc: True
+  locale:
+    locale: en_US.UTF-8
+    charset: UTF-8
 
 # some usage examples:
 bootstrap:

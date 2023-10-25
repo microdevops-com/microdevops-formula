@@ -9,3 +9,4 @@ include:
   - .root_password_hash
   - .salt-ssh_cleaner
   - .tz
+  - .locale
