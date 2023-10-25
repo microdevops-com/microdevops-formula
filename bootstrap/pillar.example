@@ -65,6 +65,10 @@ bootstrap:
   locale:
     locale: en_US.UTF-8
     charset: UTF-8
+  #auto-upgrades: | # optional, auto-upgrades are disabled by default, set the contents of /etc/apt/apt.conf.d/20auto-upgrades here
+  #  APT::Periodic::Update-Package-Lists "1";
+  #  APT::Periodic::Unattended-Upgrade "1";
+  #  Unattended-Upgrade::Automatic-Reboot "false";
 
 # some usage examples:
 bootstrap:

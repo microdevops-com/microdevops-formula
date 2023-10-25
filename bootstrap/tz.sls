@@ -3,7 +3,7 @@ bootstrap_tz:
 
   {%- if grains["oscodename"] == "jessie" %}
   file.managed:
-    - name: "/etc/timezone"
+    - name: /etc/timezone
     - contents: |
         {{ pillar["bootstrap"]["tz"]["tz"] }}
 
