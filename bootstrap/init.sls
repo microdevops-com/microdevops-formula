@@ -10,3 +10,4 @@ include:
   - .salt-ssh_cleaner
   - .tz
   - .locale
+  - .auto-upgrades
