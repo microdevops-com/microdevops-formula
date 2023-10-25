@@ -12,8 +12,8 @@ bootstrap_tz:
 
   {% else %}
   timezone.system:
-    "{{ pillar["bootstrap"]["tz"]["tz"] }}":
-      - utc: {{ pillar["bootstrap"]["tz"]["utc"] }}
+    - name: "{{ pillar["bootstrap"]["tz"]["tz"] }}":
+    - utc: {{ pillar["bootstrap"]["tz"]["utc"] }}
 
   {% endif %}
 
