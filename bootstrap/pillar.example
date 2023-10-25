@@ -59,6 +59,9 @@ bootstrap:
           #makedirs: False # optional, default False, create parent directories if not exists
           #force: False # optional, if path exists and is not a symlink, delete path and create the symlink
           ## for further readings refer to https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.symlink
+  tz:
+    tz: Etc/UTC
+    utc: True
 
 # some usage examples:
 bootstrap:
