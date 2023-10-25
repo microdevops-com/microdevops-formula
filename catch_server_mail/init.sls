@@ -1,18 +1,18 @@
 {%- if  pillar["catch_server_mail"] is defined and "sentry" in pillar["catch_server_mail"] %}
-  {%- if "domain_override" in pillar["catch_server_mail"] -%}
-    {%- do pillar["catch_server_mail"].update({"domain": pillar["catch_server_mail"]["domain_override"]]}) %}
+  {%- if pillar["catch_server_mail"]["sentry"]["domain_override"] is defined -%}
+    {%- do pillar["catch_server_mail"]["sentry"].update({"domain": pillar["catch_server_mail"]["sentry"]["domain_override"]}) %}
   {%- endif -%}
-  {%- if "org-slug_override" in pillar["catch_server_mail"] -%}
-    {%- do pillar["catch_server_mail"].update({"org-slug": pillar["catch_server_mail"]["org-slug_override"]]}) %}
+  {%- if pillar["catch_server_mail"]["sentry"]["org-slug_override"] is defined -%}
+    {%- do pillar["catch_server_mail"]["sentry"].update({"org-slug": pillar["catch_server_mail"]["sentry"]["org-slug_override"]}) %}
   {%- endif -%}
-  {%- if "project-slug_override" in pillar["catch_server_mail"] -%}
-    {%- do pillar["catch_server_mail"].update({"project-slug": pillar["catch_server_mail"]["project-slug_override"]]}) %}
+  {%- if pillar["catch_server_mail"]["sentry"]["project-slug_override"] is defined -%}
+    {%- do pillar["catch_server_mail"]["sentry"].update({"project-slug": pillar["catch_server_mail"]["sentry"]["project-slug_override"]}) %}
   {%- endif -%}
-  {%- if "auth_token_override" in pillar["catch_server_mail"] -%}
-    {%- do pillar["catch_server_mail"].update({"auth_token": pillar["catch_server_mail"]["auth_token_override"]]}) %}
+  {%- if pillar["catch_server_mail"]["sentry"]["auth_token_override"] is defined -%}
+    {%- do pillar["catch_server_mail"]["sentry"].update({"auth_token": pillar["catch_server_mail"]["sentry"]["auth_token_override"]}) %}
   {%- endif -%}
-  {%- if "dsn_public_override" in pillar["catch_server_mail"] -%}
-    {%- do pillar["catch_server_mail"].update({"dsn_public": pillar["catch_server_mail"]["dsn_public_override"]]}) %}
+  {%- if pillar["catch_server_mail"]["sentry"]["dsn_public_override"] is defined -%}
+    {%- do pillar["catch_server_mail"]["sentry"].update({"dsn_public": pillar["catch_server_mail"]["sentry"]["dsn_public_override"]}) %}
   {%- endif -%}
 catch_server_mail_sentry-cli:
   cmd.run:
