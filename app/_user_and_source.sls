@@ -34,22 +34,10 @@ app_{{ app_type }}_user_homedir_create_{{ loop_index }}:
 
 app_{{ app_type }}_user_homedir_userown_{{ loop_index }}:
   file.directory:
-    - name: {{ _app_app_root }}
+    - name: {{ _app_app_root }} # TODO
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - makedirs: True
-
-        {%- if "mkdir" in app %}
-          {%- for dir in app["mkdir"] %}
-app_{{ app_type }}_mkdir_{{ loop_index }}_{{ loop.index }}:
-  file.directory:
-    - name: {{ _app_app_root }}/{{ dir|replace("__APP_NAME__", app_name) }}
-    - user: {{ _app_user }}
-    - group: {{ _app_group }}
-    - makedirs: True
-
-          {%- endfor %}
-        {%- endif %}
 
 app_{{ app_type }}_user_ssh_dir_{{ loop_index }}:
   file.directory:
@@ -66,6 +54,49 @@ app_{{ app_type }}_user_ssh_auth_keys_{{ loop_index }}:
     - user: {{ _app_user }}
     - names: {{ app["app_auth_keys"] }}
       {%- endif %}
+
+      {%- with %}
+        {%- set files = app.get("files", {}) %}
+        {%- if files is none %}
+          {%- set files = {} %}
+        {%- endif %}
+
+        # code for legacy "files_source" key and "files_contents" key
+        {%- if "files_source" in app or "files_contents" in app %}
+          {%- do files.update({"managed": files.get("managed", {})}) %}
+          {%- do files["managed"].update({"files_source_contents_legacy": [] }) %}
+
+          {%- set items = [] %}
+          {%- do items.extend(app.get("files_contents", [])) %}
+          {%- do items.extend(app.get("files_source", [])) %}
+
+          {%- for item in items %}
+            {%- do item.update({"name": item.pop("path")})%}
+            {%- do files["managed"]["files_source_contents_legacy"].append(item) %}
+          {%- endfor %}
+        {%- endif %}
+
+        # code for legacy "files" key
+        {%- if "src" in files.keys() %}
+          {%- do files.update({"recurse": files.get("recurse", {})}) %}
+          {%- do files["recurse"].update({"files_legacy": [{"name": app["files"].pop("dst"), "source": app["files"].pop("src")}]}) %}
+        {%- endif %}
+
+        # code for legacy "mkdir" key
+        {%- if "mkdir" in app %}
+          {%- do files.update({"directory": files.get("directory", {})}) %}
+          {%- do files["directory"].update({"mkdir_legacy": []}) %}
+          {%- for dir in app["mkdir"] %}
+             {%- do files["directory"]["mkdir_legacy"].extend([{"name": _app_app_root ~ "/" ~ dir.replace("__APP_NAME__", app_name), "makedirs": True}]) %}
+          {%- endfor %}
+        {%- endif %}
+
+        {%- set extloop = loop_index %}
+        {%- set file_manager_defaults = {"default_user": _app_user, "default_group": _app_group,
+                                         "replace_old": "__APP_NAME__", "replace_new": app_name} %}
+        {%- include "_include/file_manager/init.sls" with context %}
+      {%- endwith %}
+
 
       {%- if "source" in app %}
         {%- if "repo_key" in app["source"] and "repo_key_pub" in app["source"] %}
@@ -137,44 +168,8 @@ app_{{ app_type }}_app_checkout_{{ loop_index }}:
 
       {%- endif %}
 
-      {%- if "files" in app %}
-app_{{ app_type }}_app_files_{{ loop_index }}:
-  file.recurse:
-    - name: {{ app["files"]["dst"]|replace("__APP_NAME__", app_name) }}
-    - source: {{ app["files"]["src"]|replace("__APP_NAME__", app_name) }}
-    - clean: False
-    - user: {{ _app_user }}
-    - group: {{ _app_group }}
-    - dir_mode: 755
-    - file_mode: 644
 
-      {%- endif %}
 
-      {%- if "files_source" in app %}
-        {%- for f_s in app["files_source"] %}
-app_{{ app_type }}_app_files_source_{{ loop_index }}_{{ loop.index }}:
-  file.managed:
-    - name: {{ f_s["path"]|replace("__APP_NAME__", app_name) }}
-    - user: {{ _app_user }}
-    - group: {{ _app_group }}
-    - mode: {{ f_s["mode"] }}
-    - source: {{ f_s["source"] | replace("__APP_NAME__", app_name) }}
-
-        {%- endfor %}
-      {%- endif %}
-
-      {%- if "files_contents" in app %}
-        {%- for f_c in app["files_contents"] %}
-app_{{ app_type }}_app_files_contents_{{ loop_index }}_{{ loop.index }}:
-  file.managed:
-    - name: {{ f_c["path"]|replace("__APP_NAME__", app_name) }}
-    - user: {{ _app_user }}
-    - group: {{ _app_group }}
-    - mode: {{ f_c["mode"] }}
-    - contents: {{ f_c["contents"] | replace("__APP_NAME__", app_name) | yaml_encode }}
-
-        {%- endfor %}
-      {%- endif %}
 
       {%- if "sudo_rules" in app %}
 app_{{ app_type }}_app_sudo_dir_{{ loop_index }}:
