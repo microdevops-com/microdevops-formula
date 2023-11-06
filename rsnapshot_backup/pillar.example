@@ -152,6 +152,7 @@ rsnapshot_backup:
         #mongodump_args: --username root --password password --authenticationDatabase admin # optional, args for mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
                                                                                             # if arga for mongo and mongodump are the same, you can use only mongo_args
         #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location, only for py version
+        #mongo_secondary_ok: True # optional, False by default, issue "db.getMongo().setSecondaryOk()" before issuing "show dbs"
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
         data: # list dirs or db types here
           - UBUNTU

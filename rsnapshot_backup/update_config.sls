@@ -140,6 +140,10 @@ rsnapshot_backup_yaml:
           mongodump_args: {{ host_backups_item["mongodump_args"] }}
           {%- endif %}
           #
+          {%- if "mongo_secondary_ok" in host_backups_item %}
+          mongo_secondary_ok: {{ host_backups_item["mongo_secondary_ok"] }}
+          {%- endif %}
+          #
           {%- if "connect_user" in host_backups_item %}
           connect_user: {{ host_backups_item["connect_user"] }}
           {%- endif %}
