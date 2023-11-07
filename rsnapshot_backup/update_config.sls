@@ -127,7 +127,7 @@ rsnapshot_backup_yaml:
           {%- if "mysqldump_args" in host_backups_item %}
           mysqldump_args: {{ host_backups_item["mysqldump_args"] }}
           {%- endif %}
-          # only for py
+          #
           {%- if "pg_dump_args" in host_backups_item %}
           pg_dump_args: {{ host_backups_item["pg_dump_args"] }}
           {%- endif %}
@@ -169,9 +169,17 @@ rsnapshot_backup_yaml:
           {%- if "exclude" in host_backups_item %}
           exclude: {{ host_backups_item["exclude"] }}
           {%- endif %}
-          # only for py everything below
+          #
           {%- if "dump_prefix_cmd" in host_backups_item %}
           dump_prefix_cmd: {{ host_backups_item["dump_prefix_cmd"] }}
+          {%- endif %}
+          #
+          {%- if "exec_before_dump" in host_backups_item %}
+          exec_before_dump: {{ host_backups_item["exec_before_dump"] }}
+          {%- endif %}
+          #
+          {%- if "exec_after_dump" in host_backups_item %}
+          exec_after_dump: {{ host_backups_item["exec_after_dump"] }}
           {%- endif %}
           #
           {%- if "mysql_dump_dir" in host_backups_item %}

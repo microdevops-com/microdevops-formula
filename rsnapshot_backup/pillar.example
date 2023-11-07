@@ -101,6 +101,8 @@ rsnapshot_backup:
               - test
               #- ALL # or skip empty db checks for all databases
         #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
+        #exec_before_dump: # optional, command to execute via ssh before dump, avoid using single and double quotes
+        #exec_after_dump: # optional, command to execute via ssh after dump, avoid using single and double quotes
         #
         #mysql_noevents: True # optional, remove --events from dump cmd
         #mysqldump_args: # optional, pass additional arguments to mysqldump
@@ -136,6 +138,8 @@ rsnapshot_backup:
               - template1
               #- ALL # or skip empty db checks for all databases
         #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
+        #exec_before_dump: # optional, command to execute via ssh before dump, avoid using single and double quotes
+        #exec_after_dump: # optional, command to execute via ssh after dump, avoid using single and double quotes
         #pg_dump_args: # optional, pass additional arguments to pg_dump_args, only for py version
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location, only for py version
@@ -148,6 +152,8 @@ rsnapshot_backup:
         checks: # optional, MONGODB_SSH supports only MONGODB check type
           - type: MONGODB # check dumps for freshness by looking into the signature and check real data inside dumps
         #dump_prefix_cmd: ionice -c 3 nice # optional, only for py, prefix dump command, for example with nice to be more gentle with io
+        #exec_before_dump: # optional, command to execute via ssh before dump, avoid using single and double quotes
+        #exec_after_dump: # optional, command to execute via ssh after dump, avoid using single and double quotes
         #mongo_args: --username root --password password --authenticationDatabase admin # optional, args for mongo (to list databases) and mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
         #mongodump_args: --username root --password password --authenticationDatabase admin # optional, args for mongodump (to make dump), usually to add auth params. The user (root) must have a role "root"
                                                                                             # if arga for mongo and mongodump are the same, you can use only mongo_args
