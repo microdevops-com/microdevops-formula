@@ -2,17 +2,17 @@ php-fpm:
   versions:
     7.4:
       modules:
-        - php74-zip
-        - php74-intl
-        - php74-mbstring
-        - php74-mysql
-        - php74-soap
-        - php74-xml
-        - php74-bcmath
-        - php74-curl
-        - php74-gd
-        - php74-sqlite3
-        - php74-ioncube # in case of ioncube - module will we copied from ioncube distribution, php 8+ is not yet supported by ioncube
+        - php7.4-zip
+        - php7.4-intl
+        - php7.4-mbstring
+        - php7.4-mysql
+        - php7.4-soap
+        - php7.4-xml
+        - php7.4-bcmath
+        - php7.4-curl
+        - php7.4-gd
+        - php7.4-sqlite3
+        - php7.4-ioncube # in case of ioncube - module will we copied from ioncube distribution, php 8+ is not yet supported by ioncube
       tz: Etc/UTC
 
 # legacy (php-fpm.php-fpm state)
