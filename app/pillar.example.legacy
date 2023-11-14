@@ -107,8 +107,10 @@ app:
             User git
             Identityfile /var/www/app_2/.ssh/id_repo
       files: # you can copy app configs from salt, not to store them in repo
-        src: app/example_php-fpm_app_1/files
-        dst: /var/www/app_1/src/public
+        recurse:
+          public_files:
+           - name: /var/www/app_1/src/public
+             source: salt://app/example_php-fpm_app_1/files
       setup_script: # e.g. after git pull to change permissions and create missing folders
         cwd: /var/www/app_1/src
         name: bash /var/www/app_1/src/etc/setup.sh
