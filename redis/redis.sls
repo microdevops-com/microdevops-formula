@@ -1,4 +1,4 @@
-{% if pillar['redis'] is defined and not 'sentinel_conf' in pillar['redis'] %}
+{% if pillar['redis'] is defined and 'redis_conf' in pillar['redis'] %}
 
   {%- if 'auth' in pillar['redis'] %}
 auth file for cmd check alert:
