@@ -123,9 +123,6 @@ app:
         #keep_user: True # optional, turns off user management, intended to use with existing user on server
         #app_auth_keys: # optinal, ensure ssh keys for user
         #  - ssh-rsa AAAA...== rsa-key-19700101
-        #mkdir: # mkdir -p dirs under app_root, e.g. for certbot
-        #  - certbot
-        #  - /var/__APP_NAME__/data
         shell: /bin/bash
         #sudo_rules: # optional
         #  __APP_NAME__:
@@ -163,18 +160,20 @@ app:
           #  - fetch_tags: False
           #  - https_user: deploy-user
           #  - https_pass: xx-token-xx
-        files: # optional
-          src: salt://app/__APP_NAME__
-          dst: /var/www/__APP_NAME__/app
-        files_source: # optional
-          - path: /var/www/__APP_NAME__/app/.file
-            mode: 0600
-            source: salt://app/.file
-        files_contents: # optional
-          - path: /var/www/__APP_NAME__/app/.env
-            mode: 0600
-            contents: |
-              export VAR1=value1
+        files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
+          directory:  # recurse|directory|symlink|managed|absent
+            grp_name:
+              - name: /var/www/__APP_NAME__/app
+          managed: 
+            grp_name:
+              - name: /var/www/__APP_NAME__/app/file.txt
+                source: http://example.com/file.txt
+                skip_verify: True
+              - name: /var/www/__APP_NAME__/.env
+                contents: |
+                  VAR1=value
+                apply:
+                  - env >> /var/www/__APP_NAME__/.env # run as application user
         setup_script_root: # optional
           cwd: /var/www/__APP_NAME__/app/src
           name: |

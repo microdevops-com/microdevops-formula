@@ -109,6 +109,10 @@ app_{{ app_type }}_nginx_reload_cron_{{ loop_index }}:
     - user: root
     - minute: 30
     - hour: 10
+        {%- if "nginx_reload_cmd_prefix" in app["nginx"]  %}
+    - name: "{{ app["nginx"]["nginx_reload_cmd_prefix"] }} && /usr/sbin/nginx -t -q && /usr/sbin/nginx -s reload"
+        {%- else %}
     - name: "/usr/sbin/nginx -t -q && /usr/sbin/nginx -s reload"
+        {%- endif %}
 
       {%- endif %}

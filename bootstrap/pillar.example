@@ -13,8 +13,8 @@ bootstrap:
         baz: ftp://someothersite.org/baz.deb
         qux: /minion/path/to/qux.deb
 
-  files:
-    managed:
+  files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
+    managed: # recurse|directory|symlink|managed|absent
       files_group_name_1:
         - name: /path/to/file # required, path to file on the server
           source: salt://path/to/file # required, path to file on the salt master
@@ -33,32 +33,16 @@ bootstrap:
           #  - update-grub
           #  - locale-gen
 
-    # directories are always created first by this state
-    directory:
-      dirs_group_name_1:
-        - name: /path/to/dir
-          #user: root # optional, default salt's user
-          #group: root # optional, default - salt's group
-          #recurse: [user, group, mode] # optional, default handled by salt
-          #dir_mode: 755 # optional, default handled by salt
-          #file_mode: 644 # optional, default handled by salt
-          #makedirs: False # optional, default False, create parent directories if not exists
-          #force: False # optional, if path exists and is not a directory, delete path and create the directory
-          ## for further readings refer to https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.directory
-          #apply: # optional, run arbitrary commands after file creation
-          #  - ps axu >> /path/to/dir/psaxu
-          #  - lsblk >> /path/to/dir/lsblk
-
-    # then symlinks are created
-    symlink:
-      symlinks_group_name_1:
-        - name: /path/to/symlink
-	  target: /path/to/taget
-          #user: root # optional, default salt's user
-          #group: root # optional, default - salt's group
-          #makedirs: False # optional, default False, create parent directories if not exists
-          #force: False # optional, if path exists and is not a symlink, delete path and create the symlink
-          ## for further readings refer to https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.symlink
+  tz:
+    tz: Etc/UTC
+    utc: True
+  locale:
+    locale: en_US.UTF-8
+    charset: UTF-8
+  #auto-upgrades: | # optional, auto-upgrades are disabled by default, set the contents of /etc/apt/apt.conf.d/20auto-upgrades here
+  #  APT::Periodic::Update-Package-Lists "1";
+  #  APT::Periodic::Unattended-Upgrade "1";
+  #  Unattended-Upgrade::Automatic-Reboot "false";
 
 # some usage examples:
 bootstrap:

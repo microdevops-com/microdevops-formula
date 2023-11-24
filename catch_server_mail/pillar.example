@@ -7,3 +7,9 @@ catch_server_mail:
     project-slug: server_mail
     auth_token: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     dsn_public: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # this is only a public token from dsn, the complete dsn will be constructed from domain, this token and project number for project project-slug, id is being fetched using sentry-cli using auth_token
+### possible overrides
+    #domain_override: sentry.example.com
+    #org-slug_override: example
+    #project-slug_override: server_mail
+    #auth_token_override: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    #dsn_public_override: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 

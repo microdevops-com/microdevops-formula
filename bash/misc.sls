@@ -24,7 +24,7 @@ bash_misc_root_bashrc:
 
   {%- if pillar["users"] is defined %}
     {%- for name, user in pillar["users"].items() %}
-      {%- if "home" in user %}
+      {%- if "home" in user and not ("skip_bashrc" in user and user["skip_bashrc"]) %}
 bash_misc_{{ name }}_bashrc:
   file.managed:
     - name: {{ user["home"] }}/.bashrc

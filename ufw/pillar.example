@@ -5,6 +5,7 @@ ufw:
   #disabled: True # optional, explicitly disable ufw on the server, calls `ufw disable`
   loglevel: "off" # off by default, do not remove quotes - otherwise Salt will make False instead of off
   import_ufw_simple: False # import deprecated ufw_simple state pillar
+  #forwarding: True # optional, just enable forwarding like with nat, enabling nat does it as well
   allow: # allow/deny/reject/limit
     rule_1: # from list to list with to port
       proto: tcp

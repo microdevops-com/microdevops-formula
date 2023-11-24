@@ -8,6 +8,7 @@ ufw_simple:
     https:
       proto: 'tcp'
       to_port: '443'
+
 cmd_check_alert:
   network:
     files:

@@ -1,9 +1,48 @@
 metabase:
-  docker-ce_version: 18.06.1
-  acme_account: example.com
+  docker-ce_version: latest
+  #separated_nginx_config: False # optional, set to True for creating separated nginx config (metabase.conf) instead of rewriting main nginx.conf
+  #custom_separated_nginx_config: | # optional, do not build separated metabase.conf from domains and instances defs, use custom
+  # server {
+  #     listen 80;
+  #     server_name reflector.fullslice.agency;
+  #
+  #     access_log /var/www/metabase/log/nginx/metabase.access.log;
+  #     error_log /var/www/metabase/log/nginx/metabase.error.log;
+  #
+  #     location / {
+  #         proxy_pass http://127.0.0.1:3005;
+  #         proxy_pass_header Accept;
+  #         proxy_pass_header Server;
+  #         proxy_pass_header Authorization;
+  #         proxy_http_version 1.1;
+  #         proxy_set_header Upgrade $http_upgrade;
+  #         proxy_set_header Connection “upgrade”;
+  #         proxy_set_header Connection “”;
+  #         proxy_set_header Host $host;
+  #         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  #         proxy_set_header X-Real-IP $remote_addr;
+  #         proxy_set_header X-Forwarded-User $http_authorization;
+  #         proxy_set_header Authorization $http_authorization;
+  #         proxy_set_header X-Forwarded-Proto $scheme;
+  #         proxy_set_header X-Forwarded-Server $host;
+  #         proxy_set_header X-Forwarded-Host $host:$server_port;
+  #         proxy_hide_header Referer;
+  #         proxy_hide_header Origin;
+  #         proxy_set_header Referer ‘’;
+  #         proxy_set_header Origin ‘’;
+  #         proxy_cache_bypass $http_upgrade;
+  #         proxy_connect_timeout 1200;
+  #         proxy_send_timeout 1200;
+  #         proxy_read_timeout 1200;
+  #         fastcgi_send_timeout 1200;
+  #         fastcgi_read_timeout 1200;
+  #         send_timeout 1800;
+  #     }
+  # }
   domains:
     - name: metabase.example.com
       default_instance: prod # optional, redirect to this instance if exist, make html list if not
+      acme_account: example.com
       instances:
         - name: prod
           port: 3000
