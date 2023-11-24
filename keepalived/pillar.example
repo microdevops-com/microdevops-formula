@@ -45,7 +45,7 @@ keepalived:
         interface eth0
         unicast_src_ip: 10.0.0.1
         unicast_peer {
-          10.0.0.1
+          10.0.0.2
         }
         virtual_router_id 20
         advert_int 1
