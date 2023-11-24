@@ -44,6 +44,24 @@ notify_master:
     - mode: 700
     - contents: {{ pillar['keepalived']['notify_master']['contents'] | yaml_encode }}
 {% endif %}
+{% if pillar['keepalived']['notify_backup'] is defined %}$
+notify_backup:$
+  file.managed:$
+    - name: {{ pillar['keepalived']['notify_backup']['path'] }}$
+    - user: 0$
+    - group: 0$
+    - mode: 700$
+    - contents: {{ pillar['keepalived']['notify_backup']['contents'] | yaml_encode }}$
+{% endif %}$
+{% if pillar['keepalived']['notify_fault'] is defined %}$
+notify_fault:$
+  file.managed:$
+    - name: {{ pillar['keepalived']['notify_fault']['path'] }}$
+    - user: 0$
+    - group: 0$
+    - mode: 700$
+    - contents: {{ pillar['keepalived']['notify_fault']['contents'] | yaml_encode }}$
+{% endif %}$
 
 keepalived_run:
   service.running:
