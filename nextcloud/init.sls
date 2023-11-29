@@ -1,48 +1,11 @@
 {% if pillar["nextcloud"] is defined and pillar["acme"] is defined %}
 {% set acme = pillar['acme'].keys() | first %}
-  {% if pillar["docker-ce"] is not defined %}
 
-docker_install_00:
-  file.directory:
-    - name: /etc/docker
-    - mode: 700
-
-docker_install_01:
-  file.managed:
-    - name: /etc/docker/daemon.json
-    - contents: |
-        { "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
-
-docker_install_1:
-  pkgrepo.managed:
-    - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains["os"]|lower }} {{ grains["oscodename"] }} stable
-    - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/{{ grains["os"]|lower }}/gpg
-
-docker_install_2:
-  pkg.installed:
-    - refresh: True
-    - reload_modules: True
-    - pkgs: 
-        - docker-ce: "{{ pillar["nextcloud"]["docker-ce_version"] }}*"
-        - python3-pip
-
-docker_pip_install:
-  pip.installed:
-    - name: docker-py >= 1.10
-    - reload_modules: True
-
-docker_install_3:
-  service.running:
-    - name: docker
-
-docker_install_4:
-  cmd.run:
-    - name: systemctl restart docker
-    - onchanges:
-        - file: /etc/docker/daemon.json
+  {%- if pillar["docker-ce"] is not defined %}
+    {%- set docker_ce = {"version": pillar["nextcloud"]["docker-ce_version"],
+                         "daemon_json": '{ "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
   {%- endif %}
+  {%- include "docker-ce/docker-ce.sls" with context %}
 
 nginx_install:
   pkg.installed:

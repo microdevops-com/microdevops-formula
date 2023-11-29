@@ -199,28 +199,10 @@ auth_file_from_cmd:
     - names:
         - {{ rancher_val["cluster_ssh_public_key"] }}
 
-docker_install_1:
-  pkgrepo.managed:
-    - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ grains["oscodename"] }} stable
-    - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/ubuntu/gpg
-    - clean_file: True
-
-docker_install_2:
-  pkg.installed:
-    - refresh: True
-    - pkgs:
-        - docker-ce: {{ rancher_val["docker-ce_version"] }}*
-        {%- if grains["oscodename"] in ["focal", "jammy"] %}
-        - python3-docker
-        {%- else %}
-        - python-docker
-        {%- endif %}
-
-docker_install_3:
-  service.running:
-    - name: docker
+      {%- if pillar["docker-ce"] is not defined %}
+        {%- set docker_ce = {"version": rancher_val["docker-ce_version"]} %}
+      {%- endif %}
+      {%- include "docker-ce/docker-ce.sls" with context %}
 
 docker_mount_1:
   file.managed:
