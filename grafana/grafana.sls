@@ -47,7 +47,7 @@ nginx_files_1:
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "Upgrade";
                 proxy_set_header Host $http_host;
-                proxy_pass http://localhost:{{ instance['port'] }}/;
+                proxy_pass http://localhost:{{ instance['port'] }};
             }
     {%- endfor %}
           }
