@@ -26,6 +26,8 @@ php-fpm:
   version_7_3: True
   version_8_0: True
   version_8_1: True
+  version_8_2: True
+  version_8_3: True
   tz:
     php5_5: 'Etc/UTC'
   modules:
