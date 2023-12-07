@@ -8,11 +8,11 @@ This file acts as middleware, whose main role is
 
 # we either in the main conf section or in the redirects section
 {%- if redirect is not defined %}
-  {%- set acme_account = app["nginx"]["ssl"].get("acme_account", none) %}
+  {%- set acme_account = app["nginx"].get("ssl",{}).get("acme_account", none) %}
   {%- set domain = app["nginx"]["domain"] %}
   {%- set filename = app_name ~ ".conf" %}
 {%- else %}
-  {%- set acme_account = redirect["ssl"].get("acme_account", none) %}
+  {%- set acme_account = redirect.get("ssl",{}).get("acme_account", none) %}
   {%- set domain = redirect["domain"] %}
   {%- set filename = app_name ~ "_redirect_" ~ loop2_index ~ ".conf" %}
 {%- endif %}

@@ -39,6 +39,7 @@ pkg_latest:
       - apt-listchanges
       - gnupg
       - python3-apt
+      - software-properties-common
       # man
       - doc-debian
       - info
@@ -67,6 +68,7 @@ pkg_latest:
       - iputils-ping
       - bmon
       - rasdaemon
+      - virt-what
       # build
       - build-essential
       - git

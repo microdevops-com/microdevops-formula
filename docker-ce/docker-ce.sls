@@ -11,7 +11,7 @@ docker-ce_config_dir:
 docker-ce_config_file:
   file.managed:
     - name: /etc/docker/daemon.json
-    - contents: {{ docker_ce["daemon_json"] | yaml_encode }}
+    - contents: {{ docker_ce.get("daemon_json","") | yaml_encode }}
 
 docker-ce_repo_keyringdir:
   file.directory:

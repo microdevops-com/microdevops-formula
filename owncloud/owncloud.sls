@@ -1,40 +1,11 @@
 {% if pillar['owncloud'] is defined and pillar['owncloud'] is not none %}
-docker_install_00:
-  file.directory:
-    - name: /etc/docker
-    - mode: 700
 
-docker_install_01:
-  file.managed:
-    - name: /etc/docker/daemon.json
-    - contents: |
-        {"iptables": false}
+  {%- if pillar["docker-ce"] is not defined %}
+    {%- set docker_ce = {"version": pillar["owncloud"]["docker-ce_version"],
+                         "daemon_json": '{"iptables": false}'} %}
+  {%- endif %}
+  {%- include "docker-ce/docker-ce.sls" with context %}
 
-docker_install_1:
-  pkgrepo.managed:
-    - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains['os']|lower }} {{ grains['oscodename'] }} stable
-    - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/{{ grains['os']|lower }}/gpg
-    
-docker_install_2:
-  pkg.installed:
-    - refresh: True
-    - reload_modules: True
-    - pkgs: 
-        - docker-ce: '{{ pillar['owncloud']['docker-ce_version'] }}*'
-        - python-pip
-        - python3-pip # In the case of a salt work on a python3
-
-docker_install_3:
-  pip.installed:
-    - name: docker
-    - reload_modules: True
-        
-docker_start:
-  service.running:
-    - name: docker
-        
 nginx_install:
   pkg.installed:
     - pkgs:

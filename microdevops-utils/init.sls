@@ -33,7 +33,7 @@ microdevops-utils_repo_sysadmws:
   file.managed:
     - name: {{ opts["listfile"] }}
     - contents: |
-        deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://repo.sysadm.ws/sysadmws-apt/ any main
+        deb [arch=amd64 signed-by={{ opts["keyfile"] }}] https://repo.sysadm.ws/sysadmws-apt/ any main
 
 microdevops-utils_pkg_latest_utils:
   pkg.latest:

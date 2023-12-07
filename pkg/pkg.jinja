@@ -53,7 +53,7 @@ pkg_{{ pkg_key }}_{{ PKG_WHEN }}_{{ s_key }}_{{ ss_key }}_{{ a_loop.index }}_{{ 
     {%- endif %}
   {%- endfor %}
 {% else %}
-pkg_nothing_to_do:
+pkg_nothing_to_do_{{ PKG_WHEN }}:
   test.configurable_test_state:
     - name: pkg_nothing_to_do_info
     - changes: False
