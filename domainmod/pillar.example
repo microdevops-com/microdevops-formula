@@ -1,0 +1,32 @@
+domainmod:
+  nginx_sites_enabled: true
+  external_port: 3333     # optional
+  domains:
+{% set domain  = "domainmod.example.com" %}
+{% set version = "4.20.06"               %}
+    - name: {{ domain }}
+      internal_port: 8080
+      image: domainmod/domainmod:{{ version }}
+      env_vars:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/Vancouver
+      DOMAINMOD_WEB_ROOT: ""
+      DOMAINMOD_DATABASE_HOST: {{ grains['id'] }}
+      DOMAINMOD_DATABASE: domainmod
+      DOMAINMOD_USER: domainmod
+      DOMAINMOD_PASSWORD: password1
+{% set domain  = "domainmod2.example.com" %}
+{% set version = "latest"                 %}
+    - name: {{ domain }}
+      internal_port: 8081
+      image: domainmod/domainmod:{{ version }}
+      env_vars:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/Vancouver
+      DOMAINMOD_WEB_ROOT: ""
+      DOMAINMOD_DATABASE_HOST: {{ grains['id'] }}
+      DOMAINMOD_DATABASE: domainmod2
+      DOMAINMOD_USER: domainmod2
+      DOMAINMOD_PASSWORD: password12
