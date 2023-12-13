@@ -1,44 +1,10 @@
 {% if pillar["mailcow"] is defined %}
-docker_install_00:
-  file.directory:
-    - name: /etc/docker
-    - mode: 700
 
-docker_install_01:
-  file.managed:
-    - name: /etc/docker/daemon.json
-    - contents: |
-        { "iptables": true, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }
-
-docker_install_02:
-  pkgrepo.managed:
-    - humanname: Docker CE Repository
-    - name: deb [arch=amd64] https://download.docker.com/linux/{{ grains["os"]|lower }} {{ grains["oscodename"] }} stable
-    - file: /etc/apt/sources.list.d/docker-ce.list
-    - key_url: https://download.docker.com/linux/{{ grains["os"]|lower }}/gpg
-
-docker_install_03:
-  pkg.installed:
-    - refresh: True
-    - reload_modules: True
-    - pkgs:
-        - docker-ce: "{{ pillar["mailcow"]["docker-ce_version"] }}*"
-        - python3-pip
-
-docker_pip_install:
-  pip.installed:
-    - name: docker-py >= 1.10
-    - reload_modules: True
-
-docker_install_3:
-  service.running:
-    - name: docker
-
-docker_install_4:
-  cmd.run:
-    - name: systemctl restart docker
-    - onchanges:
-        - file: /etc/docker/daemon.json
+  {%- if pillar["docker-ce"] is not defined %}
+    {%- set docker_ce = {"version": pillar["mailcow"]["docker-ce_version"],
+                         "daemon_json": '{"iptables": true, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
+  {%- endif %}
+  {%- include "docker-ce/docker-ce.sls" with context %}
 
 postfix_stop_and_disable:
   service.dead:

@@ -36,15 +36,6 @@ vrrp_script:
     - contents: {{ pillar['keepalived']['vrrp_script']['contents'] | yaml_encode }}
 {% endif %}
 
-{% if pillar['keepalived']['notify'] is defined %}
-notify:
-  file.managed:
-    - name: {{ pillar['keepalived']['notify']['path'] }}
-    - user: 0
-    - group: 0
-    - mode: 700
-    - contents: {{ pillar['keepalived']['notify']['contents'] | yaml_encode }}
-{% endif %}
 {% if pillar['keepalived']['notify_master'] is defined %}
 notify_master:
    - name: {{ pillar['keepalived']['notify_master']['path'] }}
@@ -53,6 +44,7 @@ notify_master:
    - mode: 700
    - contents: {{ pillar['keepalived']['notify_master']['contents'] | yaml_encode }}
 {% endif %}
+
 {% if pillar['keepalived']['notify_backup'] is defined %}
 notify_backup:
   file.managed:
@@ -62,6 +54,7 @@ notify_backup:
     - mode: 700
     - contents: {{ pillar['keepalived']['notify_backup']['contents'] | yaml_encode }}
 {% endif %}
+
 {% if pillar['keepalived']['notify_fault'] is defined %}
 notify_fault:
   file.managed:
