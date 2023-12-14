@@ -138,7 +138,7 @@ nginx_files_1:
 nginx_cert:
   cmd.run:
     - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh authentik {{ pillar["authentik"]["domain"] }}"
+    - name: "/opt/acme/{{ acme }}/home/verify_and_issue.sh authentik {{ pillar["authentik"]["domain"] }}"
 
 authentik_data_dirs:
   file.directory:
