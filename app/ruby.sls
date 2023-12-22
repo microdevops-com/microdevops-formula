@@ -56,11 +56,13 @@ app_ruby_app_rvm_install_ruby_{{ loop.index }}:
     - runas: {{ _app_user }}
     - name: rvm install {{ app["rvm"]["version"] }}
 
+        {% if "update_bundler" not in app["rvm"] or app["rvm"]["update_bundler"] %}
 app_ruby_app_rvm_update_bundler_{{ loop.index }}:
   cmd.run:
     - cwd: {{ consider_user_home }}
     - runas: {{ _app_user }}
     - name: source {{ consider_user_home }}/.rvm/scripts/rvm && rvm use {{ app["rvm"]["version"] }}{{ "@" ~ app["rvm"]["gemset"] if "gemset" in app["rvm"] else "" }} && gem update bundler
+        {% endif %}
 
 app_ruby_app_rvm_bundle_install_{{ loop.index }}:
   cmd.run:

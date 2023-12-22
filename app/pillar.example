@@ -93,6 +93,7 @@ app:
           bundle_install: /var/www/__APP_NAME__/app/src
           #bundle_install_cmd: bundle install --without development test # override default 'bundle install' command
           #gemset: gemset1 # optional, add @gemset1 to some commands, like rvm use {{ app["rvm"]["version"] }}@{{ app["rvm"]["gemset"] }}
+          update_bundler: True # optional, update bundler to latest version, default True
         npm: # optional, install per app user
           install:
             - yarn
