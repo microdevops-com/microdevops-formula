@@ -30,6 +30,10 @@ The states are applied in the following order: recurse, directory, symlink, mana
           # apply: # optional, run arbitrary commands after file creation, commands are run as directory owner user
           #   - ps axu >> /path/to/dir/psaxu
           #   - lsblk >> /path/to/dir/lsblk
+          #   - cmd: /home/user/user.sh
+          #     runas: user
+          #     cwd: /home/user
+             
 
           ## https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.directory
 
@@ -61,6 +65,9 @@ The states are applied in the following order: recurse, directory, symlink, mana
           # apply: # optional, run arbitrary commands after file creation, commands are run as file owner user
           #   - update-grub
           #   - locale-gen
+          #   - cmd: /home/user/user.sh
+          #     runas: user
+          #     cwd: /home/user
 
           ## https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.managed
 
