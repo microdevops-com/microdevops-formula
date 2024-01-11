@@ -119,11 +119,21 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
     - defaults: {{ item.get("values",{}) }}
       {% endif %}
       {%- set a_loop = loop %}
-      {%- for cmd in item.get("apply", []) %}
+      {%- for apply in item.get("apply", []) %}
+        {%- if apply is mapping %}
+          {%- set cmd = apply["cmd"] %}
+          {%- set cwd = apply.get("cwd","") %}
+          {%- set runas = apply.get("runas",item.get(*user)) %}
+        {%- else %}
+          {%- set cmd = apply %}
+          {%- set cwd = "" %}
+          {%- set runas = item.get(*user) %}
+        {%- endif %}
 file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
     - name: {{ cmd.replace(*replace) }}
-    - runas: {{ item.get(*user) }}
+    - runas: {{ runas }}
+    - cwd: {{ cwd.replace(*replace) }}
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}
