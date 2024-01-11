@@ -7,6 +7,22 @@
         {%- set _app_nginx_access_log = app["nginx"]["log"]["access_log"]|replace("__APP_NAME__", app_name) %}
         {%- set _app_nginx_error_log = app["nginx"]["log"]["error_log"]|replace("__APP_NAME__", app_name) %}
 
+app_{{ app_type }}_nginx_sites_available_dir_{{ loop_index }}:
+  file.directory:
+    - name: {{ _nginx_sites_available_dir }}
+    - user: root
+    - group: root
+    - mode: 755
+    - makedirs: True
+
+app_{{ app_type }}_nginx_sites_enabled_dir_{{ loop_index }}:
+  file.directory:
+    - name: {{ _nginx_sites_enabled_dir }}
+    - user: root
+    - group: root
+    - mode: 755
+    - makedirs: True
+
         {%- if "auth_basic" in app["nginx"] and "auth" in app["nginx"]["auth_basic"] %}
 app_{{ app_type }}_nginx_apache_utils_{{ loop_index }}:
   pkg.installed:
