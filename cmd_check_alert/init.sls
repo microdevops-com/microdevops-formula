@@ -153,6 +153,69 @@ sensu-plugins_fix_ffi_gem:
       {% endif %}
     - shell: /bin/bash
 
+# The same with domain_name gem
+sensu-plugins_fix_domain_name_gem:
+  cmd.run:
+      {% if grains["osarch"] in ["arm64"] %}
+    - name: |
+        source /usr/local/rvm/scripts/rvm
+        if /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem list | grep '^domain_name ' | grep '0.5.20190701'; then
+          echo domain_name 0.5.20190701 gem is already installed
+        else
+          /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install domain_name -v 0.5.20190701
+        fi
+      {% else %}
+    - name: |
+        if /opt/sensu-plugins-ruby/embedded/bin/gem list | grep '^domain_name ' | grep '0.5.20190701'; then
+          echo domain_name 0.5.20190701 gem is already installed
+        else
+          /opt/sensu-plugins-ruby/embedded/bin/gem install domain_name -v 0.5.20190701
+        fi
+      {% endif %}
+    - shell: /bin/bash
+
+# The same with aws-eventstream gem
+sensu-plugins_fix_aws-eventstream_gem:
+  cmd.run:
+      {% if grains["osarch"] in ["arm64"] %}
+    - name: |
+        source /usr/local/rvm/scripts/rvm
+        if /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem list | grep '^aws-eventstream ' | grep '1.2.0'; then
+          echo aws-eventstream 1.2.0 gem is already installed
+        else
+          /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install aws-eventstream -v 1.2.0
+        fi
+      {% else %}
+    - name: |
+        if /opt/sensu-plugins-ruby/embedded/bin/gem list | grep '^aws-eventstream ' | grep '1.2.0'; then
+          echo aws-eventstream 1.2.0 gem is already installed
+        else
+          /opt/sensu-plugins-ruby/embedded/bin/gem install aws-eventstream -v 1.2.0
+        fi
+      {% endif %}
+    - shell: /bin/bash
+
+# The same with aws-sigv4 gem
+sensu-plugins_fix_aws-sigv4_gem:
+  cmd.run:
+      {% if grains["osarch"] in ["arm64"] %}
+    - name: |
+        source /usr/local/rvm/scripts/rvm
+        if /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem list | grep '^aws-sigv4 ' | grep '1.6.0'; then
+          echo aws-sigv4 1.6.0 gem is already installed
+        else
+          /usr/local/rvm/gems/ruby-2.4.0/wrappers/gem install aws-sigv4 -v 1.6.0
+        fi
+      {% else %}
+    - name: |
+        if /opt/sensu-plugins-ruby/embedded/bin/gem list | grep '^aws-sigv4 ' | grep '1.6.0'; then
+          echo aws-sigv4 1.6.0 gem is already installed
+        else
+          /opt/sensu-plugins-ruby/embedded/bin/gem install aws-sigv4 -v 1.6.0
+        fi
+      {% endif %}
+    - shell: /bin/bash
+
       {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
