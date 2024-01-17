@@ -559,7 +559,7 @@ nextcloud_container_install_libmagickcore_{{ loop.index }}:
 
 nextcloud_container_install_php_bz2_{{ loop.index }}:
   cmd.run:
-    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install -y libbz2-dev && docker-php-ext-install bz2'
+    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install -y libbz2-dev && docker-php-ext-install bz2' && docker restart nextcloud-{{ domain["name"] }}
 
 nextcloud_config_default_phone_region_{{ loop.index }}:
   cmd.run:
