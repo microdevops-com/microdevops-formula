@@ -139,7 +139,7 @@ create /etc/nginx/sites-available/{{ domain["name"] }}.conf:
             # only for Nextcloud like below:
             include mime.types;
             types {
-                text/javascript js mjs;
+                text/javascript mjs;
             }
 
             # Specify how to handle directories -- specifying `/index.php$request_uri`
@@ -378,7 +378,7 @@ nginx_files_1:
                 # only for Nextcloud like below:
                 include mime.types;
                 types {
-                    text/javascript js mjs;
+                    text/javascript mjs;
                 }
 
                 # Specify how to handle directories -- specifying `/index.php$request_uri`
