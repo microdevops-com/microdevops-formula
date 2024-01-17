@@ -32,7 +32,7 @@ create nginx.conf:
           keepalive_timeout 65;
           types_hash_max_size 2048;
           server_names_hash_bucket_size 64;
-          include /etc/nginx/mime.types;
+          #include /etc/nginx/mime.types;
           default_type application/octet-stream;
           ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
           ssl_prefer_server_ciphers on;
@@ -51,6 +51,7 @@ create /etc/nginx/sites-available/{{ domain["name"] }}.conf:
           default upgrade;
           ''      close;
         }
+        # Set the `immutable` cache control options only for assets with a cache busting `v` argument
         map $arg_v $asset_immutable {
             "" "";
             default "immutable";
@@ -104,7 +105,7 @@ create /etc/nginx/sites-available/{{ domain["name"] }}.conf:
             gzip_comp_level 4;
             gzip_min_length 256;
             gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
-            gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+            gzip_types application/atom+xml text/javascript application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/wasm application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
 
             # Pagespeed is not supported by Nextcloud, so if your server is built
             # with the `ngx_pagespeed` module, uncomment this line to disable it.
@@ -180,8 +181,8 @@ create /etc/nginx/sites-available/{{ domain["name"] }}.conf:
             #     Further information can be found in the documentation."
             #    "Your web server is not properly set up to resolve "/.well-known/nodeinfo".
             #     Further information can be found in the documentation."
-            rewrite ^/.well-known/webfinger /index.php$uri redirect;
-            rewrite ^/.well-known/nodeinfo  /index.php$uri redirect;
+            #rewrite ^/.well-known/webfinger /index.php$uri redirect;
+            #rewrite ^/.well-known/nodeinfo  /index.php$uri redirect;
 
 
             # Make a regex exception for `/.well-known` so that clients can still
@@ -284,7 +285,7 @@ nginx_files_1:
         }
 
         http {
-            include /etc/nginx/mime.types;
+            #include /etc/nginx/mime.types;
             default_type application/octet-stream;
             sendfile on;
             keepalive_timeout 65;
@@ -292,6 +293,7 @@ nginx_files_1:
               default upgrade;
               ''      close;
             }
+            # Set the `immutable` cache control options only for assets with a cache busting `v` argument
             map $arg_v $asset_immutable {
                 "" "";
                 default "immutable";
@@ -301,7 +303,7 @@ nginx_files_1:
 
                 # Prevent nginx HTTP Server Detection
                 server_tokens off;
-                
+
                 return 301 https://$host$request_uri;
             }
     {%- for domain in pillar["nextcloud"]["domains"] %}
@@ -342,7 +344,7 @@ nginx_files_1:
                 gzip_comp_level 4;
                 gzip_min_length 256;
                 gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
-                gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+                gzip_types application/atom+xml text/javascript application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/wasm application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
 
                 # Pagespeed is not supported by Nextcloud, so if your server is built
                 # with the `ngx_pagespeed` module, uncomment this line to disable it.
@@ -418,8 +420,8 @@ nginx_files_1:
                 #     Further information can be found in the documentation."
                 #    "Your web server is not properly set up to resolve "/.well-known/nodeinfo".
                 #     Further information can be found in the documentation."
-                rewrite ^/.well-known/webfinger /index.php$uri redirect;
-                rewrite ^/.well-known/nodeinfo  /index.php$uri redirect;
+                #rewrite ^/.well-known/webfinger /index.php$uri redirect;
+                #rewrite ^/.well-known/nodeinfo  /index.php$uri redirect;
 
 
                 # Make a regex exception for `/.well-known` so that clients can still
@@ -550,9 +552,14 @@ nextcloud_php-fpm_set_pm.max_children_{{ loop.index }}:
   cmd.run:
     - name: docker exec nextcloud-{{ domain["name"] }} bash -c "sed -Ei  's/^ *pm\.max_children\ =.*$/pm.max_children = {{ domain["php_fpm"]["pm.max_children"] }}/g' /usr/local/etc/php-fpm.d/www.conf"
     {% endif %}
+
 nextcloud_container_install_libmagickcore_{{ loop.index }}:
   cmd.run:
     - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install libmagickcore-6.q16-6-extra iproute2 -y'
+
+nextcloud_container_install_php_bz2_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install -y libbz2-dev && docker-php-ext-install bz2'
 
 nextcloud_config_default_phone_region_{{ loop.index }}:
   cmd.run:
@@ -560,11 +567,11 @@ nextcloud_config_default_phone_region_{{ loop.index }}:
 
 nextcloud_config_overwrite_cli_url_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php /var/www/html/occ --no-warnings config:system:set overwrite.cli.url --value="{{ domain["overwrite_cli_url"] }}"'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set overwrite.cli.url --value="{{ domain["overwrite_cli_url"] }}"'
 
 nextcloud_missing_indexes_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php /var/www/html/occ db:add-missing-indices'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ db:add-missing-indices'
 
 nextcloud_cron_{{ loop.index }}:
   cron.present:
