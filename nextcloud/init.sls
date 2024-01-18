@@ -593,19 +593,19 @@ nextcloud_config_onlyoffice_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install onlyoffice || true'
 
-nextcloud_config_onlyoffice_1_{{ loop.index }}:
+nextcloud_config_onlyoffice_2_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable onlyoffice --force || true'
 
-nextcloud_config_onlyoffice_2_{{ loop.index }}:
+nextcloud_config_onlyoffice_3_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value={{ domain["onlyoffice"]["DocumentServerUrl"] }}'
 
-nextcloud_config_onlyoffice_3_{{ loop.index }}:
+nextcloud_config_onlyoffice_4_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value={{ domain["onlyoffice"]["DocumentServerInternalUrl"] }}'
 
-nextcloud_config_onlyoffice_4_{{ loop.index }}:
+nextcloud_config_onlyoffice_5_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice"]["StorageUrl"] }}'
 
