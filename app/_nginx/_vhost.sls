@@ -51,10 +51,11 @@ app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}_{{ loop2_index }}_{{ id|d
         ssl_key: {{ ssl.get("key","") | replace("__APP_NAME__", app_name) }}
         ssl_chain: {{ ssl.get("chain","") | replace("__APP_NAME__", app_name) }}
         auth_basic_block: '{{ auth_basic_block }}'
-          {%- if "vhost_defaults" in app["nginx"] %}
-            {%- for def_key, def_val in app["nginx"]["vhost_defaults"].items() %}
+          {%- for def_key, def_val in app["nginx"].get("vhost_defaults",{}).items() %}
         {{ def_key }}: {{ def_val|replace("__APP_NAME__", app_name)|yaml_encode }}
-            {%- endfor %}
-          {%- endif %}
+          {%- endfor %}
+          {%- for def_key, def_val in app["nginx"].get("vhost_defaults_raw",{}).items() %}
+        {{ def_key }}: {{ def_val }}
+          {%- endfor %}
         {%- endif %}
 {%- endif %}
