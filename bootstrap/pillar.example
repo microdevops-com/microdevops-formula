@@ -66,4 +66,5 @@ bootstrap:
           source: salt://bootstrap/files/grub/focal_memory_swap
           mode: 0644
           apply:
-            - update-grub
+            - cmd: update-grub
+              only: onchanges
