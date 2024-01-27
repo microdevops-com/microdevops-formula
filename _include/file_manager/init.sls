@@ -154,6 +154,41 @@ file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{
 {% endwith %}
 
 
+{# This is the generic structure for the other states from salt.state.file #}
+{%- for k in ["recurse", "directory", "symlink", "managed"] %}
+  {%- if k in files.keys() %}
+    {%- do files.pop(k) %}
+  {%- endif %}
+{%- endfor%}
+
+{% with %}
+  {%- for kind, content in files.items() if kind not in ["absent"] %}
+    {%- with %}
+
+    {%- for blockname, items in content.items() %}
+      {%- for item in items %}
+file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
+  file.{{ kind }}:
+        {%- if "user" in item.keys() %}
+    - user: {{ item["user"].replace(*user) }}
+        {%- do item.pop("user")%}
+        {%- endif %}
+        {%- if "group" in item.keys() %}
+    - group: {{ item["group"].replace(*group) }}
+        {%- do item.pop("group")%}
+        {%- endif %}
+        {% for key, value in item.items() %}
+          {% set value = value | tojson | replace(*replace) | load_json %}
+    - {{ key }}: {{ value | yaml_encode }}
+        {%- endfor %}
+      {%- endfor %}
+    {%- endfor %}
+
+    {%- endwith %}
+  {%- endfor %}
+{% endwith %}
+
+
 {% with %}
   {%- set kind = "absent" %}
   {%- for blockname, items in files.get(kind, {}).items() %}
