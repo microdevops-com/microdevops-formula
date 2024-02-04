@@ -59,7 +59,7 @@ server {
         proxy_set_header Host $http_host;
         proxy_set_header Upgrade websocket;
         proxy_set_header Connection Upgrade;
-        proxy_pass http://127.0.0.1:{{ loki_data["config"]["server"]["http_listen_port"] }};
+        proxy_pass http://127.0.0.1:{{ loki_data["config"]["server"]["http_listen_port"] }}/;
     }
 }
 {% endfor %}
