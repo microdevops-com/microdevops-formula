@@ -168,4 +168,11 @@ lxd_profile_config_set_{{ a_loop.index }}_{{ loop.index }}:
 
     {%- endfor %}
   {%- endif %}
+
+# As we are migrating to incus, disable lxd snap auto update
+lxd_snap_hold:
+  cmd.run:
+    - prepend_path: /snap/bin
+    - name: snap refresh --hold=forever lxd
+
 {% endif %}
