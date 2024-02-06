@@ -1,6 +1,8 @@
 # file manager
 The file manager state, pillar data example is listed below.  
-The states are applied in the following order: recurse, directory, symlink, managed, absent.  
+The states are applied in the following order: recurse, directory, symlink, managed, [others], absent.  
+
+[others]: The state can potentially handle the other items from [salt.states.file](https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html)
 
 ```yaml
   files:
@@ -33,6 +35,8 @@ The states are applied in the following order: recurse, directory, symlink, mana
           #   - cmd: /home/user/user.sh
           #     runas: user
           #     cwd: /home/user
+          #     only: onchanges # run command only if related directory is modified/created
+                                # `only` can be one of the https://docs.saltproject.io/en/latest/ref/states/requisites.html#requisites-types
              
 
           ## https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.directory
@@ -68,8 +72,17 @@ The states are applied in the following order: recurse, directory, symlink, mana
           #   - cmd: /home/user/user.sh
           #     runas: user
           #     cwd: /home/user
+          #     only: onchanges # run command only if related file is modified/created
+                                # `only` can be one of the https://docs.saltproject.io/en/latest/ref/states/requisites.html#requisites-types
 
           ## https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html#salt.states.file.managed
+
+    ## [others]
+    blockreplace|missing|exists|line|uncomment|etc.:
+      group_name_1:
+        - param: value
+
+          ## https://docs.saltproject.io/en/latest/ref/states/all/salt.states.file.html
 
     absent:
       absent_group_name_1:

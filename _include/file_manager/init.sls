@@ -67,11 +67,23 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
     - force: {{ item.get("force","") }}
     - clean: {{ item.get("clean","") }}
       {%- set a_loop = loop %}
-      {%- for cmd in item.get("apply", []) %}
+      {%- for apply in item.get("apply", []) %}
+        {%- if apply is not mapping %}
+          {%- set apply = {"cmd": apply} %}
+        {%- endif %}
+        {%- set cmd = apply["cmd"] %}
+        {%- set cwd = apply.get("cwd","") %}
+        {%- set runas = apply.get("runas",item.get(*user)) %}
+        {%- set only = apply.get("only","always") %}
 file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
     - name: {{ cmd.replace(*replace) }}
-    - runas: {{ item.get(*user) }}
+    - runas: {{ runas }}
+    - cwd: {{ cwd.replace(*replace) }}
+        {%- if only != "always" %}
+    - {{ only }}:
+      - file: {{ item["name"].replace(*replace) }}
+        {%- endif %}
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}
@@ -120,22 +132,59 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
       {% endif %}
       {%- set a_loop = loop %}
       {%- for apply in item.get("apply", []) %}
-        {%- if apply is mapping %}
-          {%- set cmd = apply["cmd"] %}
-          {%- set cwd = apply.get("cwd","") %}
-          {%- set runas = apply.get("runas",item.get(*user)) %}
-        {%- else %}
-          {%- set cmd = apply %}
-          {%- set cwd = "" %}
-          {%- set runas = item.get(*user) %}
+        {%- if apply is not mapping %}
+          {%- set apply = {"cmd": apply} %}
         {%- endif %}
+        {%- set cmd = apply["cmd"] %}
+        {%- set cwd = apply.get("cwd","") %}
+        {%- set runas = apply.get("runas",item.get(*user)) %}
+        {%- set only = apply.get("only","always") %}
 file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
     - name: {{ cmd.replace(*replace) }}
     - runas: {{ runas }}
     - cwd: {{ cwd.replace(*replace) }}
+        {%- if only != "always" %}
+    - {{ only }}:
+      - file: {{ item["name"].replace(*replace) }}
+        {%- endif %}
       {%- endfor %}
     {%- endfor %}
+  {%- endfor %}
+{% endwith %}
+
+
+{# This is the generic structure for the other states from salt.state.file #}
+{%- for k in ["recurse", "directory", "symlink", "managed"] %}
+  {%- if k in files.keys() %}
+    {%- do files.pop(k) %}
+  {%- endif %}
+{%- endfor%}
+
+{% with %}
+  {%- for kind, content in files.items() if kind not in ["absent"] %}
+    {%- with %}
+
+    {%- for blockname, items in content.items() %}
+      {%- for item in items %}
+file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
+  file.{{ kind }}:
+        {%- if "user" in item.keys() %}
+    - user: {{ item["user"].replace(*user) }}
+        {%- do item.pop("user")%}
+        {%- endif %}
+        {%- if "group" in item.keys() %}
+    - group: {{ item["group"].replace(*group) }}
+        {%- do item.pop("group")%}
+        {%- endif %}
+        {% for key, value in item.items() %}
+          {% set value = value | tojson | replace(*replace) | load_json %}
+    - {{ key }}: {{ value | yaml_encode }}
+        {%- endfor %}
+      {%- endfor %}
+    {%- endfor %}
+
+    {%- endwith %}
   {%- endfor %}
 {% endwith %}
 

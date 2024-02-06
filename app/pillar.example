@@ -222,6 +222,8 @@ app:
             php_version: 7.4 # e.g. for php-fpm apps
             key1: value1
             key2: value2
+          vhost_defaults_raw: # optional, can pass arbitrary complex data like dicts, lists
+            ips: ["1.1.1.1", "1.0.0.1"]
           root: /var/www/__APP_NAME__/app/src/public
           redirects: # optional
             - domain: www.example.com

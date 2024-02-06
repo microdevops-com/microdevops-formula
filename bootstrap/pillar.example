@@ -1,17 +1,22 @@
 bootstrap:
-  pkg:
-    installed:
-      pkgs:
-        <package name>: <version or "any" or "latest">
-        libhiredis-dev: 0.14.1-2
-        libmysqlclient-dev: any
-        libssl-dev: latest
-      sources:
-        <package name>:  <source>
-        nnn: https://ubuntu.pkgs.org/22.04/ubuntu-universe-amd64/nnn_4.3-1_amd64.deb.html
-        foo: salt://files/foo.deb
-        baz: ftp://someothersite.org/baz.deb
-        qux: /minion/path/to/qux.deb
+  service:
+    running:
+      sshd:
+        - enable: True
+      systemd-timesyncd:
+        - enable: True
+    dead:
+      systemd-resolved:
+        - enable: False
+  pkgs:
+    <package name>: <version or "any" or "latest" or "source">
+    libhiredis-dev: 0.14.1-2
+    libmysqlclient-dev: any
+    libssl-dev: latest
+    nnn: https://ubuntu.pkgs.org/22.04/ubuntu-universe-amd64/nnn_4.3-1_amd64.deb.html
+    foo: salt://files/foo.deb
+    baz: ftp://someothersite.org/baz.deb
+    qux: /minion/path/to/qux.deb
 
   files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
     managed: # recurse|directory|symlink|managed|absent
@@ -66,4 +71,5 @@ bootstrap:
           source: salt://bootstrap/files/grub/focal_memory_swap
           mode: 0644
           apply:
-            - update-grub
+            - cmd: update-grub
+              only: onchanges
