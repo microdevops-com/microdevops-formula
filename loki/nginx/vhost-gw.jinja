@@ -122,18 +122,13 @@ server {
   ssl_certificate_key {{ server["ssl_key"] }};
   {%- endif %}
   
-  {%- if "auth_basic" in loki_data["nginx"] %}
-  auth_basic "Administrator’s Area";
-  auth_basic_user_file {{ "/etc/nginx/htpasswd_" ~ loki_name }};
-  {%- endif %}
-
   proxy_connect_timeout       {{ loki_data["nginx"].get("timeout", 300) }};
   proxy_send_timeout          {{ loki_data["nginx"].get("timeout", 300) }};
   proxy_read_timeout          {{ loki_data["nginx"].get("timeout", 300) }};
   send_timeout                {{ loki_data["nginx"].get("timeout", 300) }};
 
   location / {
-      proxy_pass       http://{{ loki_name }}-write$request_uri;
+      proxy_pass       http://{{ loki_name }}-read$request_uri;
   }
 }
 {% endfor %}

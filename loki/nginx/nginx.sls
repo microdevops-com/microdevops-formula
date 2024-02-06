@@ -15,6 +15,7 @@ loki_{{ loki_name }}_basic_auth_{{ auth["username"] }}:
     - name: {{ auth["username"] }}
     - password: {{ auth["password"] }}
     - htpasswd_file: {{ "/etc/nginx/htpasswd_" ~ loki_name }}
+    - force: true
   {%- endfor %}
 
 
