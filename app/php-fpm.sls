@@ -63,7 +63,7 @@ app_php-fpm_app_pool_config_{{ loop.index }}:
         group: {{ _app_group }}
         php_version: {{ app["pool"]["php_version"] }}
         error_log: {{ _pool_log_file }}
-        config: {{ app["pool"]["config"] | yaml_encode }}
+        config: {{ app["pool"]["config"] | replace("__APP_NAME__", app_name) | yaml_encode }}
       {%- endif %}
 
 app_php-fpm_app_log_dir_{{ loop.index }}:
