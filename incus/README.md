@@ -14,6 +14,16 @@
 
 - `state.apply incus.settings` - to initialize Incus and apply settings, update images and profiles
 
+- Apply only specific instances
+```
+... state.apply incus.instances pillar='{incus: {only: {"instance1.example.com"}}}'
+```
+
+- The same with allowance stop and start for changes to apply
+```
+... state.apply incus.instances pillar='{incus: {only: {"instance1.example.com"}, allow_stop_start: True}}'
+```
+
 # Notes on Windows
 
 - If you delete VM and try to create the same, it may fail on "invalid main GPT header".
@@ -76,9 +86,4 @@ e2fsck -f  /dev/mapper/vg_md2-virtual--machines_...block2
 resize2fs /dev/mapper/vg_md2-virtual--machines_...block2
 kpartx -d /dev/vg_md2/virtual-machines_test.block
 incus start ...
-
-# apply only specific instances
-... state.apply incus.instances pillar='{incus: {only: {"instance1.example.com"}}}'
-# and allow stop and start for changes to apply
-... state.apply incus.instances pillar='{incus: {only: {"instance1.example.com"}, allow_stop_start: True}}'
 ```
