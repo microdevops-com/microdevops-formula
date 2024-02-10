@@ -1,0 +1,124 @@
+# vi: set ft=yaml:
+
+incus:
+  images: # optional, images to predownload on server, no images are preloaded by default
+    ubuntu/focal/amd64: # alias
+      source: images:ubuntu/focal/amd64
+    ubuntu/focal/amd64/vm:
+      source: images:ubuntu/focal/amd64
+      vm: True
+    ubuntu/jammy/amd64: # alias
+      source: images:ubuntu/jammy/amd64
+    ubuntu/jammy/amd64/vm:
+      source: images:ubuntu/jammy/amd64
+      vm: True
+  profiles:
+    br0:
+      devices:
+        eth0:
+          type: nic
+          nictype: bridged
+          parent: br0
+    br1:
+      devices:
+        eth1:
+          type: nic
+          nictype: bridged
+          parent: br1
+    #test: # profile config example
+    #  config:
+    #    some_key: some_value
+  instances:
+    # actual incus names are dots to dashes converted
+    instance1.example.com: # with eth0 with mac and eth1 in br1
+      # vm: True # add --vm to incus init
+      image: ubuntu/focal/amd64 # empty or remove for empty image and install from iso
+      #image: ubuntu/focal/amd64/vm # use alias of vm image for virtual machines
+      #init_flags: --empty -c security.secureboot=false # for Windows install from iso
+      #init_flags: --empty # Windows 11 requires secureboot
+      #skip_wait_exec_true: True # do not wait for successful exec of /bin/true for windows install from iso
+      devices:
+        root:
+          type: disk
+          path: /
+          pool: vg_md3
+          size: 10GB
+        eth0: # network with mac should be added as device, not profile. enp5s0, enp6s0 etc device names are used inside vms
+          type: nic
+          nictype: bridged
+          parent: br0
+          hwaddr: aa:aa:aa:aa:aa:aa
+        #tpm: # needed for windows 11
+        #  type: tpm
+        #iso1:
+        #  type: disk
+        #  source: /media/disk/ISO/Windows-distrobuilder.iso
+        #  boot.priority: 10
+        #iso2: # this is not needed for Windows install, but may be needed after install to install the rest of drivers
+        #  type: disk
+        #  source: /media/disk/ISO/virtio-win-0.1.215.iso
+      #config: # optional config values to apply https://lxd.readthedocs.io/en/latest/instances/
+      #  limits.cpu: 1
+      #  limits.memory: 1024MB
+      #  limits.memory.swap: False
+      #config: # minimal example for vm
+      #  limits.cpu: 4
+      #  limits.memory: 4GB
+      profiles: # profile list will be applied on each state run
+        - br1
+        - autostart
+        - docker # this profile allows docker inside instance
+        #- privileged
+        #- nfs
+      #profiles: # minimal needed for vm
+      #  - autostart
+      bootstrap:
+        ...
+
+      # boostrap examples, parameters are script specific
+      bootstrap: # focal without fixed mac on eth0
+        - focal_network.sh:
+          - 111.111.111.111
+          - 24
+          - 111.111.111.100
+          - '[8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1]' # '[]' - netplan yaml syntax
+          - '[example.com]'
+        - focal_hostname_and_hosts.sh:
+          - __INSTANCE_NAME__ # special parameter __INSTANCE_NAME__ is replaced with instance name with dots
+          - 111.111.111.111
+      bootstrap: # focal with fixed mac on eth0
+        - focal_network_mac.sh:
+          - 111.111.111.111
+          - 24
+          - 111.111.111.100
+          - '[8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1]'
+          - '[example.com]'
+          - aa:aa:aa:aa:aa:aa
+        - focal_hostname_and_hosts.sh:
+          - __INSTANCE_NAME__
+          - 111.111.111.111
+      bootstrap: # focal without fixed mac on eth0 with eth1
+        - focal_network_two_nets.sh:
+          - 111.111.111.111
+          - 24
+          - 111.111.111.100
+          - '[8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1]'
+          - '[example.com]'
+          - 10.0.10.2
+          - 24
+        - focal_hostname_and_hosts.sh:
+          - __CONTAINER_NAME__
+          - 111.111.111.111
+      bootstrap: # focal with fixed mac on eth0 with eth1
+        - focal_network_two_nets_mac.sh:
+          - 111.111.111.111
+          - 24
+          - 111.111.111.100
+          - '[8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1]'
+          - '[example.com]'
+          - aa:aa:aa:aa:aa:aa
+          - 10.0.10.2
+          - 24
+        - focal_hostname_and_hosts.sh:
+          - __CONTAINER_NAME__
+          - 111.111.111.111
