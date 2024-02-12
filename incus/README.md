@@ -11,6 +11,10 @@
   - Stop containers and VMs manually, sometimes there are issues on stopping them
   - `lxd-to-incus`
   - `incus ls` to check if all containers and VMs are migrated
+  - Remove snapd optionally:
+    - `apt autoremove --purge snapd`
+    - `rm -rf ~/snap /var/cache/snapd/`
+    - `apt-mark hold snapd`
 
 - `state.apply incus.settings` - to initialize Incus and apply settings, update images and profiles
 
