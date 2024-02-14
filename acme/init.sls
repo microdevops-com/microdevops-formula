@@ -5,6 +5,11 @@ acme_dirs:
       - /opt/acme/cert
     - makedirs: True
 
+install_socat:
+  pkg.installed:
+   - names:
+     - socat
+
   {%- for acme_acc, acme_params in pillar["acme"].items() %}
 acme_acc_dirs_{{ loop.index }}:
   file.directory:
