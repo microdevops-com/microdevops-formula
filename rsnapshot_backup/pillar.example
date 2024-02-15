@@ -124,6 +124,8 @@ rsnapshot_backup:
         #mysqlsh_max_rate: 20M # optional, override default IO limit 20 MB
         #mysqlsh_bytes_per_chunk: 100M # optional, override default 100 MB chunk size, dumped tables are splitted to chunks
         #mysqlsh_threads: 2 # optional, override default 2 mysqlsh threads
+        #
+        #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
@@ -143,6 +145,7 @@ rsnapshot_backup:
         #pg_dump_args: # optional, pass additional arguments to pg_dump_args, only for py version
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location, only for py version
+        #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
@@ -159,6 +162,7 @@ rsnapshot_backup:
                                                                                             # if arga for mongo and mongodump are the same, you can use only mongo_args
         #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location, only for py version
         #mongo_secondary_ok: True # optional, False by default, issue "db.getMongo().setSecondaryOk()" before issuing "show dbs"
+        #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
         data: # list dirs or db types here
           - UBUNTU
