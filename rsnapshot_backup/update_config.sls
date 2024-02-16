@@ -241,6 +241,10 @@ rsnapshot_backup_yaml:
           {%- if "ignore_remote_dump_failed" in host_backups_item %}
           ignore_remote_dump_failed: {{ host_backups_item["ignore_remote_dump_failed"] }}
           {%- endif %}
+          #
+          {%- if "dump_attempts" in host_backups_item %}
+          dump_attempts: {{ host_backups_item["dump_attempts"] }}
+          {%- endif %}
           # Per backup host item is higher priority than per backup item
           {%- if "rsnapshot_prefix_cmd" in backup %}
           rsnapshot_prefix_cmd: {{ backup["rsnapshot_prefix_cmd"] }}

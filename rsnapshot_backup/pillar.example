@@ -21,11 +21,11 @@ rsnapshot_backup:
                            # beware - it will be executed for each item in data, so make separate backup item to exec only once
         #before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully
         #retain_hourly: N # optional, hourly rotations disabled by default
-        #retain_daily: N # optional, override default value 7, minimum 2 on first level of backup
-        #retain_weekly: N # optional, override default value 4, minimum 0 on second level of backup and further
-        #retain_monthly: N # optional, override default value 3, minimum 0 on second level of backup and further
+        #retain_daily: N # optional, overrides default value 7, minimum 2 on first level of backup
+        #retain_weekly: N # optional, overrides default value 4, minimum 0 on second level of backup and further
+        #retain_monthly: N # optional, overrides default value 3, minimum 0 on second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
-                    # beware - retries work only on rsnapshot sync command, remote DB dumps are not being retried, it is hard to implement and makes no sense practically
+                    # this retries work only for rsnapshot sync command, remote DB dumps are retried with dump_attempts
         #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call, must include space if prefixing with nice or similar
                                # "ionice -c 3 nice " # to make rssnapshot more gentle with io
         backups: # mandatory
@@ -35,11 +35,11 @@ rsnapshot_backup:
             #connect: 1.2.3.4:873 # optional, native rsync connect with ip or name and port, if not used rsync connects to 873 port by default
             #priority: -1 # optional, priority (order) of this backup in config on the backup server, any signed integer, items are sorted by priority from minus to plus
                           # default priority is 0, if you need some item to be first in backup order, just add priority: -1, for example
-            #before_backup_check: # optional, overrides before_backup_check definition of higher level
-            #retain_hourly: N # optional, overrides retain definition of higher level
-            #retain_daily: N # optional, overrides retain definition of higher level
-            #retain_weekly: N # optional, overrides retain definition of higher level
-            #retain_monthly: N # optional, overrides retain definition of higher level
+            #before_backup_check: # optional, overrides before_backup_check definition of the higher level
+            #retain_hourly: N # optional, overrides retain definition of the higher level
+            #retain_daily: N # optional, overrides retain definition of the higher level
+            #retain_weekly: N # optional, overrides retain definition of the higher level
+            #retain_monthly: N # optional, overrides retain definition of the higher level
             #rsnapshot_prefix_cmd: # optional, overrides prefix definition of higher level
           - host: srv1.example.com # backup from server itself (local backup)
             path: /var/backups/srv1.example.com
@@ -86,7 +86,7 @@ rsnapshot_backup:
             file_type: '(data|executable)'
             files_mask: '123.+_321\..+\.DOC'
         connect_password: secret # mandatory, plain text native rsync auth
-        #native_txt_check: True # optional, check for .backup text file in the root of source
+        #native_txt_check: True # optional, check for .backup text file in the root of the source
                                 # useful if you want to ensure the data is present and not sync empty dir if removable disk gone for example
         #native_10h_limit: True # optional, limit time for the execution of rsync to 10 hours
       - type: MYSQL_SSH # dump mysql over ssh, then rsync dump dir over ssh
@@ -111,21 +111,22 @@ rsnapshot_backup:
         #mysqldump_args: --force | pv --rate-limit 5m # or you can limit the speed of mysqldump using this trick, --force arg is meaningless here, used just to start value not with |
         #mysql_dump_dir: /var/backups/mysql # optional, change default /var/backups/mysql dump dir location, only for py version
         #
-        #mysql_dump_type: xtrabackup # override default native mysqldump type, only for py version
-        #xtrabackup_throttle: 20 # optional, override default IO limit 20 MB
-        #xtrabackup_parallel: 2 # optional, override default --parallel=2
-        #xtrabackup_compress_threads: 2 # optional, override default --compress-threads=2
+        #mysql_dump_type: xtrabackup # overrides default native mysqldump type, only for py version
+        #xtrabackup_throttle: 20 # optional, overrides default IO limit 20 MB
+        #xtrabackup_parallel: 2 # optional, overrides default --parallel=2
+        #xtrabackup_compress_threads: 2 # optional, overrides default --compress-threads=2
         #xtrabackup_args: # optional, pass additional arguments to xtrabackup
         #
-        #mysql_dump_type: mysqlsh # override default native mysqldump type, only for py version
+        #mysql_dump_type: mysqlsh # overrides default native mysqldump type, only for py version
         #mysqlsh_connect_args: --user=root --password=xxx # mandatory for mysqlsh, it cannot use standard my.cnf like files
         #mysqlsh_args: --compatibility=strip_definers # optional, add any additional mysqlsh args, this example compatibility arg is recommended
                                                       # use --excludeTables=db1.table1,db2.table2 to exclude specific tables/views
-        #mysqlsh_max_rate: 20M # optional, override default IO limit 20 MB
-        #mysqlsh_bytes_per_chunk: 100M # optional, override default 100 MB chunk size, dumped tables are splitted to chunks
-        #mysqlsh_threads: 2 # optional, override default 2 mysqlsh threads
+        #mysqlsh_max_rate: 20M # optional, overrides default IO limit 20 MB
+        #mysqlsh_bytes_per_chunk: 100M # optional, overrides default 100 MB chunk size, dumped tables are splitted to chunks
+        #mysqlsh_threads: 2 # optional, overrides default 2 mysqlsh threads
         #
         #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
+        #dump_attempts: 3 # optional, try N times to perform dump, one time by default, combine with ignore_remote_dump_failed: True, otherwise it will not be synced even if it was dumped successfully with retries
       - type: POSTGRESQL_SSH # dump postgresql over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
@@ -146,6 +147,7 @@ rsnapshot_backup:
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location, only for py version
         #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
+        #dump_attempts: 3 # optional, try N times to perform dump, one time by default, combine with ignore_remote_dump_failed: True, otherwise it will not be synced even if it was dumped successfully with retries
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
@@ -163,6 +165,7 @@ rsnapshot_backup:
         #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location, only for py version
         #mongo_secondary_ok: True # optional, False by default, issue "db.getMongo().setSecondaryOk()" before issuing "show dbs"
         #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
+        #dump_attempts: 3 # optional, try N times to perform dump, one time by default, combine with ignore_remote_dump_failed: True, otherwise it will not be synced even if it was dumped successfully with retries
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
         data: # list dirs or db types here
           - UBUNTU
