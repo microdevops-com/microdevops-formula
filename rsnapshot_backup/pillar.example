@@ -146,6 +146,8 @@ rsnapshot_backup:
         #pg_dump_args: # optional, pass additional arguments to pg_dump_args
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location
+        #postgresql_dump_type: directory # optional, overrides default plain format with pipe to gz file dump type
+                                         # recommended with 'pg_dump_args: --jobs=REASONABLE_NUMBER --compress=zstd' if zstd is supported by pg_dump version
         #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
         #dump_attempts: 3 # optional, try N times to perform dump, one time by default, combine with ignore_remote_dump_failed: True, otherwise it will not be synced even if it was dumped successfully with retries
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump dir over ssh
