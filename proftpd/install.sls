@@ -11,6 +11,18 @@ install_proftpd:
       - proftpd-basic
   {%- endif %}
 
+  {%- if grains['os_family'] == "RedHat" %}
+proftpd_user:
+  user.present:
+    - name: proftpd
+    - uid: 111
+    - gid: 99
+    - home: /run/proftpd
+    - shell: /sbin/nologin
+    - require:
+      - pkg: install_proftpd
+  {%- endif %}
+
 ensure_proftpd_config_dir_exists:
   file.directory:
     - name: /etc/proftpd
