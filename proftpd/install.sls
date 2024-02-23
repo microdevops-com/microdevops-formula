@@ -21,6 +21,25 @@ proftpd_user:
     - shell: /sbin/nologin
     - require:
       - pkg: install_proftpd
+
+proftpd_confd_dir:
+  file.directory:
+    - name: /etc/proftpd/conf.d
+    - user: root
+    - group: root
+    - dir_mode: 0755
+    - require:
+      - pkg: install_proftpd
+
+# For RedHat family add line
+# Include /etc/proftpd/conf.d/
+# into /etc/proftpd.conf in the end if it is not already there
+proftpd_conf_include:
+  cmd.run:
+    - name: "grep -qxF 'Include /etc/proftpd/conf.d/' /etc/proftpd.conf || echo 'Include /etc/proftpd/conf.d/' >> /etc/proftpd.conf"
+    - require:
+      - pkg: install_proftpd
+      - file: proftpd_confd_dir
   {%- endif %}
 
 ensure_proftpd_config_dir_exists:
