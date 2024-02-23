@@ -5,7 +5,11 @@ install_proftpd:
     - allow_updates: True
     - refresh: True
     - pkgs:
+  {%- if grains['os_family'] == "RedHat" %}
+      - proftpd
+  {%- else %}
       - proftpd-basic
+  {%- endif %}
 
 ensure_proftpd_config_dir_exists:
   file.directory:
