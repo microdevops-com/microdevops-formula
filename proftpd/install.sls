@@ -114,7 +114,9 @@ create_config_file:
         RequireValidShell off
         Port 21
         AuthUserFile /etc/proftpd/ftpd.users
+        {%- if grains['os_family'] != "RedHat" %}
         AuthOrder mod_auth_file.c
+        {%- endif %}
         PassivePorts 65000 65534
         LoadModule mod_sftp.c
         <IfModule mod_sftp.c>
