@@ -7,6 +7,7 @@ install_proftpd:
     - pkgs:
   {%- if grains['os_family'] == "RedHat" %}
       - proftpd
+      - proftpd-utils
   {%- else %}
       - proftpd-basic
   {%- endif %}
