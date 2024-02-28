@@ -37,7 +37,7 @@ app_{{ app_type }}_acme_run_{{ loop_index }}_{{ loop2_index }}:
   cmd.run:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ app_name }} {{ domain }}"
-  {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_key.key"} %}
+  {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_key.key"} %}
   {%- include "app/_nginx/_vhost.sls" with context %}
 
 # in the case of acme and webroot
@@ -56,7 +56,7 @@ app_{{ app_type }}_acme_run_{{ loop_index }}_{{ loop2_index }}:
     - shell: /bin/bash
     - name: "/opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ app_name }} {{ domain }}"
     {%- set id = 2 %}
-    {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_key.key"} %}
+    {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_key.key"} %}
     {%- include "app/_nginx/_vhost.sls" with context %}
 app_{{ app_type }}_nginx_reload_{{ loop_index }}_{{ loop2_index }}_{{ id }}:
   cmd.run:
