@@ -1,6 +1,9 @@
 {% if pillar["rocketchat"] is defined and pillar["acme"] is defined %}
 {% set acme = pillar['acme'].keys() | first %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+
 nginx_install:
   pkg.installed:
     - pkgs:
@@ -142,10 +145,8 @@ delete /etc/nginx/sites-enabled/default:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["rocketchat"]["domains"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh rocketchat {{ domain["name"] }}"
+
+    {{ verify_and_issue(acme, "rocketchat", domain["name"]) }}
 
 rocketchat_data_subdir_{{ loop.index }}:
   file.directory:

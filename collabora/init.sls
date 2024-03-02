@@ -1,6 +1,8 @@
 {% if pillar["collabora"] is defined and pillar["acme"] is defined %}
 {% set acme = pillar['acme'].keys() | first %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
 nginx_install:
   pkg.installed:
     - pkgs:
@@ -174,10 +176,8 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["collabora"]["domains"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh collabora {{ domain["name"] }}"
+
+    {{ verify_and_issue(acme, "collabora", domain["name"]) }}
 
 collabora_image_{{ loop.index }}:
   cmd.run:

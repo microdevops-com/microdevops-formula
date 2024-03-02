@@ -1,5 +1,7 @@
 {% if pillar["mailcow"] is defined %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["mailcow"]["docker-ce_version"],
                          "daemon_json": '{"iptables": true, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
@@ -134,10 +136,9 @@ haproxy_config:
     {% endif %}
 
     {% if "acme_account" in pillar["mailcow"] %}
-nginx_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["mailcow"]["acme_account"] }}/verify_and_issue.sh mailcow {{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}"
+
+      {{ verify_and_issue(pillar["mailcow"]["acme_account"], "mailcow", pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"]) }}
+
     {% endif %}
   {% endif %}
 

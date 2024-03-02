@@ -1,5 +1,7 @@
 {% if pillar["metabase"] is defined %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["metabase"]["docker-ce_version"], "daemon_json": '{"iptables": false}'} %}
   {%- endif %}
@@ -96,10 +98,8 @@ nginx_files_2:
   {%- for domain in pillar["metabase"]["domains"] %}
 
     {%- if "acme_account" in domain %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ domain["acme_account"] }}/verify_and_issue.sh metabase {{ domain["name"] }}"
+
+      {{ verify_and_issue(domain["acme_account"], "metabase", domain["name"]) }}
 
     {%- endif %}
     

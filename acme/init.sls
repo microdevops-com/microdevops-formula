@@ -71,16 +71,12 @@ acme_verify_and_issue_{{ loop.index }}:
         ACME_LOCAL_DOMAIN="$2"
         printf -v DOMAINS -- " -d %s" "${@:2}"
 
-        if openssl verify -CAfile /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_ca.cer /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; then
-          /opt/acme/{{ acme_acc }}/home/acme_local.sh \
-            --cert-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_cert.cer \
-            --key-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_key.key \
-            --ca-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_ca.cer \
-            --fullchain-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_fullchain.cer \
-            --issue ${DOMAINS}
-        else
-          echo openssl verify OK
-        fi
+        /opt/acme/{{ acme_acc }}/home/acme_local.sh \
+          --cert-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_cert.cer \
+          --key-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_key.key \
+          --ca-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_ca.cer \
+          --fullchain-file /opt/acme/cert/${ACME_LOCAL_APP}_${ACME_LOCAL_DOMAIN}_fullchain.cer \
+          --issue ${DOMAINS}
 
 symlink for backwards compatibility {{ loop.index }}:
   file.symlink:

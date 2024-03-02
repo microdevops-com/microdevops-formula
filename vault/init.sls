@@ -1,4 +1,8 @@
 {% if pillar["vault"] is defined %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+
 vault_install_1:
   pkgrepo.managed:
     - humanname: HashiCorp Vault Repository
@@ -20,10 +24,8 @@ vault_autocomplete_install:
 
   {% if pillar['acme'] is defined and pillar["vault"]["acme"] is defined and pillar["vault"]["acme"]["enable"] | default(false) and  pillar["vault"]["acme"]["domain"] is defined %}
   {% set acme_account = pillar['acme'].keys() | first %} 
-vault_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme_account }}/verify_and_issue.sh vault {{ pillar["vault"]["acme"]["domain"] }} || true"
+
+    {{ verify_and_issue(acme_account, "vault", pillar["vault"]["acme"]["domain"]) }}
 
 cert_permissions:
   cmd.run:

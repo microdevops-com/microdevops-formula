@@ -1,5 +1,7 @@
 {% if pillar["snipe-it"] is defined %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["snipe-it"]["docker-ce_version"],
                          "daemon_json": '{ "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
@@ -59,10 +61,8 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["snipe-it"]["domains"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ domain["acme_account"] }}/verify_and_issue.sh snipe-it {{ domain["name"] }}"
+
+    {{ verify_and_issue(domain["acme_account"], "snipe-it", domain["name"]) }}
 
 snipe-it_data_dir_{{ loop.index }}:
   file.directory:

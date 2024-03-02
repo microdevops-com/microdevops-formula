@@ -1,4 +1,6 @@
 
+{% from "acme/macros.jinja" import verify_and_issue %}
+
 {%- set cert_prefix = "loki-gateway" if loki_data["nginx"].get("gateway", False) else "loki" %}
 {%- set template = "vhost-gw.jinja" if loki_data["nginx"].get("gateway", False) else "vhost.jinja" %}
 
@@ -20,10 +22,9 @@ loki_{{ loki_name }}_basic_auth_{{ auth["username"] }}:
 
 
   {% for server in loki_data["nginx"]["servers"] if "acme_account" in server.keys() %}
-loki_{{ loki_name }}_acme_cert_{{ server["names"][0] }}_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ server["acme_account"] }}/verify_and_issue.sh {{ cert_prefix }} {{ " ".join(server["names"]) }}"
+
+    {{ verify_and_issue(server["acme_account"], cert_prefix, server["names"]) }}
+
   {%- endfor %}
 
   {% if loki_data["nginx"].get("separate_config", True) %}

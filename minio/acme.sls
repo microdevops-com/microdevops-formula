@@ -40,6 +40,10 @@ run_/opt/acme/home/{{ acme }}/verify_and_issue_for_minio.sh:
   cmd.run:
     - name: /opt/acme/home/{{ acme }}/verify_and_issue_for_minio.sh
     - shell: /bin/bash
+    - success_stdout:
+       - Domains not changed.
+       - Skip, Next renewal time is
+       - Add '--force' to force to renew.
 
 {{ homedir }}/.minio/certs/cert.crt:
   file.managed:

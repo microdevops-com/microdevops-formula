@@ -1,5 +1,6 @@
 {% if pillar["atlassian-servicedesk"] is defined %}
-{% from 'atlassian-servicedesk/map.jinja' import servicedesk with context %}
+  {% from "atlassian-servicedesk/map.jinja" import servicedesk with context %}
+  {% from "acme/macros.jinja" import verify_and_issue %}
 
 nginx_install:
   pkg.installed:
@@ -65,18 +66,18 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- if pillar["atlassian-servicedesk"]["acme_configs"] is not defined %}
-nginx_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["atlassian-servicedesk"]["acme_account"] }}/verify_and_issue.sh atlassian-servicedesk {{ pillar["atlassian-servicedesk"]["http_proxyName"] }}"
+
+    {{ verify_and_issue(pillar["atlassian-servicedesk"]["acme_account"], "atlassian-servicedesk", pillar["atlassian-servicedesk"]["http_proxyName"]) }}
+
   {%- else %}
+
     {% for acme_config in pillar["atlassian-servicedesk"]["acme_configs"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme_config["name"] }}/verify_and_issue.sh atlassian-servicedesk {%- for domain in acme_config["domains"] %} {{ domain }} {%- endfor -%}"
+
+      {{ verify_and_issue(acme_config["name"], "atlassian-servicedesk", acme_config["domains"]) }}
+
     {%- endfor%}
   {%- endif %}
+
 nginx_reload:
   cmd.run:
     - runas: root

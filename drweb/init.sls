@@ -1,9 +1,8 @@
 {% if pillar["drweb"] is defined %}
+  
+  {% from "acme/macros.jinja" import verify_and_issue %}
 
-cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["drweb"]["acme_account"] }}/verify_and_issue.sh drweb {{ pillar["drweb"]["servername"] }}"
+  {{ verify_and_issue(pillar["drweb"]["acme_account"], "drweb", pillar["drweb"]["servername"]) }}
 
 drweb_install_00:
   pkgrepo.managed:

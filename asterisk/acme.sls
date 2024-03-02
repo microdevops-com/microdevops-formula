@@ -36,6 +36,10 @@ run_/opt/acme/{{ acme }}/home/verify_and_issue_for_asterisk.sh:
   cmd.run:
     - name: /opt/acme/{{ acme }}/home/verify_and_issue_for_asterisk.sh
     - shell: /bin/bash
+    - success_stdout:
+       - Domains not changed.
+       - Skip, Next renewal time is
+       - Add '--force' to force to renew.
 
 {% endif %}
 {% endif %}
