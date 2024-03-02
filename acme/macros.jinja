@@ -1,3 +1,6 @@
+
+# https://github.com/acmesh-official/acme.sh/wiki/Exit-Codes
+
 {% macro verify_and_issue(acme_account, application, domains) -%}
 
 {% if domains is not string %}
@@ -8,9 +11,6 @@
   cmd.run:
     - shell: /bin/bash
     - name: /opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ application }} {{ domains }}
-    - success_stdout:
-       - Domains not changed.
-       - Skip, Next renewal time is
-       - Add '--force' to force to renew.
+    - success_retcodes: [2]
 
 {%- endmacro %}
