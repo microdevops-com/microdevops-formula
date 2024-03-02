@@ -1,5 +1,8 @@
 {% if pillar["rabbitmq"] is defined %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+
 # Short hostname must be resolved to the same host, otherwise it will fail to start.
 # rabbitmq1 -> other server
 # rabbitmq1.xxx.domain.com -> this server
@@ -56,10 +59,10 @@ rabbit_pkg:
     - reload_modules: True
 
   {% if "rabbitmq_management" in pillar["rabbitmq"].get("plugins", []) and pillar["rabbitmq"]["management_domain"] is defined %}
-rabbit_cert_for_management:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["rabbitmq"]["acme_account"] }}/verify_and_issue.sh rabbitmq {{ pillar["rabbitmq"]["management_domain"] }} {%- if 'subjectAltNames' in pillar['rabbitmq'] %} {{ pillar['rabbitmq']['subjectAltNames'] }} {% endif %}"
+
+    {%- set domains = pillar["rabbitmq"]["management_domain"] ~ " " ~ pillar["rabbitmq"].get("subjectAltNames","") -%}
+
+    {{ verify_and_issue(pillar["rabbitmq"]["acme_account"], "rabbitmq", domains) }}
 
 rabbit_cert_perm_1:
   file.managed:

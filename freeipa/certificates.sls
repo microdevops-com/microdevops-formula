@@ -1,8 +1,8 @@
 {%- if pillar["freeipa"] is defined %}
-verify and issue le certificate:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["freeipa"]["acme_account"] }}/verify_and_issue.sh freeipa {{ pillar["freeipa"]["hostname"] }}"
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+  {{ verify_and_issue(pillar["freeipa"]["acme_account"], "freeipa", pillar["freeipa"]["hostname"]) }}
 
 install wget:
   cmd.run:

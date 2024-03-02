@@ -1,4 +1,7 @@
 {%- if pillar["freeipa"] is defined %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
 hosts_file:
   host.only:
     - name: 127.0.1.1
@@ -12,10 +15,8 @@ freeipa_data_dir:
     - makedirs: True
 
   {%- if 'acme_account' in pillar["freeipa"] %}
-verify and issue le certificate:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["freeipa"]["acme_account"] }}/verify_and_issue.sh freeipa {{ pillar["freeipa"]["hostname"] }}"
+
+    {{ verify_and_issue(pillar["freeipa"]["acme_account"], "freeipa", pillar["freeipa"]["hostname"]) }}
 
 script_for_cert_check_and_install:
   file.managed:

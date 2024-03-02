@@ -1,5 +1,7 @@
 {% if pillar['grafana'] is defined and pillar['grafana'] is not none %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["grafana"]["docker-ce_version"],
                          "daemon_json": '{ "dns": ["1.1.1.1", "8.8.8.8", "8.8.4.4"], "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
@@ -110,18 +112,17 @@ nginx_files_2:
 
   {%- if pillar["grafana"]["acme_configs"] is defined and pillar["grafana"]["acme_account"] is not defined %}
     {% for acme_config in pillar["grafana"]["acme_configs"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/{{ acme_config["name"] }}/home/verify_and_issue.sh grafana {%- for domain in acme_config["domains"] %} {{ domain }} {%- endfor -%}"
+
+      {{ verify_and_issue(acme_config["name"], "grafana", acme_config["domains"]) }}
+
     {%- endfor%}
   {%- endif %}
+
   {%- for domain in pillar['grafana']['domains'] %}
     {%- if pillar["grafana"]["acme_configs"] is not defined and pillar["grafana"]["acme_account"] is defined %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/{{ pillar["grafana"]["acme_account"] }}/home/verify_and_issue.sh grafana {{ domain['name'] }}"
+
+      {{ verify_and_issue(acme_config["name"], "grafana", domain["name"]) }}
+
     {%- endif %}
    
     {%- set i_loop = loop %}

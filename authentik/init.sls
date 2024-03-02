@@ -1,5 +1,8 @@
 {% if pillar["authentik"] is defined and pillar["acme"] is defined and pillar["docker-ce"] is defined %}
-{% set acme = pillar['acme'].keys() | first %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+  {% set acme = pillar["acme"].keys() | first %}
 
 nginx_install:
   pkg.installed:
@@ -135,10 +138,7 @@ nginx_files_1:
         }
   {%- endif %}
 
-nginx_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/{{ acme }}/home/verify_and_issue.sh authentik {{ pillar["authentik"]["domain"] }}"
+  {{ verify_and_issue(acme, "authentik", pillar["authentik"]["domain"]) }}
 
 authentik_data_dirs:
   file.directory:

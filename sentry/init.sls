@@ -1,8 +1,8 @@
 {% if pillar["sentry"] is defined and "version" in pillar["sentry"]  %}
-sentry_acme_run:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["sentry"]["acme_account"] }}/verify_and_issue.sh sentry {{ pillar["sentry"]["acme_domain"] }}"
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+  {{ verify_and_issue(pillar["sentry"]["acme_account"], "sentry", pillar["sentry"]["acme_domain"]) }}
 
 sentry_install_nginx:
   pkg.installed:

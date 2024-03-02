@@ -1,5 +1,7 @@
 {% if pillar['prometheus'] is defined and pillar['prometheus'] is not none %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["prometheus"]["docker-ce_version"],
                          "daemon_json": '{ "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
@@ -126,10 +128,8 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar['prometheus']['domains'] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ domain['acme_account'] }}/verify_and_issue.sh prometheus {{ domain['name'] }} || true"
+
+    {{ verify_and_issue(domain["acme_account"], "prometheus", domain["name"]) }}
 
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}

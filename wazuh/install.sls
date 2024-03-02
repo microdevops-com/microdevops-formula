@@ -1,14 +1,14 @@
 {% if pillar["wazuh"] is defined and pillar["acme"] is defined %}
-{% set acme = pillar['acme'].keys() | first %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+  {% set acme = pillar['acme'].keys() | first %}
 
 vm.max_map_count:
   sysctl.present:
     - value: 262144
 
-acme_cert_verify_and_issue:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh wazuh {{ pillar["wazuh"]["domain"] }}"
+    {{ verify_and_issue(acme, "wazuh", pillar["wazuh"]["domain"]) }}
 
 cert_permission_fix:
   file.managed:

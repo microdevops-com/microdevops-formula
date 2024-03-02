@@ -11,6 +11,9 @@
 # Here are the steps needed to connect google auth: https://docs.gitlab.com/ee/integration/google.html
 
 {% if pillar["gitlab"] is defined %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
 gitlab_repo:
   pkgrepo.managed:
     - humanname: Gitlab Repository
@@ -19,10 +22,8 @@ gitlab_repo:
     - key_url: https://packages.gitlab.com/gitlab/gitlab-{{ pillar["gitlab"]["distribution"] }}/gpgkey
 
   {%- if "acme_account" in pillar["gitlab"] %}
-gitlab_acme_run:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/{{ pillar["gitlab"]["acme_account"] }}/home/verify_and_issue.sh gitlab {{ pillar["gitlab"]["domain"] }}"
+
+    {{ verify_and_issue(pillar["gitlab"]["acme_account"], "gitlab", pillar["gitlab"]["domain"]) }}
 
   {%- else %}
 gitlab_ssl_certificate:
@@ -61,10 +62,8 @@ gitlab_dirs:
 
   {%- if "redirect" in pillar["gitlab"] %}
     {%- if "acme_account" in pillar["gitlab"]["redirect"] %}
-gitlab_redirect_acme_run:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["gitlab"]["redirect"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["redirect"]["domain"] }}"
+
+    {{ verify_and_issue(pillar["gitlab"]["redirect"]["acme_account"], "gitlab", pillar["gitlab"]["redirect"]["domain"]) }}
 
     {%- else %}
 gitlab_redirect_ssl_certificate:
@@ -109,10 +108,8 @@ gitlab_nginx_redirect:
 
   {%- if "mattermost" in pillar["gitlab"] %}
     {%- if "acme_account" in pillar["gitlab"]["mattermost"] %}
-gitlab_mattermost_acme_run:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["gitlab"]["mattermost"]["acme_account"] }}/verify_and_issue.sh gitlab {{ pillar["gitlab"]["mattermost"]["domain"] }}"
+
+      {{ verify_and_issue(pillar["gitlab"]["mattermost"]["acme_account"], "gitlab", pillar["gitlab"]["mattermost"]["domain"]) }}
 
     {%- else %}
 gitlab_mattermost_ssl_certificate:

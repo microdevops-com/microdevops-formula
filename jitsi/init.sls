@@ -1,10 +1,10 @@
 {% if pillar["jitsi"] is defined and pillar["acme"] is defined %}
-{% set acme = pillar['acme'].keys() | first %}
 
-acme_cert_verify_and_issue:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh jitsi {{ pillar["jitsi"]["domain"] }}"
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+  {% set acme = pillar['acme'].keys() | first %}
+
+  {{ verify_and_issue(acme, "jitsi", pillar["jitsi"]["domain"]) }}
 
 jitsi_data_dirs:
   file.directory:

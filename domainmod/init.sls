@@ -1,6 +1,8 @@
 {% if pillar["domainmod"] is defined and pillar["acme"] is defined %}
 {% set acme = pillar['acme'].keys() | first %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
 nginx_install:
   pkg.installed:
     - pkgs:
@@ -123,10 +125,8 @@ delete /etc/nginx/sites-enabled/default:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["domainmod"]["domains"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh domainmod {{ domain["name"] }}"
+
+    {{ verify_and_issue(acme, "domainmod", domain["name"]) }}
 
 domainmod_data_dir_{{ loop.index }}:
   file.directory:

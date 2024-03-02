@@ -1,5 +1,8 @@
 {% if pillar["nextcloud"] is defined and pillar["acme"] is defined %}
-{% set acme = pillar['acme'].keys() | first %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
+  {% set acme = pillar['acme'].keys() | first %}
 
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["nextcloud"]["docker-ce_version"],
@@ -511,10 +514,8 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["nextcloud"]["domains"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh nextcloud {{ domain["name"] }}"
+
+    {{ verify_and_issue(acme, "nextcloud", domain["name"]) }}
 
 nextcloud_data_dir_{{ loop.index }}:
   file.directory:
