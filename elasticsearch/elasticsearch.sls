@@ -1,4 +1,7 @@
 {% if pillar['elasticsearch'] is defined and pillar['elasticsearch'] is not none %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
 set_vm.max_map_count:
   cmd.run:
     - shell: /bin/bash
@@ -73,10 +76,7 @@ elasticsearch_config:
         xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_fullchain.cer
         {{ pillar['elasticsearch']['config'] }}
 
-elasticsearch_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar['elasticsearch']['acme_account'] }}/verify_and_issue.sh elasticsearch {{ grains['id'] }}"
+    {{ verify_and_issue(pillar["elasticsearch"]["acme_account"], "elasticsearch", grains["id"]) }}
 
 elasticsearch_image:
   cmd.run:

@@ -1,4 +1,7 @@
 {% if pillar['haproxy'] is defined and pillar['haproxy'] is not none %}
+  
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
 add_repository:
   pkgrepo.managed:
     - ppa: {{ pillar['haproxy']["ppa"] | default('vbernat/haproxy-2.6') }}
@@ -22,11 +25,9 @@ haproxy_config:
   {% if pillar["acme"] is defined %}
     {% if pillar["haproxy"]["ssl"]["acme_configs"] is defined %}
       {% for acme_config in pillar["haproxy"]["ssl"]["acme_configs"] %}
-{% set cert_name = acme_config["domains"][0] %}
-haproxy_cert_{{ cert_name }}_gen_1:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme_config["name"] }}/verify_and_issue.sh haproxy {%- for domain in acme_config["domains"] %} {{ domain }} {%- endfor -%}"
+        {% set cert_name = acme_config["domains"][0] %}
+
+        {{ verify_and_issue(acme_config["name"], "haproxy", acme_config["domains"]) }}
 
 create_pem_dir:
   file.directory:
@@ -52,10 +53,8 @@ haproxy restart for pem reload cron:
       {% endfor %}
     {% else %}
 {% set acme = pillar["acme"].keys() | first %}
-haproxy_cert_gen_1:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh haproxy {{ pillar["haproxy"]["ssl"]["domain"] }}"
+
+    {{ verify_and_issue(acme, "haproxy", pillar["haproxy"]["ssl"]["domain"]) }}
 
       {% if  pillar["haproxy"]["ssl"]["pemdir"] is defined %}
 create_pem_dir:

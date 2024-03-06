@@ -1,0 +1,16 @@
+
+# https://github.com/acmesh-official/acme.sh/wiki/Exit-Codes
+
+{% macro verify_and_issue(acme_account, application, domains) -%}
+
+{% if domains is not string %}
+  {% set domains = ' '.join(domains) %}
+{% endif %}
+
+/opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ application }} {{ domains }}:
+  cmd.run:
+    - shell: /bin/bash
+    - name: /opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ application }} {{ domains }}
+    - success_retcodes: [2]
+
+{%- endmacro %}

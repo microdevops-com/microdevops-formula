@@ -1,3 +1,6 @@
+
+{% from "acme/macros.jinja" import verify_and_issue %}
+
 grafana_dirs:
   file.directory:
     - names:
@@ -48,10 +51,7 @@ pmm_server_container:
       {%- endfor %}
     {%- endif %}
 
-acme_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["pmm"]["acme_account"] }}/verify_and_issue.sh percona_pmm {{ pillar["pmm"]["name"] }}"
+    {{ verify_and_issue(pillar["pmm"]["acme_account"], "percona_pmm", pillar["pmm"]["name"]) }}
     
 change_nginx_cert:
   cmd.run:

@@ -6,6 +6,8 @@ This file acts as middleware, whose main role is
   - to render the nginx config file (via _vhost.sls)
 #}
 
+{% from "acme/macros.jinja" import verify_and_issue %}
+
 # we either in the main conf section or in the redirects section
 {%- if redirect is not defined %}
   {%- set acme_account = app["nginx"].get("ssl",{}).get("acme_account", none) %}
@@ -33,11 +35,9 @@ app_{{ app_type }}_nginx_link_sites_enabled_{{ loop_index }}_{{ loop2_index }}:
 # in the case of acme and dns
 {%- elif not "webroot" in acme_account %}
 
-app_{{ app_type }}_acme_run_{{ loop_index }}_{{ loop2_index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ app_name }} {{ domain }}"
-  {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_key.key"} %}
+  {{ verify_and_issue(acme_account, app_name, domain)}}
+
+  {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_key.key"} %}
   {%- include "app/_nginx/_vhost.sls" with context %}
 
 # in the case of acme and webroot
@@ -51,12 +51,11 @@ app_{{ app_type }}_nginx_reload_{{ loop_index }}_{{ loop2_index }}_{{ id }}:
   cmd.run:
     - shell: /bin/bash
     - name: "/usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
-app_{{ app_type }}_acme_run_{{ loop_index }}_{{ loop2_index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ app_name }} {{ domain }}"
+
+    {{ verify_and_issue(acme_account, app_name, domain)}}
+
     {%- set id = 2 %}
-    {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain ~ "_key.key"} %}
+    {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_key.key"} %}
     {%- include "app/_nginx/_vhost.sls" with context %}
 app_{{ app_type }}_nginx_reload_{{ loop_index }}_{{ loop2_index }}_{{ id }}:
   cmd.run:

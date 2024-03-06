@@ -1,5 +1,7 @@
 {% if pillar["alerta"] is defined %}
 
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
   {%- set pyenv_version = "3.7.8" %}
 
 alerta_reqs_install:
@@ -362,24 +364,17 @@ alerta_nginx_absent_default:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
-alerta_acme_run:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["alerta"]["acme_account"] }}/verify_and_issue.sh alerta {{ pillar["alerta"]["domain"] }}"
+  {{ verify_and_issue(pillar["alerta"]["acme_account"], "alerta", pillar["alerta"]["domain"]) }}
 
   {%- if "redirect" in pillar["alerta"] %}
-alerta_acme_redirect_run:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["alerta"]["redirect"]["acme_account"] }}/verify_and_issue.sh alerta {{ pillar["alerta"]["redirect"]["domain"] }}"
+
+    {{ verify_and_issue(pillar["alerta"]["redirect"]["acme_account"], "alerta", pillar["alerta"]["redirect"]["domain"]) }}
 
   {%- endif %}
 
   {%- if "alias" in pillar["alerta"] %}
-alerta_acme_alias_run:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["alerta"]["alias"]["acme_account"] }}/verify_and_issue.sh alerta {{ pillar["alerta"]["alias"]["domain"] }}"
+
+    {{ verify_and_issue(pillar["alerta"]["alias"]["acme_account"], "alerta", pillar["alerta"]["alias"]["domain"]) }}
 
   {%- endif %}
 

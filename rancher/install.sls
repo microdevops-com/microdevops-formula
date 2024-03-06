@@ -1,4 +1,7 @@
 {% if pillar["rancher"] is defined %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
   {%- for rancher_key, rancher_val in pillar["rancher"].items() %}
     {%- if "run" in rancher_val and rancher_val["run"] %}
       {%- if grains["id"] in rancher_val["command_hosts"] %}
@@ -10,10 +13,7 @@ install_cmd_2:
   cmd.run:
     - name: /opt/rancher/clusters/{{ rancher_val["cluster_name"] }}/helm.sh repo update
 
-install_cmd_3:
-  cmd.run:
-    - shell: /bin/bash
-    - name: /opt/acme/home/{{ rancher_val["acme_account"] }}/verify_and_issue.sh rancher {{ rancher_val["cluster_domain"] }}
+  {{ verify_and_issue(rancher_val["acme_account"], "rancher", rancher_val["cluster_domain"]) }}
 
 install_cmd_4:
   cmd.run:

@@ -1,4 +1,7 @@
 {% if pillar["sentry"] is defined and "webhooks" in pillar["sentry"] and "telegram" in pillar["sentry"]["webhooks"]  %}
+
+  {% from "acme/macros.jinja" import verify_and_issue %}
+
 install_nginx:
   pkg.installed:
     - pkgs:
@@ -45,10 +48,7 @@ nginx_files_3:
     - name: /etc/nginx/sites-enabled/{{ pillar["sentry"]["webhooks"]["telegram"]["acme_domain"] }}.conf
     - target: /etc/nginx/sites-available/{{ pillar["sentry"]["webhooks"]["telegram"]["acme_domain"] }}.conf
 
-nginx_cert:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "/opt/acme/home/{{ pillar["sentry"]["webhooks"]["telegram"]["acme_account"] }}/verify_and_issue.sh sentry-telegram-webhook {{ pillar["sentry"]["webhooks"]["telegram"]["acme_domain"] }}"
+    {{ verify_and_issue(pillar["sentry"]["webhooks"]["telegram"]["acme_account"], "sentry-telegram-webhook", pillar["sentry"]["webhooks"]["telegram"]["acme_domain"]) }}
 
 sentry-telegram-webhook_clone_fom_git:
   git.latest:

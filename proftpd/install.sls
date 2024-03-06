@@ -5,7 +5,43 @@ install_proftpd:
     - allow_updates: True
     - refresh: True
     - pkgs:
+  {%- if grains['os_family'] == "RedHat" %}
+      - proftpd
+      - proftpd-utils
+  {%- else %}
       - proftpd-basic
+  {%- endif %}
+
+  {%- if grains['os_family'] == "RedHat" %}
+proftpd_user:
+  user.present:
+    - name: proftpd
+    - uid: 111
+    - gid: 99
+    - home: /run/proftpd
+    - shell: /sbin/nologin
+    - require:
+      - pkg: install_proftpd
+
+proftpd_confd_dir:
+  file.directory:
+    - name: /etc/proftpd/conf.d
+    - user: root
+    - group: root
+    - dir_mode: 0755
+    - require:
+      - pkg: install_proftpd
+
+# For RedHat family add line
+# Include /etc/proftpd/conf.d/
+# into /etc/proftpd.conf in the end if it is not already there
+proftpd_conf_include:
+  cmd.run:
+    - name: "grep -qxF 'Include /etc/proftpd/conf.d/' /etc/proftpd.conf || echo 'Include /etc/proftpd/conf.d/' >> /etc/proftpd.conf"
+    - require:
+      - pkg: install_proftpd
+      - file: proftpd_confd_dir
+  {%- endif %}
 
 ensure_proftpd_config_dir_exists:
   file.directory:
@@ -79,7 +115,9 @@ create_config_file:
         RequireValidShell off
         Port 21
         AuthUserFile /etc/proftpd/ftpd.users
+        {%- if grains['os_family'] != "RedHat" %}
         AuthOrder mod_auth_file.c
+        {%- endif %}
         PassivePorts 65000 65534
         LoadModule mod_sftp.c
         <IfModule mod_sftp.c>
