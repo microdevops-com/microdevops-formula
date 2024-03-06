@@ -118,6 +118,19 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['pagespeed-exporter']['port'] }}/;
                 }
       {%- endif %}
+      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+                location /{{ instance['name'] }}/redis-exporter/ {
+        {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus {{ instance['name'] }}";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+        {%- endif %}
+                    # web route is not even planned for redis-exporter, using nginx sub_filter
+                    sub_filter_once off;
+                    sub_filter 'href="/scrape' 'href="/{{ instance['name'] }}/redis-exporter/scrape';
+                    sub_filter 'href="/metrics' 'href="/{{ instance['name'] }}/redis-exporter/metrics';
+                    proxy_pass http://localhost:{{ instance['redis-exporter']['port'] }}/;
+                }
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
             }
@@ -185,6 +198,26 @@ prometheus_blackbox-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
     - merge_if_exists: False
     - formatter: yaml
     - dataset: {{ instance['blackbox-exporter']['config'] }}
+      {%- endif %}
+
+      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+prometheus_redis-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
+  file.directory:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter
+    - mode: 755
+    - makedirs: True
+
+prometheus_redis-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
+  file.serialize:
+    - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
+    - user: root
+    - group: root
+    - mode: 644
+    - show_changes: True
+    - create: True
+    - merge_if_exists: False
+    - formatter: json
+    - dataset: {{ instance['redis-exporter']['redis_password_file'] }}
       {%- endif %}
 
 prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
@@ -319,6 +352,29 @@ prometheus_pagespeed-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
     - command: -api-key {{ instance['pagespeed-exporter']['apikey'] }}
         {%- endif %}
       {%- endif %}
+
+      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+prometheus_redis-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ instance['redis-exporter']['image'] }}
+
+prometheus_redis-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
+  docker_container.running:
+    - name: redis-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - image: {{ instance['redis-exporter']['image'] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - publish:
+        - 127.0.0.1:{{ instance['redis-exporter']['port'] }}:9121/tcp
+        {%- if 'command' in instance['redis-exporter'] %}
+    - binds:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json:/redis-exporter/redis-password-file.json:rw
+    - command: {{ instance['redis-exporter']['command'] }}
+        {%- endif %}
+      {%- endif %}
+
     {%- endfor %}
   {%- endfor %}
 
@@ -343,6 +399,9 @@ nginx_domain_index_{{ loop.index }}:
       {%- endif %}
       {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
         <a href="{{ instance['name'] }}/pagespeed-exporter/">{{ instance['name'] }}/pagespeed-exporter</a><br>
+      {%- endif %}
+      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+        <a href="{{ instance['name'] }}/redis-exporter/">{{ instance['name'] }}/redis-exporter</a><br>
       {%- endif %}
     {%- endfor %}
   {%- endfor %}
