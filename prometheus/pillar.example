@@ -65,10 +65,10 @@ prometheus:
             enabled: True
             port: 9121
             image: oliver006/redis_exporter:alpine
-            redis_password_file:
+            redis_password_file:   # Optional. if you need to set separate passwords for each server
               'redis://redis1.example.com:6376': REDIS-PASSWORD-XXXXXXX1
               'redis://redis2.example.com:6376': REDIS-PASSWORD-XXXXXXX2
-            command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json --debug
+            command: --debug       # Optional, but parameters  "--redis.addr=" and "--redis.password-file=/redis-exporter/redis-password-file.json"  already seated in formula
           pushgateway: # optionally make https://prometheus.example.com/prod/pushgateway
             enabled: True
             port: 9092
