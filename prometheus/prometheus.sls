@@ -369,23 +369,23 @@ prometheus_redis-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
         - 127.0.0.1:{{ instance['redis-exporter']['port'] }}:9121/tcp
-      {%- if   'redis_password_file' in  instance['redis-exporter']    and 'command' in     instance['redis-exporter'] %}
+        {%- if   'redis_password_file' in  instance['redis-exporter']    and 'command' in     instance['redis-exporter'] %}
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json:/redis-exporter/redis-password-file.json:rw
     - watch:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json {{ instance['redis-exporter']['command'] }}
-        {%- elif 'redis_password_file' not in instance['redis-exporter'] and 'command' in     instance['redis-exporter'] %}
+          {%- elif 'redis_password_file' not in instance['redis-exporter'] and 'command' in     instance['redis-exporter'] %}
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json {{ instance['redis-exporter']['command'] }}
-        {%- elif 'redis_password_file' in     instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
+          {%- elif 'redis_password_file' in     instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json:/redis-exporter/redis-password-file.json:rw
     - watch:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json
-        {%- elif 'redis_password_file' not in  instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
+          {%- elif 'redis_password_file' not in  instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json
-        {%- endif %}
+          {%- endif %}
       {%- endif %}
 
     {%- endfor %}
