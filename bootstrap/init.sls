@@ -4,9 +4,10 @@ include:
 {% elif grains["osfinger"] == "CentOS Linux-7" %}
   - .centos7
 {% endif %}
+  - .root_password_hash
   - .pkgs
   - .files
-  - .root_password_hash
+  - .cron
   - .salt-ssh_cleaner
   - .tz
   - .locale

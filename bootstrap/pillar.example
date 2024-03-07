@@ -38,6 +38,15 @@ bootstrap:
           #  - update-grub
           #  - locale-gen
 
+  cron: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/cron_manager
+    <user>: # user which crontab will be modified 
+      present: # string, can be present, absent, env_present, env_absent
+        <unique id>: # unique id for SALT_CRON_IDENTIFIER
+          name:      # string, required, command to run
+          schedule:  # string, required, cron's scheduling syntax, f.e. '* * * * *' or '@reboot'
+          comment:   # string, optional comment string before SALT_CRON_IDENTIFIER
+          disabled:  # bool, optional, default False, if true, cron command will be prefixed with #DISABLED# 
+
   tz:
     tz: Etc/UTC
     utc: True
@@ -73,3 +82,10 @@ bootstrap:
           apply:
             - cmd: update-grub
               only: onchanges
+
+  cron:
+    root:
+      present:
+        clean_salt_files:
+          name: /usr/bin/find /var/tmp -name '.*_*_salt' -mtime +1 -exec rm -fr {} \;
+          schedule: '26 3 * * *'
