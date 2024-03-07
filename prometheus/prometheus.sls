@@ -206,8 +206,8 @@ prometheus_redis-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter
     - mode: 755
     - makedirs: True
-
-prometheus_redis-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
+        {%- if   'redis_password_file' in  instance['redis-exporter'] %}
+prometheus_redis-exporter_password-file_{{ loop.index }}_{{ i_loop.index }}:
   file.serialize:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
     - user: root
@@ -218,6 +218,7 @@ prometheus_redis-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
     - merge_if_exists: False
     - formatter: json
     - dataset: {{ instance['redis-exporter']['redis_password_file'] }}
+        {%- endif %}
       {%- endif %}
 
 prometheus_config_{{ loop.index }}_{{ i_loop.index }}:
@@ -368,10 +369,22 @@ prometheus_redis-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
         - 127.0.0.1:{{ instance['redis-exporter']['port'] }}:9121/tcp
-        {%- if 'command' in instance['redis-exporter'] %}
+      {%- if   'redis_password_file' in  instance['redis-exporter']    and 'command' in     instance['redis-exporter'] %}
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json:/redis-exporter/redis-password-file.json:rw
-    - command: {{ instance['redis-exporter']['command'] }}
+    - watch:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
+    - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json {{ instance['redis-exporter']['command'] }}
+        {%- elif 'redis_password_file' not in instance['redis-exporter'] and 'command' in     instance['redis-exporter'] %}
+    - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json {{ instance['redis-exporter']['command'] }}
+        {%- elif 'redis_password_file' in     instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
+    - binds:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json:/redis-exporter/redis-password-file.json:rw
+    - watch:
+        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
+    - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json
+        {%- elif 'redis_password_file' not in  instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
+    - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json
         {%- endif %}
       {%- endif %}
 
