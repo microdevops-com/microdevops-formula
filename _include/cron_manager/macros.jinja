@@ -1,0 +1,47 @@
+{%- macro cron_manager(cron={}, prefix="cron_manager") %}
+
+{%- for user, crontab in cron.items() %}
+  {%- for kind, data in crontab.items() %}
+    {%- for id, params in data.items() %}
+
+      {% if params is none %}
+        {% set params = {} %}
+      {% endif %}
+  
+{{ prefix }}_{{ user }}_cron_{{ kind }}_{{ id }}:
+  cron.{{ kind }}:
+    - user: {{ params.pop("user", user) }}
+
+    {%- if kind in ["env_present", "env_absent"] %}
+    - name: {{ id }}
+      {% if kind == "env_present" %}
+    - value: "{{ params["value"] }}"
+      {%- endif %}
+    {%- endif %}
+
+    {%- if kind in ["present", "absent"] %}
+      {%- set schedule = params.get("schedule","").split() %}
+
+    - identifier: "{{ id }}"
+    - name: "{{ params.get("name","") }}"
+    - comment: "{{ params.get("comment","") }}"
+    - commented: {{ params.get("disabled", False) }}
+
+      {%- if schedule | length == 1 %}
+    - special:  "{{ schedule[0] }}"
+
+      {%- elif schedule | length == 5 %}
+    - minute:   "{{ schedule[0] }}"
+    - hour:     "{{ schedule[1] }}"
+    - daymonth: "{{ schedule[2] }}"
+    - month:    "{{ schedule[3] }}"
+    - dayweek:  "{{ schedule[4] }}"
+      {%- endif %}
+
+    {%- endif %}
+
+    {%- endfor %}
+  {%- endfor %}
+{%- endfor %}
+
+{%- endmacro %}
