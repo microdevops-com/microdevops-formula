@@ -1,3 +1,16 @@
+# NOTE
+Additionally, the temporal parameters (minute, hour, etc.) can be randomized by using `random` instead of using a specific value.
+For example, by using the `random` keyword in the minute parameter of a cron state, the same cron job can be pushed to hundreds or thousands of hosts,
+and they would each use a randomly-generated minute.
+This can be helpful when the cron job accesses a network resource, and it is not desirable for all hosts to run the job concurrently.
+
+Example:
+```
+     ...
+          schedule: "random random * * *"
+```  
+
+
 # CAUTION!  
 Salt treats schedules with single word like `@reboot` or `@daily` differently from usual schedule like `* * * * *`.
 
