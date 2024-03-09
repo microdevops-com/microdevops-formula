@@ -4,38 +4,37 @@
   {%- for kind, data in crontab.items() %}
     {%- for id, params in data.items() %}
 
-      {% if params is none %}
-        {% set params = {} %}
-      {% endif %}
+      {%- if params is none %}
+        {%- set params = {} %}
+      {%- endif %}
   
 {{ prefix }}_{{ user }}_cron_{{ kind }}_{{ id }}:
   cron.{{ kind }}:
     - user: {{ params.pop("user", user) }}
 
     {%- if kind in ["env_present", "env_absent"] %}
-    - name: {{ id }}
-      {% if kind == "env_present" %}
-    - value: "{{ params["value"] }}"
+    - name: {{ id | yaml_encode }}
+      {%- if kind == "env_present" %}
+    - value: {{ params["value"] | yaml_encode }}
       {%- endif %}
     {%- endif %}
 
     {%- if kind in ["present", "absent"] %}
-      {%- set schedule = params.get("schedule","").split() %}
-
-    - identifier: "{{ id }}"
-    - name: "{{ params.get("name","") }}"
-    - comment: "{{ params.get("comment","") }}"
+    - identifier: {{ id | yaml_encode }}
+    - name: {{ params.get("name","") | yaml_encode }}
+    - comment: {{ params.get("comment","") | yaml_encode }}
     - commented: {{ params.get("disabled", False) }}
 
+      {%- set schedule = params.get("schedule","").split() %}
       {%- if schedule | length == 1 %}
-    - special:  "{{ schedule[0] }}"
+    - special:  {{ schedule[0] | yaml_encode }}
 
       {%- elif schedule | length == 5 %}
-    - minute:   "{{ schedule[0] }}"
-    - hour:     "{{ schedule[1] }}"
-    - daymonth: "{{ schedule[2] }}"
-    - month:    "{{ schedule[3] }}"
-    - dayweek:  "{{ schedule[4] }}"
+    - minute:   {{ schedule[0] | yaml_encode }}
+    - hour:     {{ schedule[1] | yaml_encode }}
+    - daymonth: {{ schedule[2] | yaml_encode }}
+    - month:    {{ schedule[3] | yaml_encode }}
+    - dayweek:  {{ schedule[4] | yaml_encode }}
       {%- endif %}
 
     {%- endif %}
