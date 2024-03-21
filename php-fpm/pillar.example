@@ -1,6 +1,13 @@
 php-fpm:
   versions:
     7.4:
+      ini:
+        Date:
+          date.timezone: Etc/UTC
+        #PHP:
+        #  short_open_tag: "On"
+        #  display_errors: "Off"
+        #  display_startup_errors: "Off"
       modules:
         - php7.4-zip
         - php7.4-intl
@@ -13,31 +20,3 @@ php-fpm:
         - php7.4-gd
         - php7.4-sqlite3
         - php7.4-ioncube # in case of ioncube - module will we copied from ioncube distribution, php 8+ is not yet supported by ioncube
-      tz: Etc/UTC
-
-# legacy (php-fpm.php-fpm state)
-php-fpm:
-  enabled: True
-  version_5_6: True
-  version_7_0: True
-  version_7_1: True
-  version_7_2: True
-  version_7_3: True
-  version_7_3: True
-  version_8_0: True
-  version_8_1: True
-  version_8_2: True
-  version_8_3: True
-  tz:
-    php5_5: 'Etc/UTC'
-  modules:
-    php5_5: # and/or php5_6, php7_0, php7_1, php7_2
-      - php5-mysql
-      - php5-curl
-      - php5-gd
-      - php5-mcrypt
-      - php5-memcache
-      - php5-mysqlnd
-      - php5-sqlite
-      - php5-tidy
-      - php5-xsl
