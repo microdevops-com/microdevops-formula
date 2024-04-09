@@ -27,16 +27,18 @@ php-fpm_installed_{{ loop.index }}:
       - php{{ version }}-cli
       - php{{ version }}-fpm
 
+    {%- set sections = params.get("ini",{}) %}
     {%- if "tz" in params %}
-      {%- set i_loop = loop %}
+      {%- do sections.update({"Date":{"date.timezone": params["tz"]} })%}
+    {%- endif %}
+
+    {%- if sections %}
       {%- for type in ["cli", "fpm"] %}
-php-fpm_timezone_{{ i_loop.index }}_{{ loop.index }}:
+php-fpm_timezone_{{ version }}_{{ type }}:
   ini.options_present:
     - name: /etc/php/{{ version }}/{{ type }}/php.ini
     - separator: '='
-    - sections:
-        Date:
-          date.timezone: {{ params["tz"] }}
+    - sections: {{ sections }}
       {%- endfor %}
     {%- endif %}
 

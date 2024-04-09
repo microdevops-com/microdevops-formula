@@ -224,3 +224,8 @@ app_{{ app_type }}_user_app_ssh_config_{{ loop_index }}:
     - mode: 0600
     - contents: {{ app["ssh_config"] | yaml_encode }}
       {%- endif %}
+
+{% if app["cron"] is defined %}
+  {%- from "_include/cron_manager/macros.jinja" import cron_manager %}
+  {{ cron_manager(cron = { _app_user: app["cron"] | tojson | replace("__APP_NAME__", app_name) | load_json }, prefix= "app_" ~ app_type) }} 
+{% endif %}

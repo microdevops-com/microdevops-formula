@@ -17,14 +17,26 @@ cmd_check_alert:
         severity: critical
       checks:
         hardware:
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
+          # We need to catch this only on host machines as containers share the kernel with the host
+          disabled: True
+{% endif %}
           cmd: :; ! dmesg -T | grep -i "hardware.*error" -m 10
           service: os
           resource: __hostname__:hardware
         hardware-nvme:
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
+          # We need to catch this only on host machines as containers share the kernel with the host
+          disabled: True
+{% endif %}
           cmd: :; ! dmesg -T | grep -i "nvme.*err" -m 10
           service: os
           resource: __hostname__:hardware-nvme
         hardware-cpu-temperature-throttling:
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
+          # We need to catch this only on host machines as containers share the kernel with the host
+          disabled: True
+{% endif %}
           cmd: :; ! dmesg -T | grep -i -e "temperature above threshold" -e "cpu clock throttled" -m 10
           service: os
           resource: __hostname__:hardware-cpu-temperature-throttling

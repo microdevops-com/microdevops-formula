@@ -196,6 +196,15 @@ app:
             systemctl --user status __APP_NAME__.service
             # Another example line for ruby
             #source ~/.rvm/scripts/rvm && rvm use 3.0.0 && RAILS_ENV=production rails assets:precompile
+        cron: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/cron_manager
+          present: # can be present, absent, env_present, env_absent
+            du-hsc: # create entry in app_user's cron
+              name: du -hsc /var/www/__APP_NAME__ >> /tmp/du-hsc-__APP_NAME__
+              schedule: "00 * * * *"
+            du-hsc-root:  # optionnaly override the user
+              name: du -hsc /var/www/ >> /tmp/du-hsc-total
+              schedule: "00 * * * *"
+              user: root
         nginx: # optional
           domain: example.com
           ssl: # optional

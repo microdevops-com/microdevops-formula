@@ -7,7 +7,10 @@
   {% set domains = ' '.join(domains) %}
 {% endif %}
 
-/opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ application }} {{ domains }}:
+# md5 here is for `domains' based uniqueness of the state name
+# we can not pass all domains here, since max yaml key length is 1024 characters
+# and `domains' value certainly migth exceed that length
+/opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ application }} {{ domains | md5 }}:
   cmd.run:
     - shell: /bin/bash
     - name: /opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ application }} {{ domains }}

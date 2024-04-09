@@ -31,16 +31,17 @@ file_manager_defaults = {"default_user":"", "default_group":"", "replace_old":"e
                    file_manager_defaults.get("replace_new", "empty")) %}
 {%- set user = ("user", file_manager_defaults.get("default_user", "")) %}
 {%- set group = ("group", file_manager_defaults.get("default_group", "")) %}
+{%- set files = files | tojson | replace(*replace) | load_json %}
 
 
-{% with %}
+{%- with %}
   {%- set kind = "recurse" %}
   {%- for blockname, items in files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
-    - name: {{ item["name"].replace(*replace) }}
-    - source: {{ item["source"].replace(*replace) }}
+    - name: {{ item["name"] }}
+    - source: {{ item["source"] }}
     - user: {{ item.get(*user) }}
     - group: {{ item.get(*group) }}
     - clean: {{ item.get("clean", False) }}
@@ -48,16 +49,16 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
     - file_mode: {{ item.get("file_mode","") }}
     {%- endfor %}
   {%- endfor %}
-{% endwith %}
+{%- endwith %}
 
 
-{% with %}
+{%- with %}
   {%- set kind = "directory" %}
   {%- for blockname, items in files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
-    - name: {{ item["name"].replace(*replace) }}
+    - name: {{ item["name"] }}
     - user: {{ item.get(*user) }}
     - group: {{ item.get(*group) }}
     - recurse: {{ item.get("recurse", "") }}
@@ -77,48 +78,48 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
         {%- set only = apply.get("only","always") %}
 file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: {{ cmd.replace(*replace) }}
+    - name: {{ cmd }}
     - runas: {{ runas }}
-    - cwd: {{ cwd.replace(*replace) }}
+    - cwd: {{ cwd }}
         {%- if only != "always" %}
     - {{ only }}:
-      - file: {{ item["name"].replace(*replace) }}
+      - file: {{ item["name"] }}
         {%- endif %}
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}
-{% endwith %}
+{%- endwith %}
 
 
-{% with %}
+{%- with %}
   {%- set kind = "symlink" %}
   {%- for blockname, items in files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
-    - name: {{ item["name"].replace(*replace) }}
-    - target: {{ item["target"].replace(*replace) }}
+    - name: {{ item["name"] }}
+    - target: {{ item["target"] }}
     - user: {{ item.get(*user) }}
     - group: {{ item.get(*group) }}
     - makedirs: {{ item.get("makedirs", "false") }}
     - force: {{ item.get("force","") }}
     {%- endfor %}
   {%- endfor %}
-{% endwith %}
+{%- endwith %}
 
 
-{% with %}
+{%- with %}
   {%- set kind = "managed" %}
   {%- for blockname, items in files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
-    - name: {{ item["name"].replace(*replace) }}
+    - name: {{ item["name"] }}
       {%- if "source" in item %} # handle both contents and source
-    - source: {{ item["source"].replace(*replace) }}
-      {% elif "contents" in item %}
-    - contents: {{ item["contents"].replace(*replace) | yaml_encode }}
-      {% endif %}
+    - source: {{ item["source"] }}
+      {%- elif "contents" in item %}
+    - contents: {{ item["contents"] | yaml_encode }}
+      {%- endif %}
     - user: {{ item.get(*user) }}
     - group: {{ item.get(*group) }}
     - mode: {{ item.get("mode", "") }}
@@ -126,10 +127,10 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
     - dir_mode: {{ item.get("dir_mode", "")}}
     - source_hash: {{ item.get("source_hash", "") }}
     - skip_verify: {{ item.get("skip_verify", "") }}
-      {% if item.get("filetype", "text") == "text" %} # do not template binary files
+      {%- if item.get("filetype", "text") == "text" %} # do not template binary files
     - template: {{ item.get("template", "jinja") }}
     - defaults: {{ item.get("values",{}) }}
-      {% endif %}
+      {%- endif %}
       {%- set a_loop = loop %}
       {%- for apply in item.get("apply", []) %}
         {%- if apply is not mapping %}
@@ -141,17 +142,17 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
         {%- set only = apply.get("only","always") %}
 file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{{ loop.index }}:
   cmd.run:
-    - name: {{ cmd.replace(*replace) }}
+    - name: {{ cmd }}
     - runas: {{ runas }}
-    - cwd: {{ cwd.replace(*replace) }}
+    - cwd: {{ cwd }}
         {%- if only != "always" %}
     - {{ only }}:
-      - file: {{ item["name"].replace(*replace) }}
+      - file: {{ item["name"] }}
         {%- endif %}
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}
-{% endwith %}
+{%- endwith %}
 
 
 {# This is the generic structure for the other states from salt.state.file #}
@@ -161,7 +162,7 @@ file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{
   {%- endif %}
 {%- endfor%}
 
-{% with %}
+{%- with %}
   {%- for kind, content in files.items() if kind not in ["absent"] %}
     {%- with %}
 
@@ -170,32 +171,35 @@ file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
         {%- if "user" in item.keys() %}
-    - user: {{ item["user"].replace(*user) }}
+    - user: {{ item.get(*user) }}
         {%- do item.pop("user")%}
         {%- endif %}
         {%- if "group" in item.keys() %}
-    - group: {{ item["group"].replace(*group) }}
+    - group: {{ item.get(*group) }}
         {%- do item.pop("group")%}
         {%- endif %}
-        {% for key, value in item.items() %}
-          {% set value = value | tojson | replace(*replace) | load_json %}
+        {%- for key, value in item.items() %}
+        {%- if value is string %}
     - {{ key }}: {{ value | yaml_encode }}
+        {%- else %}
+    - {{ key }}: {{ value }}
+        {%- endif %}
         {%- endfor %}
       {%- endfor %}
     {%- endfor %}
 
     {%- endwith %}
   {%- endfor %}
-{% endwith %}
+{%- endwith %}
 
 
-{% with %}
+{%- with %}
   {%- set kind = "absent" %}
   {%- for blockname, items in files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
-    - name: {{ item["name"].replace(*replace) }}
+    - name: {{ item["name"] }}
     {%- endfor %}
   {%- endfor %}
-{% endwith %}
+{%- endwith %}
