@@ -64,7 +64,7 @@ incus_profile_create_docker:
 
 incus_profile_set_docker:
   cmd.run:
-    - name: printf "lxc.apparmor.profile = unconfined\nlxc.cgroup.devices.allow = a\nlxc.mount.auto=proc:rw sys:rw\nlxc.cap.drop =" | incus profile set docker raw.incus -; incus profile set docker security.nesting true; incus profile set docker security.privileged true; incus profile set docker linux.kernel_modules "bridge,br_netfilter,ip_tables,ip6_tables,ip_vs,netlink_diag,nf_nat,overlay,xt_conntrack,ip_vs_rr,ip_vs_wrr,ip_vs_sh,nf_conntrack"
+    - name: printf "lxc.apparmor.profile = unconfined\nlxc.cgroup.devices.allow = a\nlxc.mount.auto=proc:rw sys:rw\nlxc.cap.drop =" | incus profile set docker raw.lxc -; incus profile set docker security.nesting true; incus profile set docker security.privileged true; incus profile set docker linux.kernel_modules "bridge,br_netfilter,ip_tables,ip6_tables,ip_vs,netlink_diag,nf_nat,overlay,xt_conntrack,ip_vs_rr,ip_vs_wrr,ip_vs_sh,nf_conntrack"
 
   {%- if "profiles" in pillar["incus"] %}
     {%- for profile_name, profile_val in pillar["incus"]["profiles"].items() %}
