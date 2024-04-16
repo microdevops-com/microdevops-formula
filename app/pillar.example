@@ -305,6 +305,8 @@ app:
         #volumes: # optional
         #  - ...
         #volumes_from: ... # optional
+        files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
+          ... # see above
       proto-redis:
         image: redis:latest
         home: /var/www/proto-redis

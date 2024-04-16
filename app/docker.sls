@@ -11,7 +11,6 @@
     {%- include "docker-ce/docker-ce.sls" with context %}
   {%- endif %}
 
-
   {%- if pillar["app"]["docker"]["networks"] is mapping %}
 
     {%- for net_name, net_params in pillar["app"]["docker"]["networks"].items() %}
@@ -40,11 +39,20 @@ docker_network_{{ loop.index }}:
 
   {%- for app_name, app in pillar["app"]["docker"]["apps"].items() %}
     {%- if not "deploy_only" in pillar["app"]["docker"] or app_name == pillar["app"]["docker"]["deploy_only"] %}
+
 docker_app_dir_{{ loop.index }}:
   file.directory:
     - name: {{ app["home"] }}
     - mode: 755
     - makedirs: True
+
+      {%- set files = app.get("files", {}) %}
+      {%- if files is none %}
+        {%- set files = {} %}
+      {%- endif %}
+      {%- set file_manager_defaults = {"default_user": "root", "default_group": "root",
+                                       "replace_old": "__APP_NAME__", "replace_new": app_name} %}
+      {%- include "_include/file_manager/init.sls" with context %}
 
       {%- if "binds" in app %}
         {%- set i_loop = loop %}
