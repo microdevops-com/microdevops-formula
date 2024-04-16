@@ -46,14 +46,16 @@ docker_app_dir_{{ loop.index }}:
     - mode: 755
     - makedirs: True
 
-      {%- set i_loop = loop %}
-      {%- for bind in app["binds"] %}
+      {%- if "binds" in app %}
+        {%- set i_loop = loop %}
+        {%- for bind in app["binds"] %}
 docker_app_bind_dir_{{ i_loop.index }}_{{ loop.index }}:
   file.directory:
     - name: {{ bind.split(":")[0] }}
     - mode: 755
     - makedirs: True
-      {%- endfor %}
+        {%- endfor %}
+      {%- endif %}
 
       {%- if app["docker_registry_login"] is defined %}
 docker_app_docker_login_{{ loop.index }}:

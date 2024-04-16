@@ -289,7 +289,7 @@ app:
           - MYSQL_PASS: xxxxxxxxxxxxxxxx
           - MYSQL_PORT: 3306
           - MYSQL_USER: proto
-        binds:
+        binds: # optional
           - /var/www/proto/app/data:/app/data:rw
         networks:
           - proto
