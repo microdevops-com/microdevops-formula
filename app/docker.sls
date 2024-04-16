@@ -54,17 +54,6 @@ docker_app_dir_{{ loop.index }}:
                                        "replace_old": "__APP_NAME__", "replace_new": app_name} %}
       {%- include "_include/file_manager/init.sls" with context %}
 
-      {%- if "binds" in app %}
-        {%- set i_loop = loop %}
-        {%- for bind in app["binds"] %}
-docker_app_bind_dir_{{ i_loop.index }}_{{ loop.index }}:
-  file.directory:
-    - name: {{ bind.split(":")[0] }}
-    - mode: 755
-    - makedirs: True
-        {%- endfor %}
-      {%- endif %}
-
       {%- if app["docker_registry_login"] is defined %}
 docker_app_docker_login_{{ loop.index }}:
   cmd.run:
