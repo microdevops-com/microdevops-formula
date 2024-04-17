@@ -85,7 +85,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max by (node_name) (1 - (max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m]) or max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m])) / \n(max_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m]) or\nmax_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs\"}[5m])))",
+          "expr": "max by (node_name) (1 - (max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs|udev|none|fuse.snapfuse\"}[5m]) or max_over_time(node_filesystem_free_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs|udev|none|fuse.snapfuse\"}[5m])) / \n(max_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs|udev|none|fuse.snapfuse\"}[5m]) or\nmax_over_time(node_filesystem_size_bytes{node_name=~\"{{ node_name }}\", fstype!~\"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs|udev|none|fuse.snapfuse\"}[5m])))",
           "interval": "",
           "legendFormat": "Disk Space Usage",
           "refId": "A"
