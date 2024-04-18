@@ -1,0 +1,39 @@
+salt_cache_dir: /var/cache/salt/VictoriaMetrics
+
+platforms:
+  github:
+    tags_url: https://api.github.com/repos/VictoriaMetrics/VictoriaMetrics/tags?per_page=1
+    source: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{release}/{name}-linux-{arch}-{release}.tar.gz
+    source_hash: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{release}/{name}-linux-{arch}-{release}_checksums.txt
+
+vmutils:
+  name: vmutils
+  target: /usr/local/bin
+  original_name: ""
+  tar_args: --transform 's/-prod//'
+  files:
+    - vmagent
+    - vmalert
+    - vmalert-tool
+    - vmauth
+    - vmbackup
+    - vmctl
+    - vmrestore
+
+vmagent:
+  name: vmutils
+  original_name: vmagent-prod
+  target: /usr/local/bin/vmagent
+  arg_storage: remoteWrite.tmpDataPath
+  args:
+    remoteWrite.tmpDataPath: /var/lib/vmagent/{vm_name}/remotewrite-data
+
+vmserver:
+  name: victoria-metrics
+  original_name: victoria-metrics-prod
+  target: /usr/local/bin/vmserver
+  arg_storage: storageDataPath
+  args:
+    httpListenAddr: 127.0.0.1:8428
+    storageDataPath: /var/lib/victoriametrics/{vm_name}
+    retentionPeriod: 1
