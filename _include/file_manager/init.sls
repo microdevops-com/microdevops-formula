@@ -33,10 +33,49 @@ file_manager_defaults = {"default_user":"", "default_group":"", "replace_old":"e
 {%- set group = ("group", file_manager_defaults.get("default_group", "")) %}
 {%- set files = files | tojson | replace(*replace) | load_json %}
 
+{%- if hook is not defined %}
+  {%- set hook = none %}
+{% endif %}
+{%- set ns = namespace(files={}) %}
+{%- for kind in files.keys() %}
+  {%- for blockname, items in files[kind].items() %}
+    {%- set requisite = items | selectattr("requisite", "defined") | list %}
 
+    {%- if requisite %}
+      {%- for r in requisite %}
+        {%- do items.remove(r) %}
+      {%- endfor %}
+      {%- set requisite = requisite[0]["requisite"] %}
+    {%- else %}
+      {%- set requisite = false %}
+    {%- endif %}
+
+    {%- if not requisite and hook is none %}
+      {%- do ns.files.setdefault(kind,{}).setdefault(blockname,[]).extend(items) %}
+    {%- elif requisite and "hook" not in requisite.keys() and hook is none %}
+      {%- for item in items %}
+        {%- do item.update({"requisite": requisite}) %}
+        {%- do ns.files.setdefault(kind,{}).setdefault(blockname,[]).append(item) %}
+      {%- endfor %}
+    {%- elif requisite and "hook" in requisite.keys() %}
+      {%- for item in items %}
+        {%- if hook == requisite["hook"] %}
+          {%- do requisite.pop("hook") %}
+          {%- if requisite %}
+            {%- do item.update({"requisite": requisite}) %}
+          {%- endif %}
+          {%- do ns.files.setdefault(kind,{}).setdefault(blockname,[]).append(item) %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
+
+  {%- endfor %}
+{%- endfor %}
+
+{%- set files = ns.files %}
 {%- with %}
   {%- set kind = "recurse" %}
-  {%- for blockname, items in files.get(kind, {}).items() %}
+  {%- for blockname, items in ns.files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
@@ -47,6 +86,9 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
     - clean: {{ item.get("clean", False) }}
     - dir_mode: {{ item.get("dir_mode","") }}
     - file_mode: {{ item.get("file_mode","") }}
+      {%- if "requisite" in item %}
+    - {{ item["requisite"] }}
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 {%- endwith %}
@@ -54,7 +96,7 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
 
 {%- with %}
   {%- set kind = "directory" %}
-  {%- for blockname, items in files.get(kind, {}).items() %}
+  {%- for blockname, items in ns.files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
@@ -67,6 +109,9 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
     - makedirs: {{ item.get("makedirs", "") }}
     - force: {{ item.get("force","") }}
     - clean: {{ item.get("clean","") }}
+      {%- if "requisite" in item %}
+    - {{ item["requisite"] }}
+      {%- endif %}
       {%- set a_loop = loop %}
       {%- for apply in item.get("apply", []) %}
         {%- if apply is not mapping %}
@@ -93,7 +138,7 @@ file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{
 
 {%- with %}
   {%- set kind = "symlink" %}
-  {%- for blockname, items in files.get(kind, {}).items() %}
+  {%- for blockname, items in ns.files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
@@ -103,6 +148,9 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
     - group: {{ item.get(*group) }}
     - makedirs: {{ item.get("makedirs", "false") }}
     - force: {{ item.get("force","") }}
+      {%- if "requisite" in item %}
+    - {{ item["requisite"] }}
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 {%- endwith %}
@@ -110,7 +158,7 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
 
 {%- with %}
   {%- set kind = "managed" %}
-  {%- for blockname, items in files.get(kind, {}).items() %}
+  {%- for blockname, items in ns.files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
@@ -130,6 +178,9 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
       {%- if item.get("filetype", "text") == "text" %} # do not template binary files
     - template: {{ item.get("template", "jinja") }}
     - defaults: {{ item.get("values",{}) }}
+      {%- if "requisite" in item %}
+    - {{ item["requisite"] }}
+      {%- endif %}
       {%- endif %}
       {%- set a_loop = loop %}
       {%- for apply in item.get("apply", []) %}
@@ -157,13 +208,13 @@ file_manager_{{ kind }}_apply_{{ blockname }}_{{ extloop }}_{{ a_loop.index }}_{
 
 {# This is the generic structure for the other states from salt.state.file #}
 {%- for k in ["recurse", "directory", "symlink", "managed"] %}
-  {%- if k in files.keys() %}
-    {%- do files.pop(k) %}
+  {%- if k in ns.files.keys() %}
+    {%- do ns.files.pop(k) %}
   {%- endif %}
 {%- endfor%}
 
 {%- with %}
-  {%- for kind, content in files.items() if kind not in ["absent"] %}
+  {%- for kind, content in ns.files.items() if kind not in ["absent"] %}
     {%- with %}
 
     {%- for blockname, items in content.items() %}
@@ -195,11 +246,14 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
 
 {%- with %}
   {%- set kind = "absent" %}
-  {%- for blockname, items in files.get(kind, {}).items() %}
+  {%- for blockname, items in ns.files.get(kind, {}).items() %}
     {%- for item in items %}
 file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
   file.{{ kind }}:
     - name: {{ item["name"] }}
+      {%- if "requisite" in item %}
+    - {{ item["requisite"] }}
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
 {%- endwith %}

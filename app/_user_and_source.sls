@@ -168,7 +168,14 @@ app_{{ app_type }}_app_checkout_{{ loop_index }}:
 
       {%- endif %}
 
-
+      {%- with %}
+        {%- set hook = "source" %}
+        {%- set files = app.get("files", {}) %}
+        {%- set extloop = loop_index %}
+        {%- set file_manager_defaults = {"default_user": _app_user, "default_group": _app_group,
+                                         "replace_old": "__APP_NAME__", "replace_new": app_name} %}
+        {%- include "_include/file_manager/init.sls" with context %}
+      {%- endwith %}
 
 
       {%- if "sudo_rules" in app %}
