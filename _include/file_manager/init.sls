@@ -58,15 +58,15 @@ file_manager_defaults = {"default_user":"", "default_group":"", "replace_old":"e
         {%- do ns.files.setdefault(kind,{}).setdefault(blockname,[]).append(item) %}
       {%- endfor %}
     {%- elif requisite and "hook" in requisite.keys() %}
-      {%- for item in items %}
-        {%- if hook == requisite["hook"] %}
-          {%- do requisite.pop("hook") %}
+      {%- if hook == requisite["hook"] %}
+      {%- do requisite.pop("hook") %}
+        {%- for item in items %}
           {%- if requisite %}
             {%- do item.update({"requisite": requisite}) %}
           {%- endif %}
           {%- do ns.files.setdefault(kind,{}).setdefault(blockname,[]).append(item) %}
-        {%- endif %}
-      {%- endfor %}
+        {%- endfor %}
+      {%- endif %}
     {%- endif %}
 
   {%- endfor %}
