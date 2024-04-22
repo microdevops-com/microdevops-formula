@@ -289,8 +289,13 @@ app:
           - MYSQL_PASS: xxxxxxxxxxxxxxxx
           - MYSQL_PORT: 3306
           - MYSQL_USER: proto
-        binds:
+        files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
+          ... # see above
+        binds: # optional, see https://docs.saltproject.io/en/latest/ref/states/all/salt.states.docker_container.html#salt.states.docker_container.running, salt has different meaning for binds
           - /var/www/proto/app/data:/app/data:rw
+        #volumes: # optional
+        #  - ...
+        #volumes_from: ... # optional
         networks:
           - proto
         cron: # optional, docker exec ... cmd by cron from docker host
@@ -302,9 +307,6 @@ app:
             dayweek: ... # optional 
             special: ... # optional 
         #command: bash # optional, override cmd
-        #volumes: # optional
-        #  - ...
-        #volumes_from: ... # optional
       proto-redis:
         image: redis:latest
         home: /var/www/proto-redis

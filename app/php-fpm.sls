@@ -55,7 +55,7 @@ app_php-fpm_app_pool_config_{{ loop.index }}:
       {%- if "pool_contents" in app["pool"] %}
     - contents: {{ app["pool"]["pool_contents"] | replace("__APP_NAME__", app_name) | yaml_encode }}
       {%- else %}
-    - source: {{ app["pool"].get("pool_template", "salt://app/files/php-generic/pool.conf") }}
+    - source: {{ app["pool"]["pool_template"] | default("salt://app/files/php-generic/pool.conf") | replace("__APP_NAME__", app_name) }}
     - template: jinja
     - defaults:
         app_name: {{ app_name }}

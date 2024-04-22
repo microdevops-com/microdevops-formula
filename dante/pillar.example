@@ -1,0 +1,20 @@
+# vi: set ft=yaml:
+
+## ToDo:
+# - create the several config templates
+#   at the moment there is only 1 very basic template 
+   
+#  template "simple":
+#    - no user auth (the firewall takes care of security)
+#    - single interface for both ways
+#    - single port
+
+dante:
+  server:
+    enabled: True  # <- mandatory
+    logdir: '/opt/dante/logs'  # <- optional, '/var/log/dante' by default 
+  config:
+    simple:  # <- config template
+      interface: 'eth0'  # <- mandatory
+  	  port: '15963'  # <- optional, '15963' by default
+
