@@ -163,18 +163,21 @@ app:
           #  - https_pass: xx-token-xx
         files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
           directory:  # recurse|directory|symlink|managed|absent
-            grp_name:
+            group_name:
               - name: /var/www/__APP_NAME__/app
           managed: 
-            grp_name:
+            group_name:
+              - requisite: # optional
+                  hook: source # will create files in this group AFTER the source (git) clonning
+                               # currently 'source' is the only hook
               - name: /var/www/__APP_NAME__/app/file.txt
                 source: http://example.com/file.txt
                 skip_verify: True
-              - name: /var/www/__APP_NAME__/.env
+              - name: /var/www/__APP_NAME__/app/src/config/db.php
                 contents: |
-                  VAR1=value
+                   define('DATABASE_URL','mysql://db_user:db_password@127.0.0.1:3306/db_name?serverVersion=5.7');
                 apply:
-                  - env >> /var/www/__APP_NAME__/.env # run as application user
+                  - php /var/www/__APP_NAME__/app/src/prepare.php
         setup_script_root: # optional
           cwd: /var/www/__APP_NAME__/app/src
           name: |
