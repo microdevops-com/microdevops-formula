@@ -11,10 +11,12 @@ app:
   #pre_deploy_cmd: # optional
   #  cwd: /root
   #  name: |
+  #    set -e
   #    /opt/scripts/validate_data.sh
   #post_deploy_cmd: # optional
   #  cwd: /root
   #  name: |
+  #    set -e
   #    systemctl reload nginx.service
   #python|php-fpm|ruby|static: # choose one of app types
     # only for python
