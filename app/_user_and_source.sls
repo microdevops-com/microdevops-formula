@@ -34,7 +34,7 @@ app_{{ app_type }}_user_homedir_create_{{ loop_index }}:
 
 app_{{ app_type }}_user_homedir_userown_{{ loop_index }}:
   file.directory:
-    - name: {{ _app_app_root }} # TODO
+    - name: {{ _app_app_root }} {# TODO #}
     - user: {{ _app_user }}
     - group: {{ _app_group }}
     - makedirs: True
@@ -61,7 +61,7 @@ app_{{ app_type }}_user_ssh_auth_keys_{{ loop_index }}:
           {%- set files = {} %}
         {%- endif %}
 
-        # code for legacy "files_source" key and "files_contents" key
+        {# code for legacy "files_source" key and "files_contents" key #}
         {%- if "files_source" in app or "files_contents" in app %}
           {%- do files.update({"managed": files.get("managed", {})}) %}
           {%- do files["managed"].update({"files_source_contents_legacy": [] }) %}
@@ -76,13 +76,13 @@ app_{{ app_type }}_user_ssh_auth_keys_{{ loop_index }}:
           {%- endfor %}
         {%- endif %}
 
-        # code for legacy "files" key
+        {# code for legacy "files" key #}
         {%- if "src" in files.keys() %}
           {%- do files.update({"recurse": files.get("recurse", {})}) %}
           {%- do files["recurse"].update({"files_legacy": [{"name": app["files"].pop("dst"), "source": app["files"].pop("src")}]}) %}
         {%- endif %}
 
-        # code for legacy "mkdir" key
+        {# code for legacy "mkdir" key #}
         {%- if "mkdir" in app %}
           {%- do files.update({"directory": files.get("directory", {})}) %}
           {%- do files["directory"].update({"mkdir_legacy": []}) %}
@@ -168,7 +168,14 @@ app_{{ app_type }}_app_checkout_{{ loop_index }}:
 
       {%- endif %}
 
-
+      {%- with %}
+        {%- set hook = "source" %}
+        {%- set files = app.get("files", {}) %}
+        {%- set extloop = loop_index %}
+        {%- set file_manager_defaults = {"default_user": _app_user, "default_group": _app_group,
+                                         "replace_old": "__APP_NAME__", "replace_new": app_name} %}
+        {%- include "_include/file_manager/init.sls" with context %}
+      {%- endwith %}
 
 
       {%- if "sudo_rules" in app %}
