@@ -4,7 +4,7 @@
 # vpnserver only managed for now
 softether:
   # Do not use tag here, it cannot be rev parsed then
-  version: ec3d052e218281dc1aa734f1bf84cf42127744aa
+  version: 89939eb52f1f40e4f75c76e8d5eca019de103532
   vpnserver:
     install: True
     # Main management password, state softether.vpnserver_install sets it at the end of install, state softether.vpnserver_settings uses it to connect

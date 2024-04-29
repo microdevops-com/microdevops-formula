@@ -6,7 +6,7 @@
 loki:
   #loki-production:
   #  ...
-  #loki-state:
+  #loki-stage:
   #  ...
   loki:
     path_prefix: /opt/lokies/__NAME__
