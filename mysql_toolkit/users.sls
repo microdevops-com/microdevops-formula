@@ -21,10 +21,15 @@ MySQL ToolKit <> Users / Regular / Absent > '{{ reg_user_name }}'@'{{ reg_user_h
 
   {%- else %}
 
-MySQL ToolKit <> Users / Regular / Present > '{{ reg_user_name }}'@'{{ reg_user_host }}':                                                                                 mysql_user.present:                                                                                                                                                       - name: "{{ reg_user_name }}"                                                                                                                                           - password_hash: "{{ reg_user_pass_hash }}"                                                                                                                             - host: "{{ reg_user_host }}"                                                                                                                                           - connection_default_file: "/root/.my.cnf"
+MySQL ToolKit <> Users / Regular / Present > '{{ reg_user_name }}'@'{{ reg_user_host }}':
+  mysql_user.present:
+    - name: "{{ reg_user_name }}"
+    - password_hash: "{{ reg_user_pass_hash }}"
+    - host: "{{ reg_user_host }}"
+    - connection_default_file: "/root/.my.cnf"
 
     {%- for reg_user_grant in reg_user_params["grants"] %}
-                                                                                                                                                                              {%- set
+      {%- set
               reg_user_privileges,
               reg_user_on_db,
               reg_user_grant_option
