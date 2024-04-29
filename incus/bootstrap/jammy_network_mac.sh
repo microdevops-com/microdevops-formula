@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat > /etc/netplan/10-incus.yaml <<- EOM
+cat > /etc/netplan/10-lxc.yaml <<- EOM
 network:
   version: 2
   renderer: networkd
@@ -18,6 +18,6 @@ network:
         addresses: $4
 EOM
 
-chmod 600 /etc/netplan/10-incus.yaml
+chmod 600 /etc/netplan/10-lxc.yaml
 
 netplan apply
