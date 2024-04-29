@@ -25,6 +25,13 @@ alerta_user:
     - shell: /bin/bash
     - fullname: alerta
 
+alerta_dir_perm_fix:
+  file.directory:
+    - name: /opt/alerta/alerta
+    - user: alerta
+    - group: alerta
+    - mode: 0755
+
 alerta_nginx_root_dir:
   file.directory:
     - name: /opt/alerta/alerta/html
