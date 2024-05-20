@@ -25,6 +25,13 @@ alerta_user:
     - shell: /bin/bash
     - fullname: alerta
 
+alerta_dir_perm_fix:
+  file.directory:
+    - name: /opt/alerta/alerta
+    - user: alerta
+    - group: alerta
+    - mode: 0755
+
 alerta_nginx_root_dir:
   file.directory:
     - name: /opt/alerta/alerta/html
@@ -364,6 +371,32 @@ alerta_nginx_absent_default:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
 
+alerta_nginx_ssl_params:
+  file.managed:
+    - name: /etc/nginx/snippets/ssl-params.conf
+    - contents: |
+        # from https://cipherli.st/
+        # and https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
+        
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers on;
+        ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+        ssl_ecdh_curve secp384r1;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_tickets off;
+        ssl_stapling on;
+        ssl_stapling_verify on;
+        resolver 8.8.8.8 1.1.1.1 valid=300s;
+        resolver_timeout 5s;
+        
+        ssl_dhparam /etc/ssl/certs/dhparam.pem;
+
+alerta_nginx_dhparam:
+  cmd.run:
+    - name: '[ ! -f /etc/ssl/certs/dhparam.pem ] && openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048 || /bin/true'
+    - env:
+      - RANDFILE: /root/.rnd
+
   {{ verify_and_issue(pillar["alerta"]["acme_account"], "alerta", pillar["alerta"]["domain"]) }}
 
   {%- if "redirect" in pillar["alerta"] %}
@@ -381,15 +414,19 @@ alerta_nginx_absent_default:
 alerta_nginx_reload:
   cmd.run:
     - runas: root
-    - name: service nginx configtest && service nginx restart
+    - name: "/usr/sbin/nginx -t -q && /usr/sbin/nginx -s reload"
 
 alerta_nginx_reload_cron:
   cron.present:
-    - name: /usr/sbin/service nginx configtest && /usr/sbin/service nginx restart
+    - name: "/usr/sbin/nginx -t -q && /usr/sbin/nginx -s reload"
     - identifier: nginx_reload
     - user: root
     - minute: 15
     - hour: 6
+
+alerta_sleep_before_inserts:
+  cmd.run:
+    - name: sleep 10
 
   {%- if "customers" in pillar["alerta"] %}
     {%- for customer in pillar["alerta"]["customers"] %}

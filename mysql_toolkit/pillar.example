@@ -1,0 +1,21 @@
+#!jinja|yaml|gpg
+mysql_toolkit:
+  users:
+    regular:
+      testSpecialUser@10.%:                                         # format __USER_NAME__@__USER_HOST__
+        password_hash: '*754AAC29CC6BF5CDE025FF5886B404A9A0B7326B'  # the hash can be obtained with the command below
+		                                                    # mysql> SELECT CONCAT('*', UPPER(SHA1(UNHEX(SHA1('my-pass')))));
+        grants:
+          - privileges: 'ALL PRIVILEGES'
+            on_db: 'my_super_db.*'
+            grant_option: True                                      # optional, default False
+          - privileges: 'SELECT, INSERT, UPDATE'
+            on_db: '%some_mask%.*'
+      testRegularUser@%:
+        password_hash: '*23BF87986D0AEC0D9A983FE01B9AC1A506BF7B02'
+        grants:
+          - privileges: 'SELECT'
+            on_db: '*.*'
+    replication:
+      testReplicationUser@192.168.56.2:
+        password_hash: '*0E7B5268AEBF4BEE571C667A474A8B9411CA88F9'
