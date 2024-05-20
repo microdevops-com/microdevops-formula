@@ -64,4 +64,11 @@ nginx_dhparam:
     - env:
       - RANDFILE: /root/.rnd
 
+  {%- set files = pillar["nginx"].get("files", {}) %}
+  {%- if files is none %}
+    {%- set files = {} %}
+  {%- endif %}
+  {%- set file_manager_defaults = {"default_user": "root", "default_group": "root"} %}
+  {%- include "_include/file_manager/init.sls" with context %}
+
 {% endif %}
