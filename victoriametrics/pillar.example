@@ -1,0 +1,116 @@
+# <vm_name> - is the name for systemd service and nginx config file,
+#   intended for multiple vmagents and vmservers installed side by side, so
+#   "some_name" will be "vmserver-some_name.service" and "vmserver-some_name.conf",
+#   "main" has special meaning, and will be "vmserver.service" and "vmserver.conf".
+#   The same applies to the vmagent.
+# "__VM_NAME__" placeholder can be used inside pillar for vmserver and vmagent
+#   under <vm_name>, and will be replaced by <vm_name>.
+# Dots in the <vm_name> will be replaced by the underscores: dev.project -->  vmserver-dev_project
+
+
+# minimal vmserver without nginx example
+# data storage will be in /var/lib/victoriametrics/main
+# it will listen on 0.0.0.0:8428
+# with retention for 1 month
+
+vmserver:
+  main:
+    service:
+      platform: github
+
+
+# minimal vmserver without nginx, installed from uri
+vmserver:
+  main:
+    service:
+      source: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0.tar.gz
+
+
+# full examples
+
+vmserver:
+  <vm_name>:
+    nginx: # optional, if not defined - nginx management would not be run
+      enabled: True # default
+      auth_basic:
+        - username: user1
+          password: password1
+      servers:
+        - names:
+            - vm.tsdb.example.com
+          acme_account: example_com
+          # or
+          ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
+          ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    service:
+      target: /usr/local/bin/vmserver # optional, default, absolute path to binary file
+      # can be installed from github
+      platform: github # required
+      version: latest # optional, default, can be "latest" or any tag ("v1.101.0","v1.100.1"...) from "https://github.com/VictoriaMetrics/VictoriaMetrics"
+      # or
+      # can be installed from direct link
+      source: # required, URI of victoriametrics archive
+      source_hash: # optional, a source hash string or the URI of a file that contains source hash strings
+                   # will not redownload the archive, if hash matches
+      version: v1.101.0 # optional, will not overwrite the binary files, if version matches
+
+    args: # https://docs.victoriametrics.com/single-server-victoriametrics/#list-of-command-line-flags
+      httpListenAddr: 0.0.0.0:8428 # optional, default
+      storageDataPath: /var/lib/victoriametrics/__VM_NAME__ # optional, default
+      retentionPeriod: 1 # If suffix isn't set, then the duration is counted in months (default 1)
+                         # following optional suffixes are supported: s (second), m (minute), h (hour), d (day), w (week), y (year)
+    files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manage
+
+vmagent: # https://docs.victoriametrics.com/vmagent/#features
+  <vm_name>:
+    service:
+      target: /usr/local/bin/vmagent # optional, default, absolute path to binary file
+      # can be installed from github
+      platform: github # required
+      version: latest # optional, default, can be "latest" or any tag ("v1.101.0","v1.100.1"...) from "https://github.com/VictoriaMetrics/VictoriaMetrics"
+      # or
+      # can be installed from direct link
+      source: # required, URI of victoriametrics archive
+      source_hash: # optional, a source hash string or the URI of a file that contains source hash strings
+                   # will not redownload the archive, if hash matches
+      version: v1.101.0 # optional, will not overwrite the binary files, if version matches
+    args: # https://docs.victoriametrics.com/vmagent/#advanced-usage
+      remoteWrite.tmpDataPath: /var/lib/vmagent/__VM_NAME__/remotewrite-data # optional, default
+      remoteWrite.url: https://vm.tsdb.example.com/api/v1/write
+      remoteWrite.basicAuth.username: user1
+      remoteWrite.basicAuth.password: password1
+      promscrape.config: /etc/victoriametrics/promscrape.yaml
+    files:
+      managed:
+        promscrape:
+          - name: /etc/victoriametrics/promscrape.yaml
+            contents: |
+              global:
+                scrape_interval: 15s
+                scrape_timeout: 10s
+
+              - job_name: nsq
+                honor_timestamps: true
+                scrape_interval: 10s
+                scrape_timeout: 10s
+                metrics_path: /metrics
+                scheme: http
+                follow_redirects: true
+                static_configs:
+                - targets:
+                  - nsq1.prd.example.com:9273
+
+vmutils:
+  target: /usr/local/bin # optional, default, absolute path to directory for binary files installation
+
+  # can be installed from github
+  platform: github # required
+  version: latest # optional, default, can be "latest" or any tag ("v1.101.0","v1.100.1"...) from "https://github.com/VictoriaMetrics/VictoriaMetrics"
+                  # will not overwrite the binary files, if version matches
+  # or
+  # can be installed from direct link
+  source: # required, URI of victoriametrics archive
+  source_hash: # optional, a source hash string or the URI of a file that contains source hash strings
+               # will not redownload the archive, if hash matches
+  version: v1.101.0 # optional, will not overwrite the binary files, if version matches
+  files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manage

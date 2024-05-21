@@ -1,0 +1,54 @@
+{%- for server in vm_data["nginx"]["servers"] %}
+server {
+    listen 80;
+    server_name {{ " ".join(server["names"]) }};
+    location /.well-known/ {
+        alias /var/www/.acme_webroot/.well-known/;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+upstream {{ service_name }} {
+    server {{ vm_data["args"]["httpListenAddr"] }};
+    keepalive 10;
+}
+
+server {
+    listen 443 ssl;
+    server_name {{ " ".join(server["names"]) }};
+
+    {%- if "acme_account" in server %}
+    ssl_certificate /opt/acme/cert/{{ cert_prefix }}_{{ server["names"][0] }}_fullchain.cer;
+    ssl_certificate_key /opt/acme/cert/{{ cert_prefix }}_{{ server["names"][0] }}_key.key;
+    {%- else %}
+    ssl_certificate {{ server["ssl_cert"] }};
+    ssl_certificate_key {{ server["ssl_key"] }};
+    {%- endif %}
+
+    {%- if "auth_basic" in vm_data["nginx"] %}
+    auth_basic "Administrator’s Area";
+    auth_basic_user_file /etc/nginx/htpasswd/{{ service_name }};
+    {%- endif %}
+
+    root /dev/null;
+    charset UTF-8;
+    autoindex off;
+
+    access_log /var/log/nginx/{{ service_name }}.access.log;
+    error_log /var/log/nginx/{{ service_name }}.error.log;
+
+    client_max_body_size 25m;
+
+    location / {
+        proxy_pass http://{{ service_name }};
+        proxy_set_header       Host             $host;
+        proxy_set_header       X-Real-IP        $remote_addr;
+        proxy_set_header       X-Forwarded-For  $proxy_add_x_forwarded_for;
+        proxy_send_timeout     240;
+        proxy_read_timeout     240;
+        proxy_connect_timeout  240;
+    }
+}
+{% endfor %}
