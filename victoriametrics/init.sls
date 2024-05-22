@@ -1,0 +1,4 @@
+include:
+  - .vmserver
+  - .vmagent
+  - .vmutils
