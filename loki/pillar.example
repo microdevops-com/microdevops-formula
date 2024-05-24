@@ -13,6 +13,8 @@ loki:
     nginx:
       enabled: True
       separate_config: True
+      config_path: /etc/custom/path/loki.conf
+      install_nginx: False # True by default
       timeout: {{ timeout }}
       auth_basic:
         - username: user1
