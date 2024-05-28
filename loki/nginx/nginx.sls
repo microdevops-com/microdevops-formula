@@ -30,7 +30,7 @@ loki_{{ loki_name }}_basic_auth_{{ auth["username"] }}:
 
   {% if loki_data["nginx"].get("separate_config", True) %}
     {%- set config_path = "/etc/nginx/sites-available/" ~ loki_name ~ ".conf" %}
-    {%- set config_path = loki_data["nginx"].get("conf_path", config_path) %}
+    {%- set config_path = loki_data["nginx"].get("config_path", config_path) %}
   {%- else %}
     {%- set config_path = "/etc/nginx/nginx.conf" %}
   {%- endif %}

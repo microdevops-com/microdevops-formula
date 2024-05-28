@@ -13,7 +13,7 @@ loki:
     nginx: # optional
       enabled: True # default, manage nginx configs
       separate_config: True # optional, in you your loki config not only one nginx config
-      conf_path: /etc/custom/path/loki.conf # optional, you can define custom conf path, if not defined - /etc/nginx/sites-available/instance_name.conf
+      config_path: /etc/custom/path/loki.conf # optional, you can define custom config path, if not defined - /etc/nginx/sites-available/instance_name.conf
       install: True # default, will not install nginx if False
       timeout: {{ timeout }}
       auth_basic:
