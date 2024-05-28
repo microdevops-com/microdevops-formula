@@ -8,12 +8,12 @@
   {%- endif %}
   {%- include "docker-ce/docker-ce.sls" with context %}
 
- {% if pillar["grafana"]["install_nginx"] is not defined or pillar["grafana"]["install_nginx"] is False %}
+  {%- if pillar["grafana"].get("install_nginx", True) %}
 nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
- {% endif %}
+  {% endif %}
 
 {% if pillar["grafana"]["separated_nginx_config"] is defined and pillar["grafana"]["separated_nginx_config"] %}
 nginx_files_1:

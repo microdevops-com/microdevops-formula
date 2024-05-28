@@ -3,13 +3,13 @@
 
 {%- set cert_prefix = "loki-gateway" if loki_data["nginx"].get("gateway", False) else "loki" %}
 {%- set template = "vhost-gw.jinja" if loki_data["nginx"].get("gateway", False) else "vhost.jinja" %}
-  {% if not loki_data["nginx"]["install_nginx"] is defined or loki_data["nginx"].get("install_nginx", False %}
 loki_{{ loki_name }}_nginx_install:
   pkg.installed:
     - pkgs:
+  {% if loki_data.get("nginx", {"install": False}).get("install", True) %}
       - nginx
-      - apache2-utils
   {% endif %}
+      - apache2-utils
 
 
   {%- for auth in loki_data["nginx"].get("auth_basic",[]) %}
@@ -29,11 +29,8 @@ loki_{{ loki_name }}_basic_auth_{{ auth["username"] }}:
   {%- endfor %}
 
   {% if loki_data["nginx"].get("separate_config", True) %}
-    {% if loki_data["nginx"]["conf_path"] is defined %}
-      {%- set config_path = loki_data["nginx"]["conf_path"] %}
-    {% else %}
-      {%- set config_path = "/etc/nginx/sites-available/" ~ loki_name ~ ".conf" %}
-    {% endif %}
+    {%- set config_path = "/etc/nginx/sites-available/" ~ loki_name ~ ".conf" %}
+    {%- set config_path = loki_data["nginx"].get("conf_path", config_path) %}
   {%- else %}
     {%- set config_path = "/etc/nginx/nginx.conf" %}
   {%- endif %}

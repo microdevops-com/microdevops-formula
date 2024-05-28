@@ -4,7 +4,7 @@ grafana:
   #nginx_allowed_ips: #for allow only whitelisted ips - works only with separated nginx config
     #name: 'ip'
   #nginx_conf_path: /custom/path/to/conf/grafana.conf
-  install_nginx: False # True by default
+  install_nginx: True # by default
   acme_configs:
     - name: example.com
       domains:
