@@ -69,7 +69,7 @@
   {%- endif %}
 
   {%- do defaults[kind]["args"].update(vm_data.get("args", {})) %}
-  {%- do vm_data["args"].update(defaults[kind]["args"]) %}
+  {%- do vm_data.setdefault("args", {}).update(defaults[kind]["args"]) %}
   {%- set arg_storage = defaults[kind]["arg_storage"] %}
   {%- set data_dir = vm_data.get(arg_storage, defaults[kind]["args"][arg_storage]).format(vm_name=vm_name) %}
   {%- do vm_data["args"].update({arg_storage: data_dir}) %}
