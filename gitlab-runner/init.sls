@@ -42,6 +42,7 @@ gitlab-runner_config:
         concurrent = {{ pillar["gitlab-runner"]["concurrency"] }}
         check_interval = 0
         shutdown_timeout = 0
+        {% if 'listen_address' in pillar["gitlab-runner"] -%} listen_address = '{{ pillar["gitlab-runner"]["listen_address"] }}' {%- endif %}
         
         [session_server]
           session_timeout = 1800
