@@ -6,7 +6,7 @@ gitlab-runner:
     admin_token: xxxxxxxxxxxxxxxxxxx # needed to cleanup runners in projects
     registration_token: xxxxxxxxxxxxxxxxxx # since approx 15.4 version of GitLab you cannot register project level runners with instance level token, use any legit project registration token here
   register_opts: "--locked --docker-privileged --docker-image 'docker:stable' --access-level='ref_protected'"
-  listen_address: "0.0.0.0:8093"
+  listen_address: "0.0.0.0:8093" # optional, defines an address (<host>:<port>) the Prometheus metrics HTTP server should listen on. 
   name: some-runner1.example.com
   executor: docker
   tags: some-runner1.example.com,dev
