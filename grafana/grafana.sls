@@ -241,6 +241,7 @@ nginx_domain_index_{{ loop.index }}:
     {%- endif %}
   {%- endfor %}
 
+  {%- if pillar["grafana"].get("install_nginx", True) %}
 nginx_reload:
   cmd.run:
     - runas: root
@@ -253,5 +254,6 @@ nginx_reload_cron:
     - user: root
     - minute: 15
     - hour: 6
+  {% endif %}
 
 {% endif %}
