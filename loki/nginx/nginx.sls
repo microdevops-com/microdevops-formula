@@ -11,6 +11,12 @@ loki_{{ loki_name }}_nginx_install:
   {% endif %}
       - apache2-utils
 
+nginx_mkdir:
+  file.directory:
+    - name: /etc/nginx
+    - user: root
+    - group: root
+    - mode: 755
 
   {%- for auth in loki_data["nginx"].get("auth_basic",[]) %}
 loki_{{ loki_name }}_basic_auth_{{ auth["username"] }}:
