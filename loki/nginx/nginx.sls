@@ -46,6 +46,7 @@ loki_{{ loki_name }}_nginx_files_1:
         loki_name: {{ loki_name }}
         loki_data: {{ loki_data }}
 
+  {% if loki_data.get("nginx", {"install": False}).get("install", True) %}
 loki_{{ loki_name }}_nginx_files_symlink_1:
   file.symlink:
     - name: /etc/nginx/sites-enabled/{{ loki_name }}.conf
@@ -69,3 +70,4 @@ loki_{{ loki_name }}_nginx_reload_cron:
     - user: root
     - minute: 15
     - hour: 6
+  {% endif %}
