@@ -8,15 +8,17 @@
   {%- endif %}
   {%- include "docker-ce/docker-ce.sls" with context %}
 
+  {%- if pillar["grafana"].get("install_nginx", True) %}
 nginx_install:
   pkg.installed:
     - pkgs:
       - nginx
+  {% endif %}
 
 {% if pillar["grafana"]["separated_nginx_config"] is defined and pillar["grafana"]["separated_nginx_config"] %}
 nginx_files_1:
   file.managed:
-    - name: /etc/nginx/sites-available/grafana.conf
+    - name: {{ pillar["grafana"]["nginx_conf_path"] | default('/etc/nginx/sites-available/grafana.conf') }}
     - contents: |
         server {
             listen 80;
@@ -54,10 +56,12 @@ nginx_files_1:
     {%- endfor %}
           }
   {%- endfor %}
+  {% if pillar["grafana"]["nginx_conf_path"] is not defined %}
 nginx_symlink_1:
   file.symlink:
     - name: /etc/nginx/sites-enabled/grafana.conf
     - target: /etc/nginx/sites-available/grafana.conf
+  {% endif %}
 
 {% else %}
 nginx_files_1:
@@ -237,6 +241,7 @@ nginx_domain_index_{{ loop.index }}:
     {%- endif %}
   {%- endfor %}
 
+  {%- if pillar["grafana"].get("install_nginx", True) %}
 nginx_reload:
   cmd.run:
     - runas: root
@@ -249,5 +254,6 @@ nginx_reload_cron:
     - user: root
     - minute: 15
     - hour: 6
+  {% endif %}
 
 {% endif %}
