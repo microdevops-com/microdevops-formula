@@ -129,8 +129,6 @@ sentry_install:
       - file: /opt/sentry/sentry/config.yml
       - file: /opt/sentry/sentry/sentry.conf.py
       - git: https://github.com/getsentry/self-hosted.git
-    - require:
-      - cmd: sentry_acme_run
 
 sentry_backup_dir:
   file.directory:
@@ -160,20 +158,14 @@ sentry_docker_compose_up:
     - cwd: /opt/sentry
     - name: |
         [[ -f /opt/sentry/.env.custom ]] && docker-compose --env-file /opt/sentry/.env.custom up -d || docker-compose up -d
-    - require:
-      - cmd: sentry_acme_run
 
 sentry_superuser:
   cmd.run:
     - name: docker exec sentry-self-hosted-web-1 sentry createuser --email {{ pillar["sentry"]["admin_email"] }} --password {{ pillar["sentry"]["admin_password"] }} --superuser --staff --force-update --no-input
-    - require:
-      - cmd: sentry_acme_run
 
 sentry_fix_sentry_admin_permissions:
   cmd.run:
     - name: docker exec sentry-self-hosted-web-1 sentry permissions add -u "{{ pillar["sentry"]["admin_email"] }}" -p "users.admin"
-    - require:
-      - cmd: sentry_acme_run
 
   {%- if "organization_creation_rate_limit_to_0" in pillar["sentry"] and pillar["sentry"]["organization_creation_rate_limit_to_0"] %}
 sentry_organization_creation_rate_limit_to_0:
@@ -190,8 +182,6 @@ sentry_organization_creation_rate_limit_to_0:
             )
           ON CONFLICT (key) DO UPDATE SET value = 'gAJLAC4=', last_updated = now();
         \""
-    - require:
-      - cmd: sentry_acme_run
   {%- endif %}
 
   {% if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
