@@ -4,7 +4,7 @@
 
   {{ verify_and_issue(pillar["sentry"]["acme_account"], "sentry", pillar["sentry"]["acme_domain"]) }}
 
-  {%- if pillar["grafana"].get("install_nginx", True) %}
+  {%- if pillar["sentry"]["web"].get("install_nginx", True) %}
 sentry_install_nginx:
   pkg.installed:
     - pkgs:
