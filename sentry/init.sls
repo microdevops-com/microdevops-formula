@@ -4,14 +4,16 @@
 
   {{ verify_and_issue(pillar["sentry"]["acme_account"], "sentry", pillar["sentry"]["acme_domain"]) }}
 
+  {%- if pillar["grafana"].get("install_nginx", True) %}
 sentry_install_nginx:
   pkg.installed:
     - pkgs:
       - nginx-full
+  {% endif %}
 
 sentry_nginx_files_1:
   file.managed:
-    - name: /etc/nginx/sites-available/{{ pillar["sentry"]["acme_domain"] }}.conf
+    - name: /etc/nginx/sites-available/{{ pillar["sentry"]["web"]["nginx_conf_path"] | default(pillar["sentry"]["acme_domain"]) }}.conf
     - contents: |
         set_real_ip_from 127.0.0.1;
         set_real_ip_from 172.16.0.0/16;
@@ -56,7 +58,7 @@ sentry_nginx_files_1:
                 add_header Strict-Transport-Security "max-age=31536000";
             }
         }
-
+  {% if pillar["sentry"]["web"]["nginx_conf_path"] is not defined %}
 sentry_nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
@@ -65,7 +67,7 @@ sentry_nginx_files_3:
   file.symlink:
     - name: /etc/nginx/sites-enabled/{{ pillar["sentry"]["acme_domain"] }}.conf
     - target: /etc/nginx/sites-available/{{ pillar["sentry"]["acme_domain"] }}.conf
-
+  {% endif %}
 sentry_installer_clone_fom_git:
   git.latest:
     - name: https://github.com/getsentry/self-hosted.git
@@ -192,6 +194,8 @@ sentry_organization_creation_rate_limit_to_0:
       - cmd: sentry_acme_run
   {%- endif %}
 
+  {% if pillar["sentry"]["web"]["nginx_conf_path"] is not defined %}
+
 sentry_nginx_reload:
   cmd.run:
     - name: service nginx configtest && service nginx reload
@@ -204,4 +208,5 @@ sentry_nginx_reload_cron:
     - minute: 15
     - hour: 6
 
+   {% endif %}
 {%- endif %}
