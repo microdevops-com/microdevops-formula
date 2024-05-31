@@ -13,7 +13,7 @@ sentry_install_nginx:
 
 sentry_nginx_files_1:
   file.managed:
-    - name: {{ pillar["sentry"]["config"]["web"]["nginx_conf_path"] | default("/etc/nginx/sites-available/" ~ {{ pillar["sentry"]["acme_domain"] }} ~ ".conf") }}
+    - name: {{ pillar["sentry"]["config"]["web"]["nginx_conf_path"] | default("/etc/nginx/sites-available/" ~ pillar["sentry"]["acme_domain"] ~ ".conf") }}
     - contents: |
         set_real_ip_from 127.0.0.1;
         set_real_ip_from 172.16.0.0/16;
