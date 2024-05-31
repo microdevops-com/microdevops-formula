@@ -58,7 +58,7 @@ sentry_nginx_files_1:
                 add_header Strict-Transport-Security "max-age=31536000";
             }
         }
-  {% if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
+  {% if not pillar["sentry"]["config"]["web"]["nginx_conf_path"] is defined %}
 sentry_nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
@@ -194,7 +194,7 @@ sentry_organization_creation_rate_limit_to_0:
       - cmd: sentry_acme_run
   {%- endif %}
 
-  {% if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
+  {% if not pillar["sentry"]["config"]["web"]["nginx_conf_path"] is defined %}
 
 sentry_nginx_reload:
   cmd.run:
