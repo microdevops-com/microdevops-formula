@@ -54,7 +54,7 @@ alerta:
   #redirect: # optional
   #  domain: alerta.olddomain.com
   #  acme_account: olddomain.com
-  pyenv_version: 3.10.13
+  pyenv_version: 3.10.13 # remove /opt/alerta/alerta in case of changing the version
   version: v9.0.3
   webui_source: salt://alerta/files/v8.7.1/alerta-webui.tar.gz # patched version with customer, group autocomplete and customer sort
   db:
