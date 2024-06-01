@@ -2,18 +2,14 @@
 
 pyenv:
   versions:
-    python-3.7.8: True
+    python-3.10.13: True
 
 postgres:
   use_upstream_repo: True
-  version: 11
+  version: 15
   pkgs_extra:
-  {%- if grains["oscodename"] in ["focal", "jammy", "bookworm"] %}
-    - postgresql-plpython3-11
-  {%- else %}
-    - postgresql-plpython-11
-  {%- endif %}
-    - postgresql-server-dev-11
+    - postgresql-plpython3-15
+    - postgresql-server-dev-15
   postgresconf: |-
     listen_addresses = '*'
     shared_buffers = 4GB
@@ -58,8 +54,9 @@ alerta:
   #redirect: # optional
   #  domain: alerta.olddomain.com
   #  acme_account: olddomain.com
-  version: v8.7.0
-  webui_source: salt://alerta/files/v8.7.0/alerta-webui.tar.gz # patched version with customer, group autocomplete and customer sort
+  pyenv_version: 3.10.13
+  version: v9.0.3
+  webui_source: salt://alerta/files/v8.7.1/alerta-webui.tar.gz # patched version with customer, group autocomplete and customer sort
   db:
     user: alerta
     pass: xxxxxxxxxxxxxxxx
