@@ -1,0 +1,27 @@
+{%- set systemd = settings.get("systemd", {}) %}
+{%- set unit = systemd.get("Unit", defaults["Unit"]) %}
+{%- set service = systemd.get("Service", defaults["Service"]) %}
+{%- set install = systemd.get("Install", defaults["Install"]) %}
+
+[Unit]
+{%- for k, v in unit.items() %}
+  {%- if v is string %}
+{{ k }}={{ v.format(install_dir=settings["install_dir"], exec=settings["exec"], name=name, type=type) }}
+  {%- else %}
+{{ k }}={{ v }}
+  {%- endif %}
+{%- endfor %}
+
+[Service]
+{%- for k, v in service.items() %}
+  {%- if v is string %}
+{{ k }}={{ v.format(install_dir=settings["install_dir"], exec=settings["exec"], name=name, type=type) }}
+  {%- else %}
+{{ k }}={{ v }}
+  {%- endif %}
+{%- endfor %}
+
+[Install]
+{%- for k, v in install.items() %}
+{{ k }}={{ v }}
+{%- endfor %}

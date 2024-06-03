@@ -1,0 +1,81 @@
+exporter:
+
+  google_page_speed:
+    type: pagespeed
+    args:
+      -api-key xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      -categories accessibility,best-practices,performance,pwa,seo
+
+
+  kannel_in:
+    type: kannel
+    args:
+      --password foo
+      --target http://127.0.0.1:13000
+      --timeout 10
+      --port 9390
+
+
+  statsd:
+    type: statsd
+
+
+  redis:
+    type: redis
+    args:
+      -include-system-metrics
+      -log-format txt
+      -ping-on-connect
+
+
+  node:
+    type: node
+    args:
+      --no-collector.arp
+      --no-collector.dmi
+      --collector.interrupts
+
+
+  bb_sites_1:
+    type: blackbox
+
+    files:
+      managed:
+        blackbox_config:
+          - name: "{install_dir}/blackbox.yml"
+            contents: |
+              modules:
+                http_2xx:
+                  prober: http
+                  http:
+                    preferred_ip_protocol: "ip4"
+                http_post_2xx:
+                  prober: http
+                  http:
+                    method: POST
+                tcp_connect:
+                  prober: tcp
+                pop3s_banner:
+  
+   some_not_described_in_defaults_exporter:
+     type: generic
+     platform: direct
+     source: https://example.com/foo_exporter
+     install_dir: /usr/local/bin
+     move:
+       src: "{file}"
+       dst: "{install_dir}/foo"
+     exec: "{install_dir}/foo"
+     args: ""
+
+   another_not_described_in_defaults_exporter:
+     type: generic
+     platform: direct
+     source: https://example.com/some/python/exporter/main.tar.gz
+     install_dir: /opt/pythonexporter
+     venv:
+       requirements:
+         - prometheus-client
+     tar: {}
+     exec: "{install_dir}/venv/bin/python {install_dir}/main.py"
+     args: ""

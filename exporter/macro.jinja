@@ -1,0 +1,242 @@
+{%- import_yaml "exporter/defaults.yaml" as defaults %}
+
+
+{%- macro install_dir(settings, prefix=[]) %}
+{{ "_".join(prefix) }}_install_dir:
+  file.directory:
+    - name: {{ settings["install_dir"] }}
+    - user: root
+    - group: root
+    - makedirs: True
+{%- endmacro %}
+
+
+{%- macro download(name, source, prefix=[]) %}
+{{ "_".join(prefix) }}_download:
+  file.managed:
+    - name: {{ name }}
+    - source: {{ source }}
+    - makedirs: True
+    - skip_verify: True
+    - watch_in:
+      - service: {{ "_".join(prefix) }}_systemd
+{%- endmacro %}
+
+
+{%- macro docker_extract(settings, prefix) %}
+  {%- set extractor = settings.get("extractor", {}) %}
+  {%- set output = settings["install_dir"] ~ "/" ~ extractor.get("dir", "output") %}
+{{ "_".join(prefix) }}_docker_extract:
+  cmd.script:
+    - name: salt://exporter/files/docker-image-extract
+    - args: "-o {{ output }} -p {{ extractor["platform"] }} {{ settings["source"] }}:{{ settings["version"] }}"
+    - shell: /bin/bash
+    - cwd: {{ settings["install_dir"] }}
+    - watch_in:
+      - service: {{ "_".join(prefix) }}_systemd
+  {%- if extractor.get("clean", True) %}
+  file.absent:
+    - name: {{ output }}
+    - order: last
+  {%- endif %}
+{%- endmacro %}
+
+
+{%- macro tar(archive, settings, prefix=[]) %}
+{{ "_".join(prefix) }}_tar:
+  cmd.run:
+    - name: |
+        tar {{ settings["tar"].get("args","") }} --no-same-owner --directory {{ settings["install_dir"] }} --extract --file {{ archive }} {{ settings["tar"].get("unpack","") }}
+    - user: root
+    - group: root
+    - shell: /bin/bash
+    - unless: 
+      - "[[ $(cat {{ settings["install_dir"] }}/.salt_version_info) =~ {{ settings["version"] }} ]]"
+    - watch_in:
+      - service: {{ "_".join(prefix) }}_systemd
+  file.managed:
+    - name: {{ settings["install_dir"] }}/.salt_version_info
+    - contents: "{{ settings["version"] }}"
+{%- endmacro %}
+
+
+{%- macro move(settings, prefix=[]) %}
+{{ "_".join(prefix) }}_move:
+  file.rename:
+    - name: "{{ settings["move"]["dst"] }}"
+    - source: "{{ settings["move"]["src"] }}"
+    - force: True
+    - makedirs: True
+{%- endmacro %}
+
+
+{%- macro venv(settings, prefix=[]) %}
+  {%- set dir = settings["install_dir"] %}
+  {%- set requirements = settings["venv"].get("requirements",[]) %}
+  {%- set requirements_txt = settings["venv"].get("requirements_txt","") %}
+{{ "_".join(prefix) }}_venv:
+  pkg.installed:
+    - name: python3-venv
+  {%- if requirements %}
+  file.managed:
+    - name: {{ dir }}/.salt_requirements.txt
+    - contents: |
+        {{ "\n".join(requirements) | indent(8) }}
+  {%- endif %}
+  cmd.run:
+    - shell: /bin/bash
+    - user: root
+    - group: root
+    - name: |
+        python -m venv --clear {{ dir }}/venv
+  {%- if requirements %}
+        {{ dir }}/venv/bin/pip --require-virtualenv install -r {{ dir }}/.salt_requirements.txt
+  {%- endif %}
+  {%- if requirements_txt %}
+        {{ dir }}/venv/bin/pip --require-virtualenv install -r {{ requirements_txt }}
+  {%- endif %}
+    - unless:
+      - "[[ $({{ dir }}/venv/bin/python -V) =~ Python ]]"
+  {%- if requirements %}
+      - "[[ ! $({{ dir }}/venv/bin/pip freeze -r {{ dir }}/.salt_requirements.txt 2>&1) =~ WARNING ]]"
+  {%- endif %}
+  {%- if requirements_txt %}
+      - "[[ ! $({{ dir }}/venv/bin/pip freeze -r {{ requirements_txt }} 2>&1) =~ WARNING ]]"
+  {%- endif %}
+    - watch_in:
+      - service: {{ "_".join(prefix) }}_systemd
+{%- endmacro %}
+
+
+{%- macro executable(settings={}, prefix=[]) %}
+{{ "_".join(prefix) }}_executable:
+  file.managed:
+    - name: {{ settings["exec"].split()[0] }}
+    - user: root
+    - group: root
+    - mode: 755
+{%- endmacro %}
+
+
+{%- macro service(name, type, settings={}, prefix=[]) %}
+{{ "_".join(prefix) }}_systemd:
+  file.managed:
+    - name: /etc/systemd/system/exporter_{{ name }}.service
+    - source: salt://exporter/service.tmpl
+    - template: jinja
+    - context:
+       name: {{ name }}
+       type: {{ type }}
+       settings: {{ settings }}
+       defaults: {{ defaults["systemd"] }}
+  service.running:
+    - name: exporter_{{ name }}.service
+    - enable: True
+    - watch:
+      - file: {{ "_".join(prefix) }}_systemd
+{%- endmacro %}
+
+
+{%- macro main(type, name, data) %}
+  {%- set prefix = ["exporter", type, name] %}
+  {%- set settings = defaults["exporter"][type] %}
+  {%- do settings.update(data) %}
+
+  {# get tag from github into settings["version"] #}
+  {%- if settings["version"] == "latest" and settings["store"] == "github" %}
+    {%- set tags_url = defaults["store"]["github"]["tags_url"].format(repo="/".join(settings["source"].split("/")[3:5])) %}
+    {%- set response = salt.http.query(tags_url) %}
+    {%- if not "error" in response and "body" in response %}
+      {%- set body = response["body"] | load_json %}
+      {%- do settings.update({"version": body[0]["name"]}) %}
+    {%- else %}
+      {{ raise("\n>>> CRITICAL: error occured during fetching \"latest\" release tag\n>>> remote response: " ~ response ~ "\n>>> remote url: " ~ tags_url ) }}
+    {%- endif %}
+  {%- endif %}
+
+  {# format install_dir #}
+  {%- do settings.update({"install_dir": settings["install_dir"].format(name=name, type=type) }) %}
+  
+  {# define format_source #}
+  {%- set format_source = {"tag": settings["version"],
+                           "tag_vstrip": settings["version"].lstrip("v"),
+                           "osarch": grains["osarch"],
+                           "cpuarch": grains["cpuarch"],
+                           "kernel": grains["kernel"],
+                           "kernel_lower": grains["kernel"].lower() } %}
+
+  {# format source #}
+  {%- do settings.update({"source": settings["source"].format(**format_source) }) %}
+
+  {# format extractor #}
+  {%- if settings.get("extractor", False) %}
+    {%- do settings["extractor"].update({"platform": settings["extractor"]["platform"].format(**format_source) }) %}
+  {%- endif %}
+
+  {%- set file_src = settings["source"] %}
+  {%- set file = defaults["salt_cache_dir"] ~ "/" ~ type ~ "/" ~ file_src.split("/")[-1] %} 
+
+  {# define format_base #}
+  {%- set format_base = {"name": name, "type": type, "file": file, "install_dir": settings["install_dir"]} %}
+
+  {# format args #}
+  {%- do settings.update({"args": settings["args"].format(**format_base) }) %}
+
+  {# update format_base #}
+  {%- do format_base.update({"args": settings["args"]}) %}
+
+  {# format exec #}
+  {%- do settings.update({"exec": settings["exec"].format(**format_base) }) %}
+
+  {# format venv #}
+  {%- if settings.get("venv",{}).get("requirements_txt", False) %}
+    {%- do settings["venv"].update({"requirements_txt": settings["venv"]["requirements_txt"].format(**format_base) }) %}
+  {%- endif %}
+
+  {# format move #}
+  {%- if settings.get("move", False) %}
+    {%- do settings["move"].update({"src": settings["move"]["src"].format(**format_base) }) %}
+    {%- do settings["move"].update({"dst": settings["move"]["dst"].format(**format_base) }) %}
+  {%- endif %}
+
+  {{ install_dir(settings, prefix) }}
+
+  {%- if settings["store"] in ["github", "direct"] %}
+    {{ download(file, file_src, prefix) }}
+  {%- endif %}
+
+  {%- if settings["store"] in ["dockerhub"] %}
+    {{ docker_extract(settings, prefix) }}
+  {%- endif %}
+
+  {%- if "tar" in settings.keys() and settings["store"] in ["github", "direct"] %}
+    {{ tar(file, settings, prefix) }}
+  {%- endif %}
+
+  {%- if "venv" in settings.keys() %}
+    {{ venv(settings, prefix) }}
+  {%- endif %}
+
+  {%- if "move" in settings.keys() %}
+    {{ move(settings, prefix) }}
+  {%- endif %}
+
+  {{ executable(settings, prefix) }}
+
+  {# patch files for file manager #}
+  {%- set files = data.get("files", {}) %}
+  {%- for kind, block in files.items() %}
+    {%- for name, items in block.items() %}
+      {%- for item in items %}
+        {%- if "name" in item %}
+          {%- do item.update({"name": item["name"].format(**format_base)}) %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endfor %}
+  {%- endfor %}
+  {%- set extloop = name %}
+  {%- include "_include/file_manager/init.sls" %}
+
+  {{ service(name, type, settings, prefix) }}
+
+{%- endmacro %}

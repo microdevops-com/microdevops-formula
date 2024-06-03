@@ -1,0 +1,123 @@
+salt_cache_dir: /var/cache/salt/exporter
+
+store:
+  github:
+    tags_url: "https://api.github.com/repos/{repo}/tags?per_page=1"
+  dockerhub: {}
+  direct: {}
+
+systemd:
+  Unit:
+    Description: "{type} exporter"
+    After: network.target
+  Service:
+    ExecStart: "{exec}"
+    Type: simple
+    Restart: on-failure
+    StartLimitBurst: 5
+    StartLimitInterval: 1
+    WorkingDirectory: "{install_dir}"
+  Install:
+    WantedBy: multi-user.target
+
+exporter:
+
+  generic: {}
+
+  _:
+    store: github | direct | dockerhub
+    version: latest | v0.1.1 
+    source: https://..., salt://..., path/to/local/file
+    install_dir: "/opt/exporter/{type}/{name}"
+
+    venv: # optional, if venv is required
+      requirements_txt: "{install_dir}/requirements.txt" # install requirements in venv from unpacket project
+      requirements: 
+        - gunicorn==20.1
+        - tzdata==2024.1
+        - xmltodict
+
+    tar: # optional, only for store in ["github", "direct"], if source file is tar archive
+      args: '--strip-components=1 --no-anchored' # optional
+      unpack: "file_name_in_archive" # optional, file name extract to, use {install_dir}/file_name_in_archive in exec
+
+    extractor: # optional, only for store in ["dockerhub"], see https://github.com/jjlin/docker-image-extract
+      clean: False # optional, default, remove "dir" after unpacking
+      platform: "{kernel_lower}/{osarch}" # required, pull image for the specified platform 
+      dir: output # optional, default, dir name inside {install_dir} extract docker to
+
+    move: # optional, if source is executable file, and just needs to be moved after downloading
+      src: "{file}" # required, {file} holds the full path to the downloaded file
+      dst: "{install_dir}/{type}_exporter" # target file, use the same in exec
+
+    exec: "{install_dir}/{type}_exporter {args}"
+    args: ""
+
+  kannel:
+    store: github
+    version: latest
+    source: "https://github.com/apostvav/kannel_exporter/archive/refs/tags/{tag}.tar.gz"
+    install_dir: "/opt/exporter/{type}/{name}"
+    tar:
+      args: '--strip-components=1'
+    venv:
+      requirements_txt: "{install_dir}/requirements.txt"
+    exec: "{install_dir}/venv/bin/python {install_dir}/kannel_exporter.py {args}"
+    args: ""
+  
+  node:
+    store: github
+    version: latest
+    source: "https://github.com/prometheus/node_exporter/releases/download/{tag}/node_exporter-{tag_vstrip}.{kernel_lower}-{osarch}.tar.gz"
+    install_dir: "/opt/exporter/{type}/{name}"
+    tar:
+      args: '--strip-components=1 --no-anchored'
+      unpack: node_exporter
+    exec: "{install_dir}/node_exporter {args}"
+    args: ""
+
+  blackbox:
+    store: github
+    version: latest
+    source: "https://github.com/prometheus/blackbox_exporter/releases/download/{tag}/blackbox_exporter-{tag_vstrip}.{kernel_lower}-{osarch}.tar.gz"
+    install_dir: "/opt/exporter/{type}/{name}"
+    tar:
+      args: '--strip-components=1 --no-anchored'
+      unpack: blackbox_exporter blackbox.yml
+    exec: "{install_dir}/blackbox_exporter {args}"
+    args: ""
+
+  redis:
+    store: github
+    version: latest
+    source: "https://github.com/oliver006/redis_exporter/releases/download/{tag}/redis_exporter-{tag}.{kernel_lower}-{osarch}.tar.gz"
+    install_dir: "/opt/exporter/{type}/{name}"
+    tar:
+      args: '--strip-components=1 --no-anchored'
+      unpack: redis_exporter
+    exec: "{install_dir}/redis_exporter {args}"
+    args: ""
+
+  statsd:
+    store: github
+    version: latest
+    source: "https://github.com/prometheus/statsd_exporter/releases/download/{tag}/statsd_exporter-{tag_vstrip}.{kernel_lower}-{osarch}.tar.gz"
+    install_dir: "/opt/exporter/{type}/{name}"
+    tar:
+      args: '--strip-components=1 --no-anchored'
+      unpack: statsd_exporter
+    exec: "{install_dir}/statsd_exporter {args}"
+    args: ""
+
+  pagespeed:
+    store: dockerhub
+    version: latest
+    source: "foomo/pagespeed_exporter"
+    install_dir: "/opt/exporter/{type}/{name}"
+    extractor:
+      platform: "{kernel_lower}/{osarch}"
+    move:
+      src: "{install_dir}/output/bin/pagespeed_exporter"
+      dst: "{install_dir}/pagespeed_exporter"
+    exec: "{install_dir}/pagespeed_exporter {args}"
+    args: ""
