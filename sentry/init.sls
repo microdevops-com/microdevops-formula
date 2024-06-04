@@ -15,7 +15,7 @@ sentry_nginx_files_1:
   file.managed:
     - name: {{ pillar["sentry"]["config"]["web"]["nginx_conf_path"] | default("/etc/nginx/sites-available/" ~ pillar["sentry"]["acme_domain"] ~ ".conf") }}
   {%- if "nginx_custom_conf" in pillar["sentry"]["config"]["web"] %}
-    - contents: {{ pillar["sentry"]["web"]["nginx_custom_conf"] }}
+    - contents: {{ pillar["sentry"][["config"]"web"]["nginx_custom_conf"] }}
   {% else %}
     - contents: |
         set_real_ip_from 127.0.0.1;
