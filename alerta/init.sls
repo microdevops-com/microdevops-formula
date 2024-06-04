@@ -2,7 +2,7 @@
 
   {% from "acme/macros.jinja" import verify_and_issue %}
 
-  {%- set pyenv_version = "3.7.8" %}
+  {%- set pyenv_version = salt["pillar.get"]("alerta:pyenv_version", "3.10.13") %}
 
 alerta_reqs_install:
   pkg.installed:

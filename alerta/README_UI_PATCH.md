@@ -1,5 +1,5 @@
 # Clone
-- Clone https://github.com/sysadmws/alerta-webui
+- Clone https://github.com/microdevops-com/alerta-webui
 
 # Patch
 ```
