@@ -14,6 +14,9 @@ sentry_install_nginx:
 sentry_nginx_files_1:
   file.managed:
     - name: {{ pillar["sentry"]["config"]["web"]["nginx_conf_path"] | default("/etc/nginx/sites-available/" ~ pillar["sentry"]["acme_domain"] ~ ".conf") }}
+  {%- if "nginx_custom_conf" in pillar["sentry"]["web"] %}
+    - contents: {{ pillar["sentry"]["web"]["nginx_custom_conf"] }}
+  {% else %}
     - contents: |
         set_real_ip_from 127.0.0.1;
         set_real_ip_from 172.16.0.0/16;
@@ -58,6 +61,7 @@ sentry_nginx_files_1:
                 add_header Strict-Transport-Security "max-age=31536000";
             }
         }
+  {% endif %}
   {% if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
 sentry_nginx_files_2:
   file.absent:
