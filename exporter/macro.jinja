@@ -18,8 +18,8 @@
     - source: {{ source }}
     - makedirs: True
     - skip_verify: True
-    - watch_in:
-      - service: {{ "_".join(prefix) }}_systemd
+    - require_in:
+      - cmd: {{ "_".join(prefix) }}_tar
 {%- endmacro %}
 
 
@@ -139,8 +139,7 @@
 
 {%- macro main(type, name, data) %}
   {%- set prefix = ["exporter", type, name] %}
-  {%- set settings = defaults["exporter"][type] %}
-  {%- do settings.update(data) %}
+  {%- set settings = salt.defaults.merge(defaults["exporter"][type], data, in_place=False) %}
 
   {# get tag from github into settings["version"] #}
   {%- if settings["version"] == "latest" and settings["store"] == "github" %}
