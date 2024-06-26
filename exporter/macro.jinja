@@ -18,8 +18,6 @@
     - source: {{ source }}
     - makedirs: True
     - skip_verify: True
-    - require_in:
-      - cmd: {{ "_".join(prefix) }}_tar
 {%- endmacro %}
 
 
@@ -50,13 +48,15 @@
     - user: root
     - group: root
     - shell: /bin/bash
-    - unless: 
-      - "[[ $(cat {{ settings["install_dir"] }}/.salt_version_info) =~ {{ settings["version"] }} ]]"
     - watch_in:
       - service: {{ "_".join(prefix) }}_systemd
+  {%- if settings.get("version", "") %}
+    - unless: 
+      - "[[ $(cat {{ settings["install_dir"] }}/.salt_version_info) =~ {{ settings["version"] }} ]]"
   file.managed:
     - name: {{ settings["install_dir"] }}/.salt_version_info
     - contents: "{{ settings["version"] }}"
+  {%- endif %}
 {%- endmacro %}
 
 
@@ -142,7 +142,7 @@
   {%- set settings = salt.defaults.merge(defaults["exporter"][type], data, in_place=False) %}
 
   {# get tag from github into settings["version"] #}
-  {%- if settings["version"] == "latest" and settings["store"] == "github" %}
+  {%- if settings.get("version","") == "latest" and settings("store","") == "github" %}
     {%- set tags_url = defaults["store"]["github"]["tags_url"].format(repo="/".join(settings["source"].split("/")[3:5])) %}
     {%- set response = salt.http.query(tags_url) %}
     {%- if not "error" in response and "body" in response %}
@@ -157,8 +157,8 @@
   {%- do settings.update({"install_dir": settings["install_dir"].format(name=name, type=type) }) %}
   
   {# define format_source #}
-  {%- set format_source = {"tag": settings["version"],
-                           "tag_vstrip": settings["version"].lstrip("v"),
+  {%- set format_source = {"tag": settings.get("version",""),
+                           "tag_vstrip": settings.get("version","").lstrip("v"),
                            "osarch": grains["osarch"],
                            "cpuarch": grains["cpuarch"],
                            "kernel": grains["kernel"],
