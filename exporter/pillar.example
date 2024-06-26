@@ -59,7 +59,7 @@ exporter:
   
    some_not_described_in_defaults_exporter:
      type: generic
-     platform: direct
+     store: direct
      source: https://example.com/foo_exporter
      install_dir: /usr/local/bin
      move:
@@ -70,7 +70,7 @@ exporter:
 
    another_not_described_in_defaults_exporter:
      type: generic
-     platform: direct
+     store: direct
      source: https://example.com/some/python/exporter/main.tar.gz
      install_dir: /opt/pythonexporter
      venv:
