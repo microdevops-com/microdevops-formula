@@ -24,11 +24,11 @@ docker-ce_repo:
 {% set opts  = {"keyurl":"https://download.docker.com/linux/debian/gpg",
                 "listfile":"/etc/apt/sources.list.d/docker-ce.list",
                 "keyfile":"/etc/apt/keyrings/docker-ce.gpg"} %}
-	{% else %}
+        {% else %}
 {% set opts  = {"keyurl":"https://download.docker.com/linux/ubuntu/gpg",
                 "listfile":"/etc/apt/sources.list.d/docker-ce.list",
                 "keyfile":"/etc/apt/keyrings/docker-ce.gpg"} %}
-	{% endif %}
+        {% endif %}
   pkg.installed:
     - pkgs: [wget, gpg]
   cmd.run:
@@ -46,9 +46,9 @@ docker-ce_repo:
     - contents: |
         {% if grains["os"] == "Debian" %}
         deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://download.docker.com/linux/debian {{ grains['oscodename'] }} stable
-	{% else %}
+        {% else %}
         deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
-	{% endif %}
+        {% endif %}
 
 docker-ce_pkg:
   {%- if docker_ce["version"] == "latest" %}
