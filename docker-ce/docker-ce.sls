@@ -20,7 +20,7 @@ docker-ce_repo_keyringdir:
     - group: root
 
 docker-ce_repo:
-        {% if grains[os] == "Debian" %}
+        {% if grains["os"] == "Debian" %}
 {% set opts  = {"keyurl":"https://download.docker.com/linux/debian/gpg",
                 "listfile":"/etc/apt/sources.list.d/docker-ce.list",
                 "keyfile":"/etc/apt/keyrings/docker-ce.gpg"} %}
@@ -44,7 +44,7 @@ docker-ce_repo:
   file.managed:
     - name: {{ opts["listfile"] }}
     - contents: |
-        {% if grains[os] == "Debian" %}
+        {% if grains["os"] == "Debian" %}
         deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://download.docker.com/linux/debian {{ grains['oscodename'] }} stable
 	{% else %}
         deb [arch={{ grains["osarch"] }} signed-by={{ opts["keyfile"] }}] https://download.docker.com/linux/ubuntu {{ grains['oscodename'] }} stable
