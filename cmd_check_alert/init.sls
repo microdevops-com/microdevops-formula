@@ -62,7 +62,7 @@ sensu-plugins_repo:
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
-    - name: deb https://packagecloud.io/sensu/community/{{ grains["os"]|lower }}/ focal main
+    - name: deb https://packagecloud.io/sensu/community/ubuntu/ focal main
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
