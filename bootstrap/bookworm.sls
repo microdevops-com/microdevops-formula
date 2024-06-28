@@ -100,12 +100,15 @@ full_hostname:
     - name: |
         echo "{{ pillar["bootstrap"]["hostname"] }}" > /etc/hostname && hostname $(cat /etc/hostname)
 
-{% if grains["virtual"] == "physical" %}
+{% if grains["virtual"] in ["physical", "kvm"] %}
 swapiness:
   sysctl.present:
     - name: vm.swappiness
     - value: 10
 
+{% endif %}
+
+{% if grains["virtual"] == "physical" %}
 debconf_utils:
   pkg.latest:
     - reload_modules: True
@@ -133,6 +136,9 @@ mdadm_reconfigure:
     - onchanges:
       - debconf: mdadm_debconf
 
+{% endif %}
+
+{% if grains["virtual"] in ["physical", "kvm"] %}
 br_netfilter_module:
   file.line:
     - name: /etc/modules-load.d/modules.conf
