@@ -85,6 +85,8 @@ pkg_latest:
       - s-nail 
       # python
       - python3-pip
+      # network
+      - netplan.io
 {% if grains["virtual"] == "physical" %}
       # physical
       - smartmontools
