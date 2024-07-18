@@ -29,22 +29,34 @@ redis_repo:
       - gpg
   cmd.run:
     - name: |
+    {% if grains['os'] == 'Debian' %}
+        curl -s https://packages.redis.io/gpg | gpg --batch --yes --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+    {% else %}
         {% if "keyid" in opts %}
         gpg --keyserver keyserver.ubuntu.com --recv-keys {{ opts["keyid"] }}
         gpg --batch --yes --no-tty --output {{ opts["keyfile"] }} --export {{ opts["keyid"] }}
         {% endif %}
     - creates: {{ opts["keyfile"] }}
+    {% endif %}
   file.managed:
     - name: {{ opts["listfile"] }}
     - contents: |
+    {% if grains['os'] == 'Debian' %}
+        deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb {{ grains['oscodename'] }} main
+    {% else %}
         deb [signed-by={{ opts["keyfile"] }}] https://ppa.launchpadcontent.net/redislabs/redis/ubuntu {{ grains['oscodename'] }} main
+    {% endif %}
 
 redis_install:
   pkg.latest:
     - refresh: True
     - reload_modules: True
     - pkgs:
+    {% if grains['os'] == 'Debian' %}
+        - redis
+    {% else %}
         - redis-server
+    {% endif %}
 
 redis_run:
   service.running:
