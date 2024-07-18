@@ -30,7 +30,7 @@ redis_repo:
   cmd.run:
     - name: |
     {% if grains['os'] == 'Debian' %}
-        curl -fsSL https://packages.redis.io/gpg | tac | tac | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+        curl -fsSL https://packages.redis.io/gpg | tac | tac | gpg --no-tty --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
     {% else %}
         {% if "keyid" in opts %}
         gpg --keyserver keyserver.ubuntu.com --recv-keys {{ opts["keyid"] }}
