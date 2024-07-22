@@ -142,7 +142,7 @@
   {%- set settings = salt.defaults.merge(defaults["exporter"][type], data, in_place=False) %}
 
   {# get tag from github into settings["version"] #}
-  {%- if settings.get("version","") == "latest" and settings("store","") == "github" %}
+  {%- if settings.get("version","") == "latest" and settings.get("store","") == "github" %}
     {%- set tags_url = defaults["store"]["github"]["tags_url"].format(repo="/".join(settings["source"].split("/")[3:5])) %}
     {%- set response = salt.http.query(tags_url) %}
     {%- if not "error" in response and "body" in response %}
