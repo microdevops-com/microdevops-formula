@@ -223,7 +223,7 @@
   {{ executable(settings, prefix) }}
 
   {# patch files for file manager #}
-  {%- set files = data.get("files", {}) %}
+  {%- set files = settings.pop("files", {}) %}
   {%- for kind, block in files.items() %}
     {%- for name, items in block.items() %}
       {%- for item in items %}
