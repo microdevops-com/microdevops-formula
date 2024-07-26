@@ -1,0 +1,2 @@
+include:
+  - .ufw_simple
