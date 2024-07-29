@@ -1,0 +1,26 @@
+# Simple server without additional network ipv4 only
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      match:
+        macaddress: {{ mac_wan }}
+      dhcp4: no
+      dhcp6: no
+      addresses:
+        - {{ ipv4_address }}
+      routes:
+        - on-link: true
+          to: default
+          via: {{ ipv4_gw }}
+      set-name: eth0
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+          
