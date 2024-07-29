@@ -11,7 +11,7 @@ loki_{{ loki_name }}_nginx_install:
   {% endif %}
       - apache2-utils
 
-nginx_mkdir:
+nginx_mkdir_{{ loki_name }}:
   file.directory:
     - name: /etc/nginx
     - user: root
