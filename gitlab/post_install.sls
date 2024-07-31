@@ -6,7 +6,7 @@ create_post_install_script:
     - contents_pillar: gitlab:post_install
     - mode: 755
 
-run_post_install:
+run_post_install_script:
   cmd.run:
     - name: /opt/gitlab/post_install.sh
     - runas: root
