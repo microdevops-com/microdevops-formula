@@ -76,6 +76,9 @@ gitlab:
   #config_additions: |
   #  sidekiq['queue_groups'] = ['*'] * 8 # https://docs.gitlab.com/ee/administration/sidekiq/extra_sidekiq_processes.html
   #  sidekiq['max_concurrency'] = 10 # has been deprecated since 16.9 and was removed in 17.0. Starting with GitLab 17.0, `sidekiq['max_concurrency']` will be removed.
+  post_install: |
+    #!/bin/bash
+    echo "run post install script"
 
 # example for rsnapshot_backup
 rsnapshot_backup:
