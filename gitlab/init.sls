@@ -176,6 +176,9 @@ gitlab_config:
         gitlab_rails['smtp_enable_starttls_auto'] = true
         gitlab_rails['smtp_tls'] = false
         gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
+        {%- if "email_from" in pillar["gitlab"]['smtp'] %}
+        gitlab_rails['gitlab_email_from'] = "{{ pillar['gitlab']['smtp']['email_from'] }}"
+        {%- endif %}
   {%- endif %}
   {%- if "incoming_email" in pillar["gitlab"] %}
         gitlab_rails['incoming_email_enabled'] = true
@@ -220,6 +223,12 @@ gitlab_config:
   {%- endif %}
   {%- if "config_additions" in pillar["gitlab"] %}
         {{ pillar["gitlab"]["config_additions"] | indent(8) }}
+  {%- endif %}
+  {% if "usage_ping_enabled" in pillar["gitlab"] %}
+        gitlab_rails['usage_ping_enabled'] = {{ pillar["gitlab"]["usage_ping_enabled"] }}
+  {%- endif %}
+  {% if "monitoring_whitelist" in pillar["gitlab"] %}
+        gitlab_rails['monitoring_whitelist'] = {{ pillar["gitlab"]["monitoring_whitelist"] }}
   {%- endif %}
 
 # Fix the issue when doing clean install with EXTERNAL_URL set - it will wait indefinately for service to start
