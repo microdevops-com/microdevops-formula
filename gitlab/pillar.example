@@ -52,12 +52,15 @@ gitlab:
   google_oauth2:
     app_id: xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
     app_secret: xxxxxxxxxxxxxxxxxxxxxxxx
+  usage_ping_enabled: 'false'
+  monitoring_whitelist: ['127.0.0.0/8', '1.2.3.4/32']
   smtp:
     address: smtp.gmail.com
     port: 587
     user_name: gitlab@example.com
     password: xxxxxxxxxxxxxxxxxxxxx
     domain: smtp.gmail.com
+    email_from: gitlab@example.com
   incoming_email:
     address: gitlab+%{key}@example.com
     email: gitlab@example.com
