@@ -340,4 +340,21 @@ gitlab_nginx_reload_cron:
     - minute: 15
     - hour: 12
 
+  {% if "post_install" in pillar["gitlab"] %}
+gitlab_create_post_install_script:
+  file.managed:
+    - name: /opt/gitlab/post_install.sh
+    - contents_pillar: gitlab:post_install
+    - mode: 755
+
+gitlab_run_post_install_script:
+  cmd.run:
+    - name: /opt/gitlab/post_install.sh
+    - runas: root
+    - shell: /bin/bash
+    - require:
+      - file: /opt/gitlab/post_install.sh
+
+  {% endif %}
+
 {% endif %}
