@@ -80,7 +80,7 @@ cmd_check_alert:
   network:
     cron: '*/15'
     install_sensu-plugins:
-      - network-checks
+      - 'network-checks:1.2.0'
     config:
       enabled: True
       limits:
