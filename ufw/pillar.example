@@ -94,3 +94,19 @@ ufw:
       -A PREROUTING -m policy --dir in --pol ipsec -j NFLOG --nflog-group 16
       -A POSTROUTING -m policy --dir out --pol ipsec -j NFLOG --nflog-group 16
       COMMIT
+  custom6: # directly paste custom iptables rules to before6.rules
+    filter: | # filter table, filter table is not flused, use ufw chains ufw6-before-forward, ufw6-before-input, ufw6-before-output etc otherwise rules will duplicate on apply
+      -I ufw6-before-output -m owner --uid-owner 998 -j DROP
+      -I ufw6-before-output -d 2605:ef80::/32 -j ACCEPT
+      -I ufw6-before-output -d 2600:1900::/28 -j ACCEPT
+      -I ufw6-before-output -d 2404:f340::/32 -j ACCEPT
+      -I ufw6-before-output -d 2404:6800::/32 -j ACCEPT
+      -I ufw6-before-output -d 2001:4860::/32 -j ACCEPT
+      -I ufw6-before-output -o lo -j ACCEPT
+      -I ufw6-before-output -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    raw_rules: | # add custom rule block to the bottom of the before.rules
+      *mangle # example for logging of ipsec traffic
+      -F
+      -A PREROUTING -m policy --dir in --pol ipsec -j NFLOG --nflog-group 16
+      -A POSTROUTING -m policy --dir out --pol ipsec -j NFLOG --nflog-group 16
+      COMMIT
