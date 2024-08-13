@@ -35,14 +35,14 @@ ufw_case_disabled:
     - name: "which ufw && ufw disable || true"
 
 
-{% elif pillar["ufw"] is defined and not (pillar["ufw"].keys() | intersect(["allow", "nat", "custom"])) %}
+{% elif pillar["ufw"] is defined and not (pillar["ufw"].keys() | intersect(["allow", "nat", "custom", "custom6"])) %}
 ufw_case_no_allowrules_host_will_close_itself:
   test.configurable_test_state:
     - name: nothing_done
     - changes: False
     - result: False
     - comment: |
-        INFO: Ufw state _was_ configured with pillar, but no allow/nat/custom rules defined, so host will close itself from world.
+        INFO: Ufw state _was_ configured with pillar, but no allow/nat/custom/custom6 rules defined, so host will close itself from world.
 
 
 {% elif pillar["ufw"] is defined %}
@@ -89,6 +89,20 @@ ufw_case_no_allowrules_host_will_close_itself:
         {%- do pillar["ufw"]["custom"].update({ "filter": pillar["ufw_simple"]["custom"]["filter"] }) %}
       {%- endif %}
     {%- endif %}
+    # custom6
+    {%- if "custom6" in pillar["ufw_simple"] %}
+      {%- if "custom6" not in pillar["ufw"] %}
+        {%- do pillar["ufw"].update({ "custom6": {} }) %}
+      {%- endif %}
+      # nat only if in ufw not set
+      {%- if "nat" in pillar["ufw_simple"]["custom6"] and "nat" not in pillar["ufw"]["custom6"]  %}
+        {%- do pillar["ufw"]["custom6"].update({ "nat": pillar["ufw_simple"]["custom6"]["nat"] }) %}
+      {%- endif %}
+      # filter only if in ufw not set
+      {%- if "filter" in pillar["ufw_simple"]["custom6"] and "filter" not in pillar["ufw"]["custom6"]  %}
+        {%- do pillar["ufw"]["custom6"].update({ "filter": pillar["ufw_simple"]["custom6"]["filter"] }) %}
+      {%- endif %}
+    {%- endif %}
   {%- endif %}
   
   {%- if "nat" in pillar["ufw"] and "management_disabled" in pillar["ufw"]["nat"] and pillar["ufw"]["nat"]["management_disabled"] %}
@@ -110,7 +124,7 @@ ufw_ip_fwd_managed_file_1:
     - mode: 0644
     - template: jinja
     - defaults:
-  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) or ("forwarding" in pillar["ufw"] and pillar["ufw"]["forwarding"]) %}
+  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) or ("custom6" in pillar["ufw"] and "nat" in pillar["ufw"]["custom6"]) or ("forwarding" in pillar["ufw"] and pillar["ufw"]["forwarding"]) %}
         IP_FWD: |
           net/ipv4/ip_forward=1
           net/ipv6/conf/default/forwarding=1
@@ -129,7 +143,7 @@ ufw_ip_fwd_managed_file_2:
     - mode: 0644
     - template: jinja
     - defaults:
-  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) or ("forwarding" in pillar["ufw"] and pillar["ufw"]["forwarding"]) %}
+  {%- if "nat" in pillar["ufw"] or ("custom" in pillar["ufw"] and "nat" in pillar["ufw"]["custom"]) or ("custom6" in pillar["ufw"] and "nat" in pillar["ufw"]["custom6"]) or ("forwarding" in pillar["ufw"] and pillar["ufw"]["forwarding"]) %}
         DEFAULT_FORWARD_POLICY: ACCEPT
         IPT_MODULES: nf_conntrack_ftp nf_nat_ftp nf_conntrack_netbios_ns
   {%- else %}
@@ -242,6 +256,27 @@ ufw_before_rules_managed:
         custom_raw_rules: {{ pillar["ufw"]["custom"]["raw_rules"] | yaml_encode }}
   {%- else %}
         custom_raw_rules: "# empty"
+  {%- endif %}
+
+# Manage /etc/ufw/before6.rules if nat or custom6 rules
+ufw_before6_rules_managed:
+  file.managed:
+    - name: /etc/ufw/before6.rules
+    - source: salt://ufw/files/etc_ufw_before6.rules
+    - mode: 0640
+    - template: jinja
+    - defaults:
+    # custom6_filter
+  {%- if "custom6" in pillar["ufw"] and "filter" in pillar["ufw"]["custom6"] %}
+        custom6_filter: {{ pillar["ufw"]["custom6"]["filter"] | yaml_encode }}
+  {%- else %}
+        custom6_filter: "# empty"
+  {%- endif %}
+    # custom6_raw_rules
+  {%- if "custom6" in pillar["ufw"] and "raw_rules" in pillar["ufw"]["custom6"] %}
+        custom6_raw_rules: {{ pillar["ufw"]["custom6"]["raw_rules"] | yaml_encode }}
+  {%- else %}
+        custom6_raw_rules: "# empty"
   {%- endif %}
 
   # Fill src rules with ufw commands to process next
@@ -372,6 +407,7 @@ ufw_reload:
       - file: /etc/ufw/sysctl.conf
       - file: /etc/default/ufw
       - file: /etc/ufw/before.rules
+      - file: /etc/ufw/before6.rules
   {%- if grains["os"] in ["CentOS"] %}
       - file: /var/lib/ufw/user.rules
       - file: /var/lib/ufw/user6.rules
@@ -389,6 +425,7 @@ exec_after:
       - file: /etc/ufw/sysctl.conf
       - file: /etc/default/ufw
       - file: /etc/ufw/before.rules
+      - file: /etc/ufw/before6.rules
     {%- if grains["os"] in ["CentOS"] %}
       - file: /var/lib/ufw/user.rules
       - file: /var/lib/ufw/user6.rules
