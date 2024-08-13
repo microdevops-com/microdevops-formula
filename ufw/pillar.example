@@ -94,6 +94,9 @@ ufw:
       -A PREROUTING -m policy --dir in --pol ipsec -j NFLOG --nflog-group 16
       -A POSTROUTING -m policy --dir out --pol ipsec -j NFLOG --nflog-group 16
       COMMIT
+  # IMPORTANT! 
+  # custom ufw6 rules may not appear in 'iptables-save' output
+  # then use 'nft list ruleset instead'
   custom6: # directly paste custom iptables rules to before6.rules
     filter: | # filter table, filter table is not flushed, use ufw chains ufw6-before-forward, ufw6-before-input, ufw6-before-output etc otherwise rules will duplicate on apply
       -I ufw6-before-output -m owner --uid-owner 998 -j DROP
