@@ -100,7 +100,7 @@ full_hostname:
     - name: |
         echo "{{ pillar["bootstrap"]["hostname"] }}" > /etc/hostname && hostname $(cat /etc/hostname)
 
-{% if grains["virtual"] in ["physical", "kvm"] %}
+{% if grains["virtual"] in ["physical", "kvm", "qemu"] %}
 swapiness:
   sysctl.present:
     - name: vm.swappiness
@@ -138,7 +138,7 @@ mdadm_reconfigure:
 
 {% endif %}
 
-{% if grains["virtual"] in ["physical", "kvm"] %}
+{% if grains["virtual"] in ["physical", "kvm", "qemu"] %}
 br_netfilter_module:
   file.line:
     - name: /etc/modules-load.d/modules.conf
