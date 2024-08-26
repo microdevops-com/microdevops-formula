@@ -1,0 +1,21 @@
+atlantis:
+  version: '0.28.5'
+  domain: atlantis.example.org
+  config: |
+    default-tf-version: 1.9.5
+    atlantis-url: https://atlantis.example.org
+    port: 443
+    gitlab-user: atlantis
+    gitlab-token: sfrt3gf5y4hrhbyu67jh
+    gitlab-webhook-secret: ansgdlvshtbnrUbdevbagenhryulmy9um
+    gitlab-hostname: gitlab.example.org
+    repo-allowlist: gitlab.example.org/oxgaming/devops/terraform/*
+    ssl-key-file: /opt/acme/cert/atlantis_atlantis.example.org_key.key
+    ssl-cert-file: /opt/acme/cert/atlantis_atlantis.example.org_fullchain.cer
+    emoji-reaction: thumbsup
+  repos: |
+    repos:
+    - id: gitlab.example.org/devops/terraform/atlantis
+      allowed_overrides: [workflow]
+      allow_custom_workflows: true
+
