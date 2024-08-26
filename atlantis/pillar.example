@@ -6,8 +6,8 @@ atlantis:
     atlantis-url: https://atlantis.example.org
     port: 443
     gitlab-user: atlantis
-    gitlab-token: sfrt3gf5y4hrhbyu67jh
-    gitlab-webhook-secret: ansgdlvshtbnrUbdevbagenhryulmy9um
+    gitlab-token: XXXXXXXXXXXXXXXXXXXX
+    gitlab-webhook-secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     gitlab-hostname: gitlab.example.org
     repo-allowlist: gitlab.example.org/devops/terraform/*
     ssl-key-file: /opt/acme/cert/atlantis_atlantis.example.org_key.key
