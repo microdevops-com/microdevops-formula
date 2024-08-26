@@ -19,16 +19,6 @@ catch_server_mail_sentry-cli:
     - name: |
         curl -L "https://release-registry.services.sentry.io/apps/sentry-cli/latest?response=download&arch={{ grains["cpuarch"] }}&platform=Linux&package=sentry-cli" -o /usr/local/bin/sentry-cli
         chmod +x /usr/local/bin/sentry-cli
-# need this pkg if we want to use newaliases command
-catch_server_mail_prereq_pkg:
-  pkg.installed:
-    - pkgs:
-        - postfix
-
-# newaliases doesn't work without this file
-catch_server_mail_prereq_file:
-  file.touch:
-    - name: /etc/postfix/main.cf
 
 catch_server_mail_dir:
   file.directory:
