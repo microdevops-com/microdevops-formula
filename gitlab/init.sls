@@ -246,7 +246,7 @@ gitlab_pkg:
       - gitlab-{{ pillar["gitlab"]["distribution"] }}
     {%- if "acme_account" in pillar["gitlab"] %}
     - require:
-      - cmd: /opt/acme/home/oxtech.org/verify_and_issue.sh gitlab *
+      - cmd: /opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab *
     {%- endif %}
   {%- else %}
   pkg.installed:
@@ -255,7 +255,7 @@ gitlab_pkg:
       - gitlab-{{ pillar["gitlab"]["distribution"] }}: '{{ pillar["gitlab"]["version"] }}*'
     {%- if "acme_account" in pillar["gitlab"] %}
     - require:
-      - cmd: /opt/acme/home/oxtech.org/verify_and_issue.sh gitlab *
+      - cmd: /opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab *
     {%- endif %}
   {%- endif %}
 
@@ -269,7 +269,7 @@ gitlab_reconfigure:
   {%- endif %}
     - require:
   {%- if "acme_account" in pillar["gitlab"] %}
-      - cmd: /opt/acme/home/oxtech.org/verify_and_issue.sh gitlab *
+      - cmd: /opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab *
   {%- endif %}
       - pkg: gitlab_pkg
 
@@ -283,7 +283,7 @@ gitlab_restart:
   {%- endif %}
     - require:
   {%- if "acme_account" in pillar["gitlab"] %}
-      - cmd: /opt/acme/home/oxtech.org/verify_and_issue.sh gitlab *
+      - cmd: /opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab *
   {%- endif %}
       - pkg: gitlab_pkg
 
