@@ -1,0 +1,35 @@
+# Leaseweb Dedicated with IP v4, Internet on {{ first_iface }}
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ first_iface }}:
+      dhcp4: no
+      dhcp6: no
+  bridges:
+    br0:
+      interfaces:
+        - {{ first_iface }}
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses: {{ br0_addresses }}
+      routes:
+        - to: default
+          via: {{ br0_gw }}
+          metric: 100
+          on-link: true
+      nameservers:
+        search:
+          - {{ bootstrap_network_domain }}
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+    br1:
+      parameters:
+        forward-delay: 0
+        stp: false
+      addresses:
+        - {{ br1_address }}
