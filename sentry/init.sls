@@ -91,7 +91,7 @@ sentry_config_2:
   file.managed:
     - name: /opt/sentry/sentry/sentry.conf.py
     - mode: 0644
-    - source: salt://sentry/files/sentry.conf.py
+    - source: salt://sentry/files/sentry.conf.py-v{{ pillar["sentry"]["version"] }}
     - template: jinja
 
 sentry_create_env_custom:
