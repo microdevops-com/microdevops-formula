@@ -98,7 +98,7 @@ sentry_config_2:
   {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  >= 0 %}
     - source: salt://sentry/files/sentry.conf.py-v23.8.0
   {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  < 0 %}
-    - source:  salt://sentry/files/sentry.conf.py-v{{ pillar["sentry"]["version"] }}
+    - source:  salt://sentry/files/sentry.conf.py-old
   {% endif %}
     - template: jinja
 
