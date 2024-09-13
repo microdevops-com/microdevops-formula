@@ -52,6 +52,9 @@ sentry_nginx_files_1:
             # buffer larger messages
             client_max_body_size 5m;
             client_body_buffer_size 100k;
+            proxy_busy_buffers_size   512k;
+            proxy_buffers   4 512k;
+            proxy_buffer_size   256k;
             location / {
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-Proto $scheme;
@@ -91,7 +94,15 @@ sentry_config_2:
   file.managed:
     - name: /opt/sentry/sentry/sentry.conf.py
     - mode: 0644
-    - source: salt://sentry/files/sentry.conf.py
+  {% if   salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2') >= 0 %}
+    - source: salt://sentry/files/sentry.conf.py-v24.8.0
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') >= 0 %}
+    - source: salt://sentry/files/sentry.conf.py-v23.11.0
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  >= 0 %}
+    - source: salt://sentry/files/sentry.conf.py-v23.8.0
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  < 0 %}
+    - source:  salt://sentry/files/sentry.conf.py-old
+  {% endif %}
     - template: jinja
 
 sentry_create_env_custom:
