@@ -91,16 +91,15 @@ sentry_config_2:
   file.managed:
     - name: /opt/sentry/sentry/sentry.conf.py
     - mode: 0644
-  {% if pillar["sentry"]["version"]   >= '24.1.2' %}
+  {% if   salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2') >= 0 %}
     - source: salt://sentry/files/sentry.conf.py-v24.8.0
-  {% elif pillar["sentry"]["version"] <  '24.1.2'  and pillar["sentry"]["version"] >= '23.11.0' %}
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') >= 0 %}
     - source: salt://sentry/files/sentry.conf.py-v23.11.0
-  {% elif pillar["sentry"]["version"] <  '23.11.0' and pillar["sentry"]["version"] >= '23.8.0'  %}
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  >= 0 %}
     - source: salt://sentry/files/sentry.conf.py-v23.8.0
-  {% elif pillar["sentry"]["version"] <  '23.8.0' %}
-    - source:  salt://sentry/files/sentry.conf.py-old
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  < 0 %}
+    - source:  salt://sentry/files/sentry.conf.py-v{{ pillar["sentry"]["version"] }}
   {% endif %}
-
     - template: jinja
 
 sentry_create_env_custom:
