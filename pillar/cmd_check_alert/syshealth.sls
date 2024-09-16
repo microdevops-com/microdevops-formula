@@ -21,7 +21,7 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-          cmd: :; ! dmesg -T | grep -v 'veth' | grep -i "hardware.*error" -m 10
+          cmd: :; ! dmesg -T | grep -v "veth" | grep -i "hardware.*error" -m 10
           service: os
           resource: __hostname__:hardware
         hardware-nvme:
@@ -29,7 +29,7 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-          cmd: :; ! dmesg -T | grep -v 'veth' | grep -i "nvme.*err" -m 10
+          cmd: :; ! dmesg -T | grep -v "veth" | grep -i "nvme.*err" -m 10
           service: os
           resource: __hostname__:hardware-nvme
         hardware-cpu-temperature-throttling:
@@ -37,11 +37,11 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-          cmd: :; ! dmesg -T | grep -v 'veth' | grep -i -e "temperature above threshold" -e "cpu clock throttled" -m 10
+          cmd: :; ! dmesg -T | grep -v "veth" | grep -i -e "temperature above threshold" -e "cpu clock throttled" -m 10
           service: os
           resource: __hostname__:hardware-cpu-temperature-throttling
         oom:
-          cmd: :; ! dmesg -T | grep -v 'veth' | grep -i -e "Out of memory" -e "oom"
+          cmd: :; ! dmesg -T | grep -v "veth" | grep -i -e "Out of memory" -e "oom"
           service: os
           resource: __hostname__:oom
       {%- if grains.get("oscodename","") not in ["precise"] %}
@@ -58,7 +58,7 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-          cmd: :; ! dmesg -T | grep -v 'veth' | grep -i "core dump" -m 10
+          cmd: :; ! dmesg -T | grep -v "veth" | grep -i "core dump" -m 10
           service: os
           resource: __hostname__:coredump
         segfault:
@@ -66,7 +66,7 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-          cmd: :; ! dmesg -T | grep -v 'veth' | grep -i "segfault" -m 10 | grep -v -i -e "ebpf" -e "netdata"
+          cmd: :; ! dmesg -T | grep -v "veth" | grep -i "segfault" -m 10 | grep -v -i -e "ebpf" -e "netdata"
           service: os
           resource: __hostname__:segfault
         pinggoogle:
