@@ -5,12 +5,21 @@
 {% if php_fpm is defined and "versions" in php_fpm %}
 php-fpm_repo_deb:
   pkgrepo.managed:
+  {% if grains["os"] == "Debian" %}
+    - name: deb [signed-by=/etc/apt/keyrings/debian-ondrej-keyring.gpg] https://packages.sury.org/php/ {{ grains["oscodename"] }} main
+    - dist: {{ grains["oscodename"] }}
+    - file: /etc/apt/sources.list.d/ondrej-debian-php-{{ grains["oscodename"] }}.list
+    - key_url: https://packages.sury.org/php/apt.gpg
+    - aptkey: False
+    - refresh: True
+  {% else %}
     - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains["oscodename"] }} main
     - dist: {{ grains["oscodename"] }}
     - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains["oscodename"] }}.list
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
     - refresh: True
+  {% endif %}
 
 php-fpm_app_log_dir:
   file.directory:
