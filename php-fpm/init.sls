@@ -6,7 +6,7 @@
 php-fpm_repo_deb:
   pkgrepo.managed:
   {% if grains["os"] == "Debian" %}
-    - name: deb https://packages.sury.org/php/ {{ grains["oscodename"] }} main
+    - name: deb [signed-by=/etc/apt/keyrings/debian-ondrej-keyring.gpg] https://packages.sury.org/php/ {{ grains["oscodename"] }} main
     - dist: {{ grains["oscodename"] }}
     - file: /etc/apt/sources.list.d/ondrej-debian-php-{{ grains["oscodename"] }}.list
     - key_url: https://packages.sury.org/php/apt.gpg
