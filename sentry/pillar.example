@@ -8,12 +8,13 @@ sentry:
   url: https://sentry.example.com
   admin_email: admin@example.com
   admin_password: xxxxxxxxxxxxxxxxxx
-  enhance_image_sh: |
+  enhance_image_sh: | # Optional
     apt-get update
-    apt-get install -y gcc libsasl2-dev python-dev libldap2-dev libssl-dev
-    pip install django-auth-ldap
-    pip install sentry-ldap-auth
+    apt-get install -y gcc libsasl2-dev libldap2-dev libssl-dev
+    #pip install django-auth-ldap
+    #pip install sentry-ldap-auth
   config:
+    compose_profiles: errors-only         # Optional for versions 24.8.0+
     single_organization: True
     features:
       auth_register: True

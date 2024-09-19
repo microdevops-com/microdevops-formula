@@ -1,7 +1,7 @@
 #!/bin/bash
 mkdir -p /opt/sentry/backup/volumes/
-#docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/backup/backup.json
-/opt/sentry/scripts/backup.sh global
+docker-compose --file /opt/sentry/docker-compose.yml run --rm -T -e SENTRY_LOG_LEVEL=CRITICAL web export > /opt/sentry/backup/backup.json
+#/opt/sentry/scripts/backup.sh global
 [[ -f /opt/sentry/.env.custom ]] && docker-compose --file /opt/sentry/docker-compose.yml --env-file /opt/sentry/.env.custom stop || docker-compose --file /opt/sentry/docker-compose.yml stop
   docker run --rm --volumes-from sentry-self-hosted-clickhouse-1	-v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-clickhouse-1.tar	/var/lib/clickhouse /var/log/clickhouse-server
   docker run --rm --volumes-from sentry-self-hosted-web-1		-v /opt/sentry/backup/volumes/:/backup ubuntu tar cvf /backup/sentry-self-hosted-web-1.tar		/data
