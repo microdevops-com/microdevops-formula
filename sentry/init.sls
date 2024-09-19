@@ -187,12 +187,14 @@ sentry_export_backup_script:
     - name: /opt/sentry/backup_export.sh
     - source: salt://sentry/files/backup_export.sh
     - mode: 775
+    - template: jinja
 
 sentry_volume_backup_script:
   file.managed:
     - name: /opt/sentry/backup_volumes.sh
     - source: salt://sentry/files/backup_volumes.sh
     - mode: 775
+    - template: jinja
 
 sentry_volume_restore_script:
   file.managed:
