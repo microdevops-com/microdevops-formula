@@ -1,3 +1,4 @@
+# v23.8.0
 # This file is just Python, with a touch of Django which means
 # you can inherit and tweak settings to your hearts content.
 
@@ -333,4 +334,6 @@ CSP_REPORT_ONLY = True
 {%- if "ldap" in pillar["sentry"]["config"] and salt["pillar.get"]("sentry:config:ldap:enabled", False) %}
 {{ salt["pillar.get"]("sentry:config:ldap:sentry_conf_py") }}
 {%- endif %}
+
+SENTRY_BEACON = False
 

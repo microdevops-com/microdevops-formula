@@ -94,13 +94,23 @@ sentry_config_2:
   file.managed:
     - name: /opt/sentry/sentry/sentry.conf.py
     - mode: 0644
-  {% if   salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2') >= 0 %}
+  {% if   salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.8.0') >= 0 %}
+  # if version is greater or equal to 24.8.0
     - source: salt://sentry/files/sentry.conf.py-v24.8.0
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.8.0')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.7.1') >= 0 %}
+  # if version is less than 24.8.0 and greater or equal to 24.7.1
+    - source: salt://sentry/files/sentry.conf.py-v24.7.1
+  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.7.1')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2') >= 0 %}
+  # if version is less than 24.7.1 and greater or equal to 24.1.2
+    - source: salt://sentry/files/sentry.conf.py-v24.1.2
   {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') >= 0 %}
+  # if version is less than 24.1.2 and greater or equal to 23.11.0
     - source: salt://sentry/files/sentry.conf.py-v23.11.0
   {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  >= 0 %}
+  # if version is less than 23.11.0 and greater or equal to 23.8.0
     - source: salt://sentry/files/sentry.conf.py-v23.8.0
   {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  < 0 %}
+  # if version is less than 23.8.0
     - source:  salt://sentry/files/sentry.conf.py-old
   {% endif %}
     - template: jinja
@@ -110,8 +120,31 @@ sentry_create_env_custom:
     - name: /opt/sentry/.env.custom
     - source: /opt/sentry/.env
     - force: true
-
-sentry_custom_env:
+  {% if   salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.8.0') >= 0 %}
+  # if version is greater or equal to 24.8.0
+sentry_custom_env_set_COMPOSE_PROFILES:
+  file.replace:
+    - name: /opt/sentry/.env.custom
+    - pattern: '^ *COMPOSE_PROFILES *=.*$'
+    - repl: 'COMPOSE_PROFILES={{ salt["pillar.get"]("sentry:config:compose_profiles", 'feature-complete') }}'
+    - append_if_not_found: True
+    - ignore_if_missing: True
+  {% endif %}
+sentry_custom_env_disable_REPORT_SELF_HOSTED_ISSUES:
+  file.replace:
+    - name: /opt/sentry/.env.custom
+    - pattern: '^ *REPORT_SELF_HOSTED_ISSUE *=.*$'
+    - repl: 'REPORT_SELF_HOSTED_ISSUE=0'
+    - append_if_not_found: True
+    - ignore_if_missing: True
+sentry_custom_env_disable_SENTRY_BEACON:
+  file.replace:
+    - name: /opt/sentry/.env.custom
+    - pattern: '^ *SENTRY_BEACON *=.*$'
+    - repl: 'SENTRY_BEACON=False'
+    - append_if_not_found: True
+    - ignore_if_missing: True
+sentry_custom_env_1:
   file.replace:
     - name: /opt/sentry/.env.custom
     - pattern: '^ *SENTRY_EVENT_RETENTION_DAYS=.*$'
@@ -215,3 +248,4 @@ sentry_nginx_reload_cron:
 
    {% endif %}
 {%- endif %}
+
