@@ -197,3 +197,37 @@ alerta:
     }
 
     SORT_LIST_BY = ['severity', 'customer', 'status', 'resource']
+
+# Highload Tuning
+## Host of the alerta container if containerized
+bootstrap:
+  files:
+    managed:
+      alerta_max_open_files:
+        - name: /etc/systemd/user.conf
+          contents: |
+            [Manager]
+            DefaultLimitNOFILE=524288:524288
+sysctl:
+  default:
+    fs.nr_open: 1000000
+    fs.file-max: 500000
+
+## The alerta container itself
+bootstrap:
+  files:
+    managed:
+      alerta_max_open_files:
+        - name: /etc/systemd/user.conf
+          contents: |
+            [Manager]
+            DefaultLimitNOFILE=524288:524288
+        - name: /etc/systemd/system/nginx.service.d/override.conf
+          makedirs: True
+          contents: |
+            [Service]
+            LimitNOFILE=1000000
+sysctl:
+  default:
+    fs.nr_open: 1000000
+    fs.file-max: 500000

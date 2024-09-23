@@ -49,5 +49,8 @@ If you are using alerta inside LXD, add pillar above to the host and
 ```
 to the container as well.
 
+## Max open files
+See "Highload Tuning" section in pillar.example.
+
 # References
 - http://docs.alerta.io/en/latest/gettingstarted/tutorial-1-deploy-alerta.html#tutorial-1
