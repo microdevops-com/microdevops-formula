@@ -19,17 +19,10 @@ asterisk_depencies_installed:
       - uuid-dev
       - libvpb1
       - sngrep
+      - sox
+      - ffmpeg
+      - lame
 
-
-pyst2_pip_install:
-  pip.installed:
-    - name: pyst2
-    - reload_modules: True
-
-PyMySQL_pip_install:
-  pip.installed:
-    - name: PyMySQL            
-    - reload_modules: True
 
 
 asterisk_source:
@@ -71,15 +64,17 @@ run_configure_modules:
     - shell: '/bin/bash'
 {% endif %} 
 
+
 run_make_and_install:
   cmd.run:
     - names: 
       - "make"
       - "make install"
-{%- if not salt['file.directory_exists']('/etc/asterisk') %}
+{%- if not salt['file.directory_exists']('/etc/asterisk') and pillar["asterisk"]["make_samples"] is defined and pillar["asterisk"]["make_samples"] == True %}
       - "make samples"
 {% endif %}
       - "make config"
+      - "make install-logrotate"
       - "ldconfig"      
     - cwd: '/usr/src/asterisk-{{ version }}'
     - shell: '/bin/bash'
@@ -117,6 +112,7 @@ asterisk_dir_chmod:
       - group
       - mode
 
+
 replace_/etc/default/asterisk:
   file.replace:
     - names: 
@@ -125,47 +121,60 @@ replace_/etc/default/asterisk:
         - repl: AST_USER="{{ user }}"
       - /etc/default/asterisk:
         - pattern: ^.*AST_GROUP=.*
-        - repl: AST_GROUP="{{ group }}"
-      - /etc/asterisk/asterisk.conf:
-        - pattern: ^.*runuser =.* 
-        - repl: 'runuser = {{ user }}'
-      - /etc/asterisk/asterisk.conf:
-        - pattern: ^.*rungroup =.* 
-        - repl: 'rungroup = {{ group }}'     
+        - repl: AST_GROUP="{{ group }}"    
     - append_if_not_found: True
 
 
-{% if pillar["asterisk"]["files"] is defined %}
-
-  {% if pillar["asterisk"]["files"]["/etc/asterisk"] is defined %}
-/etc/asterisk/:        
-  file.recurse:
-    - name: /etc/asterisk/
-    - source: {{ pillar["asterisk"]["files"]["/etc/asterisk"] }}
-    - include_empty: True
-    - clean: False
-    - user: {{ user }}
-    - group: {{ group }}
-    - dir_mode: 755
-    - file_mode: 664
-  {%- endif %}
 
 
-  {% if pillar["asterisk"]["files"]["/var/lib/asterisk/agi-bin"] is defined %}
-/var/lib/asterisk/agi-bin:        
-  file.recurse:
-    - name: /var/lib/asterisk/agi-bin
-    - source: {{ pillar["asterisk"]["files"]["/var/lib/asterisk/agi-bin"] }}
-    - include_empty: True
-    - clean: False
-    - user: {{ user }}
-    - group: {{ group }}
-    - dir_mode: 755
-    - file_mode: 755
-  {%- endif %}
-
-
+{% if pillar["asterisk"]["state"] is defined %}
+{%- for state_name, state_data in pillar["asterisk"]["state"].items() %}
+{{state_name}}: {{ state_data }}
+{%- endfor %}
 {%- endif %}
+
+
+
+{% if pillar["asterisk"] is defined and "configs_ini" in pillar["asterisk"] %}
+{% set separator = salt['pillar.get']('asterisk:configs_ini:separator', ' = ') %}
+{% macro macro_list(key, val) %}
+        {%- if val | is_list %}
+        {%- for item in val %}
+        {{ key }}{{ separator }}{{ item }}
+        {%- endfor %}
+        {%- elif val is mapping %}
+
+        {{ key }}
+        {%- for item_key, item_val in val.items() %}
+        {{- macro_list(item_key, item_val) }}
+        {%- endfor %}
+        {%- elif val is none and not val %}
+        {{ key }}
+        {%- else %}
+        {{ key }}{{ separator }}{{ val }}
+        {%- endif -%}
+{% endmacro %}
+{% macro macro_config_ini(config_ini_data, separator) %}
+        {%- for section, section_data in config_ini_data.items() %}
+        {{- macro_list(section, section_data) }}
+        {%- endfor -%}
+{% endmacro %}
+  {%- for config_ini_name, config_ini_data in pillar["asterisk"]["configs_ini"].items() if not config_ini_name in ["dirs", "separator"] %}
+asterisk_configs_ini_{{ loop.index }}:
+  file.managed:
+    - name: {{ config_ini_name }}
+    - contents: |
+        {{- macro_config_ini(config_ini_data) -}}
+
+  {%- endfor %}
+{% endif %}
+
+
+
+service_asterisk_enable:
+  service.running:
+    - name: asterisk
+    - enable: True
 
 
 asterisk_core_reload:
@@ -174,10 +183,45 @@ asterisk_core_reload:
     - names: 
       - "asterisk -x 'core reload'"
 
-service_asterisk_enable:
-  service.running:
-    - name: asterisk
-    - enable: True
+
+{% if pillar["asterisk"]["mysql"] is defined %}
+mariadb_depencies_installed:
+  pkg.installed:
+    - pkgs:
+      - mariadb-server
+      - mariadb-client
+      - odbc-mariadb
+      - unixodbc
+
+mysql-base:
+  mysql_database.present:
+    - names: {{ pillar["asterisk"]["mysql"]["database"] }}
+
+  mysql_user.present:
+    - name: {{ pillar["asterisk"]["mysql"]["user_db"] }}
+    - password: {{ pillar["asterisk"]["mysql"]["pass_db"] }}
+
+  {%- for databases_name in pillar["asterisk"]["mysql"]["database"] %}
+mysql-grants-{{databases_name}}:
+  mysql_grants.present:
+    - grant: ALL PRIVILEGES
+    - database: '{{databases_name}}.*' 
+    - user: {{ pillar["asterisk"]["mysql"]["user_db"] }}
+    - host: localhost
+  {%- endfor %}
+
+
+  {% if pillar["asterisk"]["mysql"]["run_sql"] is defined %}
+run-mysql-sql:
+  cmd.run:
+    - names:
+    {%- for run_sql in pillar["asterisk"]["mysql"]["run_sql"] %}
+      - /usr/bin/mysql -h localhost < {{ run_sql }}
+    {%- endfor %}      
+    - shell: '/bin/bash'
+  {%- endif %}
+{%- endif %}
+
 
 
 
