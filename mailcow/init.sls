@@ -170,6 +170,12 @@ mailcow_config_{{ var_key }}:
     - append_if_not_found: True
   {%- endfor %}
 
+mailcow_ipv6:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/docker-compose.yml'
+    - pattern: '^    enable_ipv6:.*$'
+    - repl: '    enable_ipv6: {{ pillar["mailcow"]["enable_ipv6"] | default(False) }}'
+
 mailcow_data_dir:
   file.directory:
     - names:
@@ -191,7 +197,6 @@ mailcow_docker_compose_owerride:
   file.managed:
     - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/docker-compose.override.yml
     - contents: |
-        version: '2.1'
     {%- if 'docker_logging' in pillar['mailcow'] %}
         services:
           unbound-mailcow:
@@ -335,6 +340,11 @@ mailcow_docker_compose_owerride:
                 {{ var_key }}: "{{ var_val }}"
       {%- endfor %}
           ipv6nat-mailcow:
+      {%- if not pillar['mailcow']['enable_ipv6'] | default(false) %}
+            image: bash:latest
+            restart: "no"
+            entrypoint: ["echo", "ipv6nat disabled in docker-compose.override.yml"]
+      {%- endif %}
             logging:
               driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
               options:
@@ -355,6 +365,18 @@ mailcow_docker_compose_owerride:
             {#- "${SMTP_PORT_HAPROXY:-127.0.0.1:10025}:10025"#}
               - "${SMTPS_PORT_HAPROXY:-127.0.0.1:10465}:10465"
               - "${SUBMISSION_PORT_HAPROXY:-127.0.0.1:10587}:10587"
+        {%- if not pillar['mailcow']['enable_ipv6'] | default(false) %}
+          ipv6nat-mailcow:
+            image: bash:latest
+            restart: "no"
+            entrypoint: ["echo", "ipv6nat disabled in docker-compose.override.yml"]
+        {%- endif %}
+    {%- elif not pillar['mailcow']['enable_ipv6'] | default(false) %}
+        services:
+          ipv6nat-mailcow:
+            image: bash:latest
+            restart: "no"
+            entrypoint: ["echo", "ipv6nat disabled in docker-compose.override.yml"]    
     {%- endif %}
         volumes:
           vmail-vol-1:
@@ -423,6 +445,42 @@ mailcow_docker_compose_owerride:
                 type: 'none'
                 o: 'bind'
                 device: './volumes/sogo_backup'
+
+  {% if not pillar['mailcow']['enable_ipv6'] | default(false) %}
+unboud_ipv6_conf:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/unbound/unbound.conf'
+    - pattern: '^  do-ip6:.*$'
+    - repl: '  do-ip6: no'
+    - append_if_not_found: True
+
+postfix_extra_cf_touch_0:
+  file.touch:
+    - name: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/extra.cf
+postfix_ipv6_conf_1:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/extra.cf'
+    - pattern: '^ *inet_protocols *=.*$'
+    - repl: 'inet_protocols = ipv4'
+    - append_if_not_found: True
+postfix_ipv6_conf_2:
+  file.replace:
+    - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/postfix/extra.cf'
+    - pattern: '^ *smtp_address_preference *=.*$'
+    - repl: 'smtp_address_preference = ipv4'
+    - append_if_not_found: True
+
+fix_configs:
+  cmd.run:
+    - name: |
+        sed -i '/::/d' data/conf/nginx/listen_*
+        sed -i '/::/d' data/conf/nginx/templates/listen*
+        sed -i '/::/d' data/conf/nginx/dynmaps.conf
+        sed -i 's/,\[::\]//g' data/conf/dovecot/dovecot.conf
+        sed -i 's/\[::\]://g' data/conf/phpfpm/php-fpm.d/pools.conf
+    - cwd: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}
+    - shell: /bin/bash
+  {% endif %}
 
   {% if pillar["mailcow"]["mailcow_conf"]["SKIP_LETS_ENCRYPT"] == 'y' %}
 bind_ssl_certificate_for_services_in_docker:
@@ -599,3 +657,4 @@ nginx_reload_cron:
     - hour: 6
   {% endif %}
 {% endif %}
+
