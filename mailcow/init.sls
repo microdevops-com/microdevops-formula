@@ -452,7 +452,6 @@ unboud_ipv6_conf:
     - name: '/opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/data/conf/unbound/unbound.conf'
     - pattern: '^  do-ip6:.*$'
     - repl: '  do-ip6: no'
-    - append_if_not_found: True
 
 postfix_extra_cf_touch_0:
   file.touch:
