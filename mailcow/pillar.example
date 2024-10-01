@@ -5,7 +5,7 @@ mailcow:
     options:
       tag: "{% raw -%}{{.ImageName}}|{{.Name}}|tst{%- endraw %}"
   acme_account: example.com         # used only when SKIP_LETS_ENCRYPT=y
-  enable_ipv6: false
+  enable_ipv6: true    # DO NOT CHANGE THIS PARAMETER IF YOU ARE NOT SURE, because if you once disable ipv6 using this parameter, it will not work to turn it back on by setting the value to true
   mailcow_conf:
     MAILCOW_HOSTNAME: mail.example.com
     SKIP_LETS_ENCRYPT: n            #y or n
