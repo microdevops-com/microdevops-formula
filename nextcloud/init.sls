@@ -545,34 +545,60 @@ nextcloud_container_{{ loop.index }}:
 
 nextcloud-available_{{ loop.index }}:
   cmd.run:
-    - name: 'while [ $(curl -sL -u {{ domain["env_vars"]["NEXTCLOUD_ADMIN_USER"] }}:{{ domain["env_vars"]["NEXTCLOUD_ADMIN_PASSWORD"] }} https://{{ domain["name"] }}/ocs/v2.php/apps/serverinfo/api/v1/info?format=json | jq -r ".ocs.meta.statuscode") != 200 ]; do sleep 1; done'
+    - name: |
+        sleep 30
+        start_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        docker restart nextcloud-{{ domain["name"] }}
+        while ! docker logs --since ${start_time} nextcloud-{{ domain["name"] }} 2>&1 | grep "ready to handle connections"; do sleep 1; done
+        echo "occ set serverinfo token"
+        docker exec --user www-data --env PHP_MEMORY_LIMIT=512M nextcloud-{{ domain["name"] }} php /var/www/html/occ config:app:set serverinfo token --value {{ domain["env_vars"]["NEXTCLOUD_ADMIN_PASSWORD"] }}
+        echo "Wait until statuscode != 200"
+        while [ $(curl -sL -H 'NC-Token: {{ domain["env_vars"]["NEXTCLOUD_ADMIN_PASSWORD"] }}' -X GET https://{{ domain["name"] }}/ocs/v2.php/apps/serverinfo/api/v1/info?format=json | jq -r ".ocs.meta.statuscode") != 200 ]; do echo 'Wait for NC'; sleep 1; done
     - timeout: 120
 
     {% if "php_fpm" in domain and "pm.max_children" in domain["php_fpm"] %}
 nextcloud_php-fpm_set_pm.max_children_{{ loop.index }}:
   cmd.run:
     - name: docker exec nextcloud-{{ domain["name"] }} bash -c "sed -Ei  's/^ *pm\.max_children\ =.*$/pm.max_children = {{ domain["php_fpm"]["pm.max_children"] }}/g' /usr/local/etc/php-fpm.d/www.conf"
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
     {% endif %}
 
 nextcloud_container_install_libmagickcore_{{ loop.index }}:
   cmd.run:
     - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install libmagickcore-6.q16-6-extra iproute2 -y'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_container_install_php_bz2_{{ loop.index }}:
   cmd.run:
     - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install -y libbz2-dev && docker-php-ext-install bz2' && docker restart nextcloud-{{ domain["name"] }}
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_default_phone_region_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'sleep 10; php occ config:system:set default_phone_region --value="{{ domain["default_phone_region"] }}"'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_overwrite_cli_url_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set overwrite.cli.url --value="{{ domain["overwrite_cli_url"] }}"'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_missing_indexes_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ db:add-missing-indices'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
+
+nextcloud_mimetype_migrations_{{ loop.index }}:
+  cmd.run:
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ maintenance:repair --include-expensive'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_cron_{{ loop.index }}:
   cron.present:
@@ -584,63 +610,91 @@ nextcloud_cron_{{ loop.index }}:
 nextcloud_update_all_applications_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:update --all; sleep 10'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
     {%- if "onlyoffice" in domain %}
 nextcloud_config_onlyoffice_0_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:disable richdocuments || true'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_onlyoffice_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install onlyoffice || true'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_onlyoffice_2_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable onlyoffice --force || true'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_onlyoffice_3_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value={{ domain["onlyoffice"]["DocumentServerUrl"] }}'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_onlyoffice_4_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value={{ domain["onlyoffice"]["DocumentServerInternalUrl"] }}'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_onlyoffice_5_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:system:set onlyoffice StorageUrl --value={{ domain["onlyoffice"]["StorageUrl"] }}'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
     {%- endif %}
     {%- if "collabora" in domain %}
 nextcloud_config_collabora_0_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:disable onlyoffice || true'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_collabora_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install richdocuments || true'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_collabora_2_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable --force richdocuments || true'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_collabora_3_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments wopi_url --value {{ domain["collabora"]["DocumentServerUrl"] }}'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_collabora_4_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments wopi_allowlist --value {{ domain["collabora"]["wopi_allowlist"] }}'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
       {%- if "doc_format" in domain["collabora"] %}
 nextcloud_config_collabora_5_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:app:set richdocuments doc_format --value {{ domain["collabora"]["doc_format"] }}'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
       {%- endif %}
 
 nextcloud_config_collabora_6_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ richdocuments:activate-config'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
     {%- endif %}
     {%- if "user_saml" in domain %}
@@ -648,10 +702,14 @@ nextcloud_config_collabora_6_{{ loop.index }}:
 nextcloud_config_user_saml_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install user_saml || true'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_user_saml_2_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable user_saml'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_user_saml_3_{{ loop.index }}:
   file.serialize:
@@ -664,6 +722,8 @@ nextcloud_config_user_saml_3_{{ loop.index }}:
 nextcloud_config_user_saml_4_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:import < user_saml_config.json'
+    - require:
+      - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_remove_config_user_saml_{{ loop.index }}:
   file.absent:
@@ -686,3 +746,4 @@ nginx_reload_cron:
     - hour: 6
 
 {% endif %}
+
