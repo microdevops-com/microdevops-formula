@@ -66,7 +66,7 @@ MySQL ToolKit <> Users / Replication / Present > '{{ repl_user_user }}'@'{{ repl
   mysql_user.present:
     - name: "{{ repl_user_user }}"
     - host: "{{ repl_user_host }}"
-    - password: "{{ repl_user_pass_hash }}"
+    - password_hash: "{{ repl_user_pass_hash }}"
     - connection_default_file: "/root/.my.cnf"
 
 MySQL ToolKit <> Users / Replication / Grant > 'REPLICATION SLAVE' on '*.*' to '{{ repl_user_user }}'@'{{ repl_user_host }}':
