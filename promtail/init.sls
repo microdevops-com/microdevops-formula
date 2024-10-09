@@ -1,5 +1,15 @@
 {% if pillar['promtail'] is defined and pillar['promtail'] is not none %}
 
+  {% if "acme_domain" in pillar["promtail"] %}
+
+    {% from "acme/macros.jinja" import verify_and_issue %}
+
+    {% set acme = pillar["acme"].keys() | first %}
+
+    {{ verify_and_issue(acme, "promtail", pillar["promtail"]["acme_domain"]) }}
+    
+  {% endif %}
+
   {% if pillar["promtail"]["scrape_configs"] is defined and pillar["promtail"]["config"] is defined %}
 
 pillar must contain either "promtail.config" or "promtail.scrape_configs" block:
