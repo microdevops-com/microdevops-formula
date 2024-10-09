@@ -5,6 +5,7 @@
 promtail:
   binary:
     link: https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip
+  acme_domain: {{ grains['fqdn'] }}
   config: |
     server:
       http_listen_port: 9080
@@ -20,6 +21,16 @@ promtail:
       readline_rate_enabled: true
       readline_rate_drop: false
     scrape_configs:
+    - job_name: fastly_syslog
+      syslog:
+        listen_address: 0.0.0.0:514
+        tls_config:
+          cert_file: /opt/acme/cert/promtail_{{ grains['fqdn'] }}_fullchain.cer
+          key_file: /opt/acme/cert/promtail_{{ grains['fqdn'] }}_key.key
+        #use_rfc5424_message: true
+        labels:
+          job: fastly
+          env: test
     - job_name: test
       pipeline_stages:
       - json:
