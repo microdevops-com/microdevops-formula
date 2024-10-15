@@ -69,7 +69,7 @@ elasticsearch_config:
         xpack.security.transport.ssl.verification_mode: certificate
         xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_key.key
         xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_fullchain.cer
-        xpack.security.transport.ssl.certificate_authorities: [ "/usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_ca.cer" ]
+        #xpack.security.transport.ssl.certificate_authorities: [ "/usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_ca.cer" ]
         xpack.security.http.ssl.enabled: true
         xpack.security.http.ssl.verification_mode: certificate
         xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch_{{ grains['id'] }}_key.key
