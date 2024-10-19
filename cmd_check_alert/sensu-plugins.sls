@@ -200,6 +200,18 @@ sensu-plugins_fix_aws-sigv4_gem:
         fi
     - shell: /bin/bash
 
+# The same with mime-types
+sensu-plugins_fix_mime-types_gem:
+  cmd.run:
+    - name: |
+        {{ source_rvm }}
+        if {{ ruby_bin_path }}/gem list | grep '^mime-types ' | grep '3.5.2'; then
+          echo mime-types 3.3.1 gem is already installed
+        else
+          {{ ruby_bin_path }}/gem install mime-types -v 3.5.2
+        fi
+    - shell: /bin/bash
+
     {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
   cmd.run:
