@@ -222,7 +222,7 @@ sensu-plugins_install_{{ loop.index }}:
 sensu-plugins_install_{{ loop.index }}_patch_raid_1:
   file.managed:
         {%- if grains["osarch"] not in ["arm64"] %}
-    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.10/gems/sensu-plugins-raid-checks-3.0.0/bin/check-raid.rb
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-raid-checks-3.0.0/bin/check-raid.rb
         {%- else %}
     - name: /usr/local/rvm/gems/ruby-2.4.10/gems/sensu-plugins-raid-checks-3.0.0/bin/check-raid.rb
         {%- endif %}
@@ -236,7 +236,7 @@ sensu-plugins_install_{{ loop.index }}_patch_raid_1:
 sensu-plugins_install_{{ loop.index }}_patch_smart_1:
   file.managed:
         {%- if grains["osarch"] not in ["arm64"] %}
-    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.10/gems/sensu-plugins-disk-checks-5.1.4/bin/check-smart.rb
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-disk-checks-5.1.4/bin/check-smart.rb
         {%- else %}
     - name: /usr/local/rvm/gems/ruby-2.4.10/gems/sensu-plugins-disk-checks-5.1.4/bin/check-smart.rb
         {%- endif %}
@@ -250,7 +250,7 @@ sensu-plugins_install_{{ loop.index }}_patch_smart_1:
 sensu-plugins_install_{{ loop.index }}_patch_http_1:
   file.managed:
         {%- if grains["osarch"] not in ["arm64"] %}
-    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.10/gems/sensu-plugins-http-6.1.0/bin/check-http.rb
+    - name: /opt/sensu-plugins-ruby/embedded/lib/ruby/gems/2.4.0/gems/sensu-plugins-http-6.1.0/bin/check-http.rb
         {%- else %}
     - name: /usr/local/rvm/gems/ruby-2.4.10/gems/sensu-plugins-http-6.1.0/bin/check-http.rb
         {%- endif %}
