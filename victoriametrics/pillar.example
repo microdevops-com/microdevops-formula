@@ -114,3 +114,46 @@ vmutils:
                # will not redownload the archive, if hash matches
   version: v1.101.0 # optional, will not overwrite the binary files, if version matches
   files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manage
+
+
+vmalert:
+  <vm_name>:
+    nginx: # optional, if not defined - nginx management would not be run
+      enabled: True # default
+      auth_basic:
+        - username: user1
+          password: password1
+      servers:
+        - names:
+            - vmalert.tsdb.example.com
+          acme_account: example_com
+          # or
+          ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
+          ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    service:
+      target: /usr/local/bin/vmalert # optional, default, absolute path to binary file
+      # can be installed from github
+      platform: github # required
+      version: latest # optional, default, can be "latest" or any tag ("v1.101.0","v1.100.1"...) from "https://github.com/VictoriaMetrics/VictoriaMetrics"
+      # or
+      # can be installed from direct link
+      source: # required, URI of victoriametrics archive
+      source_hash: # optional, a source hash string or the URI of a file that contains source hash strings
+                   # will not redownload the archive, if hash matches
+      version: v1.101.0 # optional, will not overwrite the binary files, if version matches
+
+    args: # https://docs.victoriametrics.com/single-server-victoriametrics/#list-of-command-line-flags
+      httpListenAddr: 127.0.0.1:8880 # optional, default
+      datasource.url: http://localhost:8428 # optional, default
+      rule: /etc/victoriametrics/vmalert/rules/*yaml  # optional, default
+      notifier.url: http://localhost:9093 # optional, default
+      evaluationInterval: 10s # optional, default
+    files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manage
+      managed:
+        vmalert_rules_disk_alert:
+          - name: /etc/victoriametrics/vmalert/rules/microdevops_agent_disk_alert.yaml
+            source: salt://victoriametrics/files/vmalert/rules/microdevops_agent_disk_alert.yaml
+            filetype: binary
+            makedirs: True
+
+

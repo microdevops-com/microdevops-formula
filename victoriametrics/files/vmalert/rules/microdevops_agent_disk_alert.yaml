@@ -1,0 +1,42 @@
+groups:
+  - name: SeverityBasedDiskAlerts
+    rules:
+      # Alert for disk space usage based on severity
+      - alert: DiskSpaceUsageAlert
+        expr: microdevops_agent_disk_alert_space_usage_percentage_severity > 0
+        for: 1m
+        labels:
+          current_usage: '{{ $value }}'
+        annotations:
+          summary: "Disk usage alert on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Disk usage on {{ $labels.host }} (partition {{ $labels.partition }}) is {{ $labels.current_usage }}%."
+
+      # Alert for low free space in MB based on severity
+      - alert: DiskFreeSpaceAlert
+        expr: microdevops_agent_disk_alert_free_space_mb_severity > 0
+        for: 1m
+        labels:
+          current_free_space: '{{ $value }}'
+        annotations:
+          summary: "Low free disk space on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Free disk space on {{ $labels.host }} (partition {{ $labels.partition }}) is {{ $labels.current_free_space }} MB."
+
+      # Alert for predicted full disk based on severity
+      - alert: DiskPredictedFullAlert
+        expr: microdevops_agent_disk_alert_predicted_full_sec_severity > 0
+        for: 1m
+        labels:
+          remaining_time: '{{ $value }}'
+        annotations:
+          summary: "Disk predicted to be full soon on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Disk on {{ $labels.host }} (partition {{ $labels.partition }}) is predicted to be full in less than 24 hours. Remaining time: {{ $labels.remaining_time }} seconds."
+
+      # Alert for inode usage based on severity
+      - alert: InodeUsageAlert
+        expr: microdevops_agent_disk_alert_inode_usage_percentage_severity > 0
+        for: 1m
+        labels:
+          current_inode_usage: '{{ $value }}'
+        annotations:
+          summary: "High inode usage on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Inode usage on {{ $labels.host }} (partition {{ $labels.partition }}) is {{ $labels.current_inode_usage }}%."
