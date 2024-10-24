@@ -37,3 +37,15 @@ vmserver:
     httpListenAddr: 127.0.0.1:8428
     storageDataPath: /var/lib/victoriametrics/{vm_name}
     retentionPeriod: 1
+
+vmalert:
+  name: vmutils
+  original_name: vmalert-prod
+  target: /usr/local/bin/vmalert
+  args:
+    rule: /etc/victoriametrics/vmalert/rules/*.yaml
+    datasource.url: http://localhost:8428
+    httpListenAddr: 127.0.0.1:8880
+    notifier.url: http://localhost:9093
+    evaluationInterval: 10s
+

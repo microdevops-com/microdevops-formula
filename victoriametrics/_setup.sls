@@ -64,27 +64,31 @@
 
   {%- set service_name = kind if vm_name == "main" else kind ~ "-" ~ vm_name %}
 
-  {%- if kind == "vmserver" and vm_data.get("nginx", {}) and vm_data.get("nginx",{}).get("enabled", True) %}
+  {%- if ( kind == "vmserver" or kind == "vmalert" ) and vm_data.get("nginx", {}) and vm_data.get("nginx",{}).get("enabled", True) %}
     {%- include "victoriametrics/nginx/init.sls" %}
   {%- endif %}
 
   {%- do defaults[kind]["args"].update(vm_data.get("args", {})) %}
   {%- do vm_data.setdefault("args", {}).update(defaults[kind]["args"]) %}
-  {%- set arg_storage = defaults[kind]["arg_storage"] %}
-  {%- set data_dir = vm_data.get(arg_storage, defaults[kind]["args"][arg_storage]).format(vm_name=vm_name) %}
-  {%- do vm_data["args"].update({arg_storage: data_dir}) %}
+  {%- if kind != "vmalert" %}
+    {%- set arg_storage = defaults[kind]["arg_storage"] %}
+    {%- set data_dir = vm_data.get(arg_storage, defaults[kind]["args"][arg_storage]).format(vm_name=vm_name) %}
+    {%- do vm_data["args"].update({arg_storage: data_dir}) %}
+  {%- endif %}
 
   {%- set vmargslist = [] %}
   {%- for k, v in vm_data.get("args", {}).items() %}
     {%- do vmargslist.append("-" ~ k ~ " " ~ v) %}
   {%- endfor %}
 
+  {%- if kind != "vmalert" %}
 {{ kind }}_{{ vm_name }}_storage_dir:
   file.directory:
     - name: {{ vm_data["args"][arg_storage] }}
     - makedirs: True
     - user: root
     - group: root
+  {%- endif %}
 
 {{ kind }}_{{ vm_name }}_rename:
   file.rename:
