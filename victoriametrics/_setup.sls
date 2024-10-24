@@ -64,7 +64,7 @@
 
   {%- set service_name = kind if vm_name == "main" else kind ~ "-" ~ vm_name %}
 
-  {%- if ( kind == "vmserver" or kind == "vmalert" ) and vm_data.get("nginx", {}) and vm_data.get("nginx",{}).get("enabled", True) %}
+  {%- if ( kind in ["vmserver", "vmalert"] ) and vm_data.get("nginx", {}) and vm_data.get("nginx",{}).get("enabled", True) %}
     {%- include "victoriametrics/nginx/init.sls" %}
   {%- endif %}
 
