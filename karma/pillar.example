@@ -1,0 +1,13 @@
+karma:
+  version: '0.120'
+  domain: karma.dev.example.org
+  config: |
+    listen:
+      tls:
+        cert: /opt/acme/cert/karma_karma.dev.example.org_fullchain.cer
+        key: /opt/acme/cert/karma_karma.dev.example.org_key.key
+    alertmanager:
+      servers:
+        - name: dev
+          uri: https://alertmanager.dev.example.org:9093
+
