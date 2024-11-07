@@ -35,21 +35,24 @@ rabbitmq_repo:
   file.managed:
     - name: /etc/apt/sources.list.d/rabbitmq.list
     - contents: |
-        ## Provides modern Erlang/OTP releases
+        ## Provides modern Erlang/OTP releases from a Cloudsmith mirror
         ##
-        deb [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu {{ grains["oscodename"] }} main
-        deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu {{ grains["oscodename"] }} main
+        deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
+        
         # another mirror for redundancy
-        deb [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu {{ grains["oscodename"] }} main
-        deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu {{ grains["oscodename"] }} main
+        deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
+        
+        ## Provides RabbitMQ from a Cloudsmith mirror
+        ##
+        deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-server/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-server/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
+        
+        # another mirror for redundancy
+        deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-server/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
+        deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-server/deb/{{ grains["os"].lower() }} {{ grains["oscodename"] }} main
 
-        ## Provides RabbitMQ
-        ##
-        deb [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu {{ grains["oscodename"] }} main
-        deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu {{ grains["oscodename"] }} main
-        # another mirror for redundancy
-        deb [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu {{ grains["oscodename"] }} main
-        deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu {{ grains["oscodename"] }} main
 
 rabbit_pkg:
   pkg.latest:
