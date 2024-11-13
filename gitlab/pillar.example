@@ -48,6 +48,22 @@ gitlab:
     #    -----BEGIN PRIVATE KEY-----
     #    ...
     #    -----END PRIVATE KEY-----
+  pages: # optional, enable pages
+    domain: pages.example.com
+    acme_account: example.com
+    namespace_in_path: True # setting for gitlab_pages['namespace_in_path']
+    #ssl_certificate:
+    #  file: /etc/ssl/example.com/ssl.crt
+    #  contents: |
+    #    -----BEGIN CERTIFICATE-----
+    #    ...
+    #    -----END CERTIFICATE-----
+    #ssl_certificate_key:
+    #  file: /etc/ssl/example.com/ssl.key
+    #  contents: |
+    #    -----BEGIN PRIVATE KEY-----
+    #    ...
+    #    -----END PRIVATE KEY-----
   #gitaly_ruby_num_workers: 4 # has been deprecated since 16.0 and was removed in 17.0. Gitaly-ruby is removed in GitLab 16.0, and thus this setting is now unused
   google_oauth2:
     app_id: xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
