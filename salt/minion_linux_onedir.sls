@@ -81,17 +81,29 @@ salt_minion_pki_minion_master_pub:
     {%- endif %}
   {%- endif %}
 
+salt_minion_rm_old_repo_key:
+  file.absent:
+    - name: /etc/apt/keyrings/salt-archive-keyring-2023.gpg
+
 salt_minion_repo_key:
   file.managed:
-    - name: /etc/apt/keyrings/salt-archive-keyring-2023.gpg
-    - source: https://repo.saltproject.io/salt/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"]|string }}/{{ grains["osarch"] }}/SALT-PROJECT-GPG-PUBKEY-2023.gpg
+    - name: /etc/apt/keyrings/salt-archive-keyring-2023.pgp # Broadcom is a funny company, instantly deprecated old Salt versions, moved to artifactory, renamed key extension from gpg to pgp
+    - source: https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public
     - skip_verify: True
 
 salt_minion_repo_list:
   file.managed:
-    - name: /etc/apt/sources.list.d/saltstack.list
+    - name: /etc/apt/sources.list.d/saltstack.list # Salt version is not in the repo URL, so we need to check it in the package
     - contents: |
-        deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.gpg arch={{ grains["osarch"] }}] https://repo.saltproject.io/salt/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"]|string }}/{{ grains["osarch"] }}/{{ pillar["salt"]["minion"]["version"]|string }} {{ grains["oscodename"] }} main
+        deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=amd64] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main
+
+salt_minion_apt_pin:
+  file.managed:
+    - name: /etc/apt/preferences.d/salt-pin-1001
+    - contents: |
+        Package: salt-*
+        Pin: version {{ pillar["salt"]["minion"]["version"] }}.*
+        Pin-Priority: 1001
 
   {%- set salt_minion_version = pillar["salt"]["minion"]["version"]|string %}
   {%- set salt_call_args = "" %}

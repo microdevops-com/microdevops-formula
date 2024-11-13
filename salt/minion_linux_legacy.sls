@@ -1,3 +1,5 @@
+# This file is kept only for the multi-unit code reference, Salt before 3006 is not supported anymore
+
 {% if pillar["salt"] is defined and "minion" in pillar["salt"] and grains["os"] in ["Ubuntu", "Debian"] and pillar["salt"]["minion"]["version"]|int in [3001, 3002, 3004] %}
 
   # If install_root is set use it as a prefix in all paths

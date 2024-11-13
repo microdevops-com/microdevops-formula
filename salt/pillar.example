@@ -6,7 +6,7 @@
 salt:
 
   master:
-    version: 3001
+    version: 3006
     config:
       file_roots:
         base:
@@ -80,8 +80,8 @@ salt:
   minion:
     #install_root: /opt/salt # optional, install minion configs to alternative location, useful for having additional minion if primary is managed by other system
     #systemd_unit_name: salt-minion-in-opt # optional, create additional unit to run minion from alternative location, use with install_root
-    version: 3001
-    release: 3001.4 # optional specific release of version to install (only for windows)
+    version: 3006
+    release: 3006.9 # optional specific release of version to install (only for windows)
     hosts: # add static records for salt masters
       - name: salt1.example.com
         ip: 1.2.3.4
