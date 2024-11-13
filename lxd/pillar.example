@@ -154,9 +154,6 @@ lxd:
           - 111.111.111.111
           - salt1.example.com
           - 1.2.3.4
-        - focal_salt_minion.sh:
-          - salt1.example.com
-          - 3001
       bootstrap: # focal with fixed mac on eth0
         - focal_network_mac.sh:
           - 111.111.111.111
@@ -170,9 +167,6 @@ lxd:
           - 111.111.111.111
           - salt1.example.com
           - 1.2.3.4
-        - focal_salt_minion.sh:
-          - salt1.example.com
-          - 3001
       bootstrap: # focal without fixed mac on eth0 with eth1
         - focal_network_two_nets.sh:
           - 111.111.111.111
@@ -187,9 +181,6 @@ lxd:
           - 111.111.111.111
           - salt1.example.com
           - 1.2.3.4
-        - focal_salt_minion.sh:
-          - salt1.example.com
-          - 3001
       bootstrap: # focal with fixed mac on eth0 with eth1
         - focal_network_two_nets_mac.sh:
           - 111.111.111.111
@@ -205,9 +196,6 @@ lxd:
           - 111.111.111.111
           - salt1.example.com
           - 1.2.3.4
-        - focal_salt_minion.sh:
-          - salt1.example.com
-          - 3001
       bootstrap: # xenial with eth0
         - xenial_network.sh:
           - 10.0.10.2
@@ -219,9 +207,6 @@ lxd:
           - __CONTAINER_NAME__
           - 1.2.3.4
           - salt1.example.com
-        - xenial_salt_minion.sh:
-          - salt1.example.com
-          - 3000
       bootstrap: # bionic with eth0
         - bionic_network.sh:
           - 111.111.111.111
@@ -234,9 +219,6 @@ lxd:
           - __CONTAINER_NAME__
           - 1.2.3.4
           - salt1.example.com
-        - bionic_salt_minion.sh:
-          - salt1.example.com
-          - 3000
       bootstrap: # bionic with eth0 and eth1
         - bionic_network_two_nets.sh:
           - 111.111.111.111
@@ -251,6 +233,3 @@ lxd:
           - __CONTAINER_NAME__
           - 1.2.3.4
           - salt1.example.com
-        - bionic_salt_minion.sh:
-          - salt1.example.com
-          - 3000
