@@ -12,7 +12,7 @@ salt_master_hosts_{{ loop.index }}:
   {%- if grains["os"] in ["Windows"] %}
 include:
   - .minion_windows
-  {%- elif grains["os"] in ["Ubuntu", "Debian"] and pillar["salt"]["minion"]["version"]|int in [3006, 3007] %}
+  {%- else %}
 include:
   - .minion_linux_onedir
   {%- endif %}

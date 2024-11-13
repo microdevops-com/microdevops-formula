@@ -1,14 +1,7 @@
 {% if pillar["salt"] is defined and "minion" in pillar["salt"] and grains["os"] in ["Windows"] %}
 
-  {%- if pillar["salt"]["minion"]["version"]|string == "3001" %}
-    {%- set minion_src = 'https://archive.repo.saltproject.io/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
-  # This block should be updated each time new minor version comes
-  {%- elif pillar["salt"]["minion"]["version"]|string == "3004" %}
-    {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '.1-Py3-AMD64-Setup.exe' -%}
-  {%- else %}
-    {%- set minion_src = 'https://repo.saltstack.com/windows/Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '.1-Py3-AMD64-Setup.exe' -%}
-  {%- endif %}
-  {%- set minion_exe = 'Salt-Minion-' ~ pillar["salt"]["minion"]["version"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+  {%- set minion_src = 'https://packages.broadcom.com/artifactory/saltproject-generic/windows/' ~ pillar["salt"]["minion"]["release"]|string ~ '/Salt-Minion-' ~ pillar["salt"]["minion"]["release"]|string ~ '-Py3-AMD64-Setup.exe' -%}
+  {%- set minion_exe = 'Salt-Minion-' ~ pillar["salt"]["minion"]["release"]|string ~ '-Py3-AMD64-Setup.exe' -%}
 
   {%- if 
          pillar["salt"]["minion"]["version"]|string != grains["saltversioninfo"][0]|string

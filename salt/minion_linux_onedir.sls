@@ -1,4 +1,4 @@
-{% if pillar["salt"] is defined and "minion" in pillar["salt"] and grains["os"] in ["Ubuntu", "Debian"] and pillar["salt"]["minion"]["version"]|int in [3006, 3007] %}
+{% if pillar["salt"] is defined and "minion" in pillar["salt"] and grains["os"] in ["Ubuntu", "Debian"] %}
 
   {% set install_root = "" %}
 
