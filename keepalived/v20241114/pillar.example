@@ -1,0 +1,70 @@
+# keepalived state, in case installing "from_source" accepts the following pillar cli options:
+# pillar='{ keepalived_reinstall: True }' to re-run the whole install process
+# pillar='{ keepalived_make_clean: True }' to run 'make clean' and remove installed keepalived binary prior 'make' and 'make install'
+
+keepalived:
+
+    #from_source: https://github.com/acassen/keepalived/archive/refs/tags/v2.3.1.tar.gz # optional, to build from source, url is mandatory
+    #build_deps: [] # list, optional, packages to install to build keepalived, see defaults in keepalived/v20241114/build_deps.yaml
+
+    files: # required
+      managed: # required
+        keepalived_config: # required
+          - contents: | # required, name can be ommited here
+              global_defs {
+                enable_script_security
+                script_user root
+              }
+              vrrp_script my_vrrp_script {
+                script "/etc/keepalived/my_vrrp_script.sh"
+                interval 3  # Run script every 1 seconds
+                timeout  2  # Wait up to t seconds for script before assuming non-zero exit code
+                fall     2  # If script returns non-zero 2 times in succession, enter FAULT state
+                rise     10 # If script returns zero 10 times in succession, exit FAULT state
+              }
+              vrrp_instance VI_1 {
+                #priority 100
+                #nopreempt
+                #state MASTER | BACKUP
+                interface eth0
+                unicast_src_ip: 10.0.0.1
+                unicast_peer {
+                  10.0.0.2
+                }
+                virtual_router_id 20
+                advert_int 1
+                authentication {
+                  auth_type PASS
+                  auth_pass 12345678
+                }
+                track_script {
+                  my_vrrp_script
+                }
+                notify /etc/keepalived/notify.sh
+              }
+
+        keepalived_scripts:
+          - name: /etc/keepalived/notify.sh
+            contents: |
+              #!/bin/bash
+              ENDSTATE=$3
+              NAME=$2
+              TYPE=$1
+              case $ENDSTATE in
+                  "BACKUP") # Perform action for transition to BACKUP state
+                            exit 0
+                            ;;
+                  "FAULT")  # Perform action for transition to FAULT state
+                            exit 0
+                            ;;
+                  "MASTER") # Perform action for transition to MASTER state
+                            exit 0
+                            ;;
+                  *)        echo "Unknown state ${ENDSTATE} for VRRP ${TYPE} ${NAME}"
+                            exit 1
+                            ;;
+              esac
+          - name: /etc/keepalived/my_vrrp_script.sh
+            contents: |
+              #!/bin/bash
+              /usr/bin/killall -0 haproxy
