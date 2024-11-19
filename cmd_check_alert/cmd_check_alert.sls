@@ -51,7 +51,7 @@ cmd_check_alert_config_managed_{{ loop.index }}:
     - formatter: yaml
     - serializer_opts:
       - width: 1024 # otherwise it will split long commands in multiple lines
-    - dataset: {{ check_group_params["config"] }}
+    - dataset: {{ check_group_params["config"] | tojson }}
 
 cmd_check_alert_cron_managed_{{ loop.index }}:
   cron.present:
