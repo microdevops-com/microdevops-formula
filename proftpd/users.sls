@@ -19,6 +19,11 @@ create_proftpd_user_directory{{ loop.index }}:
     - group: {{ pillar['proftpd']['users'][proftpd_user]['group'] }}
     - makedirs: True
       {%- endif %}
+      {%- if (pillar['proftpd']['users'][proftpd_user]['sleep'] is defined) and (pillar['proftpd']['users'][proftpd_user]['sleep'] is not none) and (pillar['proftpd']['users'][proftpd_user]['sleep']) %}
+  cmd.run:
+    - name: 'sleep {{ pillar['proftpd']['users'][proftpd_user]['sleep'] }}'
+    - runas: 'root'
+      {%- endif %}
     {%- endfor %}
   {%- endif %}
 {%- endif %}
