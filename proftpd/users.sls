@@ -20,6 +20,7 @@ create_proftpd_user_directory{{ loop.index }}:
     - makedirs: True
       {%- endif %}
       {%- if (pillar['proftpd']['users'][proftpd_user]['sleep'] is defined) and (pillar['proftpd']['users'][proftpd_user]['sleep'] is not none) and (pillar['proftpd']['users'][proftpd_user]['sleep']) %}
+sleep_on_create_proftpd_user_{{ loop.index }}:
   cmd.run:
     - name: 'sleep {{ pillar['proftpd']['users'][proftpd_user]['sleep'] }}'
     - runas: 'root'
