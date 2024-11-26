@@ -159,7 +159,7 @@ redis_image:
 
 authentik_image:
   cmd.run:
-    - name: docker pull ghcr.io/goauthentik/server:{{ pillar["authentik"]["version"] }}
+    - name: docker pull {{ pillar["authentik"]["image"] | default('ghcr.io/goauthentik/server') }}:{{ pillar["authentik"]["version"] }}
 
 redis_container:
   docker_container.running:
@@ -178,7 +178,7 @@ redis_container:
 authentik_server_container:
   docker_container.running:
     - name: authentik-server-{{ pillar["authentik"]["domain"] }}
-    - image: ghcr.io/goauthentik/server:{{ pillar["authentik"]["version"] }}
+    - image: {{ pillar["authentik"]["image"] | default('ghcr.io/goauthentik/server') }}:{{ pillar["authentik"]["version"] }}
     - command: server
     - detach: True
     - restart_policy: unless-stopped
@@ -204,7 +204,7 @@ authentik_server_container:
 authentik_worker_container:
   docker_container.running:
     - name: authentik-worker-{{ pillar["authentik"]["domain"] }}
-    - image: ghcr.io/goauthentik/server:{{ pillar["authentik"]["version"] }}
+    - image: {{ pillar["authentik"]["image"] | default('ghcr.io/goauthentik/server') }}:{{ pillar["authentik"]["version"] }}
     - command: worker
     - detach: True
     - restart_policy: unless-stopped
@@ -239,3 +239,4 @@ nginx_reload_cron:
     - hour: 6
 
 {% endif %}
+
