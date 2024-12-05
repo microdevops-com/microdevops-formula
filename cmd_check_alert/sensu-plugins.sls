@@ -33,7 +33,7 @@ sensu-plugins_mkdir_fix:
 
     {%- endif %}
 
-    {%- if grains["os_family"] == "Debian" and grains["oscodename"] not in ["buster", "bullseye", "jammy", "bookworm"] and grains["osarch"] not in ["arm64"] %}
+    {%- if grains["os_family"] == "Debian" and grains["oscodename"] not in ["buster", "bullseye", "jammy", "bookworm", "Ubuntu"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
