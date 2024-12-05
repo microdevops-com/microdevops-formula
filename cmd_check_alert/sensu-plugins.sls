@@ -33,7 +33,7 @@ sensu-plugins_mkdir_fix:
 
     {%- endif %}
 
-    {%- if grains["os_family"] == "Debian" and grains["oscodename"] not in ["buster", "bullseye", "jammy", "bookworm"] and grains["osarch"] not in ["arm64"] %}
+    {%- if grains["os_family"] == "Debian" and grains["oscodename"] not in ["buster", "bullseye", "jammy", "bookworm", "noble"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
@@ -51,7 +51,8 @@ sensu-plugins_repo:
     - key_url: https://packagecloud.io/sensu/community/gpgkey
     - clean_file: True
 
-    {%- elif grains["os_family"] == "Debian" and grains["oscodename"] in ["jammy", "bookworm"] and grains["osarch"] not in ["arm64"] %}
+
+    {%- elif grains["os_family"] == "Debian" and grains["oscodename"] in ["jammy", "bookworm", "noble"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
