@@ -49,7 +49,6 @@ pkg_latest:
       - at
       - rsnapshot
       - util-linux-locales
-      - mlocate
       # libs
       - ncurses-term
       # diag
