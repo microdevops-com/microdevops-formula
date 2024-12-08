@@ -184,9 +184,9 @@ file_manager_{{ kind }}_{{ blockname }}_{{ extloop }}_{{ loop.index }}:
       {%- if item.get("filetype", "text") == "text" %} {# do not template binary files #}
     - template: {{ item.get("template", "jinja") }}
     - defaults: {{ item.get("values",{}) }}
+      {%- endif %}
       {%- if "requisite" in item %}
     - {{ item["requisite"] }}
-      {%- endif %}
       {%- endif %}
       {%- set a_loop = loop %}
       {%- for apply in item.get("apply", []) %}
