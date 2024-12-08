@@ -8,8 +8,8 @@
     {%- import "victoriametrics/_release.sls" as release with context %}
     {%- do vm_data["service"].update({"version": release["latest"]}) %}
   {%- endif %}
-  {%- set source = defaults["platforms"][platform]["source"].format(release=vm_data["service"]["version"], name=defaults[kind]["name"], arch=grains["osarch"]) %}
-  {%- set source_hash = defaults["platforms"][platform]["source_hash"].format(release=vm_data["service"]["version"], name=defaults[kind]["name"], arch=grains["osarch"]) %}
+  {%- set source = defaults["platforms"][platform]["source"].format(release=vm_data["service"]["version"], name=defaults[kind]["name"], arch=grains["osarch"].replace("x86_64", "amd64")) %}
+  {%- set source_hash = defaults["platforms"][platform]["source_hash"].format(release=vm_data["service"]["version"], name=defaults[kind]["name"], arch=grains["osarch"].replace("x86_64", "amd64")) %}
 {%- else %}
   {%- set source = vm_data["service"]["source"] %}
   {%- set source_hash = vm_data["service"].get("source_hash", none) %}
