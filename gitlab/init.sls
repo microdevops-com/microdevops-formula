@@ -230,9 +230,6 @@ gitlab_config:
         gitlab_rails['artifacts_path'] = "/var/lib/gitlab_artifacts"
         gitlab_rails['backup_path'] = '/var/backups/gitlab_backups'
         gitlab_rails['pipeline_schedule_worker_cron'] = "*/10 * * * *"
-  {%- if "gitaly_ruby_num_workers" in pillar["gitlab"] %}
-        gitaly['ruby_num_workers'] = {{ pillar["gitlab"]["gitaly_ruby_num_workers"] }}
-  {%- endif %}
   {%- if "mattermost" in pillar["gitlab"] %}
         mattermost_external_url 'https://{{ pillar["gitlab"]["mattermost"]["domain"] }}'
         mattermost_nginx['redirect_http_to_https'] = true
