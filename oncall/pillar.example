@@ -1,0 +1,26 @@
+{% set domain = "oncall.example.com" %}
+oncall:
+  domain: {{ domain }}
+  env_vars:
+    ONCALL_VERSION=v1.13.11
+    DOMAIN: https://{{ domain }}
+    COMPOSE_PROFILES: ""
+    SECRET_KEY: 1234567890qwertyuiopasdfghjklzxc
+    GRAFANA_API_URL: 'https://grafana.example.com/'
+    EMAIL_FROM_ADDRESS: oncall@example.com
+    EMAIL_HOST: 172.16.0.1
+    EMAIL_PORT: 25
+    EMAIL_USE_TLS: false
+    EMAIL_HOST_PASSWORD: 1234567890
+    EMAIL_HOST_USER: username@example.com
+    FEATURE_TELEGRAM_INTEGRATION_ENABLED: False
+    FEATURE_TELEGRAM_LONG_POLLING_ENABLED: False
+    TELEGRAM_TOKEN: 1234567890:ABCDEFGHI-JKLMNOPQRSTUVWXY-Z1234567
+    TELEGRAM_WEBHOOK_HOST: https://oncall.example.com
+    GRAFANA_CLOUD_NOTIFICATIONS_ENABLED: False
+    GRAFANA_CLOUD_ONCALL_API_URL: https://oncall-prod-eu-west-0.grafana.net/oncall
+    GRAFANA_CLOUD_ONCALL_TOKEN: e7032526012c70bsdf4334v545tb5nhy5vcgx4wd23ec24v3tb54t5b1209a5372
+    FEATURE_LIVE_SETTINGS_ENABLED: False
+    FEATURE_ALERT_GROUP_SEARCH_ENABLED: Flase
+    PROMETHEUS_EXPORTER_SECRET: my_random_prometheus_secret
+    FEATURE_PROMETHEUS_EXPORTER_ENABLED: False
