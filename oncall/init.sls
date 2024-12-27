@@ -21,7 +21,7 @@ oncall_data_dirs:
 
 generate_self_signed_cert_with_check_expire:
   cmd.run:
-    - name: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /opt/oncall/cert/oncall_{{ pillar["oncall"]["domain"] }}_key.key -out /opt/oncall/cert/oncall_{{ pillar["oncall"]["domain"] }}_fullchain.cer -subj "{{ pillar["oncall"]["self_signed_cert_subject"] }}"
+    - name: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /opt/oncall/cert/oncall_{{ pillar["oncall"]["domain"] }}_key.key -out /opt/oncall/cert/oncall_{{ pillar["oncall"]["domain"] }}_fullchain.cer -subj "{{ pillar["oncall"]["self_signed_cert_subject"] | default('/C=US/ST=NY/L=NY/O=Org/CN=' ~ pillar["oncall"]["domain"]) }}"
     - unless: openssl x509 -checkend 86400 -noout -in /opt/oncall/cert/oncall_{{ pillar["oncall"]["domain"] }}_fullchain.cer
 
   {% endif %}
@@ -232,7 +232,7 @@ dotenv:
     - name: /opt/oncall/.env
     - contents: |
         {%- for key, value in pillar["oncall"]["env_vars"].items() %}
-        {{ key }}={{ value }}
+        {{ key }}='{{ value }}'
         {%- endfor %}
 
 docker_compose_up:
