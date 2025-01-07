@@ -662,8 +662,6 @@ php-fpm_{{ k }}_timezone_{{ type }}:
       {%- endfor %}
     {%- endif %}
 
-{% endif %}
-
 #php 8.4
     {%- if (pillar['php-fpm']['version_8_4'] is defined) and (pillar['php-fpm']['version_8_4'] is not none) and (pillar['php-fpm']['version_8_4']) %}
 php-fpm_repo_deb_8_4:
