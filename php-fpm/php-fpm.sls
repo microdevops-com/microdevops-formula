@@ -743,3 +743,85 @@ php-fpm_{{ k }}_timezone_{{ type }}:
     {%- endif %}
 
 {% endif %}
+
+#php 8.4
+    {%- if (pillar['php-fpm']['version_8_4'] is defined) and (pillar['php-fpm']['version_8_4'] is not none) and (pillar['php-fpm']['version_8_4']) %}
+php-fpm_repo_deb_8_4:
+  pkgrepo.managed:
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: E5267A6C
+    - refresh: True
+
+php-fpm_8_4_installed:
+  pkg.installed:
+    - pkgs:
+      - php8.4-cli
+      - php8.4-fpm
+
+      {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
+        {%- if (pillar['php-fpm']['modules']['php8_4'] is defined) and (pillar['php-fpm']['modules']['php8_4'] is not none) %}
+php-fpm_8_4_modules_installed:
+  pkg.installed:
+    - pkgs:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php8_4'] %}
+            {%- if (pkg_name != 'php8.4-ioncube') %} # TODO: now (2023-12-07 12:41) there is no ionCube for php8.4
+      - {{ pkg_name }}
+            {%- endif %}
+          {%- endfor %}
+
+          {%- for pkg_name in pillar['php-fpm']['modules']['php8_4'] %}
+            {%- if (pkg_name == 'php8.4-ioncube') %}
+php-fpm_8_4_modules_ioncube_1:
+  file.managed:
+    - name: '/usr/lib/php/8.4-ioncube/ioncube_loader_lin_8.4.so'
+    - makedirs: True
+    - user: root
+    - group: root
+    - source: 'https://microdevopsformula.s3.eu-central-1.amazonaws.com/php-fpm/ioncube/ioncube_loader_lin_8.4.so'
+    - skip_verify: True
+
+php-fpm_8_4_modules_ioncube_2:
+  file.managed:
+    - name: '/etc/php/8.4/mods-available/ioncube.ini'
+    - user: root
+    - group: root
+    - contents: |
+        zend_extension=/usr/lib/php/8.4-ioncube/ioncube_loader_lin_8.4.so
+
+php-fpm_8_4_modules_ioncube_3:
+  file.symlink:
+    - name: '/etc/php/8.4/fpm/conf.d/00-ioncube.ini'
+    - target: '/etc/php/8.4/mods-available/ioncube.ini'
+            {%- endif %}
+          {%- endfor %}
+
+        {%- endif %}
+      {%- endif %}
+    {%- endif %}
+
+    {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
+      {%- for k, v in pillar['php-fpm']['tz'].items() %}
+        {%- set phpversion = k.replace('_','.').split('php')[1] %}
+        {%- set timezone = v %}
+
+        {%- for type in ['cli','fpm'] %}
+php-fpm_{{ k }}_timezone_{{ type }}:
+  ini.options_present:
+          {%- if phpversion == '5.5' %}
+    - name: '/etc/php5/{{ type }}/php.ini'
+          {%- else %}
+    - name: '/etc/php/{{ phpversion }}/{{ type }}/php.ini'
+          {%- endif %}
+    - separator: '='
+    - sections:
+        Date:
+          date.timezone: {{ timezone }}
+        {%- endfor %}
+
+      {%- endfor %}
+    {%- endif %}
+
+{% endif %}
