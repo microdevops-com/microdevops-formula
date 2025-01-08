@@ -146,6 +146,7 @@ rsnapshot_backup:
         #exec_before_dump: # optional, command to execute via ssh before dump, avoid using single and double quotes
         #exec_after_dump: # optional, command to execute via ssh after dump, avoid using single and double quotes
         #pg_dump_args: # optional, pass additional arguments to pg_dump_args
+        #pg_dump_filter: grep -v -e \"pg_dump.*: finished item\" -e \"pg_dump.*: creating\" -e \"pg_dump.*: executing\" -e \"pg_dump.*: last built-in\" -e \"pg_dump.*: reading\" -e \"pg_dump.*: identifying\" -e \"pg_dump.*: finding\" -e \"pg_dump.*: flagging\" -e \"pg_dump.*: saving\" -e \"pg_dump.*: dropping\" -e \"pg_dump.*: dumping\" -e \"pg_dump.*: running\" -e \"pg_dump.*: processing\" >&2 # optional, filter pg_dump output
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location
         #postgresql_dump_type: directory # optional, overrides default plain format with pipe to gz file dump type
