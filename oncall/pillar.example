@@ -1,6 +1,8 @@
 {% set domain = "oncall.example.com" %}
 oncall:
   domain: {{ domain }}
+  sqlite_disable: true      # default 'false'
+  nginx_reload_cron: false  # default 'true'
   env_vars:
     ONCALL_VERSION=v1.13.11
     DOMAIN: https://{{ domain }}
