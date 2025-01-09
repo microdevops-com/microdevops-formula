@@ -115,7 +115,7 @@ create symlink /etc/nginx/sites-enabled/{{ pillar["oncall"]["domain"] }}.conf:
 delete /etc/nginx/sites-enabled/default:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
-  
+
   {%- else %}
 
 nginx_files_1:
@@ -187,12 +187,30 @@ nginx_files_1:
   {%- endif %}
 
 download_docker-compose_file:
-  cmd.run:
-    - name: curl -fsSL https://raw.githubusercontent.com/grafana/oncall/dev/docker-compose.yml -o /opt/oncall/docker-compose.yml
-
-fix_docker-compose_file:
-  cmd.run:
-    - name: sed -i 's|- "8080:8080"|- "127.0.0.1:8080:8080"|' /opt/oncall/docker-compose.yml
+  file.managed:
+    - name: /opt/oncall/docker-compose.yml
+    - source: https://raw.githubusercontent.com/grafana/oncall/dev/docker-compose.yml
+    - source_hash: sha256=6d0ad22c8e1c4da423c65fc4c8a8887d287749e2ff86d9dfdd264c6912cfbc28
+    - skip_verify: False
+    - makedirs: True
+    - replace: True
+set_oncall_listening_on_localhost:
+  file.replace:
+    - name: /opt/oncall/docker-compose.yml
+    - pattern: '- "8080:8080"'
+    - repl: '- "127.0.0.1:8080:8080"'
+obtain_GRAFANA_API_URL_from_env:
+  file.replace:
+    - name: /opt/oncall/docker-compose.yml
+    - pattern: "GRAFANA_API_URL: http://grafana:3000"
+    - repl: "GRAFANA_API_URL: ${GRAFANA_API_URL:-'http://grafana:3000'}"
+{%- if pillar["oncall"]["sqlite_disable"] | default(false) %}
+disable_sqlite:
+  file.line:
+    - name: /opt/oncall/docker-compose.yml
+    - match: ".*DATABASE_TYPE: sqlite3.*"
+    - mode: delete
+{%- endif %}
 
 make_docker-compose_override:
   file.managed:
@@ -246,7 +264,11 @@ nginx_reload:
     - name: service nginx configtest && service nginx reload
 
 nginx_reload_cron:
+{%- if pillar["oncall"]["nginx_reload_cron"] | default(true) %}
   cron.present:
+{%- else %}
+  cron.absent:
+{%- endif %}
     - name: /usr/sbin/service nginx configtest && /usr/sbin/service nginx reload
     - identifier: nginx_reload
     - user: root
@@ -254,3 +276,4 @@ nginx_reload_cron:
     - hour: 6
 
 {% endif %}
+
