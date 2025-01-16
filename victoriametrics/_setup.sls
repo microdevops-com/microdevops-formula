@@ -78,7 +78,7 @@
 
   {%- set vmargslist = [] %}
   {%- for k, v in vm_data.get("args", {}).items() %}
-    {%- do vmargslist.append("-" ~ k ~ " " ~ v) %}
+    {%- do vmargslist.append("-" ~ k ~ "=" ~ v) %}
   {%- endfor %}
 
   {%- if kind != "vmalert" %}
