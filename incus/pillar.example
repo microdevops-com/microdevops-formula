@@ -91,6 +91,7 @@ incus:
         - hostname_and_hosts.sh:
           - __INSTANCE_NAME__ # special parameter __INSTANCE_NAME__ is replaced with instance name with dots
           - 111.111.111.111
+        - python3.sh: [] # install python3
       bootstrap: # with fixed mac on eth0
         - network_mac.sh:
           - 111.111.111.111
