@@ -29,7 +29,7 @@ incus_remove_incusbr0:
 incus_image_pillar_{{ loop.index }}:
   cmd.run:
     - name: |
-        incus image copy {{ image_params["source"] }} local: --alias {{ image_alias }} --auto-update {% if "vm" in image_params and image_params["vm"] %}--vm{% endif %}
+        incus image info {{ image_alias }} {% if "vm" in image_params and image_params["vm"] %}--vm{% endif %} || incus image copy {{ image_params["source"] }} local: --alias {{ image_alias }} --auto-update {% if "vm" in image_params and image_params["vm"] %}--vm{% endif %}
 
     {%- endfor %}
   {%- endif %}
