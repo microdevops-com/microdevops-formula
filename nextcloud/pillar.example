@@ -108,3 +108,11 @@ nextcloud:
         MAIL_FROM_ADDRESS: nextcloud
         MAIL_DOMAIN: example.com
         PHP_MEMORY_LIMIT: 512M
+
+
+
+#################
+
+nextcloud-aio:
+  domain: nextcloud-aio.example.com
+  tag: latest
