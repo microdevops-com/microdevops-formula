@@ -25,6 +25,7 @@ cmd_check_alert:
           #cmd_override: xxx # optional, cmd definition that will override cmd on pillar level, useful for setting custom thresholds for hosts
           service: service
           resource: __hostname__:salt-master
+          description: Salt Master Service Check
     files: # optionally fill in some files like exclusions in check helpers, useful if joined from other standard pillar
       /opt/sysadmws/cmd_check_alert/checks/exclude_network_iptables_open_from_any_safe.txt: # contents of this file is joined from all items
         softether_vpnserver: |

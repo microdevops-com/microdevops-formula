@@ -132,6 +132,10 @@ rsnapshot_backup_yaml:
           pg_dump_args: {{ host_backups_item["pg_dump_args"] }}
           {%- endif %}
           #
+          {%- if "pg_dump_filter" in host_backups_item %}
+          pg_dump_filter: {{ host_backups_item["pg_dump_filter"] }}
+          {%- endif %}
+          #
           {%- if "mongo_args" in host_backups_item %}
           mongo_args: {{ host_backups_item["mongo_args"] }}
           {%- endif %}

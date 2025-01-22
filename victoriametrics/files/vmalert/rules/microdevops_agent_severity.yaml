@@ -1,0 +1,13 @@
+groups:
+  - name: GenericSeverityAlerts
+    rules:
+      # Alert for any metric that matches the pattern 'microdevops_agent_*_severity > 0'
+      - alert: GenericSeverityAlert
+        expr: '{__name__=~"microdevops_agent_.*_severity"} > 0'
+        for: 1m
+        labels:
+          severity: '{{ $value }}'
+          metric: '{{ $labels.__name__ }}'
+        annotations:
+          summary: Alert triggered for metric {{ $labels.__name__ }} on {{ $labels.host }} ({{ $labels.partition }})
+          description: Metric {{ $labels.__name__ }} on {{ $labels.host }} (partition {{ $labels.partition }}) has triggered an alert with a severity level of {{ $value }}.

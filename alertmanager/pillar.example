@@ -1,0 +1,28 @@
+alertmanager:
+  version: '0.27.0'
+  domain: alertmanager.dev.example.org
+  extra_args: '--cluster.listen-address=""'
+  config: |
+    global:
+      resolve_timeout: 5m
+
+    route:
+      receiver: 'grafana-oncall'
+
+    receivers:
+    - name: 'grafana-oncall'
+      webhook_configs:
+      - url: 'https://oncall.example.org/integrations/v1/alertmanager/ZyUusdqst6467276i8XklM8PN/'
+        send_resolved: true
+  web_config: |
+    tls_server_config:
+      cert_file: /opt/acme/cert/alertmanager_alertmanager.dev.example.org_fullchain.cer
+      key_file: /opt/acme/cert/alertmanager_alertmanager.dev.example.org_key.key
+
+    http_server_config:
+      # Enable HTTP/2 support
+      http2: true
+
+    basic_auth_users:
+      # Optionally, add users for basic authentication
+      # admin: "$2y$12$examplehashedpasswordwithbcrypt"

@@ -125,39 +125,29 @@ salt_master_root_rsa_pub:
 
   {%- endif %}
 
-  {%- if pillar["salt"]["master"]["version"]|int in [3001] and grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["focal", "jammy"] %}
-salt_master_repo:
-  pkgrepo.managed:
-    - humanname: SaltStack Repository
-    - name: deb https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }} {{ grains["oscodename"] }} main
-    - file: /etc/apt/sources.list.d/saltstack.list
-    - key_url: https://archive.repo.saltproject.io/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
-    - clean_file: True
+salt_master_rm_old_repo_key:
+  file.absent:
+    - name: /etc/apt/keyrings/salt-archive-keyring-2023.gpg
 
-  {%- elif pillar["salt"]["master"]["version"]|int in [3004] and grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["focal", "jammy"] %}
-# jammy uses focal packages
-salt_master_repo:
-  pkgrepo.managed:
-    - humanname: SaltStack Repository
-    - name: deb https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ "20.04" if grains["osrelease"]|string in ["22.04"] else grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }} {{ "focal" if grains["oscodename"] in ["jammy"] else grains["oscodename"] }} main
-    - file: /etc/apt/sources.list.d/saltstack.list
-    - key_url: https://repo.saltstack.com/py3/{{ grains["os"]|lower }}/{{ "20.04" if grains["osrelease"]|string in ["22.04"] else grains["osrelease"] }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"] }}/SALTSTACK-GPG-KEY.pub
-    - clean_file: True
-
-  {%- elif pillar["salt"]["master"]["version"]|int in [3006, 3007] and grains["os"] in ["Ubuntu"] and grains["oscodename"] in ["focal", "jammy"] %}
 salt_master_repo_key:
   file.managed:
-    - name: /etc/apt/keyrings/salt-archive-keyring-2023.gpg
-    - source: https://repo.saltproject.io/salt/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"]|string }}/{{ grains["osarch"] }}/SALT-PROJECT-GPG-PUBKEY-2023.gpg
+    - name: /etc/apt/keyrings/salt-archive-keyring-2023.pgp
+    - source: https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public
     - skip_verify: True
 
 salt_master_repo_list:
   file.managed:
-    - name: /etc/apt/sources.list.d/saltstack.list
+    - name: /etc/apt/sources.list.d/saltstack.list # Salt version is not in the repo URL, so we need to check it in the package
     - contents: |
-        deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.gpg arch={{ grains["osarch"] }}] https://repo.saltproject.io/salt/py3/{{ grains["os"]|lower }}/{{ grains["osrelease"]|string }}/{{ grains["osarch"] }}/{{ pillar["salt"]["master"]["version"]|string }} {{ grains["oscodename"] }} main
+        deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=amd64] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main
 
-  {%- endif %}
+salt_minion_apt_pin:
+  file.managed:
+    - name: /etc/apt/preferences.d/salt-pin-1001
+    - contents: |
+        Package: salt-*
+        Pin: version {{ pillar["salt"]["master"]["version"] }}.*
+        Pin-Priority: 1001
 
 salt_master_pkg:
   pkg.latest:
@@ -165,9 +155,6 @@ salt_master_pkg:
     - pkgs:
         - salt-master
         - salt-ssh
-  {%- if pillar["salt"]["master"]["version"]|int not in [3001] %}
-        - python3-contextvars
-  {%- endif %}
 
 salt_master_service:
   cmd.run:

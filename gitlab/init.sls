@@ -101,7 +101,7 @@ gitlab_nginx_redirect:
         }
     {%- if "acme_account" in pillar["gitlab"]["redirect"] %}
     - require:
-      - cmd: gitlab_redirect_acme_run
+      - cmd: /opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab *
     {%- endif %}
 
   {%- endif %}
@@ -125,6 +125,29 @@ gitlab_mattermost_ssl_certificate_key:
     - makedirs: True
     - mode: 0600
     - contents: {{ pillar["gitlab"]["mattermost"]["ssl_certificate_key"]["contents"] | yaml_encode }}
+
+    {%- endif %}
+  {%- endif %}
+
+  {%- if "pages" in pillar["gitlab"] %}
+    {%- if "acme_account" in pillar["gitlab"]["pages"] %}
+
+      {{ verify_and_issue(pillar["gitlab"]["pages"]["acme_account"], "gitlab", pillar["gitlab"]["pages"]["domain"]) }}
+
+    {%- else %}
+gitlab_pages_ssl_certificate:
+  file.managed:
+    - name: {{ pillar["gitlab"]["pages"]["ssl_certificate"]["file"] }}
+    - makedirs: True
+    - mode: 0644
+    - contents: {{ pillar["gitlab"]["pages"]["ssl_certificate"]["contents"] | yaml_encode }}
+
+gitlab_pages_ssl_certificate_key:
+  file.managed:
+    - name: {{ pillar["gitlab"]["pages"]["ssl_certificate_key"]["file"] }}
+    - makedirs: True
+    - mode: 0600
+    - contents: {{ pillar["gitlab"]["pages"]["ssl_certificate_key"]["contents"] | yaml_encode }}
 
     {%- endif %}
   {%- endif %}
@@ -207,9 +230,6 @@ gitlab_config:
         gitlab_rails['artifacts_path'] = "/var/lib/gitlab_artifacts"
         gitlab_rails['backup_path'] = '/var/backups/gitlab_backups'
         gitlab_rails['pipeline_schedule_worker_cron'] = "*/10 * * * *"
-  {%- if "gitaly_ruby_num_workers" in pillar["gitlab"] %}
-        gitaly['ruby_num_workers'] = {{ pillar["gitlab"]["gitaly_ruby_num_workers"] }}
-  {%- endif %}
   {%- if "mattermost" in pillar["gitlab"] %}
         mattermost_external_url 'https://{{ pillar["gitlab"]["mattermost"]["domain"] }}'
         mattermost_nginx['redirect_http_to_https'] = true
@@ -219,6 +239,20 @@ gitlab_config:
     {%- else %}
         mattermost_nginx['ssl_certificate'] = "{{ pillar["gitlab"]["mattermost"]["ssl_certificate"]["file"] }}"
         mattermost_nginx['ssl_certificate_key'] = "{{ pillar["gitlab"]["mattermost"]["ssl_certificate_key"]["file"] }}"
+    {%- endif %}
+  {%- endif %}
+  {%- if "pages" in pillar["gitlab"] %}
+        pages_external_url 'https://{{ pillar["gitlab"]["pages"]["domain"] }}'
+        pages_nginx['redirect_http_to_https'] = true
+    {%- if "acme_account" in pillar["gitlab"]["pages"] %}
+        pages_nginx['ssl_certificate'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["pages"]["domain"] }}_fullchain.cer"
+        pages_nginx['ssl_certificate_key'] = "/opt/acme/cert/gitlab_{{ pillar["gitlab"]["pages"]["domain"] }}_key.key"
+    {%- else %}
+        pages_nginx['ssl_certificate'] = "{{ pillar["gitlab"]["pages"]["ssl_certificate"]["file"] }}"
+        pages_nginx['ssl_certificate_key'] = "{{ pillar["gitlab"]["pages"]["ssl_certificate_key"]["file"] }}"
+    {%- endif %}
+    {%- if "namespace_in_path" in pillar["gitlab"]["pages"] and pillar["gitlab"]["pages"]["namespace_in_path"] %}
+        gitlab_pages['namespace_in_path'] = true
     {%- endif %}
   {%- endif %}
   {%- if "config_additions" in pillar["gitlab"] %}

@@ -21,9 +21,11 @@ rsnapshot_backup:
                            # beware - it will be executed for each item in data, so make separate backup item to exec only once
         #before_backup_check: # optional, script to execute locally before backup, backup will be made only if executed successfully
         #retain_hourly: N # optional, hourly rotations disabled by default
-        #retain_daily: N # optional, overrides default value 7, minimum 2 on first level of backup
-        #retain_weekly: N # optional, overrides default value 4, minimum 0 on second level of backup and further
-        #retain_monthly: N # optional, overrides default value 3, minimum 0 on second level of backup and further
+        #retain_daily: N # optional, overrides default value 7, minimum 2 on the first level of backup
+                         # if set to 0 for MYSQL_SSH, POSTGRESQL_SSH, MONGODB_SSH, rsnapshot is not executed at all, only db dump
+                         # used to initiate db dumps in advance which are then picked up by remote backup servers
+        #retain_weekly: N # optional, overrides default value 4, minimum 0 on the second level of backup and further
+        #retain_monthly: N # optional, overrides default value 3, minimum 0 on the second level of backup and further
         #retries: N # optional, if rsnapshot fails, try N times more
                     # this retries work only for rsnapshot sync command, remote DB dumps are retried with dump_attempts
         #rsnapshot_prefix_cmd: # optional, prefix rsnapshot command call, must include space if prefixing with nice or similar
@@ -144,6 +146,7 @@ rsnapshot_backup:
         #exec_before_dump: # optional, command to execute via ssh before dump, avoid using single and double quotes
         #exec_after_dump: # optional, command to execute via ssh after dump, avoid using single and double quotes
         #pg_dump_args: # optional, pass additional arguments to pg_dump_args
+        #pg_dump_filter: grep -v -e \"pg_dump.*: finished item\" -e \"pg_dump.*: creating\" -e \"pg_dump.*: executing\" -e \"pg_dump.*: last built-in\" -e \"pg_dump.*: reading\" -e \"pg_dump.*: identifying\" -e \"pg_dump.*: finding\" -e \"pg_dump.*: flagging\" -e \"pg_dump.*: saving\" -e \"pg_dump.*: dropping\" -e \"pg_dump.*: dumping\" -e \"pg_dump.*: running\" -e \"pg_dump.*: processing\" >&2 # optional, filter pg_dump output
         #postgresql_noclean: True # optional, remove --clean from pg dump
         #postgresql_dump_dir: /var/backups/postgresql # optional, change default /var/backups/postgresql dump dir location
         #postgresql_dump_type: directory # optional, overrides default plain format with pipe to gz file dump type

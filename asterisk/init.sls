@@ -1,7 +1,5 @@
 include:
   - .asterisk
-  - .freepbx
-  - .acme
-  - .apache
+  - .certbot
   - .ssh
-  - .records_to_archive
+  

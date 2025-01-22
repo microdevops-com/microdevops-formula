@@ -1,0 +1,35 @@
+groups:
+  - name: SeverityBasedDiskAlerts
+    rules:
+      # Alert for disk space usage based on severity
+      - alert: DiskSpaceUsageAlert
+        expr: microdevops_agent_disk_alert_space_usage_percentage_severity > 0
+        for: 1m
+        annotations:
+          summary: "Disk usage alert on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Disk usage on {{ $labels.host }} (partition {{ $labels.partition }}) is {{ printf \"microdevops_agent_disk_alert_space_usage_percentage{host=\\\"%s\\\", partition=\\\"%s\\\"}\" $labels.host $labels.partition | query | first | value }}%."
+
+      # Alert for low free space in MB based on severity
+      - alert: DiskFreeSpaceAlert
+        expr: microdevops_agent_disk_alert_free_space_mb_severity > 0
+        for: 1m
+        annotations:
+          summary: "Low free disk space on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Free space on {{ $labels.host }} (partition {{ $labels.partition }}) is {{ printf \"microdevops_agent_disk_alert_free_space_mb{host=\\\"%s\\\", partition=\\\"%s\\\"}\" $labels.host $labels.partition | query | first | value }} MB."
+
+      # Alert for predicted full disk based on severity
+      - alert: DiskPredictedFullAlert
+        expr: microdevops_agent_disk_alert_predicted_full_sec_severity > 0
+        for: 1m
+        annotations:
+          summary: "Disk predicted to be full soon on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Disk on {{ $labels.host }} (partition {{ $labels.partition }}) is predicted to be full in less than {{ printf \"microdevops_agent_disk_alert_predicted_full_sec{host=\\\"%s\\\", partition=\\\"%s\\\"}\" $labels.host $labels.partition | query | first | value }} seconds."
+
+      # Alert for inode usage based on severity
+      - alert: InodeUsageAlert
+        expr: microdevops_agent_disk_alert_inode_usage_percentage_severity > 0
+        for: 1m
+        annotations:
+          summary: "High inode usage on {{ $labels.host }} ({{ $labels.partition }})"
+          description: "Inode usage on {{ $labels.host }} (partition {{ $labels.partition }}) is {{ printf \"microdevops_agent_disk_alert_inode_usage_percentage{host=\\\"%s\\\", partition=\\\"%s\\\"}\" $labels.host $labels.partition | query | first | value }}%."
+
