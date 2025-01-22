@@ -1,5 +1,0 @@
-include:
-  - .asterisk
-  - .certbot
-  - .ssh
-  
