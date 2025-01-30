@@ -8,7 +8,6 @@ ufw_case_pillar_render_errors:
         ERROR: There are pillar errors, so nothing has been done.
         {{ pillar["_errors"] | json() }}
 
-
 {% elif pillar["ufw"] is not defined or pillar["ufw"] is none %}
 ufw_case_no_pillar:
   test.configurable_test_state:
@@ -17,7 +16,6 @@ ufw_case_no_pillar:
     - result: True
     - comment: |
         INFO: Ufw state was not configured with pillar, so nothing has been done. But it is OK.
-
 
 {% elif pillar["ufw"] is defined and "not_managed" in pillar["ufw"] and pillar["ufw"]["not_managed"] %}
 ufw_case_not_managed:
@@ -28,12 +26,10 @@ ufw_case_not_managed:
     - comment: |
         INFO: Ufw management was explicitly turned off by pillar.
 
-
 {% elif pillar["ufw"] is defined and "disabled" in pillar["ufw"] and pillar["ufw"]["disabled"] %}
 ufw_case_disabled:
   cmd.run:
     - name: "which ufw && ufw disable || true"
-
 
 {% elif pillar["ufw"] is defined and not (pillar["ufw"].keys() | intersect(["allow", "nat", "custom", "custom6"])) %}
 ufw_case_no_allowrules_host_will_close_itself:
@@ -42,8 +38,7 @@ ufw_case_no_allowrules_host_will_close_itself:
     - changes: False
     - result: False
     - comment: |
-        INFO: Ufw state _was_ configured with pillar, but no allow/nat/custom/custom6 rules defined, so host will close itself from world.
-
+        ERROR: Ufw state _was_ configured with pillar, but no allow/nat/custom/custom6 rules defined, so host would close itself from world, aborted.
 
 {% elif pillar["ufw"] is defined %}
   # Import deprecated ufw_simple rules if enabled
