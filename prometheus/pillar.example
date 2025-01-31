@@ -61,6 +61,31 @@ prometheus:
                   regex: 'redis://(.*):.*'
                   target_label: instance
                   replacement: '$1'
+              - job_name: 'mailcow'
+                static_configs:
+                - targets:
+                  - 'mailcow-exporter-prometheus.example.com-prod-mail.example.com:9099'
+                  - 'mailcow-exporter-prometheus.example.com-prod-mail.example2.com:9099'
+                relabel_configs:
+                  - source_labels: [__address__]
+                    regex: 'mailcow-exporter-prometheus\.example\.org-prod-(.*):.*'
+                    replacement: '$1'
+                    target_label: instance
+          mailcow-exporters:
+            mail.example.com:
+              enabled: True
+              port: 9199
+              image: thej6s/mailcow-exporter
+              env_vars:
+                MAILCOW_EXPORTER_HOST: mail.example.com
+                MAILCOW_EXPORTER_API_KEY: 3EAE1E-2E4D83-77316C-CB9440-93378B
+            mail.example2.com:
+              enabled: True
+              port: 9299
+              image: thej6s/mailcow-exporter
+              env_vars:
+                MAILCOW_EXPORTER_HOST: mail.example2.com
+                MAILCOW_EXPORTER_API_KEY: 389EDB-4FF197-AECF8D-092520-7D4C18
           redis-exporter:
             enabled: True
             port: 9121

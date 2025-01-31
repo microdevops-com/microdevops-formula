@@ -131,6 +131,24 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['redis-exporter']['port'] }}/;
                 }
       {%- endif %}
+      {% if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
+        {%- set x_loop = loop %}
+        {%- for mailcow_exporter_name, mailcow_exporter_params in instance['mailcow-exporters'].items() %}
+          {% if mailcow_exporter_params['enabled'] %}
+                location /{{ instance['name'] }}/mailcow-exporter/{{ mailcow_exporter_name }} {
+            {%- if instance['auth'] is defined and instance['auth'] is not none %}
+                    auth_basic "Prometheus {{ instance['name'] }}";
+                    auth_basic_user_file /etc/nginx/{{ domain['name'] }}-{{ instance['name'] }}.htpasswd;
+            {%- endif %}
+                    # web route is not even planned for mailcow-exporter, using nginx sub_filter
+                    sub_filter_once off;
+                    sub_filter 'href="/scrape' 'href="/{{ instance['name'] }}/mailcow-exporter/{{ mailcow_exporter_name }}/scrape';
+                    sub_filter 'href="/metrics' 'href="/{{ instance['name'] }}/mailcow-exporter/{{ mailcow_exporter_name }}/metrics';
+                    proxy_pass http://localhost:{{ mailcow_exporter_params['port'] }}/;
+                }
+          {%- endif %}
+        {%- endfor %}
+      {%- endif %}
     {%- endfor %}
   {%- endfor %}
             }
@@ -388,6 +406,35 @@ prometheus_redis-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
           {%- endif %}
       {%- endif %}
 
+      {% if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
+        {%- set x_loop = loop %}
+        {%- for mailcow_exporter_name, mailcow_exporter_params in instance['mailcow-exporters'].items() %}
+          {% if mailcow_exporter_params['enabled'] %}
+prometheus_mailcow-exporter_image_{{ loop.index }}_{{ i_loop.index }}_{{ x_loop.index }}:
+  cmd.run:
+    - name: docker pull {{ mailcow_exporter_params['image'] }}
+
+prometheus_mailcow-exporter_container_{{ loop.index }}_{{ i_loop.index }}_{{ x_loop.index }}:
+  docker_container.running:
+    - name: mailcow-exporter-{{ domain['name'] }}-{{ instance['name'] }}-{{ mailcow_exporter_name }}
+    - user: root
+    - image: {{ mailcow_exporter_params['image'] }}
+    - detach: True
+    - restart_policy: unless-stopped
+    - networks:
+        - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - publish:
+        - 127.0.0.1:{{ mailcow_exporter_params['port'] }}:9099/tcp
+            {% if 'env_vars' in mailcow_exporter_params %}
+    - environment:
+              {%- for var_key, var_val in mailcow_exporter_params["env_vars"].items() %}
+        - {{ var_key }}: {{ var_val }}
+              {%- endfor %}
+            {%- endif %}
+          {%- endif %}
+        {%- endfor %}
+      {%- endif %}
+
     {%- endfor %}
   {%- endfor %}
 
@@ -415,6 +462,14 @@ nginx_domain_index_{{ loop.index }}:
       {%- endif %}
       {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
         <a href="{{ instance['name'] }}/redis-exporter/">{{ instance['name'] }}/redis-exporter</a><br>
+      {%- endif %}
+      {% if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
+        {%- set x_loop = loop %}
+        {%- for mailcow_exporter_name, mailcow_exporter_params in instance['mailcow-exporters'].items() %}
+          {% if mailcow_exporter_params['enabled'] %}
+        <a href="{{ instance['name'] }}/mailcow-exporter/">{{ instance['name'] }}/mailcow-exporter/{{ mailcow_exporter_name }}</a><br>
+          {%- endif %}
+        {%- endfor %}
       {%- endif %}
     {%- endfor %}
   {%- endfor %}
