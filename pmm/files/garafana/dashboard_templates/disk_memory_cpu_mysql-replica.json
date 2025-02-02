@@ -349,7 +349,7 @@
           {
             "evaluator": {
               "params": [
-                {{ panel_cpu_usage_alert_conditions_evaluator_params | default(21474836480) }}
+                {{ panel_undo_log_size_alert_conditions_evaluator_params | default(21474836480) }}
               ],
               "type": "gt"
             },
