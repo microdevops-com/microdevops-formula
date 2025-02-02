@@ -342,6 +342,7 @@
         "align": false
       }
     },
+{%- if is_mysql_server | default(true) %},
     {
       "alert": {
         "alertRuleTags": {},
@@ -462,6 +463,7 @@
         "align": false
       }
     },
+{%- endif %}
     {
       "collapsed": false,
       "gridPos": {
