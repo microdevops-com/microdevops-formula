@@ -342,14 +342,137 @@
         "align": false
       }
     },
+{%- if is_mysql_server | default(true) %},
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                {{ panel_undo_log_size_alert_conditions_evaluator_params | default(21474836480) }}
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "max"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "5m",
+        "frequency": "1m",
+        "handler": 1,
+        "name": "[{{ node_name }}] Undo log is HUGE",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 4,
+      "fillGradient": 10,
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 7,
+        "y": 7
+      },
+      "hiddenSeries": false,
+      "id": 18,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.10",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:400",
+          "alias": "Undo log size",
+          "color": "#E02F44"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (node_name) ((max_over_time(mysql_info_schema_innodb_metrics_transaction_trx_rseg_current_size{node_name=~\"{{ node_name }}\"}[1m]) or\nmax_over_time(mysql_info_schema_innodb_metrics_transaction_trx_rseg_current_size{node_name=~\"{{ node_name }}\"}[5m])) *\n(max_over_time(mysql_global_status_innodb_page_size{node_name=~\"{{ node_name }}\"}[1m]) or\nmax_over_time(mysql_global_status_innodb_page_size{node_name=~\"{{ node_name }}\"}[5m])))",
+          "interval": "1",
+          "legendFormat": "Undo log size",
+          "refId": "A"
+        }
+      ],
+      "timeRegions": [],
+      "title": "[{{ node_name }}] Undo Log",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:449",
+          "format": "decbytes",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:450",
+          "format": "percent",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+{%- endif %}
     {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 13
       },
+      "id": 17,
       "title": "CPU",
       "type": "row"
     },
