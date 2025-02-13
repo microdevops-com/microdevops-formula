@@ -169,6 +169,24 @@ asterisk_configs_ini_{{ loop.index }}:
   {%- endfor %}
 {% endif %}
 
+{% if pillar["asterisk"]["systemd"] is defined and "autorestart" or "file_limit" in pillar["asterisk"]["systemd"] %}
+asterisk_systemd_override:
+  file.managed:
+    - name: /etc/systemd/system/asterisk.service.d/override.conf
+    - contents: |
+        [Service]
+        {% if "autorestart" in pillar["asterisk"]["systemd"] %}
+        Restart={{ pillar["asterisk"]["systemd"]["autorestart"] }}
+        {% endif %}
+        {% if "file_limit" in pillar["asterisk"]["systemd"] %}
+        LimitNOFILE={{ pillar["asterisk"]["systemd"]["file_limit"] }}
+        {% endif %}
+asterisk_systemd_override_reload:
+  cmd.run:
+    - name: systemctl daemon-reload
+  
+{% endif %}
+
 
 
 service_asterisk_enable:

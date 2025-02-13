@@ -2,6 +2,9 @@ asterisk:
   user: asterisk
   group: asterisk
   version: 18.12.0
+  systemd: #optional, overrides default systemd unit
+    autorestart: no # options: no | always | on-success | on-failure | on-abnormal | on-abort | on-watchdog | unless-stopped
+    file_limit: 65535
   modules:
     disable:
       - CORE-SOUNDS-EN-GSM
