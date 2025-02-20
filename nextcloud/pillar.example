@@ -116,3 +116,4 @@ nextcloud:
 nextcloud-aio:
   domain: nextcloud-aio.example.com
   tag: latest
+  NEXTCLOUD_KEEP_DISABLED_APPS: False # Setting this to true will keep Nextcloud apps that are disabled in the AIO interface and not uninstall them if they should be installed. See https://github.com/nextcloud/all-in-one#how-to-keep-disabled-apps
