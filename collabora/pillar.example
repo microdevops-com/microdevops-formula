@@ -20,3 +20,24 @@ collabora:
         password: YYYYYYYYYYYYYYYYYYYY
         server_name: collabora.tst.example.com
         aliasgroup1: https://nextcloud.tst.example.com:443
+
+## FOR INSTALL FULL COLLABORA ONLINE FROM CUSTOMER DEB
+collabora:
+  full: true
+  nginx_sites_enabled: true
+  name: collabora.example.com
+  customer_hash: EAXMPLE-1eba3132499b6d24b127484ccc932e63d1717b21
+  coolwsd_xml:
+    template: salt://collabora/coolwsd.xml.jinja
+    values:
+      user: admin
+      password: very-strong-pass
+      ssl: false
+      ssl_termination: true
+      alias_groups:
+        mode: groups
+        groups:
+        - https://nextcloud.example.com:443
+        - https://next1.example.com:443
+        - https://next2.example.com:443
+

@@ -78,7 +78,7 @@ pkg_latest:
       - wget
       # security
       - fail2ban
-      - iptables
+      # - iptables # ufw will setup it if needed, removed to keep nftables clean
       - openssh-server
       # mail
       - postfix
