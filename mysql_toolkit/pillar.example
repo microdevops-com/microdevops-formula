@@ -16,6 +16,3 @@ mysql_toolkit:
         grants:
           - privileges: 'SELECT'
             on_db: '*.*'
-    replication:
-      testReplicationUser@192.168.56.2:
-        password_hash: '*0E7B5268AEBF4BEE571C667A474A8B9411CA88F9'
