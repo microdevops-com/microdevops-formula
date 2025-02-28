@@ -13,3 +13,4 @@ include:
   - .locale
   - .auto-upgrades
   - .service
+  - .sshd_prohibit_password
