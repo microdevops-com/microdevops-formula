@@ -196,7 +196,7 @@ keep_data_dirs:
 
 docker_network:
   docker_network.present:
-    - name: keep_default
+    - name: keephq_default
 
 {% for component in pillar["keep"]["components"] %}
 {{ component["name"] }}_image:
@@ -205,7 +205,7 @@ docker_network:
 
 {{ component["name"] }}_container:
   docker_container.running:
-    - name: keep-{{ component["name"] }}-1
+    - name: keephq-{{ component["name"] }}-1
     - image: {{ component["image"] }}
     - detach: True
     - restart_policy: unless-stopped
@@ -222,7 +222,7 @@ docker_network:
       {%- endfor %}
     {%- endif %}
     - networks:
-      - keep_default:
+      - keephq_default:
         - aliases:
           - {{ component["name"] }}
     {% if 'environment' in component %}
