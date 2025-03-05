@@ -2,7 +2,7 @@ salt_cache_dir: /var/cache/salt/VictoriaMetrics
 
 platforms:
   github:
-    tags_url: https://api.github.com/repos/VictoriaMetrics/VictoriaMetrics/tags?per_page=1
+    tags_url: https://api.github.com/repos/VictoriaMetrics/VictoriaMetrics/releases/latest
     source: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{release}/{name}-linux-{arch}-{release}.tar.gz
     source_hash: https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{release}/{name}-linux-{arch}-{release}_checksums.txt
 
