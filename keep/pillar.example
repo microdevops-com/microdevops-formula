@@ -16,11 +16,17 @@ keep:
   host: {{ host }}
   nginx_sites_enabled: True
   homedir: {{ homedir }}
+  default_username: {{ keep_default_username }}
+  mysql_host: {{ keep_dbhost }}
+  dbport: {{ keep_dbport }}
+  dbname: {{ keep_dbname }}
+  dbusername: {{ keep_dbusername }}
+  dbpassword: {{ keep_dbpassword }}
   api_key: {{ keep_api_key }}
   retries: 10
   providers:
     - name: grafana-oncall-provider-name
-      force: true         # Optional for re-creating provider
+      force: true
       type: grafana_oncall
       args:
         - --host https://oncall.example.com
@@ -95,3 +101,4 @@ keep:
         - SOKETI_DEFAULT_APP_ID=1
         - SOKETI_DEFAULT_APP_KEY={{ keep_app_key }}
         - SOKETI_DEFAULT_APP_SECRET={{ keep_app_secret }}
+
