@@ -10,11 +10,33 @@
 {% set keep_dbname = 'keep' %}
 {% set keep_dbusername = 'keep' %}
 {% set keep_dbpassword = 'password' %}
+{% set keep_api_key = '12345678-1234-1234-1234-123456789012' %}
 
 keep:
   host: {{ host }}
   nginx_sites_enabled: True
   homedir: {{ homedir }}
+  api_key: {{ keep_api_key }}
+  retries: 10
+  providers:
+    - name: grafana-oncall-provider-name
+      force: true         # Optional for re-creating provider
+      type: grafana_oncall
+      args:
+        - --host https://oncall.example.com
+        - --token 1234567890123456789012345678901234567890123456789012345678901234
+    - name: telegram-provider-name
+      force: true
+      type: telegram
+      args:
+        - --bot-token 1234567890:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+    - name: vmalert-provider-name
+      force: true
+      type: victoriametrics
+      args:
+        - --VMAlertURL https://vmalert.example.com
+        - --BasicAuthUsername USERNAME
+        - --BasicAuthPassword PASSWORD
   components:
     - name: keep-frontend
       ports:
