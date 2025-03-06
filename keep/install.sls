@@ -233,17 +233,6 @@ docker_network:
     {%- endif %}
 {% endfor %}
 
-
-keep-cli_image:
-  cmd.run:
-    - name: docker pull us-central1-docker.pkg.dev/keephq/keep/keep-cli
-
-env_file:
-  file.touch:
-    - name: {{ pillar["keep"]["homedir"] }}/.env
-
-
-
 nginx_reload:
   cmd.run:
     - runas: root
