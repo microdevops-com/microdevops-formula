@@ -103,14 +103,15 @@ cmd_check_alert:
           service: network
           resource: __hostname__:netfilter-conntrack
         iptables_input_drop:
-{% if grains["oscodename"] in ["precise"] %}
-          disabled: True
-{% endif %}
           cmd: iptables -w -S | grep -q -e "-P INPUT DROP"
-          #severity: security
-          severity: minor
+          severity: critical
           service: network
           resource: __hostname__:iptables_input_drop
+        iptables_ssh_open:
+          cmd: :; ! iptables -w -S | grep -e "-j ACCEPT" | grep -e " 22 " -e ",22," -e " 22," -e ",22 " | grep -v -e "-s "
+          severity: critical
+          service: network
+          resource: __hostname__:iptables_ssh_open
         iptables_open_from_any:
 {% if grains["oscodename"] in ["precise"] %}
           disabled: True
