@@ -18,12 +18,16 @@ keep:
   homedir: {{ homedir }}
   default_username: {{ keep_default_username }}
   mysql_host: {{ keep_dbhost }}
+  #postgresql_host: {{ keep_dbhost }}
+  #sqlite_path: {{ homedir }}/state/db.sqlite3
   dbport: {{ keep_dbport }}
   dbname: {{ keep_dbname }}
   dbusername: {{ keep_dbusername }}
   dbpassword: {{ keep_dbpassword }}
   api_key: {{ keep_api_key }}
   retries: 10
+  health_retries: 30
+  health_retry_delay: 5
   providers:
     - name: grafana-oncall-provider-name
       force: true
