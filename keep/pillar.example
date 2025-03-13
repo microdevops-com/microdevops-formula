@@ -1,5 +1,6 @@
 {% set host = 'keep.example.com' %}
 {% set homedir = '/opt/keep' %}
+{% set keep_docker_tag = '0.38.8' %}
 {% set keep_default_username = 'keep' %}
 {% set keep_default_password = 'keep' %}
 {% set keep_jwt_secret = 'secret' %}
@@ -24,34 +25,15 @@ keep:
   dbname: {{ keep_dbname }}
   dbusername: {{ keep_dbusername }}
   dbpassword: {{ keep_dbpassword }}
-  api_key: {{ keep_api_key }}
+  api_key: 12345678-1234-1234-1234-1234567890ab
   retries: 10
   health_retries: 30
   health_retry_delay: 5
-  providers:
-    - name: grafana-oncall-provider-name
-      force: true
-      type: grafana_oncall
-      args:
-        - --host https://oncall.example.com
-        - --token 1234567890123456789012345678901234567890123456789012345678901234
-    - name: telegram-provider-name
-      force: true
-      type: telegram
-      args:
-        - --bot-token 1234567890:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-    - name: vmalert-provider-name
-      force: true
-      type: victoriametrics
-      args:
-        - --VMAlertURL https://vmalert.example.com
-        - --BasicAuthUsername USERNAME
-        - --BasicAuthPassword PASSWORD
   components:
     - name: keep-frontend
       ports:
         - "127.0.0.1:3000:3000"
-      image: us-central1-docker.pkg.dev/keephq/keep/keep-ui
+      image: us-central1-docker.pkg.dev/keephq/keep/keep-ui:{{ keep_docker_tag }}
       environment:
         - API_URL=http://keep-backend:8080
         - AUTH_TYPE=DB
@@ -68,7 +50,7 @@ keep:
       volumes:
         - {{ homedir }}/state:/state
     - name: keep-backend
-      image: us-central1-docker.pkg.dev/keephq/keep/keep-api
+      image: us-central1-docker.pkg.dev/keephq/keep/keep-api:{{ keep_docker_tag }}
       ports:
         - "127.0.0.1:8080:8080"
       environment:
@@ -105,4 +87,82 @@ keep:
         - SOKETI_DEFAULT_APP_ID=1
         - SOKETI_DEFAULT_APP_KEY={{ keep_app_key }}
         - SOKETI_DEFAULT_APP_SECRET={{ keep_app_secret }}
-
+  providers:
+    - name: grafana-oncall-provider-name
+      force: true
+      type: grafana_oncall
+      args:
+        - --host https://oncall.example.com
+        - --token 1234567890123456789012345678901234567890123456789012345678901234
+    - name: telegram-provider-name
+      force: true
+      type: telegram
+      args:
+        - --bot-token 1234567890:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+    - name: vmalert-provider-name
+      force: true
+      type: victoriametrics
+      args:
+        - --VMAlertURL https://vmalert.example.com
+        - --BasicAuthUsername USERNAME
+        - --BasicAuthPassword PASSWORD
+  workflows:
+{% raw %}
+    - |
+      id: query-clickhouse
+      description: Query Clickhouse and send an alert if there is an error
+      triggers:
+        - type: manual
+      steps:
+        - name: clickhouse-step
+          provider:
+            config: "{{ providers.clickhouse }}"
+            type: clickhouse
+            with:
+              query: SELECT * FROM logs_table ORDER BY timestamp DESC LIMIT 1;
+              single_row: "True"
+      actions:
+        - name: ntfy-action
+          if: "'{{ steps.clickhouse-step.results.level }}' == 'ERROR'"
+          provider:
+            config: "{{ providers.ntfy }}"
+            type: ntfy
+            with:
+              message: "Error in clickhouse logs_table: {{ steps.clickhouse-step.results.level }}"
+              topic: clickhouse
+    - |
+      id: query-victoriametrics
+      name: victoriametrics-alert-example
+      description: Monitors CPU usage metrics from VictoriaMetrics and creates alerts when thresholds are exceeded
+      disabled: false
+      triggers:
+        - type: manual
+      consts: {}
+      owners: []
+      services: []
+      steps:
+        - name: victoriametrics-step
+          provider:
+            type: victoriametrics
+            config: "{{ providers.vmalert }}"
+            with:
+              query: avg(rate(process_cpu_seconds_total))
+              queryType: query
+      actions:
+        - name: create-alert
+          provider:
+            type: keep
+            config: "{{ providers.default-keep }}"
+            with:
+              if: "{{ value.1 }} > 0.0040"
+              alert:
+                name: High CPU Usage
+                description: "[Single] CPU usage is high on the VM (created from VM metric)"
+                severity: '{{ value.1 }} > 0.9 ? "critical" : {{ value.1 }} > 0.7 ? "warning" : "info"'
+                labels:
+                  environment: production
+                  app: myapp
+                  service: api
+                  team: devops
+                  owner: alice  
+{% endraw %}
