@@ -26,7 +26,6 @@ keep:
   dbusername: {{ keep_dbusername }}
   dbpassword: {{ keep_dbpassword }}
   api_key: 12345678-1234-1234-1234-1234567890ab
-  retries: 10
   health_retries: 30
   health_retry_delay: 5
   components:
@@ -166,3 +165,4 @@ keep:
                   team: devops
                   owner: alice  
 {% endraw %}
+
