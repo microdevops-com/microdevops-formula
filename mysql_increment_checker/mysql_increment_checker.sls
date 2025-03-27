@@ -1,10 +1,10 @@
-{% if pillar['mysql_increment_checker'] is defined and pillar['mysql_increment_checker'] is not none and pillar['mysql_increment_checker']['enabled'] is defined and pillar['mysql_increment_checker']['enabled'] is not none and pillar['mysql_increment_checker']['enabled'] %}
+{% if pillar["mysql_increment_checker"] is defined and "enabled" in pillar["mysql_increment_checker"] and pillar["mysql_increment_checker"]["enabled"] %}
 
-  {%- if salt['file.directory_exists']('/opt/sysadmws/mysql_increment_checker') %}
-    {%- if pillar['mysql_increment_checker']['config'] is defined and pillar['mysql_increment_checker']['config'] is not none %}
+  {%- if salt["file.directory_exists"]("/opt/sysadmws/mysql_increment_checker") %}
+    {%- if "config" in pillar["mysql_increment_checker"] %}
 swsu_v1_mysql_increment_checker_config_managed:
   file.serialize:
-    - name: '/opt/sysadmws/mysql_increment_checker/mysql_increment_checker.yaml'
+    - name: /opt/sysadmws/mysql_increment_checker/mysql_increment_checker.yaml
     - mode: 0644
     - user: root
     - group: root
@@ -13,15 +13,18 @@ swsu_v1_mysql_increment_checker_config_managed:
     {%- else %}
 swsu_v1_mysql_increment_checker_config_managed:
   file.absent:
-    - name: '/opt/sysadmws/mysql_increment_checker/mysql_increment_checker.yaml'
+    - name: /opt/sysadmws/mysql_increment_checker/mysql_increment_checker.yaml
     {%- endif %}
 
 swsu_v1_mysql_increment_checker_cron_managed:
   cron.present:
-    - name: '/opt/sysadmws/mysql_increment_checker/mysql_increment_checker.py'
+    - name: /opt/sysadmws/mysql_increment_checker/mysql_increment_checker.py
     - identifier: mysql_increment_checker
     - user: root
     - minute: '*/30'
+    {%- if "cron_disabled" in pillar["mysql_increment_checker"] and pillar["mysql_increment_checker"]["cron_disabled"] %}
+    - commented: True
+    {%- endif %}
   {%- endif %}
 
 {% else %}

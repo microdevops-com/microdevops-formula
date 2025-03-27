@@ -1,4 +1,5 @@
 mysql_replica_checker:
   enabled: True
+  #cron_disabled: True # Optional, disable cron
   config: |
     BEHIND_MASTER_THR="600"

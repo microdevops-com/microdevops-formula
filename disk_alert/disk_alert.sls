@@ -24,6 +24,9 @@ disk_alert_cron_managed:
     - identifier: disk_alert
     - user: root
     - minute: "*/5"
+  {%- if "cron_disabled" in pillar["disk_alert"] and pillar["disk_alert"]["cron_disabled"] %}
+    - commented: True
+  {%- endif %}
 
 {% else %}
 disk_alert_nothing_done_info:
