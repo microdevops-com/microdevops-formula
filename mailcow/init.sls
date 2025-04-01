@@ -181,7 +181,9 @@ mailcow_data_dir:
     - names:
       - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/data
       - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/mail_crypt
+  {%- if pillar["mailcow"]["solr_enable"] | default(true) %}
       - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/opt/solr/server/solr/dovecot-fts/data
+  {%- endif %}
       - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/sogo_web
       - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/sogo_backup
       - /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/volumes/var/vmail_index
@@ -318,13 +320,15 @@ mailcow_docker_compose_owerride:
       {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
                 {{ var_key }}: "{{ var_val }}"
       {%- endfor %}
+      {%- if pillar["mailcow"]["solr_enable"] | default(true) %}
           solr-mailcow:
             logging:
               driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
               options:
-      {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
+        {%- for var_key, var_val in pillar["mailcow"]["docker_logging"]["options"].items() %}
                 {{ var_key }}: "{{ var_val }}"
-      {%- endfor %}
+        {%- endfor %}
+      {%- endif %}
           olefy-mailcow:
             logging:
               driver: "{{ pillar['mailcow']['docker_logging']['driver'] }}"
@@ -415,12 +419,14 @@ mailcow_docker_compose_owerride:
                 type: 'none'
                 o: 'bind'
                 device: './volumes/var/lib/rspamd'
+    {%- if pillar["mailcow"]["solr_enable"] | default(true) %}
           solr-vol-1:
             driver: local
             driver_opts:
                 type: 'none'
                 o: 'bind'
                 device: './volumes/opt/solr/server/solr/dovecot-fts/data'
+    {%- endif %}
           postfix-vol-1:
             driver: local
             driver_opts:
@@ -469,14 +475,10 @@ postfix_disable_ipv6_2:
     - repl: 'smtp_address_preference = ipv4'
     - append_if_not_found: True
 
-nginx_dovecot_php_disable_ipv6:
+dovecot_disable_ipv6:
   cmd.run:
     - name: |
-        sed -i '/::/d' data/conf/nginx/listen_*
-        sed -i '/::/d' data/conf/nginx/templates/listen*
-        sed -i '/::/d' data/conf/nginx/dynmaps.conf
         sed -i 's/,\[::\]//g' data/conf/dovecot/dovecot.conf
-        sed -i 's/\[::\]://g' data/conf/phpfpm/php-fpm.d/pools.conf
     - cwd: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}
     - shell: /bin/bash
   {% endif %}
@@ -627,6 +629,24 @@ mailcow_docker_compose_up:
     - cwd: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}
     - name: cd /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }} && docker-compose up -d
 
+  {% if not pillar['mailcow']['enable_ipv6'] | default(true) %}
+nginx_php_disable_ipv6:
+  cmd.run:
+    - name: |
+        sleep 10
+        : sed -i '/::/d' data/conf/nginx/listen_*
+        : sed -i '/::/d' data/conf/nginx/templates/listen*
+        : sed -i '/::/d' data/conf/nginx/dynmaps.conf
+        sed -i '/^\s*listen \[::\]:80 default_server;/d' data/conf/nginx/redirect.conf
+        sed -i 's/\[::\]://g' data/conf/phpfpm/php-fpm.d/pools.conf
+    - cwd: /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}
+    - shell: /bin/bash
+nginx_php_containers_restart:
+  cmd.run:
+    - shell: /bin/bash
+    - name: docker restart mailcowdockerized-nginx-mailcow-1 mailcowdockerized-php-fpm-mailcow-1
+  {% endif %}
+
 create_cron_dovecot_full_text_serach_rescan:
   cron.present:
     - name: bash -c 'docker-compose -f /opt/mailcow/{{ pillar["mailcow"]["mailcow_conf"]["MAILCOW_HOSTNAME"] }}/docker-compose.yml exec dovecot-mailcow doveadm fts rescan -A'
@@ -656,5 +676,3 @@ nginx_reload_cron:
     - hour: 6
   {% endif %}
 {% endif %}
-
-
