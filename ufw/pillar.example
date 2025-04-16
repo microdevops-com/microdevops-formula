@@ -6,6 +6,7 @@ ufw:
   loglevel: "off" # off by default, do not remove quotes - otherwise Salt will make False instead of off
   import_ufw_simple: False # import deprecated ufw_simple state pillar
   #forwarding: True # optional, just enable forwarding like with nat, enabling nat does it as well
+  #iptables-legacy: True # optional, `update-alternatives --set iptables /usr/sbin/iptables-legacy` iptables-nft is not compatible with large iptables lists
   allow: # allow/deny/reject/limit
     rule_1: # from list to list with to port
       proto: tcp
