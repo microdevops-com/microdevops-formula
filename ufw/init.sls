@@ -111,6 +111,13 @@ ufw_pkg_latest:
     - pkgs:
         - ufw
 
+  {% if "iptables-legacy" in pillar["ufw"] and pillar["ufw"]["iptables-legacy"] %}
+ufw_iptables_legacy:
+  alternatives.set:
+    - name: iptables
+    - path: /usr/sbin/iptables-legacy
+  {%- endif %}
+
   # Enable ip forwarding if nat or custom nat rules
 ufw_ip_fwd_managed_file_1:
   file.managed:

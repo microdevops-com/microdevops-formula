@@ -53,30 +53,3 @@ MySQL ToolKit <> Users / Regular / Grant > '{{ reg_user_privileges }}' on '{{ re
     {%- endfor %}
   {%- endif %}
 {%- endfor %}
-
-{%- for repl_user_string, repl_user_params in pillar["mysql_toolkit"]["users"]["replication"].items() %}
-
-  {%- set repl_user_user, repl_user_host = repl_user_string.split('@') %}
-  {%- set repl_user_pass_hash = repl_user_params["password_hash"] %}
-
-  {%- if repl_user_user and repl_user_pass_hash %}
-
-MySQL ToolKit <> Users / Replication / Present > '{{ repl_user_user }}'@'{{ repl_user_host }}':
-  mysql_user.present:
-    - name: "{{ repl_user_user }}"
-    - host: "{{ repl_user_host }}"
-    - password_hash: "{{ repl_user_pass_hash }}"
-    - connection_default_file: "/root/.my.cnf"
-
-MySQL ToolKit <> Users / Replication / Grant > 'REPLICATION SLAVE' on '*.*' to '{{ repl_user_user }}'@'{{ repl_user_host }}':
-  mysql_grants.present:
-    - user: "{{ repl_user_user }}"
-    - host: "{{ repl_user_host }}"
-    - grant: "REPLICATION SLAVE"
-    - database: "*.*"
-    - connection_default_file: "/root/.my.cnf"
-    - require:
-        - mysql_user: "{{ repl_user_user }}"
-
-  {%- endif %}
-{%- endfor %}

@@ -1,15 +1,16 @@
 {% if pillar["jitsi"] is defined and pillar["acme"] is defined %}
+{% set acme = pillar['acme'].keys() | first %}
 
-  {% from "acme/macros.jinja" import verify_and_issue %}
-
-  {% set acme = pillar['acme'].keys() | first %}
-
-  {{ verify_and_issue(acme, "jitsi", pillar["jitsi"]["domain"]) }}
+acme_cert_verify_and_issue:
+  cmd.run:
+    - shell: /bin/bash
+    - name: "/opt/acme/home/{{ acme }}/verify_and_issue.sh jitsi {{ pillar["jitsi"]["domain"] }}"
 
 jitsi_data_dirs:
   file.directory:
     - names:
-      - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/web
+      - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/web/crontabs
+      - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/web/load-test
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/transcripts
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/prosody/config
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/prosody/prosody-plugins-custom
@@ -48,18 +49,23 @@ jitsi_frontend_container:
     - binds:
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/web:/config
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/web/crontabs:/var/spool/cron/crontabs
+      - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/web/load-test:/usr/share/jitsi-meet/load-test
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/transcripts:/usr/share/jitsi-meet/transcripts
       - /opt/acme/cert/jitsi_{{ pillar["jitsi"]["domain"] }}_fullchain.cer:/config/keys/cert.crt
       - /opt/acme/cert/jitsi_{{ pillar["jitsi"]["domain"] }}_key.key:/config/keys/cert.key
     - publish:
-      - 80:80/tcp
-      - 443:443/tcp
+      - 0.0.0.0:80:80/tcp
+      - 0.0.0.0:443:443/tcp
     - networks:
       - jitsi
     - environment:
     {%- for var_key, var_val in pillar["jitsi"]["web"]["env_vars"].items() %}
       - {{ var_key }}: {{ var_val }}
     {%- endfor %}
+    - require:
+      - docker_container: jitsi-jvb-{{ pillar["jitsi"]["domain"] }}
+    - labels:
+      - service: jitsi-web
 
 jitsi_xmpp_server_container:
   docker_container.running:
@@ -72,6 +78,7 @@ jitsi_xmpp_server_container:
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/prosody/prosody-plugins-custom:/prosody-plugins-custom
     - ports:
       - 5222
+      - 5269
       - 5347
       - 5280
     - networks:
@@ -82,6 +89,8 @@ jitsi_xmpp_server_container:
     {%- for var_key, var_val in pillar["jitsi"]["prosody"]["env_vars"].items() %}
       - {{ var_key }}: {{ var_val }}
     {%- endfor %}
+    - labels:
+      - service: jitsi-prosody
 
 jitsi_focus_component_container:
   docker_container.running:
@@ -101,6 +110,8 @@ jitsi_focus_component_container:
     {%- endfor %}
     - require:
       - docker_container: jitsi-prosody-{{ pillar["jitsi"]["domain"] }}
+    - labels:
+      - service: jitsi-jicofo
 
 jitsi_video_bridge_container:
   docker_container.running:
@@ -111,7 +122,7 @@ jitsi_video_bridge_container:
     - binds:
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/jvb:/config
     - publish:
-      - 10000:10000/udp
+      - 0.0.0.0:10000:10000/udp
       - 127.0.0.1:8080:8080
     - networks:
       - jitsi
@@ -121,6 +132,8 @@ jitsi_video_bridge_container:
     {%- endfor %}
     - require:
       - docker_container: jitsi-prosody-{{ pillar["jitsi"]["domain"] }}
+    - labels:
+      - service: jitsi-jvb
 
   {% if pillar["jitsi"]["jibri"] is defined %}
 snd_aloop_module_enable:
@@ -182,7 +195,7 @@ jitsi_sip_gateway_container:
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/config/jigasi:/config
       - /opt/jitsi/{{ pillar["jitsi"]["domain"] }}/transcripts:/tmp/transcripts
     - publish:
-      - 20000-20050:20000-20050/udp
+      - 0.0.0.0:20000-20050:20000-20050/udp
     - networks:
       - jitsi
     - environment:
@@ -192,5 +205,4 @@ jitsi_sip_gateway_container:
     - require:
       - docker_container: jitsi-prosody-{{ pillar["jitsi"]["domain"] }}
   {% endif %}
-
 {% endif %}

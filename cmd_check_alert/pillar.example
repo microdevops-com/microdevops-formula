@@ -5,6 +5,7 @@ cmd_check_alert:
     #cron: # or complex format, any cron.present state option
     #  minute: '15'
     #  hour: '10'
+    #cron_disabled: True # Optional, disable cron
     #install_sensu-plugins: # optional, install sensu-plugins repo, binary and listed checks
     #  - cpu-checks
     #  - memory-checks

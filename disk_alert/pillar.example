@@ -1,0 +1,7 @@
+disk_alert:
+  enabled: True
+  #cron_disabled: True # Optional, disable cron
+  #config: |
+  #  HOSTNAME_OVERRIDE="{{ grains["id"] }}"
+  #  DISK_ALERT_DEFAULT_PERCENT_CRITICAL="98"
+  #  DISK_ALERT_DEFAULT_PERCENT_WARNING="95"

@@ -77,6 +77,9 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
     {%- else %}
     - minute: "{{ check_group_params["cron"] }}"
     {%- endif %}
+    {%- if "cron_disabled" in check_group_params and check_group_params["cron_disabled"] %}
+    - commented: True
+    {%- endif %}
 
     {%- if "files" in check_group_params %}
       {%- set a_loop = loop %}

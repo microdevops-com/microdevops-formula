@@ -1,5 +1,6 @@
 mysql_increment_checker:
   enabled: True # enable or disable configuration of mysql_increment_checker for certain host
+  #cron_disabled: True # Optional, disable cron
   config:
     auto_increment_ratio: 70 # mandatory, the threshold for alert
     my_cred: "~/.my.cnf" # optional, path tho the my.cnf file

@@ -1,0 +1,2 @@
+ufw:
+  iptables-legacy: True
