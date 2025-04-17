@@ -7,6 +7,11 @@
 
 - `state.apply incus.install` - to install or update incus without initializing it
 
+- Sometimes downgrade of LXD is needed, for example when `lxd-to-incus (Error: LXD version is newer than maximum version "5.21.99")`
+  - `snap stop --disable lxd`
+  - `snap refresh lxd --channel=5.21/stable`
+  - `snap start --enable lxd`
+
 - Make migration from LXD manually if needed right after after install and before incus init: https://linuxcontainers.org/incus/docs/main/howto/server_migrate_lxd/
   - Stop containers and VMs manually, sometimes there are issues on stopping them
   - `lxc config unset core.trust_password`
