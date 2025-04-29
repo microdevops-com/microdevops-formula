@@ -342,7 +342,7 @@
         "align": false
       }
     },
-{%- if is_mysql_server | default(true) %},
+{%- if is_mysql_server | default(true) %}
     {
       "alert": {
         "alertRuleTags": {},
