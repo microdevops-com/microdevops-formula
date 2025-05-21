@@ -24,6 +24,13 @@
 
 - `state.apply incus.settings` - to initialize Incus and apply settings, update images and profiles
 
+- Add storage manually and make it default:
+  - `incus storage create vg_mdX lvm source=vg_mdX lvm.use_thinpool=false` - thinpool is not recommended for prod, but can be used for dev.
+  - `incus profile device remove default root`
+  - `incus storage delete default`
+  - `incus profile device add default root disk path=/ pool=vg_mdX type=disk size=10GB` - you can set root disk size only after container init, so we need to set default root size in default profile withith created storage pool.
+This volume will be resized after pillar apply and it should contain enough space to contain base OS image.
+
 - Apply only specific instances
 ```
 ... state.apply incus.instances pillar='{incus: {only: {"instance1.example.com"}}}'

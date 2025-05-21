@@ -7,6 +7,8 @@ incus:
     ubuntu/jammy/amd64/vm:
       source: images:ubuntu/jammy/amd64
       vm: True
+    debian/bookworm/amd64:
+      source: images:debian/bookworm/amd64
   profiles:
     br0:
       devices:
