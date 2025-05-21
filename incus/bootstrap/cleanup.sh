@@ -1,6 +1,7 @@
 #!/bin/bash
 
 [[ -d /home/ubuntu ]] && userdel -r "ubuntu"
+[[ -d /home/debian ]] && userdel -r "debian"
 rm -f /etc/sudoers.d/90-incus
 
 timeout 1m bash -c 'until ping -c 1 google.com; do echo .; sleep 1; done'
