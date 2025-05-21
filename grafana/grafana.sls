@@ -51,7 +51,7 @@ nginx_files_1:
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "Upgrade";
                 proxy_set_header Host $http_host;
-                proxy_pass http://localhost:{{ instance['port'] }};
+                proxy_pass http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/;
             }
     {%- endfor %}
           }
@@ -103,7 +103,7 @@ nginx_files_1:
                     proxy_set_header Upgrade $http_upgrade;
                     proxy_set_header Connection "Upgrade";
                     proxy_set_header Host $http_host;
-                    proxy_pass http://localhost:{{ instance['port'] }}/;
+                    proxy_pass http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/;
                 }
     {%- endfor %}
             }
@@ -214,6 +214,11 @@ grafana_container_{{ loop.index }}_{{ i_loop.index }}:
         - GF_SECURITY_ADMIN_PASSWORD: {{ instance['admin_password'] }}
       {%- if instance['install_plugins'] is defined and instance['install_plugins'] is not none %}
         - GF_INSTALL_PLUGINS: {{ instance['install_plugins'] }}
+      {%- endif %}
+      {%- if 'env_vars' in instance %}
+        {%- for var_key, var_val in instance["env_vars"].items() %}
+        - {{ var_key }}: {{ var_val }}
+        {%- endfor %}
       {%- endif %}
       {%- if instance['docker_logging'] is defined and instance['docker_logging'] is not none %}
     - log_driver: {{ instance['docker_logging']['driver'] }}
