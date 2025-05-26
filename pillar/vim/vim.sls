@@ -30,3 +30,4 @@ vim:
     shiftwidth: 8
     nowrap:
     mouse: ""
+    ttymouse: ""
