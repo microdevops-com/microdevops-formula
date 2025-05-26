@@ -29,3 +29,4 @@ vim:
     softtabstop: 8
     shiftwidth: 8
     nowrap:
+    mouse: ""
