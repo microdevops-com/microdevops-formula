@@ -47,30 +47,6 @@ app:
           name: |
             set -e
             curl -sS https://wordpress.org/latest.tar.gz | tar zxf -
-        pool:
-          pool_template: salt://app/files/wp/pool.conf
-          reload: True
-          log:
-            error_log: /var/www/__APP_NAME__/app/log/php/__APP_NAME__.error.log
-            dir_user: __APP_NAME__
-            dir_group: __APP_NAME__
-            dir_mode: 755                                                                      
-            log_user: __APP_NAME__                                                         
-            log_group: __APP_NAME__
-            log_mode: 644          
-            rotate_count: 31                                                           
-            rotate_when: daily
-          php_version: 7.4
-          config: |
-            pm = ondemand
-            pm.max_children = 50
-            pm.process_idle_timeout = 10s
-            pm.max_requests = 500
-
-            php_admin_value[date.timezone] = Europe/Kiev
-            php_admin_flag[html_errors] = off
-            php_admin_value[post_max_size] = 25M
-            php_admin_value[upload_max_filesize] = 25M
         nginx:
           domain: microdevops.com
           ssl:
@@ -98,11 +74,19 @@ app:
             access_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.access.log                                            
             error_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.error.log
             dir: /var/www/__APP_NAME__/app/log/nginx                                                                      
-            dir_mode: 755         
-            log_mode: 640          
-            dir_user: __APP_NAME__                                                             
-            dir_group: __APP_NAME__                                                        
-            log_user: __APP_NAME__ 
-            log_group: __APP_NAME__
-            rotate_count: 31                                                           
-            rotate_when: daily
+        pool:
+          pool_template: salt://app/files/wp/pool.conf
+          reload: True
+          log:
+            error_log: /var/www/__APP_NAME__/app/log/php/__APP_NAME__.error.log
+          php_version: 7.4
+          config: |
+            pm = ondemand
+            pm.max_children = 50
+            pm.process_idle_timeout = 10s
+            pm.max_requests = 500
+
+            php_admin_value[date.timezone] = Europe/Kiev
+            php_admin_flag[html_errors] = off
+            php_admin_value[post_max_size] = 25M
+            php_admin_value[upload_max_filesize] = 25M
