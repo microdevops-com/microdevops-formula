@@ -3,7 +3,7 @@
 nodejs_repo:
   pkgrepo.managed:
     - humanname: NodeSource Node.js
-    - name: deb https://deb.nodesource.com/node_{{ pillar["nodejs"]["version"] }}.x focal main
+    - name: deb https://deb.nodesource.com/node_{{ pillar["nodejs"]["version"] }}.x nodistro main
     - file: /etc/apt/sources.list.d/nodesource.list
     - key_url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
     - clean_file: True

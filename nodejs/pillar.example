@@ -1,7 +1,7 @@
 # vi: set ft=yaml:
 
 nodejs:
-  version: 14
+  version: 23
   npm:
     install:
       - yarn
