@@ -96,6 +96,12 @@ class Disk
       @smart_enabled = !output.scan(/NVM Capacity/).empty?
     end
 
+    unless smart_capable?
+      # NVME disks newer smartctl
+      @smart_available = !output.scan(/NVMe Version/).empty?
+      @smart_enabled = !output.scan(/NVMe Version/).empty?
+    end
+
     @capability_output = output
   end
 
