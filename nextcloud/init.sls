@@ -1,9 +1,6 @@
 {% if pillar["nextcloud"] is defined and pillar["acme"] is defined %}
 
   {% from "acme/macros.jinja" import verify_and_issue %}
-
-  {% set acme = pillar['acme'].keys() | first %}
-
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["nextcloud"]["docker-ce_version"],
                          "daemon_json": '{ "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
@@ -272,6 +269,31 @@ create symlink /etc/nginx/sites-enabled/{{ domain["name"] }}.conf:
     - name: /etc/nginx/sites-enabled/{{ domain["name"] }}.conf
     - target: /etc/nginx/sites-available/{{ domain["name"] }}.conf
     - force: True
+    {%- if domain.get('nginx_forwards') is defined %}
+      {%- for fwd_domain in domain['nginx_forwards'] %}
+create /etc/nginx/sites-available/{{ fwd_domain }}.conf:
+  file.managed:
+    - name: /etc/nginx/sites-available/{{ fwd_domain }}.conf
+    - contents: |
+        server {
+            listen 80;
+            server_name {{ fwd_domain }};
+            return 301 https://{{ domain["name"] }}$request_uri;
+        }
+        server {
+            listen 443 ssl http2;
+            server_name {{ fwd_domain }};
+            ssl_certificate /opt/acme/cert/nextcloud_{{ fwd_domain }}_fullchain.cer;
+            ssl_certificate_key /opt/acme/cert/nextcloud_{{ fwd_domain }}_key.key;
+            return 301 https://{{ domain["name"] }}$request_uri;
+        }
+create symlink /etc/nginx/sites-enabled/{{ fwd_domain }}.conf:
+  file.symlink:
+    - name: /etc/nginx/sites-enabled/{{ fwd_domain }}.conf
+    - target: /etc/nginx/sites-available/{{ fwd_domain }}.conf
+    - force: True
+      {%- endfor %}
+    {%- endif %}
     {%- endfor %}
   
   {%- else %}
@@ -506,6 +528,22 @@ nginx_files_1:
                     try_files $uri $uri/ /index.php$request_uri;
                 }
             }
+            {%- if domain.get('nginx_forwards') is defined %}
+              {%- for fwd_domain in domain['nginx_forwards'] %}
+            server {
+                listen 80;
+                server_name {{ fwd_domain }};
+                return 301 https://{{ domain["name"] }}$request_uri;
+            }
+            server {
+                listen 443 ssl http2;
+                server_name {{ fwd_domain }};
+                ssl_certificate /opt/acme/cert/nextcloud_{{ fwd_domain }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/nextcloud_{{ fwd_domain }}_key.key;
+                return 301 https://{{ domain["name"] }}$request_uri;
+            }
+              {%- endfor %}
+            {%- endif %}
     {%- endfor %}
         }
   {%- endif%}
@@ -514,8 +552,16 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["nextcloud"]["domains"] %}
-
-    {{ verify_and_issue(acme, "nextcloud", domain["name"]) }}
+    {%- if domain.get('acme_configs') is defined %}
+      {%- for acme_cfg in domain['acme_configs'] %}
+        {% for acme_domain in acme_cfg["domains"] %}
+          {{ verify_and_issue(acme_cfg["name"], "nextcloud", acme_domain) }}
+        {%- endfor %}
+      {%- endfor %}
+    {%- else %}
+        {% set acme = pillar['acme'].keys() | first %}
+        {{ verify_and_issue(acme, "nextcloud", domain["name"]) }}
+    {%- endif %}
 
 nextcloud_data_dir_{{ loop.index }}:
   file.directory:
