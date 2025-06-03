@@ -1,4 +1,7 @@
 {% if pillar["onlyoffice"] is defined %}
+  {% from "acme/macros.jinja" import verify_and_issue %}
+  {% set acme = pillar['acme'].keys() | first %}
+
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["onlyoffice"]["docker-ce_version"],
                          "daemon_json": '{ "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
@@ -78,10 +81,8 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["onlyoffice"]["domains"] %}
-nginx_cert_{{ loop.index }}:
-  cmd.run:
-    - shell: /bin/bash
-    - name: "openssl verify -CAfile /opt/acme/cert/onlyoffice_{{ domain["name"] }}_ca.cer /opt/acme/cert/onlyoffice_{{ domain["name"] }}_fullchain.cer 2>&1 | grep -q -i -e error -e cannot; [ ${PIPESTATUS[1]} -eq 0 ] && /opt/acme/home/acme_local.sh --cert-file /opt/acme/cert/onlyoffice_{{ domain["name"] }}_cert.cer --key-file /opt/acme/cert/onlyoffice_{{ domain["name"] }}_key.key --ca-file /opt/acme/cert/onlyoffice_{{ domain["name"] }}_ca.cer --fullchain-file /opt/acme/cert/onlyoffice_{{ domain["name"] }}_fullchain.cer --issue -d {{ domain["name"] }} || true"
+
+  {{ verify_and_issue(acme, "onlyoffice", domain["name"]) }}
 
 create_onlyoffice_dirs_{{ loop.index }}:
   file.directory:
@@ -135,3 +136,4 @@ nginx_reload_cron:
     - hour: 6
 
 {% endif %}
+
