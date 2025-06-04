@@ -39,7 +39,7 @@ pmm_server_container:
         - 0.0.0.0:443:443/tcp
     - binds:
         - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana:/etc/grafana:rw
-        - /opt/acme/cert/{{ pillar["pmm"]["name"] }}:/opt/acme/cert/{{ pillar["pmm"]["name"] }}:rw
+        - /opt/acme/cert/:/opt/acme/cert/:rw
         - /opt/pmm/{{ pillar["pmm"]["name"] }}{{ pillar["pmm"]["gf_path_var_lib"] }}:{{ pillar["pmm"]["gf_path_var_lib"] }}:rw
     - watch:
         - /opt/pmm/{{ pillar["pmm"]["name"] }}/etc/grafana/grafana.ini
@@ -56,12 +56,12 @@ pmm_server_container:
 change_nginx_cert:
   cmd.run:
     - shell: /bin/bash
-    - name: docker exec -i percona-{{ pillar["pmm"]["name"] }} sed -i 's/\bssl_certificate\b\(.*\)/ssl_certificate \/opt\/acme\/cert\/{{ pillar["pmm"]["name"] }}\/fullchain.cer;/' /etc/nginx/conf.d/pmm.conf
+    - name: docker exec -i percona-{{ pillar["pmm"]["name"] }} sed -i 's/\bssl_certificate\b\(.*\)/ssl_certificate \/opt\/acme\/cert\/percona_pmm_{{ pillar["pmm"]["name"] }}_fullchain.cer;/' /etc/nginx/conf.d/pmm.conf
 
 change_nginx_key:
   cmd.run:
     - shell: /bin/bash
-    - name: docker exec -i  percona-{{ pillar["pmm"]["name"] }} sed -i 's/\bssl_certificate_key\b\(.*\)/ssl_certificate_key \/opt\/acme\/cert\/{{ pillar["pmm"]["name"] }}\/{{ pillar["pmm"]["name"] }}.key;/' /etc/nginx/conf.d/pmm.conf
+    - name: docker exec -i  percona-{{ pillar["pmm"]["name"] }} sed -i 's/\bssl_certificate_key\b\(.*\)/ssl_certificate_key \/opt\/acme\/cert\/percona_pmm_{{ pillar["pmm"]["name"] }}_key.key;/' /etc/nginx/conf.d/pmm.conf
 
 restart nginx:
   cmd.run:
@@ -112,3 +112,4 @@ pmm_nginx_reload_cron:
     - user: root
     - minute: 10
     - hour: 12
+
