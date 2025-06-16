@@ -2,7 +2,15 @@ prometheus:
   docker-ce_version: 5:20.10.9
   domains:
     - name: prometheus.example.com # for nginx proxy and its ssl on https://prometheus.example.com/prod
-      acme_account: example.com
+      acme_configs:
+        - name: example.com
+          domains:
+            - prometheus.example.com
+        - name: example2.com
+          domains:
+            - prometheus.example2.com
+      nginx_forwards:
+        - prometheus.example2.com
       default_instance: prod      
       instances:
         - name: prod
