@@ -150,8 +150,24 @@ nginx_files_1:
         {%- endfor %}
       {%- endif %}
     {%- endfor %}
-  {%- endfor %}
             }
+            {%- if domain.get('nginx_forwards') is defined %}
+              {%- for fwd_domain in domain['nginx_forwards'] %}
+            server {
+                listen 80;
+                server_name {{ fwd_domain }};
+                return 301 https://{{ fwd_domain }}$request_uri;
+            }
+            server {
+                listen 443 ssl;
+                server_name {{ fwd_domain }};
+                ssl_certificate /opt/acme/cert/prometheus_{{ fwd_domain }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/prometheus_{{ fwd_domain }}_key.key;
+                return 301 https://{{ domain["name"] }}$request_uri;
+            }
+              {%- endfor %}
+            {%- endif %}
+  {%- endfor %}
         }
 
 nginx_files_2:
@@ -159,8 +175,15 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar['prometheus']['domains'] %}
-
-    {{ verify_and_issue(domain["acme_account"], "prometheus", domain["name"]) }}
+    {%- if domain.get('acme_configs') is defined %}
+      {%- for acme_cfg in domain['acme_configs'] %}
+        {%- for cert_domain in acme_cfg['domains'] %}
+          {{ verify_and_issue(acme_cfg["name"], "prometheus", cert_domain) }}
+        {%- endfor %}
+      {%- endfor %}
+    {%- else %}
+      {{ verify_and_issue(domain["acme_account"], "prometheus", domain["name"]) }}
+    {%- endif %}
 
     {%- set i_loop = loop %}
     {%- for instance in domain['instances'] %}
