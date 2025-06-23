@@ -2,6 +2,11 @@ collabora:
   nginx_sites_enabled: true
   domains:
     - name: collabora.example.com
+      acme_configs:
+        - name: example.com
+          domains:
+            - collabora.example.com
+            - collabora-new.example.com
       internal_name: prod
       internal_port: 9980
       image: collabora/code:23.05.1.2.1
@@ -12,6 +17,11 @@ collabora:
         aliasgroup1: https://nextcloud.example.com:443
         dictionaries: de_DE en_GB en_US es_ES fr_FR it nl pt_BR pt_PT ru uk_UA
     - name: collabora.tst.example.com
+      acme_configs:
+        - name: example2.com
+          domains:
+            - collabora.tst.example2.com
+            - collabora3.example2.com
       internal_name: test
       internal_port: 9981
       image: collabora/code:latest

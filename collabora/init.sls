@@ -350,7 +350,15 @@ collabora_systemd_restart:
 
     {%- for domain in pillar["collabora"]["domains"] %}
 
-      {{ verify_and_issue(acme, "collabora", domain["name"]) }}
+    {%- if domain.get('acme_configs')|default([]) is defined %}
+      {%- for acme_cfg in domain['acme_configs'] %}
+        {% for acme_domain in acme_cfg["domains"] %}
+          {{ verify_and_issue(acme_cfg["name"], "collabora", acme_domain) }}
+        {%- endfor %}
+      {%- endfor %}
+    {%- else %}
+        {{ verify_and_issue(acme, "collabora", domain["name"]) }}
+    {%- endif %}
 
 collabora_image_{{ loop.index }}:
   cmd.run:
