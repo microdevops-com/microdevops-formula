@@ -43,7 +43,7 @@ app:
                                          # or separate app and other files
         app_root: /var/www/__APP_NAME__/app # required, base for relative paths
         #keep_user: True # optional, turns off user management, intended to use with existing user on server
-        #app_auth_keys: # optinal, ensure ssh keys for user
+        #app_auth_keys: # optional, ensure ssh keys for user
         #  - ssh-rsa AAAA...== rsa-key-19700101
         shell: /bin/bash
         #sudo_rules: # optional
