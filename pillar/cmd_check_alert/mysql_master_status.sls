@@ -1,5 +1,5 @@
 cmd_check_alert:
-  mysqld:
+  mysql_master_status:
     cron: '*/5'
     config:
       enabled: True
