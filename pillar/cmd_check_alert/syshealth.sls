@@ -51,9 +51,9 @@ cmd_check_alert:
           disabled: True
 {% endif %}
 {% if grains["oscodename"] in ["bookworm"] %}
-          cmd: :; ! journalctl -k | grep -i "watchdog: BUG: soft lockup - CPU.*stuck" -m 10
+          cmd: :; ! journalctl -k | grep -i "watchdog.*BUG.*soft lockup - CPU.*stuck" -m 10
 {% else %}
-          cmd: :; ! grep -i "watchdog: BUG: soft lockup - CPU.*stuck" -m 10 /var/log/kern.log
+          cmd: :; ! grep -i "watchdog.*BUG.*soft lockup - CPU.*stuck" -m 10 /var/log/kern.log
 {% endif %}
           service: hardware
           resource: __hostname__:hardware-soft-lockup
