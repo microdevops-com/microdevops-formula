@@ -23,7 +23,7 @@ cmd_check_alert:
           disabled: True
 {% endif %}
           cmd: :; ! dmesg -T | grep -v "veth" | grep -i "hardware.*error" -m 10
-          service: os
+          service: hardware
           resource: __hostname__:hardware
         hardware-nvme:
 {% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
@@ -31,15 +31,39 @@ cmd_check_alert:
           disabled: True
 {% endif %}
           cmd: :; ! dmesg -T | grep -v "veth" | grep -i "nvme.*err" -m 10
-          service: os
+          service: disk
           resource: __hostname__:hardware-nvme
+        hardware-completion-loop-timeout:
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
+          # We need to catch this only on host machines as containers share the kernel with the host
+          disabled: True
+{% endif %}
+{% if grains["oscodename"] in ["bookworm"] %}
+          cmd: :; ! journalctl -k | grep -i "Completion-Wait loop timed out" -m 10
+{% else %}
+          cmd: :; ! grep -i "Completion-Wait loop timed out" -m 10 /var/log/kern.log
+{% endif %}
+          service: hardware
+          resource: __hostname__:hardware-completion-loop-timeout
+        hardware-soft-lockup:
+{% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
+          # We need to catch this only on host machines as containers share the kernel with the host
+          disabled: True
+{% endif %}
+{% if grains["oscodename"] in ["bookworm"] %}
+          cmd: :; ! journalctl -k | grep -i "watchdog: BUG: soft lockup - CPU.*stuck" -m 10
+{% else %}
+          cmd: :; ! grep -i "watchdog: BUG: soft lockup - CPU.*stuck" -m 10 /var/log/kern.log
+{% endif %}
+          service: hardware
+          resource: __hostname__:hardware-soft-lockup
         hardware-cpu-temperature-throttling:
 {% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
           cmd: :; ! dmesg -T | grep -v "veth" | grep -i -e "temperature above threshold" -e "cpu clock throttled" -m 10
-          service: os
+          service: cpu
           resource: __hostname__:hardware-cpu-temperature-throttling
         oom:
           cmd: :; ! dmesg -T | grep -v "veth" | grep -i -e "Out of memory" -e "oom"
