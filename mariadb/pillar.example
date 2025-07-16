@@ -1,0 +1,69 @@
+# vi: set ft=yaml:
+
+# This state helps to install and configure MariaDB Server
+
+mariadb:
+
+  version: "10.11"  # MariaDB version
+  root_password: xxxxxxxxxxxxxxxxxxxxxxx
+  pmm_password: xxxxxxxxxxxxxxxxxxxxxxx  # Optional, for PMM monitoring
+  
+  pkgs:
+    mariadb-server: 1:10.11.13+maria~deb12
+    mariadb-client: 1:10.11.13+maria~deb12
+    mariadb-backup: 1:10.11.13+maria~deb12
+    
+  configs:
+    restart_service_on_changes: True
+    /etc/mysql/mariadb.conf.d/99-salt.cnf: |
+      [mysqld]
+
+      # general settings
+      #sql_mode = ""
+      default_storage_engine=InnoDB
+      innodb_file_per_table=1
+
+      # connection settings
+      bind_address = 0.0.0.0
+      skip_name_resolve=ON
+      thread_cache_size=128
+      max_connections=1024
+      wait_timeout=28800
+      connect_timeout=600
+
+      # tuning
+      join_buffer_size=10M
+      sort_buffer_size=10M
+      key_buffer_size=100M
+      read_rnd_buffer_size=1M
+      innodb_io_capacity=600
+      innodb_io_capacity_max=2000
+      innodb_log_buffer_size=16M
+      innodb_log_file_size=1G
+      innodb_log_files_in_group=2
+      innodb_log_write_ahead_size=4K
+      innodb_open_files=64K
+      max_heap_table_size=512M
+      open_files_limit=64K
+      table_definition_cache=4K
+      table_open_cache=32K # total_tables*Threads_connected/2
+      tmp_table_size=512M
+      innodb_buffer_pool_size=48G
+      innodb_buffer_pool_dump_at_shutdown=ON
+      innodb_adaptive_hash_index=1
+
+  databases:
+    exampledb:
+      character_set: utf8mb4 # optional, utf8mb4 is used by default
+      collate: utf8mb4_unicode_ci # optional, utf8mb4_unicode_ci is used by default
+  users:
+    exampleuser:
+      host: '%'
+      password: xxxxxxxxxxxxxxxxxxxxxx
+      grants:
+        "`exampledb`.*":
+          - ALL PRIVILEGES
+          #- ALL PRIVILEGES WITH GRANT OPTION
+        "*.*":
+          - SELECT
+          - PROCESS
