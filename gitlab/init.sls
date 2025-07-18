@@ -101,7 +101,7 @@ gitlab_nginx_redirect:
         }
     {%- if "acme_account" in pillar["gitlab"]["redirect"] %}
     - require:
-      - cmd: /opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab *
+      - cmd: /opt/acme/home/{{ pillar["gitlab"]["redirect"]["acme_account"] }}/verify_and_issue.sh gitlab *
     {%- endif %}
 
   {%- endif %}
@@ -150,6 +150,53 @@ gitlab_pages_ssl_certificate_key:
     - contents: {{ pillar["gitlab"]["pages"]["ssl_certificate_key"]["contents"] | yaml_encode }}
 
     {%- endif %}
+
+    {%- if "redirect" in pillar["gitlab"]["pages"] %}
+      {%- if "acme_account" in pillar["gitlab"]["pages"]["redirect"] %}
+
+      {{ verify_and_issue(pillar["gitlab"]["pages"]["redirect"]["acme_account"], "gitlab", pillar["gitlab"]["pages"]["redirect"]["domain"]) }}
+
+      {%- else %}
+gitlab_pages_redirect_ssl_certificate:
+  file.managed:
+    - name: {{ pillar["gitlab"]["pages"]["redirect"]["ssl_certificate"]["file"] }}
+    - makedirs: True
+    - mode: 0644
+    - contents: {{ pillar["gitlab"]["pages"]["redirect"]["ssl_certificate"]["contents"] | yaml_encode }}
+
+gitlab_pages_redirect_ssl_certificate_key:
+  file.managed:
+    - name: {{ pillar["gitlab"]["pages"]["redirect"]["ssl_certificate_key"]["file"] }}
+    - makedirs: True
+    - mode: 0600
+    - contents: {{ pillar["gitlab"]["pages"]["redirect"]["ssl_certificate_key"]["contents"] | yaml_encode }}
+
+      {%- endif %}
+
+gitlab_pages_nginx_redirect:
+  file.managed:
+    - name: /etc/gitlab/nginx/conf.d/pages-redirect.conf
+    - contents: |
+        server {
+          listen 80;
+          listen 443 ssl;
+          server_name {{ pillar["gitlab"]["pages"]["redirect"]["domain"] }};
+      {%- if "acme_account" in pillar["gitlab"]["pages"]["redirect"] %}
+          ssl_certificate /opt/acme/cert/gitlab_{{ pillar["gitlab"]["pages"]["redirect"]["domain"] }}_fullchain.cer;
+          ssl_certificate_key /opt/acme/cert/gitlab_{{ pillar["gitlab"]["pages"]["redirect"]["domain"] }}_key.key;
+      {%- else %}
+          ssl_certificate {{ pillar["gitlab"]["pages"]["redirect"]["ssl_certificate"]["file"] }};
+          ssl_certificate_key {{ pillar["gitlab"]["pages"]["redirect"]["ssl_certificate_key"]["file"] }};
+      {%- endif %}
+          return 301 https://{{ pillar["gitlab"]["pages"]["domain"] }}$request_uri;
+        }
+      {%- if "acme_account" in pillar["gitlab"]["pages"]["redirect"] %}
+    - require:
+      - cmd: /opt/acme/home/{{ pillar["gitlab"]["pages"]["redirect"]["acme_account"] }}/verify_and_issue.sh gitlab *
+      {%- endif %}
+
+    {%- endif %}
+
   {%- endif %}
 
 gitlab_config:

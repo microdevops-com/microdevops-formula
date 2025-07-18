@@ -64,6 +64,21 @@ gitlab:
     #    -----BEGIN PRIVATE KEY-----
     #    ...
     #    -----END PRIVATE KEY-----
+    #redirect: # optional, add custom nginx config with redirect from other domain to the pages
+    #  domain: gitlab.old-example.com
+    #  acme_account: old-example.com # use either acme_account or ssl_certificate + ssl_certificate_key
+    #  #ssl_certificate:
+    #  #  file: /etc/ssl/example.com/ssl.crt
+    #  #  contents: |
+    #  #    -----BEGIN CERTIFICATE-----
+    #  #    ...
+    #  #    -----END CERTIFICATE-----
+    #  #ssl_certificate_key:
+    #  #  file: /etc/ssl/example.com/ssl.key
+    #  #  contents: |
+    #  #    -----BEGIN PRIVATE KEY-----
+    #  #    ...
+    #  #    -----END PRIVATE KEY-----
   google_oauth2:
     app_id: xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
     app_secret: xxxxxxxxxxxxxxxxxxxxxxxx

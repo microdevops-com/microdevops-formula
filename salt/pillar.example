@@ -72,8 +72,8 @@ salt:
       output_limit: 8192 # optional, increase job log size from default 4096 Kb, https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runners-section
       #salt-ssh: # optional, add additional runner for salt-ssh in the same project
       #  concurrent: 16 # optional, concurrency for salt-ssh runner
-      #additional_salt-ssh: optional, add salt-ssh runners for additional projects
-      #  - project: somegroup/project1
+      #additional_salt-ssh: optional, add salt-ssh runners for additional projects/groups (depends on registration token)
+      #  - name_suffix: somegroup/project1
       #    concurrent: 16 # optional, concurrency for salt-ssh runner
       #    registration_token: xxxxxxxxxxxxxxxxxxxx
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cat > /etc/systemd/network/eth0.network <<- EOM
+cat > /etc/systemd/network/enp5s0.network <<- EOM
 [Match]
-Name=eth0
+Name=enp5s0
 
 [Network]
 Address=$1/$2

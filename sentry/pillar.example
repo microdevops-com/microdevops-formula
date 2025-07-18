@@ -8,13 +8,11 @@ sentry:
   url: https://sentry.example.com
   admin_email: admin@example.com
   admin_password: xxxxxxxxxxxxxxxxxx
-  enhance_image_sh: | # Optional
+  enhance_image_sh: | # optional
     apt-get update
     apt-get install -y gcc libsasl2-dev libldap2-dev libssl-dev
-    #pip install django-auth-ldap
-    #pip install sentry-ldap-auth
   config:
-    compose_profiles: errors-only         # Optional for versions 24.8.0+
+    # compose_profiles: errors-only # optional for versions 24.8.0+
     single_organization: True
     features:
       auth_register: True
@@ -32,13 +30,14 @@ sentry:
     web:
       ssl: True
       install_nginx: True # default, set to False if you need not to install nginx
-      nginx_conf_path: /custom/path/to/conf/sentry.conf # optional
-      nginx_custom_conf: | # optional
-        server {
-          listen 443 ssl;
-          server_name sentry.example.com;
-          .......
-        }
+      # nginx_conf_path: /custom/path/to/conf/sentry.conf # optional
+      # nginx_custom_conf: | # optional
+      #   server {
+      #     listen 443 ssl;
+      #     server_name sentry.example.com;
+      #     .......
+      #   }
+      # nginx_proxy_timeouts: 20s # optional, default is 5s
     google_auth: # https://develop.sentry.dev/self-hosted/sso/
       client_id: 012345678999-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
       client_secret: ABCDEF-1q2w3e4r5t6y7u8i9o0pASDFGHJK

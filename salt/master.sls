@@ -169,7 +169,7 @@ salt_master_deploy_repo:
 salt_master_update_repo:
   cmd.run:
     - name: |
-        [ -d /srv/.git ] && ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update -f --checkout && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule foreach "git checkout master && git pull" )
+        [ -d /srv/.git ] && ( cd /srv && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git pull && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule sync && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule init && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule update -f --checkout && GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=no" git submodule foreach "git checkout master && git pull" )
   {%- endif %}
   
   {%- if pillar["salt"]["master"]["gitlab-runner"] %}
@@ -286,7 +286,7 @@ salt_master_gitlab-runner_register_additional_salt-ssh_{{ loop.index }}:
     - name: |
         gitlab-runner register --non-interactive --url "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_url"] }}/" \
           --registration-token "{{ additional_runner["registration_token"] }}" \
-          --executor "docker" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}_salt-ssh_{{ additional_runner["project"] }}" \
+          --executor "docker" --name "{{ pillar["salt"]["master"]["gitlab-runner"]["gitlab_runner_name"] }}_salt-ssh_{{ additional_runner["name_suffix"] }}" \
           --tag-list "salt-ssh" \
           --limit {{ additional_runner["concurrent"]|default(16)|int }} \
           --locked --docker-privileged --docker-image 'docker:stable' --access-level "ref_protected" {{ "--output-limit " + pillar["salt"]["master"]["gitlab-runner"]["output_limit"]|string if pillar["salt"]["master"]["gitlab-runner"]["output_limit"] is defined else "" }}

@@ -31,36 +31,106 @@ app:
     # common for all app types
     apps:
       someapp: # you can use __APP_NAME__ to substitute it to the app name in some of values here below
-        logrotate: # optional, add custom logrotate config files
-          - name: app_logs
-            contents: |
-              /var/www/__APP_NAME__/app/log/some.log {
-                  daily
-                  missingok
-                  rotate 32
-                  compress
-                  delaycompress
-                  notifempty
-                  copytruncate
-              }
-        # only for python
-        virtualenv:
-          pyenv_version: 3.8.8
-          target: /var/www/__APP_NAME__/app/venv
+        user: __APP_NAME__
+        group: __APP_NAME__
+        #groups: # optional
+        # - docker
+        pass: '!'
+        #enforce_password: False # optional, do not change pass if it was changed by user
+        user_home: /var/www/__APP_NAME__ # optional, but recommended to set each time explicitly, if not set app_root is used
+                                         # this is actual linux user home
+                                         # useful to set one level higher than app_root to be able to host several apps under one linux user
+                                         # or separate app and other files
+        app_root: /var/www/__APP_NAME__/app # required, base for relative paths
+        #keep_user: True # optional, turns off user management, intended to use with existing user on server
+        #app_auth_keys: # optional, ensure ssh keys for user
+        #  - ssh-rsa AAAA...== rsa-key-19700101
+        shell: /bin/bash
+        #sudo_rules: # optional
+        #  __APP_NAME__:
+        #    - 'ALL=(ALL) NOPASSWD: /bin/true'
+        #  gitlab-runner:
+        #    - 'ALL=(ALL) NOPASSWD: /bin/false'
+        #ssh_keys: # optional, keys for app .ssh
+        #  - file: id_app
+        #    priv: |
+        #      -----BEGIN OPENSSH PRIVATE KEY-----
+        #      ...
+        #      -----END OPENSSH PRIVATE KEY-----
+        #    pub: ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx app@example.com
+        #ssh_config: | # optional
+        #  ...
+        nginx: # optional
+          domain: example.com
+          ssl: # optional
+            acme_account: example.com
+          #ssl: # standalone cert example
+          #  cert: ssl/__APP_NAME__/__APP_NAME__.crt # mandatory, in terms of nginx, e.g. as for files above, or you can use absolute path
+          #  key: ssl/__APP_NAME__/__APP_NAME__.key # mandatory
+          #  chain: ssl/__APP_NAME__/gd_bundle-g2-g1.crt # optional
+          link_sites-enabled: True
+          reload: False # Usually restarting nginx on each app is not recommended, but it is ok for one app server setup flow
+          auth_basic: # optional basic auth
+            #omit_options: True # optionally disable auth for OPTIONS request method
+            auth:
+              - user: basicuser
+                pass: basicpassword
+            custom: # optional, manage custom additional htaccess files if needed
+              - path: /some/path/__APP_NAME__/dir/.htaccess1
+                auth:
+                  - user: basicuser
+                    pass: basicpassword
+          vhost_config: salt://app/files/__APP_NAME__/.../vhost.conf
+          #nginx_reload_cmd_prefix: ulimit -n 1000000 # prefix for nginx test and reload commands
+          vhost_defaults: # optional, defaults for vhost config template
+            php_version: 7.4 # e.g. for php-fpm apps
+            key1: value1
+            key2: value2
+          vhost_defaults_raw: # optional, can pass arbitrary complex data like dicts, lists
+            ips: ["1.1.1.1", "1.0.0.1"]
+          root: /var/www/__APP_NAME__/app/src/public
+          redirects: # optional
+            - domain: www.example.com
+              vhost_config: salt://app/files/redirect/vhost.conf
+              ssl:
+                acme_account: example.com
+          log: # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
+            access_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.access.log
+            error_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.error.log
+            dir: /var/www/__APP_NAME__/app/log/nginx # required if logs are stored outside of /var/log/nginx, rotation will not work without this
+            #dir_mode: 755
+            #log_mode: 640
+            #dir_user: __APP_NAME__
+            #dir_group: __APP_NAME__
+            #log_user: __APP_NAME__
+            #log_group: __APP_NAME__
+            #rotate_count: 31
+            #rotate_when: daily
+          #sites_available_dir: /etc/nginx/sites-available # optional default location override
+          #sites_enabled_dir: /etc/nginx/sites-enabled # optional default location override
+          #vhost_contents: |     # optional, instead of vhost_template you can set this pillar for the complete contents
+          #  server {            # please also note that in this case only the __APP_NAME__ variable will be replaced 
+          #    listen 443 ssl;
+          #    server_name __APP_NAME__.mydomain.tld;
+          #    ssl_certificate /etc/letsencrypt/live/__APP_NAME__/fullchain.pem;
+          #    ssl_certificate_key /etc/letsencrypt/live/__APP_NAME__/privkey.pem;
+          #
+          #    return 200 "PONG!";
+          #  }
         # only for php-fpm
         pool:
           #pool_template: salt://app/files/.../pool.conf # optional, by default uses salt://app/files/php-generic/pool.conf
           reload: False # Usually restarting php-fpm on each app is not recommended, but it is ok for one app server setup flow
           log: # optional pool log params
             error_log: /var/www/__APP_NAME__/app/log/php/__APP_NAME__.error.log # by default pool logs are in /var/log/php
-            dir_user: __APP_NAME__
-            dir_group: __APP_NAME__
-            dir_mode: 755
-            log_user: __APP_NAME__
-            log_group: __APP_NAME__
-            log_mode: 644
-            rotate_count: 31
-            rotate_when: daily
+            #dir_user: __APP_NAME__
+            #dir_group: __APP_NAME__
+            #dir_mode: 755
+            #log_user: __APP_NAME__
+            #log_group: __APP_NAME__
+            #log_mode: 644
+            #rotate_count: 31
+            #rotate_when: daily
           php_version: 7.4
           config: |
             pm = dynamic
@@ -89,6 +159,10 @@ app:
           #  php_admin_flag[html_errors] = off
           #  php_admin_value[post_max_size] = 25M
           #  php_admin_value[upload_max_filesize] = 25M
+        # only for python
+        virtualenv:
+          pyenv_version: 3.8.8
+          target: /var/www/__APP_NAME__/app/venv
         # only for ruby
         rvm: # install rvm and specific ruby version for app
           version: 3.0.0 
@@ -112,35 +186,6 @@ app:
           rails_env: production
           #envs: # optional, additional unit envs
           #  ENV_NAME: env_value
-        user: __APP_NAME__
-        group: __APP_NAME__
-        #groups: # optional
-        # - docker
-        pass: '!'
-        #enforce_password: False # optional, do not change pass if it was changed by user
-        user_home: /var/www/__APP_NAME__ # optional, but recommended to set each time explicitly, if not set app_root is used
-                                         # this is actual linux user home
-                                         # useful to set one level higher than app_root to be able to host several apps under one linux user
-                                         # or separate app and other files
-        app_root: /var/www/__APP_NAME__/app # required, base for relative paths
-        #keep_user: True # optional, turns off user management, intended to use with existing user on server
-        #app_auth_keys: # optinal, ensure ssh keys for user
-        #  - ssh-rsa AAAA...== rsa-key-19700101
-        shell: /bin/bash
-        #sudo_rules: # optional
-        #  __APP_NAME__:
-        #    - 'ALL=(ALL) NOPASSWD: /bin/true'
-        #  gitlab-runner:
-        #    - 'ALL=(ALL) NOPASSWD: /bin/false'
-        #ssh_keys: # optional, keys for app .ssh
-        #  - file: id_app
-        #    priv: |
-        #      -----BEGIN OPENSSH PRIVATE KEY-----
-        #      ...
-        #      -----END OPENSSH PRIVATE KEY-----
-        #    pub: ssh-ed25519 AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx app@example.com
-        #ssh_config: | # optional
-        #  ...
         source: # optional
           git: git@github.com:myorg/app.git
           #force_reset: False # optional, True by default
@@ -210,63 +255,18 @@ app:
               name: du -hsc /var/www/ >> /tmp/du-hsc-total
               schedule: "00 * * * *"
               user: root
-        nginx: # optional
-          domain: example.com
-          ssl: # optional
-            acme_account: example.com
-          #ssl: # standalone cert example
-          #  cert: ssl/__APP_NAME__/__APP_NAME__.crt # mandatory, in terms of nginx, e.g. as for files above, or you can use absolute path
-          #  key: ssl/__APP_NAME__/__APP_NAME__.key # mandatory
-          #  chain: ssl/__APP_NAME__/gd_bundle-g2-g1.crt # optional
-          link_sites-enabled: True
-          reload: False # Usually restarting nginx on each app is not recommended, but it is ok for one app server setup flow
-          auth_basic: # optional basic auth
-            #omit_options: True # optionally disable auth for OPTIONS request method
-            auth:
-              - user: basicuser
-                pass: basicpassword
-            custom: # optional, manage custom additional htaccess files if needed
-              - path: /some/path/__APP_NAME__/dir/.htaccess1
-                auth:
-                  - user: basicuser
-                    pass: basicpassword
-          vhost_config: salt://app/files/__APP_NAME__/.../vhost.conf
-          #nginx_reload_cmd_prefix: ulimit -n 1000000 # prefix for nginx test and reload commands
-          vhost_defaults: # optional, defaults for vhost config template
-            php_version: 7.4 # e.g. for php-fpm apps
-            key1: value1
-            key2: value2
-          vhost_defaults_raw: # optional, can pass arbitrary complex data like dicts, lists
-            ips: ["1.1.1.1", "1.0.0.1"]
-          root: /var/www/__APP_NAME__/app/src/public
-          redirects: # optional
-            - domain: www.example.com
-              vhost_config: salt://app/files/redirect/vhost.conf
-              ssl:
-                acme_account: example.com
-          log: # usually nginx logs are in /var/log/nginx (created by apt), you can have custom dir and logrotate
-            access_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.access.log
-            error_log: /var/www/__APP_NAME__/app/log/nginx/__APP_NAME__.error.log
-            dir: /var/www/__APP_NAME__/app/log/nginx # required if logs are stored outside of /var/log/nginx, rotation will not work without this
-            dir_mode: 755
-            log_mode: 640
-            dir_user: __APP_NAME__
-            dir_group: __APP_NAME__
-            log_user: __APP_NAME__
-            log_group: __APP_NAME__
-            rotate_count: 31
-            rotate_when: daily
-          #sites_available_dir: /etc/nginx/sites-available # optional default location override
-          #sites_enabled_dir: /etc/nginx/sites-enabled # optional default location override
-          #vhost_contents: |     # optional, instead of vhost_template you can set this pillar for the complete contents
-          #  server {            # please also note that in this case only the __APP_NAME__ variable will be replaced 
-          #    listen 443 ssl;
-          #    server_name __APP_NAME__.mydomain.tld;
-          #    ssl_certificate /etc/letsencrypt/live/__APP_NAME__/fullchain.pem;
-          #    ssl_certificate_key /etc/letsencrypt/live/__APP_NAME__/privkey.pem;
-          #
-          #    return 200 "PONG!";
-          #  }
+        logrotate: # optional, add custom logrotate config files
+          - name: app_logs
+            contents: |
+              /var/www/__APP_NAME__/app/log/some.log {
+                  daily
+                  missingok
+                  rotate 32
+                  compress
+                  delaycompress
+                  notifempty
+                  copytruncate
+              }
 
   docker:
     docker-ce_version: 18.06.1 # optional, do not manage docker installation if omitted

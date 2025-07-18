@@ -7,6 +7,11 @@
 
 - `state.apply incus.install` - to install or update incus without initializing it
 
+- Sometimes downgrade of LXD is needed, for example when `lxd-to-incus (Error: LXD version is newer than maximum version "5.21.99")`
+  - `snap stop --disable lxd`
+  - `snap refresh lxd --channel=5.21/stable`
+  - `snap start --enable lxd`
+
 - Make migration from LXD manually if needed right after after install and before incus init: https://linuxcontainers.org/incus/docs/main/howto/server_migrate_lxd/
   - Stop containers and VMs manually, sometimes there are issues on stopping them
   - `lxc config unset core.trust_password`
@@ -18,6 +23,13 @@
     - `apt-mark hold snapd`
 
 - `state.apply incus.settings` - to initialize Incus and apply settings, update images and profiles
+
+- Add storage manually and make it default:
+  - `incus storage create vg_mdX lvm source=vg_mdX lvm.use_thinpool=false` - thinpool is not recommended for prod, but can be used for dev.
+  - `incus profile device remove default root`
+  - `incus storage delete default`
+  - `incus profile device add default root disk path=/ pool=vg_mdX type=disk size=10GB` - you can set root disk size only after container init, so we need to set default root size in default profile withith created storage pool.
+This volume will be resized after pillar apply and it should contain enough space to contain base OS image.
 
 - Apply only specific instances
 ```

@@ -44,11 +44,11 @@ sentry_nginx_files_1:
             # keepalive + raven.js is a disaster
             keepalive_timeout 0;
             # use very aggressive timeouts
-            proxy_read_timeout 5s;
-            proxy_send_timeout 5s;
-            send_timeout 5s;
-            resolver_timeout 5s;
-            client_body_timeout 5s;
+            proxy_read_timeout {{ pillar["sentry"]["config"]["web"]["nginx_proxy_timeouts"] | default("5s") }};
+            proxy_send_timeout {{ pillar["sentry"]["config"]["web"]["nginx_proxy_timeouts"] | default("5s") }};
+            send_timeout {{ pillar["sentry"]["config"]["web"]["nginx_proxy_timeouts"] | default("5s") }};
+            resolver_timeout {{ pillar["sentry"]["config"]["web"]["nginx_proxy_timeouts"] | default("5s") }};
+            client_body_timeout {{ pillar["sentry"]["config"]["web"]["nginx_proxy_timeouts"] | default("5s") }};
             # buffer larger messages
             client_max_body_size 5m;
             client_body_buffer_size 100k;
