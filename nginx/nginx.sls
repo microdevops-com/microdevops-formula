@@ -1,6 +1,8 @@
 {% if pillar["nginx"] is defined %}
 
   {% if pillar["nginx"].get("ondrej_ppa", False) %}
+   {% if grains["os"] == "Ubuntu" %}
+
 nginx_ondrej_ppa_add:
   pkgrepo.managed:
     - name: deb https://ppa.launchpadcontent.net/ondrej/nginx/ubuntu {{ grains['oscodename'] }} main
