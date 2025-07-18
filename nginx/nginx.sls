@@ -9,6 +9,19 @@ nginx_ondrej_ppa_add:
     - keyserver: keyserver.ubuntu.com
     - keyid: E5267A6C
     - refresh: True
+
+   {% elif grains["os"] == "Debian" %}
+
+nginx_repo_add:
+  pkgrepo.managed:
+    - name: deb [signed-by=/etc/apt/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/debian {{ grains["oscodename"] }} nginx
+    - file: /etc/apt/sources.list.d/nginx-debian.list
+    - key_url: https://nginx.org/keys/nginx_signing.key
+    - keyring: /etc/apt/keyrings/nginx-archive-keyring.gpg
+    - aptkey: False
+    - clean_file: True
+
+   {% endif %}
   {% endif %}
 
 nginx_deps:
