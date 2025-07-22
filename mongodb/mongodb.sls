@@ -24,7 +24,7 @@ install_3:
 install_4:
   pkgrepo.managed:
     - humanname: MongoDB Community Edition
-    - name: deb [arch=amd64] https://repo.mongodb.org/apt/ubuntu {{ grains['oscodename'] }}/mongodb-org/{{ pillar['mongodb']['version'] }} multiverse
+    - name: deb [arch=amd64] https://repo.mongodb.org/apt/{{ grains['os']|lower }} {{ grains['oscodename'] }}/mongodb-org/{{ pillar['mongodb']['version'] }} {{ 'main' if grains['os']|lower == 'debian' else 'multiverse' }}
     - file: /etc/apt/sources.list.d/mongodb-org-{{ pillar['mongodb']['version'] }}.list
     - key_url: https://www.mongodb.org/static/pgp/server-{{ pillar['mongodb']['version'] }}.asc
 
