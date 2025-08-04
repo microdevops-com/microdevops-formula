@@ -5,7 +5,7 @@
   - Rename pillar file and change top.sls if needed
   - Remove password key - Incus doesn't support password authentication
 
-- Add needed pillar to the target server, see `pillar.example`.
+- Add needed pillar to the target server, see [pillar.example](pillar.example).
 
 - `state.apply incus.install` - to install or update incus without initializing it
 
