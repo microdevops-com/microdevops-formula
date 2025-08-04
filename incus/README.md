@@ -7,7 +7,7 @@
 
 - Add needed pillar to the target server, see [pillar.example](pillar.example).
 
-- `state.apply incus.install` - to install or update incus without initializing it
+- `... state.apply incus.install` - to install or update incus without initializing it
 
 - Sometimes downgrade of LXD is needed, for example when `lxd-to-incus (Error: LXD version is newer than maximum version "5.21.99")`
   - `snap stop --disable lxd`
@@ -24,7 +24,7 @@
     - `rm -rf ~/snap /var/cache/snapd/`
     - `apt-mark hold snapd`
 
-- `state.apply incus.settings` - to initialize Incus and apply settings, update images and profiles
+- `... state.apply incus.settings` - to initialize Incus and apply settings, update images and profiles
 
 - Add storage manually and make it default:
   - `incus storage create vg_mdX lvm source=vg_mdX lvm.use_thinpool=false` - thinpool is not recommended for prod, but can be used for dev.
