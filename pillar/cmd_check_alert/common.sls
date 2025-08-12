@@ -190,6 +190,13 @@ cmd_check_alert:
             2: critical
           service: disk
           resource: __hostname__:raid
+        raid-ro-pending:
+{% if grains["virtual"] != "physical" or grains["oscodename"] in ["precise"] or "-aws" in grains["kernelrelease"] %}
+          disabled: True
+{% endif %}
+          cmd: :; ! cat /proc/mdstat | grep -i -e "auto-read-only" -e "PENDING"
+          service: disk
+          resource: __hostname__:raid-ro-pending
   pkg:
     cron:
       minute: '15'
