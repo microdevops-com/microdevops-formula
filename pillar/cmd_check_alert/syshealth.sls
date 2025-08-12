@@ -69,7 +69,7 @@ cmd_check_alert:
           cmd: :; ! dmesg -T | grep -v "veth" | grep -i -e "Out of memory" -e "oom"
           service: os
           resource: __hostname__:oom
-      {%- if grains.get("oscodename","") not in ["precise"] %}
+{%- if grains.get("oscodename","") not in ["precise"] %}
         zombie:
           cmd: {{ ruby_prefix }}/check-process.rb -s Z -W 0 -C 0 -w 10 -c 15
           service: os
@@ -77,7 +77,7 @@ cmd_check_alert:
           severity_per_retcode:
             1: major
             2: critical
-      {%- endif %}
+{%- endif %}
         coredump:
 {% if (grains["virtual"]|lower == "lxc" or grains["virtual"]|lower == "container") %}
           # We need to catch this only on host machines as containers share the kernel with the host
@@ -98,3 +98,9 @@ cmd_check_alert:
           cmd: ping -c4 google.com
           service: os
           resource: __hostname__:pinggoogle
+{%- if grains.get("oscodename","") not in ["precise"] %}
+        clock-synchronized:
+          cmd: timedatectl status | grep -i "synchronized" | grep -i "yes"
+          service: os
+          resource: __hostname__:clock-synchronized
+{%- endif %}
