@@ -2,19 +2,55 @@
 
 # Real life wordpress deployment example
 
-percona:
-  enabled: True
-  version: 8.0
-  root_password: xxxxxxxxxxxxxxxxxxxxxx
+pxc:
+  root_password: xxxxxxxxxxxxxxxxxxxxx
+  repos:
+    tools: release
+    ps-80: release
+  pkgs:
+    percona-server-common: 8.0.42-33-1.bookworm
+    percona-server-client: 8.0.42-33-1.bookworm
+    percona-server-server: 8.0.42-33-1.bookworm
+  debconf:
+    percona-server-server:
+      percona-server-server/re-root-pass:
+        type: password
+        value: __root_password__
+      percona-server-server/root_password_again:
+        type: password
+        value: __root_password__
+      percona-server-server/root-pass:
+        type: password
+        value: __root_password__
+      percona-server-server/root_password:
+        type: password
+        value: __root_password__
+      percona-server-server/default-auth-override:
+        type: select
+        value: Use Legacy Authentication Method (Retain MySQL 5.x Compatibility)
   databases:
     microdevopscom: {}
   users:
     microdevopscom:
-      host: localhost
+      host: '%'
       password: xxxxxxxxxxxxxxxxxxxxxx
-      databases:
-        - database: microdevopscom
-          grant: ['all privileges']
+      grants:
+        "`microdevopscom`.*":
+          - ALL PRIVILEGES
+  configs:
+    dirs:
+      - /etc/mysql/conf.d
+      - /etc/mysql/mysql.conf.d
+    /etc/mysql/conf.d/mysql.cnf: |
+      [mysqld]
+
+      default_storage_engine=InnoDB
+      innodb_file_per_table=1
+
+      # connection settings
+      bind-address = 0.0.0.0
+      skip_name_resolve=ON
+      max_connections=1024
 
 nginx:
   configs: nginx/app_hosting
