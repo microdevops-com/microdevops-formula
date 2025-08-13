@@ -191,6 +191,7 @@ pxc_xinetd_service:
 
   {%- endif %}
 
+  {% if "pmm_password" in pillar["pxc"] and pillar["pxc"]["pmm_password"] %}
 pxc_pmm_sql_1:
   cmd.run:
     - name: |
@@ -218,5 +219,6 @@ pxc_pmm_sql_4:
         mysql -e "FLUSH PRIVILEGES;"
     - require:
       - service: pxc_mysql_service
+  {% endif %}
 
 {% endif %}
