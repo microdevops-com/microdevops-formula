@@ -118,6 +118,13 @@ ufw_iptables_legacy:
     - path: /usr/sbin/iptables-legacy
   {%- endif %}
 
+  {% if "ip6tables-legacy" in pillar["ufw"] and pillar["ufw"]["ip6tables-legacy"] %}
+ufw_ip6tables_legacy:
+  alternatives.set:
+    - name: ip6tables
+    - path: /usr/sbin/ip6tables-legacy
+  {%- endif %}
+
   # Enable ip forwarding if nat or custom nat rules
 ufw_ip_fwd_managed_file_1:
   file.managed:
