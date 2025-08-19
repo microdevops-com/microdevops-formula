@@ -4,7 +4,7 @@
 {% from "rsnapshot_backup/os_vars.jinja" import db_ps with context %}
 {% if data_dirs_to_find[grains["oscodename"]] is defined and data_dirs_to_skip[grains["oscodename"]] is defined and db_ps[grains["oscodename"]] is defined %}
 
-  {%- if pillar["rsnapshot_backup"] is defined and pillar["rsnapshot_backup"]["sources"][grains["id"]] is defined %}
+  {%- if pillar["rsnapshot_backup"] is defined and pillar["rsnapshot_backup"]["sources"] is defined and pillar["rsnapshot_backup"]["sources"][grains["id"]] is defined %}
 
     {# Data Dirs #}
     
