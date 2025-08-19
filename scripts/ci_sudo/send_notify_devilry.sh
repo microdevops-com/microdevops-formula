@@ -23,18 +23,18 @@ if [[ -n "$RSNAPSHOT_BACKUP_TYPE" ]]; then
 	# Failed job on any stage or check_alive_minions failure - send notify
 	elif [[ "$CI_JOB_STATUS" == "failed" || "$CHECK_ALIVE_MINIONS" == "failed" ]]; then
 
-		# Consider check_backup as major
+		# Consider check_backup as critical
 		if [[ $CI_JOB_NAME =~ rsnapshot_backup_check_backup ]]; then
-			NOTIFY_SEVERITY=major
+			NOTIFY_SEVERITY=critical
 			NOTIFY_SEND=1
 			NOTIFY_EVENT=pipeline_rsnapshot_backup_check_backup_failed
 			NOTIFY_VALUE=failed
 			NOTIFY_TEXT="Pipeline for rsnapshot_backup failed on job check_backup ${CI_JOB_URL}"
 			NOTIFY_CORRELATE='["pipeline_rsnapshot_backup_check_coverage_failed","pipeline_rsnapshot_backup_failed","pipeline_rsnapshot_backup_ok"]'
 
-		# Consider check_coverage as minor
+		# Consider check_coverage as critical
 		elif [[ $CI_JOB_NAME =~ rsnapshot_backup_check_coverage ]]; then
-			NOTIFY_SEVERITY=minor
+			NOTIFY_SEVERITY=critical
 			NOTIFY_SEND=1
 			NOTIFY_EVENT=pipeline_rsnapshot_backup_check_coverage_failed
 			NOTIFY_VALUE=failed
