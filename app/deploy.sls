@@ -15,6 +15,7 @@ include:
   - memcached
   - percona
   - pxc
+  - mariadb
   - rabbitmq
   - pyenv
   - nodejs
