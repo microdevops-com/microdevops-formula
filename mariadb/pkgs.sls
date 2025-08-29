@@ -168,6 +168,24 @@ mariadb_pmm_sql_3:
       - service: mariadb_service
   {%- endif %}
 
+  {%- if "pmm_agent_setup" in pillar["mariadb"] and pillar["mariadb"]["pmm_agent_setup"] %}
+mariadb_pmm_agent_repo:
+  pkg.installed:
+    - sources:
+      - percona-release: 'https://repo.percona.com/apt/percona-release_latest.generic_all.deb'
+
+mariadb_pmm_agent_enable_release:
+  cmd.run:
+    - name: percona-release enable pmm2-client release
+    - unless: percona-release show | grep -q 'pmm2-client -'
+
+mariadb_pmm_agent_pkg:
+  pkg.installed:
+    - refresh: True
+    - pkgs:
+      - pmm2-client
+  {%- endif %}
+
 mariadb_flush_privileges:
   cmd.run:
     - name: |

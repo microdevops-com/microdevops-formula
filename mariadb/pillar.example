@@ -6,7 +6,8 @@ mariadb:
 
   version: "10.11"  # MariaDB version
   root_password: xxxxxxxxxxxxxxxxxxxxxxx
-  pmm_password: xxxxxxxxxxxxxxxxxxxxxxx  # Optional, for PMM monitoring
+  #pmm_password: xxxxxxxxxxxxxxxxxxxxxxx  # Optional, create a user 'pmm' inside MariaDB with this password
+  #pmm_agent_setup: True # Optional, setup PMM Agent to monitor MariaDB
   
   pkgs:
     mariadb-server: 1:10.11.13+maria~deb12
