@@ -631,7 +631,7 @@ php-fpm_apps_nginx_logrotate_file_{{ loop.index }}:
         {%- endif %}
 
         {%- if (app_params['nginx']['link_sites-enabled'] is defined and app_params['nginx']['link_sites-enabled'] is not none and app_params['nginx']['link_sites-enabled']) %}
-app_link_sites_enabled_{{ loop.index }}:
+app_link_sites_enabled_php-fpm_{{ loop.index }}:
   file.symlink:
     - name: '/etc/nginx/sites-enabled/{{ phpfpm_app }}.conf'
     - target: '/etc/nginx/sites-available/{{ phpfpm_app }}.conf'

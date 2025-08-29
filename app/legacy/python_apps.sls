@@ -570,7 +570,7 @@ python_apps_app_nginx_vhost_config_{{ loop.index }}:
         {%- endif %}
 
         {%- if (app_params['nginx']['link_sites-enabled'] is defined and app_params['nginx']['link_sites-enabled'] is not none and app_params['nginx']['link_sites-enabled']) %}
-app_link_sites_enabled_{{ loop.index }}:
+app_link_sites_enabled_python_{{ loop.index }}:
   file.symlink:
     - name: '/etc/nginx/sites-enabled/{{ python_app }}.conf'
     - target: '/etc/nginx/sites-available/{{ python_app }}.conf'

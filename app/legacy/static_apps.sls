@@ -570,7 +570,7 @@ static_apps_nginx_logrotate_file_{{ loop.index }}:
         {%- endif %}
 
         {%- if (app_params['nginx']['link_sites-enabled'] is defined and app_params['nginx']['link_sites-enabled'] is not none and app_params['nginx']['link_sites-enabled']) %}
-app_link_sites_enabled_{{ loop.index }}:
+app_link_sites_enabled_static_{{ loop.index }}:
   file.symlink:
     - name: '/etc/nginx/sites-enabled/{{ static_app }}.conf'
     - target: '/etc/nginx/sites-available/{{ static_app }}.conf'
