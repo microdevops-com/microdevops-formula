@@ -1,5 +1,7 @@
 # PMM Agent Setup
 ```
+apt install pmm2-client
+
 mysql -e "CREATE USER 'pmm'@'localhost' IDENTIFIED BY 'XXXXXXXXXXXXXXXXX';"
 
 mysql -e "GRANT SELECT, PROCESS, SUPER, REPLICATION CLIENT, RELOAD ON *.* TO 'pmm'@'localhost';"
