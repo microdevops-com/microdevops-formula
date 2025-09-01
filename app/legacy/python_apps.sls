@@ -56,6 +56,11 @@ Salt minion 3001+ with python3-pip deb package required for virtualenv.managed t
                (app_selector == python_app)
              )
       %}
+      {% for name, data in app_params.get("saltfuncs", {}).items() %}
+        {% for item in data %}
+          {% do salt[name](**item) %}
+        {% endfor %}
+      {% endfor %}
 
 
 {%- if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}

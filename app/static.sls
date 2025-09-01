@@ -8,6 +8,12 @@
   {%- for app_name, app in pillar["app"]["static"]["apps"].items() %}
     {%- if not "deploy_only" in pillar["app"]["static"] or app_name == pillar["app"]["static"]["deploy_only"] %}
 
+      {% for name, data in app.get("saltfuncs", {}).items() %}
+        {% for item in data %}
+          {% do salt[name](**item) %}
+        {% endfor %}
+      {% endfor %}
+
       {%- set loop_index = loop.index %}
       {%- set _app_user = app["user"]|replace("__APP_NAME__", app_name) %}
       {%- set _app_group = app["group"]|replace("__APP_NAME__", app_name) %}
