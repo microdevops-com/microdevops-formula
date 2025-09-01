@@ -58,6 +58,13 @@
                (app_selector == phpfpm_app)
              )
       %}
+      {% for name, data in app_params.get("saltfuncs", {}).items() %}
+        {% for item in data %}
+          {% do salt[name](**item) %}
+        {% endfor %}
+      {% endfor %}
+
+
 {%- if ( app_params['keep_user'] is not defined ) or ( app_params['keep_user'] is defined and app_params['keep_user'] != True ) %}
 php-fpm_apps_group_{{ loop.index }}:
   group.present:

@@ -54,7 +54,11 @@
                (app_selector == static_app)
              )
       %}
-
+      {% for name, data in app_params.get("saltfuncs", {}).items() %}
+        {% for item in data %}
+          {% do salt[name](**item) %}
+        {% endfor %}
+      {% endfor %}
 
 
 
