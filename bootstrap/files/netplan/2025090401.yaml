@@ -1,0 +1,26 @@
+# OperaVPS without bridge, IPV4_ONLY=YES
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ wan_iface }}:
+      dhcp4: no
+      dhcp6: no
+      addresses:
+        - {{ ipv4_address }}
+      routes:
+        - to: default
+          via: {{ ipv4_gw }}
+      nameservers:
+        addresses:
+{%- if custom_resolvers is defined -%}
+    {%- for resolver in custom_resolvers %}
+          - {{ resolver }}
+    {%- endfor %}
+{%- else %}
+          - 8.8.8.8
+          - 8.8.4.4
+          - 1.1.1.1
+          - 1.0.0.1
+{%- endif %}
+
