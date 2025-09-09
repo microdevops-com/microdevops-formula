@@ -53,6 +53,13 @@ mariadb:
       innodb_buffer_pool_dump_at_shutdown=ON
       innodb_adaptive_hash_index=1
 
+      # pmm / qan via performance schema
+      performance_schema=ON
+      performance-schema-consumer-events-statements-current=ON
+      performance-schema-consumer-events-statements-history=ON
+      performance-schema-consumer-events-statements-history-long=ON
+      performance-schema-instrument='statement/%=ON'
+
   databases:
     exampledb:
       character_set: utf8mb4 # optional, utf8mb4 is used by default
