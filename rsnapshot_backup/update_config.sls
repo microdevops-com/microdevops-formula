@@ -218,6 +218,22 @@ rsnapshot_backup_yaml:
           xtrabackup_args: {{ host_backups_item["xtrabackup_args"] }}
           {%- endif %}
           #
+          {%- if "mariadb-backup_throttle" in host_backups_item %}
+          mariadb-backup_throttle: {{ host_backups_item["mariadb-backup_throttle"] }}
+          {%- endif %}
+          #
+          {%- if "mariadb-backup_parallel" in host_backups_item %}
+          mariadb-backup_parallel: {{ host_backups_item["mariadb-backup_parallel"] }}
+          {%- endif %}
+          #
+          {%- if "mariadb-backup_compress_threads" in host_backups_item %}
+          mariadb-backup_compress_threads: {{ host_backups_item["mariadb-backup_compress_threads"] }}
+          {%- endif %}
+          #
+          {%- if "mariadb-backup_args" in host_backups_item %}
+          mariadb-backup_args: {{ host_backups_item["mariadb-backup_args"] }}
+          {%- endif %}
+          #
           {%- if "mysqlsh_connect_args" in host_backups_item %}
           mysqlsh_connect_args: {{ host_backups_item["mysqlsh_connect_args"] }}
           {%- endif %}

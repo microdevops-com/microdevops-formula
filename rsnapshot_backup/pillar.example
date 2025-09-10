@@ -119,6 +119,12 @@ rsnapshot_backup:
         #xtrabackup_compress_threads: 2 # optional, overrides default --compress-threads=2
         #xtrabackup_args: # optional, pass additional arguments to xtrabackup
         #
+        #mysql_dump_type: mariadb-backup # overrides default native mysqldump type, mariadb-backup is a fork of xtrabackup, so options are similar
+        #mariadb-backup_throttle: 20 # optional, overrides default IO limit 20 MB
+        #mariadb-backup_parallel: 2 # optional, overrides default --parallel=2
+        #mariadb-backup_compress_threads: 2 # optional, overrides default --compress-threads=2
+        #mariadb-backup_args: # optional, pass additional arguments to mariadb-backup
+        #
         #mysql_dump_type: mysqlsh # overrides default native mysqldump type
         #mysqlsh_connect_args: --user=root --password=xxx # mandatory for mysqlsh, it cannot use standard my.cnf like files
         #mysqlsh_args: --compatibility=strip_definers # optional, add any additional mysqlsh args, this example compatibility arg is recommended
