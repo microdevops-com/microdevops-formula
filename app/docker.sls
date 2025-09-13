@@ -44,7 +44,7 @@ docker_network_{{ loop.index }}:
 
 docker_app_dir_{{ loop.index }}:
   file.directory:
-    - name: {{ app["home"] }}
+    - name: {{ app["home"]|replace("__APP_NAME__", app_name) }}
     - mode: 755
     - makedirs: True
 
