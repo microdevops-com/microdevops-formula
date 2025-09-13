@@ -270,10 +270,10 @@ app:
 
   docker:
     docker-ce_version: 18.06.1 # optional, do not manage docker installation if omitted
-    networks:
-      proto:
-        subnet: 172.18.0.0/24
-        gateway: 172.18.0.1
+    #networks: # optional, create custom docker networks
+    #  proto:
+    #    subnet: 172.18.0.0/24
+    #    gateway: 172.18.0.1
     apps:
       proto:
         image: php:7.3-fpm
@@ -301,8 +301,8 @@ app:
         #volumes: # optional
         #  - ...
         #volumes_from: ... # optional
-        networks:
-          - proto
+        #networks: # optional, attach to custom networks, use [] to start without any network
+        #  - proto
         cron: # optional, docker exec ... cmd by cron from docker host
           - cmd: /app/some/command.sh
             minute: ... # optional

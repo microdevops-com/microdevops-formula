@@ -11,30 +11,32 @@
     {%- include "docker-ce/docker-ce.sls" with context %}
   {%- endif %}
 
-  {%- if pillar["app"]["docker"]["networks"] is mapping %}
+  {%- if "networks" in pillar["app"]["docker"] %}
+    {%- if pillar["app"]["docker"]["networks"] is mapping %}
 
-    {%- for net_name, net_params in pillar["app"]["docker"]["networks"].items() %}
-      {%- if not "deploy_only" in pillar["app"]["docker"] or net_name == pillar["app"]["docker"]["deploy_only"] %}
+      {%- for net_name, net_params in pillar["app"]["docker"]["networks"].items() %}
+        {%- if not "deploy_only" in pillar["app"]["docker"] or net_name == pillar["app"]["docker"]["deploy_only"] %}
 docker_network_{{ loop.index }}:
   docker_network.present:
     - name: {{ net_name }}
     - subnet: {{ net_params["subnet"] }}
     - gateway: {{ net_params["gateway"] }}
 
-      {%- endif %}
-    {%- endfor %}
+        {%- endif %}
+      {%- endfor %}
 
-  {%- else %}
+    {%- else %}
 
-    {%- for net in pillar["app"]["docker"]["networks"] %}
+      {%- for net in pillar["app"]["docker"]["networks"] %}
 docker_network_{{ loop.index }}:
   docker_network.present:
     - name: {{ net["name"] }}
     - subnet: {{ net["subnet"] }}
     - gateway: {{ net["gateway"] }}
 
-    {%- endfor %}
+      {%- endfor %}
 
+    {%- endif %}
   {%- endif %}
 
   {%- for app_name, app in pillar["app"]["docker"]["apps"].items() %}
@@ -74,7 +76,9 @@ docker_app_container_{{ loop.index }}:
     - publish: {{ app["publish"] | default([]) }}
     - environment: {{ app["environment"] | default([]) }}
     - binds: {{ app["binds"] | default([]) }}
-    - networks: {{ app["networks"] | default([]) }}
+      {%- if "networks" in app %}
+    - networks: {{ app["networks"] }}
+      {%- endif %}
     - privileged: {{ app["privileged"] | default(False) }}
       {%- if "command" in app %}
     - command : {{ app["command"] }}
