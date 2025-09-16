@@ -36,7 +36,7 @@ app_{{ app_type }}_nginx_vhost_config_{{ loop_index }}_{{ loop2_index }}_{{ id|d
   file.managed:
     - name: {{ _nginx_sites_available_dir }}/{{ filename }}
         {%- if "vhost_contents" in app["nginx"] %}
-    - contents: {{ app["nginx"]["vhost_contents"] | replace("__APP_NAME__", app_name) }}
+    - contents: {{ app["nginx"]["vhost_contents"] | replace("__APP_NAME__", app_name) | yaml_encode }}
         {%- else %}
     - source: {{ app["nginx"]["vhost_config"]|replace("__APP_NAME__", app_name) }}
     - template: jinja
