@@ -75,9 +75,9 @@ docker_app_container_{{ loop.index }}:
     - restart_policy: unless-stopped
     - publish: {{ app["publish"] | default([]) }}
     - environment: {{ app["environment"] | default([]) }}
-    - binds: {{ app["binds"] | default([]) }}
+    - binds: {{ app["binds"] | replace("__APP_NAME__", app_name) | default([]) }}
       {%- if "networks" in app %}
-    - networks: {{ app["networks"] }}
+    - networks: {{ app["networks"] | replace("__APP_NAME__", app_name) }}
       {%- endif %}
     - privileged: {{ app["privileged"] | default(False) }}
       {%- if "command" in app %}
@@ -86,7 +86,7 @@ docker_app_container_{{ loop.index }}:
       {%- if "volumes" in app %}
     - volumes:
         {%- for volume in app["volumes"] %}
-      - {{ volume }}
+      - {{ volume | replace("__APP_NAME__", app_name) }}
         {%- endfor %}
       {%- endif %}
       {%- if "volumes_from" in app %}
