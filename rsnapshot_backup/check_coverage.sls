@@ -4,7 +4,18 @@
 {% from "rsnapshot_backup/os_vars.jinja" import db_ps with context %}
 {% if data_dirs_to_find[grains["oscodename"]] is defined and data_dirs_to_skip[grains["oscodename"]] is defined and db_ps[grains["oscodename"]] is defined %}
 
-  {%- if pillar["rsnapshot_backup"] is defined and pillar["rsnapshot_backup"]["sources"] is defined and pillar["rsnapshot_backup"]["sources"][grains["id"]] is defined %}
+  # Extend sources with "all" items
+  {%- if pillar["rsnapshot_backup"] is defined and "sources" in pillar["rsnapshot_backup"] and "all" in pillar["rsnapshot_backup"]["sources"] %}
+    # In case grains["id"] is in sources, append a list with "all" items
+    {%- if grains["id"] in pillar["rsnapshot_backup"]["sources"] %}
+      {%- set _ = pillar["rsnapshot_backup"]["sources"][grains["id"]].extend(pillar["rsnapshot_backup"]["sources"]["all"]) %}
+    # In case grains["id"] is not in sources, add a list as defined in all
+    {%- else %}
+      {%- set _ = pillar["rsnapshot_backup"]["sources"].update({grains["id"]: pillar["rsnapshot_backup"]["sources"]["all"]}) %}
+    {%- endif %}
+  {%- endif %}
+
+  {%- if pillar["rsnapshot_backup"] is defined and "sources" in pillar["rsnapshot_backup"] and grains["id"] in pillar["rsnapshot_backup"]["sources"] %}
 
     {# Data Dirs #}
     
