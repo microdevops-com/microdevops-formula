@@ -5,7 +5,7 @@
 #  - reboot
 #
 # Requirements:
-# - You need to set up acme.sh beforehand, see sysadmws-formula/acme, if you are using acme certs.
+# - You need to set up acme.sh beforehand, see microdevops-formula/acme, if you are using acme certs.
 # - GitLab in LXD requires permissions as defined in docker profile.
 #
 # Here are the steps needed to connect google auth: https://docs.gitlab.com/ee/integration/google.html
