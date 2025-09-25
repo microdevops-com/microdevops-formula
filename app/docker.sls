@@ -75,7 +75,7 @@ docker_app_container_{{ loop.index }}:
     - restart_policy: unless-stopped
     - publish: {{ app["publish"] | default([]) }}
     - environment: {{ app["environment"] | default([]) }}
-    - binds: {{ app["binds"] | replace("__APP_NAME__", app_name) | default([]) }}
+    - binds: {{ app["binds"] | default([]) | replace("__APP_NAME__", app_name) }}
       {%- if "networks" in app %}
     - networks: {{ app["networks"] | replace("__APP_NAME__", app_name) }}
       {%- endif %}
