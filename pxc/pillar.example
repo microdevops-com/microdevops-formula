@@ -23,6 +23,8 @@
 
 pxc:
   root_password: xxxxxxxxxxxxxxxxxxxxxxx
+  clustercheck_install: True
+  clustercheck_user: clustercheckuser # optional, default is clustercheck
   clustercheck_password: xxxxxxxxxxxxxxxxxxxxxxx
   pmm_password: xxxxxxxxxxxxxxxxxxxxxxx
   repos:
@@ -56,7 +58,6 @@ pxc:
         type: select
         value: Use Legacy Authentication Method (Retain MySQL 5.x Compatibility)
 
-  clustercheck_install: True
 
   configs:
 

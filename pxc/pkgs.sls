@@ -134,21 +134,21 @@ pxc_create_symlink_debian_sys_maint_to_root:
 pxc_clustercheck_sql_1:
   cmd.run:
     - name: |
-        mysql -e "CREATE USER IF NOT EXISTS 'clustercheck'@'localhost';"
+        mysql -e "CREATE USER IF NOT EXISTS '{{ pillar["pxc"]["clustercheck_user"] | default("clustercheck") }}'@'localhost';"
     - require:
       - service: pxc_mysql_service
 
 pxc_clustercheck_sql_2:
   cmd.run:
     - name: |
-        mysql -e "ALTER USER 'clustercheck'@'localhost' IDENTIFIED BY '{{ pillar["pxc"]["clustercheck_password"] }}';"
+        mysql -e "ALTER USER '{{ pillar["pxc"]["clustercheck_user"] | default("clustercheck") }}'@'localhost' IDENTIFIED BY '{{ pillar["pxc"]["clustercheck_password"] }}';"
     - require:
       - service: pxc_mysql_service
 
 pxc_clustercheck_sql_3:
   cmd.run:
     - name: |
-        mysql -e "GRANT PROCESS ON *.* TO 'clustercheck'@'localhost';"
+        mysql -e "GRANT PROCESS ON *.* TO '{{ pillar["pxc"]["clustercheck_user"] | default("clustercheck") }}'@'localhost';"
     - require:
       - service: pxc_mysql_service
 
@@ -167,7 +167,7 @@ pxc_xinetd_config:
         	wait = no
         	user = nobody
         	server = /usr/bin/clustercheck
-        	server_args = clustercheck {{ pillar["pxc"]["clustercheck_password"] }} 1
+        	server_args = {{ pillar["pxc"]["clustercheck_user"] | default("clustercheck") }} {{ pillar["pxc"]["clustercheck_password"] }} 1
         	log_on_failure += USERID
         	only_from = 0.0.0.0/0
         	per_source = UNLIMITED
