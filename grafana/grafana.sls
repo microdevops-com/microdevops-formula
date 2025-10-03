@@ -125,7 +125,7 @@ nginx_files_2:
   {%- for domain in pillar['grafana']['domains'] %}
     {%- if pillar["grafana"]["acme_configs"] is not defined and pillar["grafana"]["acme_account"] is defined %}
 
-      {{ verify_and_issue(acme_config["name"], "grafana", domain["name"]) }}
+      {{ verify_and_issue(pillar["grafana"]["acme_account"], "grafana", domain["name"]) }}
 
     {%- endif %}
    
