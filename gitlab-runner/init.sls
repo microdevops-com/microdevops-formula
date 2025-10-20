@@ -114,13 +114,41 @@ gitlab-runner_docker_clean_script:
     - mode: 0755
     - contents: |
         #!/bin/bash
-        docker stop $(docker ps -a -q)
-        docker rm $(docker ps -a -q)
-        docker rmi $(docker image ls -a -q)
+        set -euo pipefail
+        
+        # Docker cleanup script that removes everything except BuildKit cache (--mount=type=cache)
+        # When run with the --full flag, it also removes BuildKit cache.
+        
+        FULL=0
+        if [[ "${1:-}" == "--full" ]]; then
+            FULL=1
+        fi
+        
+        echo "[1/6] Stopping all running containers..."
+        docker ps -q | xargs -r docker stop
+        
+        echo "[2/6] Removing stopped containers..."
+        docker container prune -f
+        
+        echo "[3/6] Cleaning up unused networks..."
+        docker network prune -f
+        
+        echo "[4/6] Cleaning up unused images..."
         docker image prune -f
         docker image prune -f -a
+        
+        echo "[5/6] Cleaning up unused volumes..."
         docker volume prune -f
-        docker builder prune -f -a
+        
+        if [[ $FULL -eq 1 ]]; then
+            echo "[6/6] Full cleanup including BuildKit cache (--mount=type=cache will be removed)..."
+            docker builder prune -f -a
+        else
+            echo "[6/6] Skipping BuildKit cache cleanup (--mount=type=cache preserved)."
+            echo "      For full cleanup, run: $0 --full"
+        fi
+        
+        echo "Cleanup complete."
 
 # Add cron job
 gitlab-runner_docker_clean_cron:
