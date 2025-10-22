@@ -108,7 +108,7 @@ app:
             #rotate_when: daily
           #sites_available_dir: /etc/nginx/sites-available # optional default location override
           #sites_enabled_dir: /etc/nginx/sites-enabled # optional default location override
-          #vhost_contents: |     # optional, instead of vhost_template you can set this pillar for the complete contents
+          #vhost_contents: |     # optional, instead of vhost_config you can set this pillar for the complete contents
           #  server {            # please also note that in this case only the __APP_NAME__ variable will be replaced 
           #    listen 443 ssl;
           #    server_name __APP_NAME__.mydomain.tld;
