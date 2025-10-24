@@ -3,6 +3,9 @@ sysctl:
     net.core.somaxconn: 65365
     vm.overcommit_memory: 1
 
+percona-valkey:
+
+
 {% set pidfile = '/var/run/valkey/valkey_6379.pid' %}
 {% set logfile = '/var/log/valkey/valkey.log' 	   %}
 {% set dir     = '/var/lib/valkey' 		   %}
@@ -89,3 +92,23 @@ percona-valkey:
     aof-rewrite-incremental-fsync yes
     rdb-save-incremental-fsync yes
     jemalloc-bg-thread yes
+{% set pidfile = '/var/run/valkey/valkey_6379.pid' %}
+{% set logfile = '/var/log/valkey/valkey.log' 	   %}
+  sentinel_conf: |
+    bind 0.0.0.0
+    port 26379
+    daemonize no
+    pidfile {{ pidfile }}
+    logfile "{{ logfile }}"
+    loglevel notice
+    dir "{{ dir }}"
+    sentinel monitor mymaster 127.0.0.1 6379 2
+    sentinel down-after-milliseconds mymaster 5000
+    acllog-max-len 128
+    protected-mode no
+    sentinel parallel-syncs mymaster 1
+    sentinel failover-timeout mymaster 180000
+    sentinel deny-scripts-reconfig yes
+    SENTINEL resolve-hostnames no
+    SENTINEL announce-hostnames no
+    SENTINEL primary-reboot-down-after-period mymaster 0
