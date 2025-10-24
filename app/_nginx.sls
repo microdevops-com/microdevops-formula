@@ -130,7 +130,7 @@ app_{{ app_type }}_nginx_reload_cron_{{ loop_index }}:
         {%- else %}
     - name: "/usr/sbin/nginx -t -q && /usr/sbin/nginx -s reload"
         {%- endif %}
-        {%- if pillar.get("nginx:daily_reload_disabled", false) %}
+        {%- if pillar["nginx"] is defined and "daily_reload_disabled" in pillar["nginx"] and pillar["nginx"]["daily_reload_disabled"] %}
     - commented: True
         {%- endif %}
 
