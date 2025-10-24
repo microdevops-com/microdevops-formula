@@ -3,6 +3,9 @@
 # To deploy only specific apps add pillar in state.apply like:
 # state.apply app.python pillar='{app: {python: {deploy_only: "someapp"}}}'
 
+#nginx:
+  #daily_reload_disabled: True # optional, disable daily nginx reload cron for all apps
+
 app:
   pkg: # optional, to install prerequisites
     default-libmysqlclient-dev: any # just make sure version is installed
