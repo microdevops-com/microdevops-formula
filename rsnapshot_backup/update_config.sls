@@ -148,6 +148,10 @@ rsnapshot_backup_yaml:
           mongo_secondary_ok: {{ host_backups_item["mongo_secondary_ok"] }}
           {%- endif %}
           #
+          {%- if "mongodump_skip_tar" in host_backups_item %}
+          mongodump_skip_tar: {{ host_backups_item["mongodump_skip_tar"] }}
+          {%- endif %}
+          #
           {%- if "connect_user" in host_backups_item %}
           connect_user: {{ host_backups_item["connect_user"] }}
           {%- endif %}

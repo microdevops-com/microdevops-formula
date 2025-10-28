@@ -175,6 +175,7 @@ rsnapshot_backup:
                                                                                             # if arga for mongo and mongodump are the same, you can use only mongo_args
         #mongodb_dump_dir: /var/backups/mongodb # optional, change default /var/backups/mongodb dump dir location
         #mongo_secondary_ok: True # optional, False by default, issue "db.getMongo().setSecondaryOk()" before issuing "show dbs"
+        #mongodump_skip_tar: True # optional, False by default, do not tar dump dir, leave as is
         #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
         #dump_attempts: 3 # optional, try N times to perform dump, one time by default, combine with ignore_remote_dump_failed: True, otherwise it will not be synced even if it was dumped successfully with retries
       - type: SUPPRESS_COVERAGE # special stub type for rsnapshot_backup.check_coverage error suppression
