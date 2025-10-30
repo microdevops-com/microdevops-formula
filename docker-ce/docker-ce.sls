@@ -56,12 +56,18 @@ docker-ce_pkg:
     - refresh: True
     - pkgs:
       - python3-docker
+    {%- if "buildx" in docker_ce and docker_ce["buildx"] %}
+      - docker-buildx-plugin
+    {%- endif %}
       - docker-ce
   {%- else %}
   pkg.installed:
     - refresh: True
     - pkgs:
       - python3-docker
+    {%- if "buildx" in docker_ce and docker_ce["buildx"] %}
+      - docker-buildx-plugin
+    {%- endif %}
       - docker-ce: '{{ docker_ce["version"] }}*'
   {%- endif %}
 
