@@ -91,6 +91,7 @@ cmd_check_alert_cron_managed_{{ loop.index }}:
 cmd_check_alert_file_managed_{{ loop.index }}_{{ a_loop.index }}:
   file.managed:
     - name: {{ file_name }}
+    - makedirs: True
     - contents: {{ contents_list | json }}
 
       {%- endfor %}
