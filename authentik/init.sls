@@ -3,6 +3,10 @@
   {% from "acme/macros.jinja" import verify_and_issue %}
 
   {% set acme = pillar["acme"].keys() | first %}
+  {% set version_parts = pillar["authentik"]["version"].split('.') %}
+  {% set version_year = version_parts[0] | int %}
+  {% set version_month = version_parts[1] | int %}
+  {% set needs_redis = version_year < 2025 or (version_year == 2025 and version_month < 10) %}
 
 nginx_install:
   pkg.installed:
@@ -143,7 +147,9 @@ nginx_files_1:
 authentik_data_dirs:
   file.directory:
     - names:
+  {%- if needs_redis %}
       - /opt/authentik/{{ pillar["authentik"]["domain"] }}/redis-data
+  {%- endif %}
       - /opt/authentik/{{ pillar["authentik"]["domain"] }}/media
       - /opt/authentik/{{ pillar["authentik"]["domain"] }}/certs
       - /opt/authentik/{{ pillar["authentik"]["domain"] }}/custom-templates
@@ -153,14 +159,17 @@ docker_network:
   docker_network.present:
     - name: authentik
 
+{%- if needs_redis %}
 redis_image:
   cmd.run:
     - name: docker pull docker.io/library/redis:alpine
+{%- endif %}
 
 authentik_image:
   cmd.run:
     - name: docker pull {{ pillar["authentik"]["image"] | default('ghcr.io/goauthentik/server') }}:{{ pillar["authentik"]["version"] }}
 
+{%- if needs_redis %}
 redis_container:
   docker_container.running:
     - name: redis-{{ pillar["authentik"]["domain"] }}
@@ -174,6 +183,7 @@ redis_container:
       - authentik:
         - aliases:
           - redis
+{%- endif %}
 
 authentik_server_container:
   docker_container.running:
@@ -194,12 +204,16 @@ authentik_server_container:
         - aliases:
           - server
     - environment:
+    {%- if needs_redis %}
         - AUTHENTIK_REDIS__HOST: redis
+    {%- endif %}
     {%- for key, value in pillar["authentik"]["env_vars"].items() %}
         - {{ key }}: {{ value }}
     {%- endfor %}
+{%- if needs_redis %}
     - require:
       - docker_container: redis-{{ pillar["authentik"]["domain"] }}
+{%- endif %}
 
 authentik_worker_container:
   docker_container.running:
@@ -214,7 +228,9 @@ authentik_worker_container:
       - /opt/authentik/{{ pillar["authentik"]["domain"] }}/certs:/certs
       - /var/run/docker.sock:/var/run/docker.sock
     - environment:
+    {%- if needs_redis %}
         - AUTHENTIK_REDIS__HOST: redis
+    {%- endif %}
     {%- for key, value in pillar["authentik"]["env_vars"].items() %}
         - {{ key }}: {{ value }}
     {%- endfor %}
@@ -222,8 +238,10 @@ authentik_worker_container:
       - authentik:
         - aliases:
           - worker
+{%- if needs_redis %}
     - require:
       - docker_container: redis-{{ pillar["authentik"]["domain"] }}
+{%- endif %}
 
 nginx_reload:
   cmd.run:
