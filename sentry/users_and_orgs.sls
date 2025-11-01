@@ -149,14 +149,14 @@ sentry_org_project_auto_resolve_issues_30_days_{{ a_loop.index }}_{{ loop.index 
           VALUES
             (
               'sentry:resolve_age',
-              'gAJN0AIu',
+              720,
               (
                 SELECT id FROM sentry_project
                 WHERE slug = '{{ project["slug"] }}'
                   AND organization_id = (SELECT id FROM sentry_organization WHERE slug = '{{ org["slug"] }}')
               )
             )
-          ON CONFLICT (project_id, key) DO UPDATE SET value = 'gAJN0AIu'
+          ON CONFLICT (project_id, key) DO UPDATE SET value = 720
             WHERE
               sentry_projectoptions.project_id = 
                 (
