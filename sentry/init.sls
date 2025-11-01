@@ -9,14 +9,14 @@ sentry_install_nginx:
   pkg.installed:
     - pkgs:
       - nginx-full
-  {% endif %}
+  {%- endif %}
 
 sentry_nginx_files_1:
   file.managed:
     - name: {{ pillar["sentry"]["config"]["web"]["nginx_conf_path"] | default("/etc/nginx/sites-available/" ~ pillar["sentry"]["acme_domain"] ~ ".conf") }}
   {%- if "nginx_custom_conf" in pillar["sentry"]["config"]["web"] %}
     - contents: {{ pillar["sentry"]["config"]["web"]["nginx_custom_conf"] | yaml_encode}}
-  {% else %}
+  {%- else %}
     - contents: |
         set_real_ip_from 127.0.0.1;
         set_real_ip_from 172.16.0.0/16;
@@ -64,8 +64,9 @@ sentry_nginx_files_1:
                 add_header Strict-Transport-Security "max-age=31536000";
             }
         }
-  {% endif %}
-  {% if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
+  {%- endif %}
+
+  {%- if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
 sentry_nginx_files_2:
   file.absent:
     - name: /etc/nginx/sites-enabled/default
@@ -74,7 +75,8 @@ sentry_nginx_files_3:
   file.symlink:
     - name: /etc/nginx/sites-enabled/{{ pillar["sentry"]["acme_domain"] }}.conf
     - target: /etc/nginx/sites-available/{{ pillar["sentry"]["acme_domain"] }}.conf
-  {% endif %}
+  {%- endif %}
+
 sentry_installer_clone_fom_git:
   git.latest:
     - name: https://github.com/getsentry/self-hosted.git
@@ -86,7 +88,7 @@ sentry_config_1:
   file.managed:
     - name: /opt/sentry/sentry/config.yml
     - mode: 0644
-    - source: salt://sentry/files/config.yml
+    - source: salt://sentry/files/{{ pillar["sentry"]["version"] }}/config.yml
     - template: jinja
 
 # sentry.conf.py best doc is here: https://github.com/getsentry/sentry/blob/master/src/sentry/conf/server.py
@@ -94,33 +96,22 @@ sentry_config_2:
   file.managed:
     - name: /opt/sentry/sentry/sentry.conf.py
     - mode: 0644
-  {% if   salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.8.0') >= 0 %}
-  # if version is greater or equal to 24.8.0
-    - source: salt://sentry/files/sentry.conf.py-v24.8.0
-  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.8.0')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.7.1') >= 0 %}
-  # if version is less than 24.8.0 and greater or equal to 24.7.1
-    - source: salt://sentry/files/sentry.conf.py-v24.7.1
-  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.7.1')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2') >= 0 %}
-  # if version is less than 24.7.1 and greater or equal to 24.1.2
-    - source: salt://sentry/files/sentry.conf.py-v24.1.2
-  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.1.2')  < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') >= 0 %}
-  # if version is less than 24.1.2 and greater or equal to 23.11.0
-    - source: salt://sentry/files/sentry.conf.py-v23.11.0
-  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.11.0') < 0 and salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  >= 0 %}
-  # if version is less than 23.11.0 and greater or equal to 23.8.0
-    - source: salt://sentry/files/sentry.conf.py-v23.8.0
-  {% elif salt['pkg.version_cmp'](pillar["sentry"]["version"],'23.8.0')  < 0 %}
-  # if version is less than 23.8.0
-    - source:  salt://sentry/files/sentry.conf.py-old
-  {% endif %}
+    - source: salt://sentry/files/{{ pillar["sentry"]["version"] }}/sentry.conf.py
     - template: jinja
+
+sentry_geoip_conf:
+  file.managed:
+    - name: /opt/sentry/geoip/GeoIP.conf
+    - mode: 0644
+    - contents: {{ pillar["sentry"]["geoip_conf"] | yaml_encode }}
 
 sentry_create_env_custom:
   file.copy:
     - name: /opt/sentry/.env.custom
     - source: /opt/sentry/.env
     - force: true
-  {% if   salt['pkg.version_cmp'](pillar["sentry"]["version"],'24.8.0') >= 0 %}
+
+  {%- if salt["pkg.version_cmp"](pillar["sentry"]["version"],'24.8.0') >= 0 %}
   # if version is greater or equal to 24.8.0
 sentry_custom_env_set_COMPOSE_PROFILES:
   file.replace:
@@ -129,7 +120,8 @@ sentry_custom_env_set_COMPOSE_PROFILES:
     - repl: 'COMPOSE_PROFILES={{ salt["pillar.get"]("sentry:config:compose_profiles", 'feature-complete') }}'
     - append_if_not_found: True
     - ignore_if_missing: True
-  {% endif %}
+  {%- endif %}
+
 sentry_custom_env_disable_REPORT_SELF_HOSTED_ISSUES:
   file.replace:
     - name: /opt/sentry/.env.custom
@@ -137,6 +129,7 @@ sentry_custom_env_disable_REPORT_SELF_HOSTED_ISSUES:
     - repl: 'REPORT_SELF_HOSTED_ISSUE=0'
     - append_if_not_found: True
     - ignore_if_missing: True
+
 sentry_custom_env_disable_SENTRY_BEACON:
   file.replace:
     - name: /opt/sentry/.env.custom
@@ -144,6 +137,7 @@ sentry_custom_env_disable_SENTRY_BEACON:
     - repl: 'SENTRY_BEACON=False'
     - append_if_not_found: True
     - ignore_if_missing: True
+
 sentry_custom_env_1:
   file.replace:
     - name: /opt/sentry/.env.custom
@@ -166,11 +160,15 @@ sentry_enhance-image_sh_del:
 
   {%- endif %}
 
+sentry_update_geoip_database:
+  cmd.run:
+    - name: bash /opt/sentry/install/geoip.sh
+    - shell: /bin/bash
+    - cwd: /opt/sentry
+
 sentry_install:
   cmd.run:
-    # For versions older than 22.10.0
-    # - name: ./install.sh --no-user-prompt --skip-commit-check
-    - name: ./install.sh --skip-user-creation --skip-commit-check --no-report-self-hosted-issues
+    - name: ./install.sh --skip-user-creation --skip-commit-check --no-report-self-hosted-issues --no-apply-automatic-config-updates
     - shell: /bin/bash
     - cwd: /opt/sentry
     - onchanges:
@@ -220,22 +218,10 @@ sentry_fix_sentry_admin_permissions:
   {%- if "organization_creation_rate_limit_to_0" in pillar["sentry"] and pillar["sentry"]["organization_creation_rate_limit_to_0"] %}
 sentry_organization_creation_rate_limit_to_0:
   cmd.run:
-    - name: |
-        docker exec sentry-self-hosted-postgres-1 su - postgres -c "psql -c \"
-          INSERT INTO sentry_option
-            (key, value, last_updated)
-          VALUES
-            (
-              'api.rate-limit.org-create',
-              'gAJLAC4=',
-              now()
-            )
-          ON CONFLICT (key) DO UPDATE SET value = 'gAJLAC4=', last_updated = now();
-        \""
+    - name: docker exec sentry-self-hosted-web-1 sentry config set api.rate-limit.org-create 0
   {%- endif %}
 
-  {% if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
-
+  {%- if pillar["sentry"]["config"]["web"]["nginx_conf_path"] is not defined %}
 sentry_nginx_reload:
   cmd.run:
     - name: service nginx configtest && service nginx reload
@@ -247,7 +233,6 @@ sentry_nginx_reload_cron:
     - user: root
     - minute: 15
     - hour: 6
+   {%- endif %}
 
-   {% endif %}
 {%- endif %}
-

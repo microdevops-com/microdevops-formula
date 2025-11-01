@@ -1,22 +1,31 @@
 # vi: set ft=yaml:
+#
+# Supported Sentry versions:
+# - 25.10.0
+#
+# Each supported version should have config folder in files here.
 
 sentry:
   acme_account: example.com
   acme_domain: sentry.example.com
-  version: 22.11.0
+  version: 25.10.0
   secret: "secretsecretsecretsecretsecretsecretsecretsecretse" # cat /dev/urandom | tr -dc 'abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*(-_=+)' | fold -w 50 | head -n 1 # see https://github.com/getsentry/sentry/blob/22.11.0/src/sentry/runner/settings.py#L14
   url: https://sentry.example.com
   admin_email: admin@example.com
   admin_password: xxxxxxxxxxxxxxxxxx
-  enhance_image_sh: | # optional
-    apt-get update
-    apt-get install -y gcc libsasl2-dev libldap2-dev libssl-dev
+  # enhance_image_sh: | # optional
+  #   apt-get update
+  #   apt-get install -y gcc libsasl2-dev libldap2-dev libssl-dev
+  geoip_conf: | # MaxMind GeoIP2 credentials for https://develop.sentry.dev/self-hosted/geolocation/
+    AccountID 012345
+    LicenseKey foobarbazbuz
+    EditionIDs GeoLite2-City
   config:
     # compose_profiles: errors-only # optional for versions 24.8.0+
     single_organization: True
     features:
       auth_register: True
-      projects_plugins: True
+    #ingest_endpoint: https://ingest.sentry.example.com # optional, custom ingest endpoint
     email:
       backend: smtp
       host: smtp.gmail.com
@@ -116,7 +125,7 @@ sentry:
           token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   organizations: # optional, use state.apply sentry.users_and_orgs
     - name: Example
-      slug: example
+      slug: example # Enter a valid slug consisting of letters, numbers, or hyphens. It cannot be entirely numeric or start/end with a hyphen.
       members: # optional
         - email: admin@example.com
           role: owner

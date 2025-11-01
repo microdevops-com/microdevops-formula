@@ -1,4 +1,3 @@
-# v24.7.1
 # This file is just Python, with a touch of Django which means
 # you can inherit and tweak settings to your hearts content.
 
@@ -42,20 +41,17 @@ def get_internal_network():
 
 INTERNAL_SYSTEM_IPS = (get_internal_network(),)
 
+
 DATABASES = {
     "default": {
         "ENGINE": "sentry.db.postgres",
         "NAME": "postgres",
         "USER": "postgres",
         "PASSWORD": "",
-        "HOST": "postgres",
+        "HOST": "pgbouncer",
         "PORT": "",
     }
 }
-
-# You should not change this setting after your database has been created
-# unless you have altered all schemas first
-SENTRY_USE_BIG_INTS = True
 
 # If you're expecting any kind of real traffic on Sentry, we highly recommend
 # configuring the CACHES and Redis settings
@@ -68,9 +64,69 @@ SENTRY_USE_BIG_INTS = True
 # and thus various UI optimizations should be enabled.
 SENTRY_SINGLE_ORGANIZATION = {{ salt["pillar.get"]("sentry:config:single_organization", True) }}
 
+# Sentry event retention days specifies how long events are retained in the database.
+# This should be set on your `.env` or `.env.custom` file, instead of modifying
+# the value here.
+# NOTE: The longer the days, the more disk space is required.
 SENTRY_OPTIONS["system.event-retention-days"] = int(
     env("SENTRY_EVENT_RETENTION_DAYS", "{{ salt["pillar.get"]("sentry:config:general:options:system:event_retention_days", 90) }}")
 )
+
+# The secret key is being used for various cryptographic operations, such as
+# generating a CSRF token, session token, and registering Relay instances.
+# The secret key value should be set on your `.env` or `.env.custom` file
+# instead of modifying the value here.
+#
+# If the key ever becomes compromised, it's important to generate a new key.
+# Changing this value will result in all current sessions being invalidated.
+# A new key can be generated with `$ sentry config generate-secret-key`
+if env("SENTRY_SYSTEM_SECRET_KEY"):
+    SENTRY_OPTIONS["system.secret-key"] = env("SENTRY_SYSTEM_SECRET_KEY", "")
+
+# Self-hosted Sentry infamously has a lot of Docker containers required to make
+# all the features work. Oftentimes, users don't use the full feature set that
+# requires all the containers. This is a way to enable only the error monitoring
+# feature which also reduces the amount of containers required to run Sentry.
+#
+# To make Sentry work with all features, set `COMPOSE_PROFILES` to `feature-complete`
+# in your `.env` file. To enable only the error monitoring feature, set
+# `COMPOSE_PROFILES` to `errors-only`.
+#
+# See https://develop.sentry.dev/self-hosted/experimental/errors-only/
+SENTRY_SELF_HOSTED_ERRORS_ONLY = env("COMPOSE_PROFILES") != "feature-complete"
+
+# When running in an air-gapped environment, set this to True to entirely disable
+# external network calls and features that require Internet connectivity.
+#
+# Setting the value to False while running in an air-gapped environment will
+# cause some containers to raise exceptions. One known example is fetching
+# AI model prices from various public APIs.
+SENTRY_AIR_GAP = False
+
+################
+# Node Storage #
+################
+
+# Sentry uses an abstraction layer called "node storage" to store raw events.
+# Previously, it used PostgreSQL as the backend, but this didn't scale for
+# high-throughput environments. Read more about this in the documentation:
+# https://develop.sentry.dev/backend/application-domains/nodestore/
+#
+# Through this setting, you can use the provided blob storage or
+# your own S3-compatible API from your infrastructure.
+# Other backend implementations for node storage developed by the community
+# are available in public GitHub repositories.
+
+SENTRY_NODESTORE = "sentry_nodestore_s3.S3PassthroughDjangoNodeStorage"
+SENTRY_NODESTORE_OPTIONS = {
+    "compression": True,
+    "endpoint_url": "http://seaweedfs:8333",
+    "bucket_path": "nodestore",
+    "bucket_name": "nodestore",
+    "region_name": "us-east-1",
+    "aws_access_key_id": "sentry",
+    "aws_secret_access_key": "sentry",
+}
 
 #########
 # Redis #
@@ -86,25 +142,6 @@ SENTRY_OPTIONS["redis.clusters"] = {
 }
 
 #########
-# Queue #
-#########
-
-# See https://develop.sentry.dev/services/queue/ for more
-# information on configuring your queue broker and workers. Sentry relies
-# on a Python framework called Celery to manage queues.
-
-rabbitmq_host = None
-if rabbitmq_host:
-    BROKER_URL = "amqp://{username}:{password}@{host}/{vhost}".format(
-        username="guest", password="guest", host=rabbitmq_host, vhost="/"
-    )
-else:
-    BROKER_URL = "redis://:{password}@{host}:{port}/{db}".format(
-        **SENTRY_OPTIONS["redis.clusters"]["default"]["hosts"][0]
-    )
-
-
-#########
 # Cache #
 #########
 
@@ -116,7 +153,7 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
         "LOCATION": ["memcached:11211"],
         "TIMEOUT": 3600,
-        "OPTIONS": {"ignore_exc": True}
+        "OPTIONS": {"ignore_exc": True},
     }
 }
 
@@ -188,15 +225,6 @@ SENTRY_TAGSTORE_OPTIONS = {}
 
 SENTRY_DIGESTS = "sentry.digests.backends.redis.RedisBackend"
 
-###################
-# Metrics Backend #
-###################
-
-SENTRY_RELEASE_HEALTH = "sentry.release_health.metrics.MetricsReleaseHealthBackend"
-SENTRY_RELEASE_MONITOR = (
-    "sentry.release_health.release_monitor.metrics.MetricReleaseMonitorBackend"
-)
-
 ##############
 # Web Server #
 ##############
@@ -216,6 +244,12 @@ SENTRY_WEB_OPTIONS = {
     "workers": 3,
     "threads": 4,
     "memory-report": False,
+    # The `harakiri` option terminates requests that take longer than the
+    # defined amount of time (in seconds) which can help avoid stuck workers
+    # caused by GIL issues or deadlocks.
+    # Ensure nginx `proxy_read_timeout` configuration (default: 30)
+    # on your `nginx.conf` file to be at least 5 seconds longer than this.
+    # "harakiri": 25,
     # Some stuff so uwsgi will cycle workers sensibly
     "max-requests": 100000,
     "max-requests-delta": 500,
@@ -259,33 +293,35 @@ SENTRY_OPTIONS["mail.from"] = f"sentry@{SENTRY_OPTIONS['mail.list-namespace']}"
 # Features #
 ############
 
+# Sentry uses feature flags to enable certain features. Some features may
+# require additional configuration or containers. To learn more about how
+# Sentry uses feature flags, see https://develop.sentry.dev/backend/application-domains/feature-flags/
+#
+# The features listed here are stable and generally available on SaaS.
+# To enable preview features, see https://develop.sentry.dev/self-hosted/configuration/#enabling-preview-features
+
 SENTRY_FEATURES["projects:sample-events"] = False
+SENTRY_FEATURES["auth:register"] = {{ salt["pillar.get"]("sentry:config:features:auth_register", False) }}
 SENTRY_FEATURES.update(
     {
         feature: True
         for feature in (
             "organizations:discover",
-            "organizations:events",
             "organizations:global-views",
+            "organizations:issue-views",
             "organizations:incidents",
             "organizations:integrations-issue-basic",
             "organizations:integrations-issue-sync",
             "organizations:invite-members",
-            "organizations:metric-alert-builder-aggregate",
             "organizations:sso-basic",
-            "organizations:sso-rippling",
             "organizations:sso-saml2",
-            "organizations:performance-view",
             "organizations:advanced-search",
-            "organizations:session-replay",
             "organizations:issue-platform",
-            "organizations:profiling",
             "organizations:monitors",
             "organizations:dashboards-mep",
             "organizations:mep-rollout-flag",
             "organizations:dashboards-rh-widget",
-            "organizations:metrics-extraction",
-            "organizations:transaction-metrics-extraction",
+            "organizations:dynamic-sampling",
             "projects:custom-inbound-filters",
             "projects:data-forwarding",
             "projects:discard-groups",
@@ -293,25 +329,53 @@ SENTRY_FEATURES.update(
             "projects:rate-limits",
             "projects:servicehooks",
         )
+        # Performance/Tracing/Spans related flags
         + (
-            "organizations:deprecate-fid-from-performance-score",
+            "organizations:performance-view",
+            "organizations:span-stats",
+            "organizations:visibility-explore-view",
+            "organizations:visibility-explore-range-high",
+            "organizations:transaction-metrics-extraction",
             "organizations:indexed-spans-extraction",
             "organizations:insights-entry-points",
             "organizations:insights-initial-modules",
             "organizations:insights-addon-modules",
-            "organizations:mobile-ttid-ttfd-contribution",
-            "organizations:performance-calculate-score-relay",
+            "organizations:insights-modules-use-eap",
             "organizations:standalone-span-ingestion",
-            "organizations:starfish-browser-resource-module-image-view",
-            "organizations:starfish-browser-resource-module-ui",
-            "organizations:starfish-browser-webvitals",
-            "organizations:starfish-browser-webvitals-pageoverview-v2",
-            "organizations:starfish-browser-webvitals-replace-fid-with-inp",
-            "organizations:starfish-browser-webvitals-use-backend-scores",
             "organizations:starfish-mobile-appstart",
             "projects:span-metrics-extraction",
             "projects:span-metrics-extraction-addons",
-        )  # starfish related flags
+        )
+        # Session Replay related flags
+        + (
+            "organizations:session-replay",
+        )
+        # User Feedback related flags
+        + (
+            "organizations:user-feedback-ui",
+        )
+        # Profiling related flags
+        + (
+            "organizations:profiling",
+            "organizations:profiling-view",
+        )
+        # Continuous Profiling related flags
+        + (
+            "organizations:continuous-profiling",
+            "organizations:continuous-profiling-stats",
+        )
+        # Uptime Monitoring related flags
+        + (
+            "organizations:uptime",
+            "organizations:uptime-create-issues",
+        )
+        # Logs related flags
+        + (
+            "organizations:ourlogs-enabled",
+            "organizations:ourlogs-ingestion",
+            "organizations:ourlogs-stats",
+            "organizations:ourlogs-replay-ui",
+        )
     }
 )
 
@@ -329,20 +393,6 @@ GEOIP_PATH_MMDB = "/geoip/GeoLite2-City.mmdb"
 # BITBUCKET_CONSUMER_SECRET = 'YOUR_BITBUCKET_CONSUMER_SECRET'
 
 ##############################################
-# Suggested Fix Feature / OpenAI Integration #
-##############################################
-
-# See https://docs.sentry.io/product/issues/issue-details/ai-suggested-solution/
-# for more information about the feature. Make sure the OpenAI's privacy policy is
-# aligned with your company.
-
-# Set the OPENAI_API_KEY on the .env or .env.custom file with a valid
-# OpenAI API key to turn on the feature.
-OPENAI_API_KEY = env("OPENAI_API_KEY", "")
-
-SENTRY_FEATURES["organizations:open-ai-suggestion"] = bool(OPENAI_API_KEY)
-
-##############################################
 # Content Security Policy settings
 ##############################################
 
@@ -352,6 +402,20 @@ CSP_REPORT_ONLY = True
 # optional extra permissions
 # https://django-csp.readthedocs.io/en/latest/configuration.html
 # CSP_SCRIPT_SRC += ["example.com"]
+
+############################
+# Sentry Endpoint Settings #
+############################
+
+# If your Sentry installation has different hostnames for ingestion and web UI,
+# in which your web UI is accessible via private corporate network, yet your
+# ingestion hostname is accessible from the public internet, you can uncomment
+# this following options in order to have the ingestion hostname rendered
+# correctly on the SDK configuration UI.
+#
+{% if "ingest_endpoint" in pillar["sentry"]["config"] %}
+SENTRY_ENDPOINT = "{{ salt["pillar.get"]("sentry:config:ingest_endpoint") }}"
+{% endif %}
 
 #################
 # CSRF Settings #
@@ -364,12 +428,54 @@ CSP_REPORT_ONLY = True
 
 # CSRF_TRUSTED_ORIGINS = ["https://example.com", "http://127.0.0.1:9000"]
 
-# If you would like to use self-hosted Sentry with only errors enabled, please set this
-SENTRY_SELF_HOSTED_ERRORS_ONLY = env("COMPOSE_PROFILES") != "feature-complete"
+#################
+# JS SDK Loader #
+#################
 
-{%- if "ldap" in pillar["sentry"]["config"] and salt["pillar.get"]("sentry:config:ldap:enabled", False) %}
-{{ salt["pillar.get"]("sentry:config:ldap:sentry_conf_py") }}
-{%- endif %}
+# Configure Sentry JS SDK bundle URL template for Loader Scripts.
+# Learn more about the Loader Scripts: https://docs.sentry.io/platforms/javascript/install/loader/
+# If you wish to host your own JS SDK bundles, set `SETUP_JS_SDK_ASSETS` environment variable to `1`
+# on your `.env` or `.env.custom` file. Then, replace the value below with your own public URL.
+# For example: "https://sentry.example.com/js-sdk/%s/bundle%s.min.js"
+#
+# By default, the previous JS SDK assets version will be pruned during upgrades, if you wish
+# to keep the old assets, set `SETUP_JS_SDK_KEEP_OLD_ASSETS` environment variable to any value on
+# your `.env` or `.env.custom` file. The files should only be a few KBs, and this might be useful
+# if you're using it directly like a CDN instead of using the loader script.
+JS_SDK_LOADER_DEFAULT_SDK_URL = "https://browser.sentry-cdn.com/%s/bundle%s.min.js"
+
+#####################
+# Insights Settings #
+#####################
+
+# Since version 24.3.0, Insights features are available on self-hosted. For Requests module,
+# there are scrubbing logic done on Relay to prevent high cardinality of stored HTTP hosts.
+# However in self-hosted scenario, the amount of stored HTTP hosts might be consistent,
+# and you may have allow list of hosts that you want to keep. Uncomment the following line
+# to allow specific hosts. It might be IP addresses or domain names (without `http://` or `https://`).
+
+# SENTRY_OPTIONS["relay.span-normalization.allowed_hosts"] = ["example.com", "192.168.10.1"]
+
+##############
+# Monitoring #
+##############
+
+# By default, Sentry uses dummy statsd monitoring backend that is a no-op.
+# If you have a statsd server, you can utilize that to monitor self-hosted
+# Sentry for "sentry"-related containers.
+#
+# To start, uncomment the following line and adjust the options as needed.
+
+# SENTRY_METRICS_BACKEND = 'sentry.metrics.statsd.StatsdMetricsBackend'
+# SENTRY_METRICS_OPTIONS: dict[str, Any] = {
+#     'host': '100.100.123.123', # It is recommended to use IP address instead of domain name
+#     'port': 8125,
+# }
+# SENTRY_METRICS_SAMPLE_RATE = 1.0   # Adjust this to your needs, default is 1.0
+# SENTRY_METRICS_PREFIX = "sentry."  # Adjust this to your needs, default is "sentry."
 
 SENTRY_BEACON = False
 
+{% if "ldap" in pillar["sentry"]["config"] and salt["pillar.get"]("sentry:config:ldap:enabled", False) %}
+{{ salt["pillar.get"]("sentry:config:ldap:sentry_conf_py") }}
+{% endif %}
