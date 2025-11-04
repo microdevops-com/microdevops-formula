@@ -39,6 +39,34 @@ disable_transparent_hugepage:
   {%- endif  %}
 
   {%- if pillar['percona-valkey'].get('manage_limits', False) %}
+{%- set maxclients = pillar['percona-valkey'].get('maxclients', 10000) %}
+{%- set nofile_limit = maxclients + 32 %}
+
+set_valkey_systemd_limits:
+  file.managed:
+    - name: /etc/systemd/system/valkey.service.d/limits.conf
+    - user: 0
+    - group: 0
+    - mode: 644
+    - makedirs: True
+    - contents: |
+        [Service]
+        LimitNOFILE={{ nofile_limit }}
+
+reload_systemd_for_valkey:
+  cmd.run:
+    - name: systemctl daemon-reload
+    - onchanges:
+        - file: /etc/systemd/system/valkey.service.d/limits.conf
+
+restart_valkey_after_limits:
+  cmd.run:
+    - name: systemctl restart valkey
+    - onchanges:
+        - file: /etc/systemd/system/valkey.service.d/limits.conf
+    - require:
+        - cmd: reload_systemd_for_valkey
+
 set_maxclients_for_valkey_user:
   file.managed:
     - name: /etc/security/limits.d/95-valkey.conf
@@ -46,11 +74,11 @@ set_maxclients_for_valkey_user:
     - group: 0
     - mode: 644
     - contents: |
-        root soft nofile {{ pillar['percona-valkey'].get('maxclients',10000) }}
-        root hard nofile {{ pillar['percona-valkey'].get('maxclients',10000) }}
-        valkey soft nofile {{ pillar['percona-valkey'].get('maxclients', 10000) }}
-        valkey hard nofile {{ pillar['percona-valkey'].get('maxclients', 10000) }}
-        haproxy soft nofile {{ pillar['percona-valkey'].get('maxclients',10000) * 2 + 100 }}
-        haproxy hard nofile {{ pillar['percona-valkey'].get('maxclients',10000) * 2 + 100 }}
+        root soft nofile {{ maxclients }}
+        root hard nofile {{ maxclients }}
+        valkey soft nofile {{ maxclients }}
+        valkey hard nofile {{ maxclients }}
+        haproxy soft nofile {{ maxclients * 2 + 100 }}
+        haproxy hard nofile {{ maxclients * 2 + 100 }}
   {%- endif  %}
 {% endif  %}
