@@ -17,4 +17,3 @@
   fi
   ##
 [[ -f /opt/sentry/.env.custom ]] && docker-compose --file /opt/sentry/docker-compose.yml --env-file /opt/sentry/.env.custom up -d || docker-compose --file /opt/sentry/docker-compose.yml up -d
-

@@ -168,7 +168,12 @@ sentry_update_geoip_database:
 
 sentry_install:
   cmd.run:
+  {%- if salt["pkg.version_cmp"](pillar["sentry"]["version"],"25.10.0") >= 0 %}
+    # if version is greater or equal to 25.10.0
     - name: ./install.sh --skip-user-creation --skip-commit-check --no-report-self-hosted-issues --no-apply-automatic-config-updates
+  {%- else %}
+    - name: ./install.sh --skip-user-creation --skip-commit-check --no-report-self-hosted-issues
+  {%- endif %}
     - shell: /bin/bash
     - cwd: /opt/sentry
     - onchanges:
@@ -185,14 +190,14 @@ sentry_export_backup_script:
     - name: /opt/sentry/backup_export.sh
     - source: salt://sentry/files/backup_export.sh
     - mode: 775
-    - template: jinja
+    #- template: jinja # currently not needed as we dropped old versions support
 
 sentry_volume_backup_script:
   file.managed:
     - name: /opt/sentry/backup_volumes.sh
     - source: salt://sentry/files/backup_volumes.sh
     - mode: 775
-    - template: jinja
+    #- template: jinja # currently not needed as we dropped old versions support
 
 sentry_volume_restore_script:
   file.managed:
