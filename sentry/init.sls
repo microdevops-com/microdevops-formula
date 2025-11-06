@@ -82,8 +82,14 @@ sentry_installer_clone_fom_git:
     - name: https://github.com/getsentry/self-hosted.git
     - target: /opt/sentry/
     - rev: {{ pillar ["sentry"]["version"] }}
-    - branch: {{ pillar ["sentry"]["version"] }}
+    - branch: local
     - force_reset: True
+    - force_checkout: True
+
+sentry_version_txt:
+  file.managed:
+    - name: /opt/sentry/sentry_version.txt
+    - contents: {{ pillar ["sentry"]["version"] }}
 
 sentry_config_1:
   file.managed:
