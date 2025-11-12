@@ -53,6 +53,7 @@
   {%- if settings.get("version", "") %}
     - unless: 
       - "[[ $(cat {{ settings["install_dir"] }}/.salt_version_info) =~ {{ settings["version"] }} ]]"
+      - "[[ -s {{ settings["exec"].split()[0] }} ]]"
   file.managed:
     - name: {{ settings["install_dir"] }}/.salt_version_info
     - contents: "{{ settings["version"] }}"
