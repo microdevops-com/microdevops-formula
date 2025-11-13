@@ -2,9 +2,11 @@
   
   {% from "acme/macros.jinja" import verify_and_issue %}
 
+  {% if grains['os_family'] == 'Ubuntu' %}
 add_repository:
   pkgrepo.managed:
     - ppa: {{ pillar['haproxy']["ppa"] | default('vbernat/haproxy-2.6') }}
+  {% endif %}
 
 haproxy_install:
   pkg.latest:
