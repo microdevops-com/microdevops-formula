@@ -2,18 +2,50 @@
   
   {% from "acme/macros.jinja" import verify_and_issue %}
 
-  {% if grains['os_family'] == 'Ubuntu' %}
+  {% set haproxy_version = pillar['haproxy'].get('version', '2.6') %}
+  {% set os_family = grains['os_family'] %}
+  {% set os = grains['os'] %}
+  {% set osrelease = grains['osrelease'] %}
+
+  {% if os_family == 'Ubuntu' %}
+    {% if haproxy_version == '3.2' and os == 'Ubuntu' and osrelease.startswith('24.') %}
+add_repository_3_2_noble:
+  pkgrepo.managed:
+    - ppa: vbernat/haproxy-3.2
+    {% else %}
 add_repository:
   pkgrepo.managed:
     - ppa: {{ pillar['haproxy']["ppa"] | default('vbernat/haproxy-2.6') }}
+    {% endif %}
   {% endif %}
 
+  {% if os_family == 'Debian' and haproxy_version == '3.2' and os == 'Debian' and osrelease.startswith('12') %}
+haproxy_keyring:
+  cmd.run:
+    - name: curl https://haproxy.debian.net/haproxy-archive-keyring.gpg --create-dirs --output /etc/apt/keyrings/haproxy-archive-keyring.gpg
+    - unless: test -f /etc/apt/keyrings/haproxy-archive-keyring.gpg
+
+haproxy_repo:
+  file.managed:
+    - name: /etc/apt/sources.list.d/haproxy.list
+    - contents: 'deb [signed-by=/etc/apt/keyrings/haproxy-archive-keyring.gpg] https://haproxy.debian.net bookworm-backports-3.2 main'
+
+haproxy_update:
+  cmd.run:
+    - name: apt-get update
+
+haproxy_install:
+  pkg.installed:
+    - name: haproxy
+    - version: 3.2.*
+  {% else %}
 haproxy_install:
   pkg.latest:
     - refresh: True
     - reload_modules: True
     - pkgs:
         - haproxy
+  {% endif %}
 
 haproxy_config:
   file.managed:
