@@ -1,5 +1,6 @@
 {% set domain = 'example.com' %}
 haproxy:
+  version: '2.6'  # '2.6' or '3.2'
   ppa: 'vbernat/haproxy-2.6'
   ssl:
     acme_configs:
