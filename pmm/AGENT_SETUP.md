@@ -11,5 +11,6 @@ mysql -e "FLUSH PRIVILEGES;"
 pmm-agent setup --server-address pmm.example.com --server-username admin --server-password YYYYYYYYYYYYYYYYYY --force --server-insecure-tls
 
 pmm-admin add mysql --socket=$(mysql -s -e "select @@socket" | awk 2) --username=pmm --password=XXXXXXXXXXXXXXXXX --query-source=perfschema
-pmm-admin add postgresql --username=someuser --password=XXXXXXXXXXXXXXXXX # needs Superuser pmm user, check https://docs.percona.com/percona-monitoring-and-management/2/setting-up/client/postgresql.html
+pmm-admin add postgresql --username=someuser --password=XXXXXXXXXXXXXXXXX \ # needs Superuser pmm user, check https://docs.percona.com/percona-monitoring-and-management/2/setting-up/client/postgresql.html
+  --query-source=pgstatements # for pg_stat_statements to work with QAN
 ```
