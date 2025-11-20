@@ -1,6 +1,7 @@
 # vi: set ft=yaml:
 #
 # Supported Sentry versions:
+# - 25.5.1
 # - 25.10.0
 #
 # Each supported version should have config folder in files here.
