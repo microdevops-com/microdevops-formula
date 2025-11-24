@@ -59,6 +59,9 @@ docker-ce_pkg:
     {%- if "buildx" in docker_ce and docker_ce["buildx"] %}
       - docker-buildx-plugin
     {%- endif %}
+    {%- if "compose-plugin" in docker_ce and docker_ce["compose-plugin"] %}
+      - docker-compose-plugin
+    {%- endif %}
       - docker-ce
   {%- else %}
   pkg.installed:
@@ -67,6 +70,9 @@ docker-ce_pkg:
       - python3-docker
     {%- if "buildx" in docker_ce and docker_ce["buildx"] %}
       - docker-buildx-plugin
+    {%- endif %}
+    {%- if "compose-plugin" in docker_ce and docker_ce["compose-plugin"] %}
+      - docker-compose-plugin
     {%- endif %}
       - docker-ce: '{{ docker_ce["version"] }}*'
   {%- endif %}

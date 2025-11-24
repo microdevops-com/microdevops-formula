@@ -15,6 +15,7 @@ docker-ce:
                     "compress": "true"
             }
     }
-  compose: latest # optional, latest or use specific version like 2.14.0 without v
+  #compose: latest # optional, latest or use specific version like 2.14.0 without v
+  #compose-plugin: True # optional, add compose as plugin
   #buildx: True # optional, add buildx plugin
   #daily_image_prune: True # optional, runs docker image prune -a --force daily
