@@ -140,15 +140,23 @@ gitlab-runner_docker_clean_script:
         echo "[5/6] Cleaning up unused volumes..."
         docker volume prune -f
         
+        
         if [[ $FULL -eq 1 ]]; then
-            echo "[6/6] Full cleanup including BuildKit cache (--mount=type=cache will be removed)..."
-            docker builder prune -f -a
+            echo "[6/7] FULL mode: cleaning ALL Buildx cache (including RUN --mount=type=cache)..."
+            # Removes all build cache for the default builder, including exec.cachemount
+            docker buildx prune -af
         else
-            echo "[6/6] Skipping BuildKit cache cleanup (--mount=type=cache preserved)."
-            echo "      For full cleanup, run: $0 --full"
+            echo "[6/7] Cleaning Buildx cache except RUN --mount=type=cache (type=exec.cachemount)..."
+            # Remove all build cache records whose type is NOT exec.cachemount
+            docker buildx prune -f --filter "type!=exec.cachemount"
         fi
         
+        echo "[7/7] Current Buildx cache usage:"
+        docker buildx du || echo "buildx du failed (builder not configured?)"
+        
+        
         echo "Cleanup complete."
+
 
 # Add cron job
 gitlab-runner_docker_clean_cron:
