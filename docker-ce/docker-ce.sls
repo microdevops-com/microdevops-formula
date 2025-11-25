@@ -63,6 +63,7 @@ docker-ce_pkg:
       - docker-compose-plugin
     {%- endif %}
       - docker-ce
+      - docker-ce-cli
   {%- else %}
   pkg.installed:
     - refresh: True
@@ -75,6 +76,7 @@ docker-ce_pkg:
       - docker-compose-plugin
     {%- endif %}
       - docker-ce: '{{ docker_ce["version"] }}*'
+      - docker-ce-cli: '{{ docker_ce["version"] }}*'
   {%- endif %}
 
 docker-ce_service:
