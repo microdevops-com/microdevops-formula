@@ -30,27 +30,18 @@ gitlab-runner_add_docker:
 
   {%- endif %}
 
-gitlab-runner_unregister:
-  cmd.run:
-    - name: |
-        gitlab-runner unregister --name "{{ pillar["gitlab-runner"]["name"] }}" || true
-
-gitlab-runner_config:
-  file.managed:
-    - name: /etc/gitlab-runner/config.toml
-    - contents: |
-        concurrent = {{ pillar["gitlab-runner"]["concurrency"] }}
-        check_interval = 0
-        shutdown_timeout = 0
-        {% if 'listen_address' in pillar["gitlab-runner"] -%} listen_address = '{{ pillar["gitlab-runner"]["listen_address"] }}' {%- endif %}
-        
-        [session_server]
-          session_timeout = 1800
-
 # https://docs.gitlab.com/runner/shells/index.html#shell-profile-loading
 gitlab-runner_bash_issue_fix:
   file.absent:
     - name: /home/gitlab-runner/.bash_logout
+
+  # Old flow with registration token
+  # https://docs.gitlab.com/runner/register/
+  {%- if "registration_token" in pillar["gitlab-runner"]["gitlab"] %}
+gitlab-runner_unregister:
+  cmd.run:
+    - name: |
+        gitlab-runner unregister --name "{{ pillar["gitlab-runner"]["name"] }}" || true
 
 gitlab-runner_register:
   cmd.run:
@@ -60,11 +51,11 @@ gitlab-runner_register:
           --url "{{ pillar["gitlab-runner"]["gitlab"]["url"] }}" \
           --registration-token "{{ pillar["gitlab-runner"]["gitlab"]["registration_token"] }}" \
           --executor "{{ pillar["gitlab-runner"]["executor"] }}" \
-          --name "{{ pillar["gitlab-runner"]["name"] }}" \
           --tag-list "{{ pillar["gitlab-runner"]["tags"] }}" \
-          {{ pillar["gitlab-runner"]["register_opts"] }}
+          {% if "register_opts" in pillar["gitlab-runner"] %}{{ pillar["gitlab-runner"]["register_opts"] }}{% endif %} \
+          --name "{{ pillar["gitlab-runner"]["name"] }}" \
 
-  {%- for project in pillar["gitlab-runner"]["projects"] %}
+    {%- for project in pillar["gitlab-runner"]["projects"] %}
 gitlab-runner_project_{{ loop.index }}:
   cmd.run:
     - name: |
@@ -73,7 +64,64 @@ gitlab-runner_project_{{ loop.index }}:
           "{{ pillar["gitlab-runner"]["gitlab"]["url"] }}/api/v4/projects/{{ project | replace("/","%2F") }}/runners" --form "runner_id=${RUNNER_ID}"
     - shell: /bin/bash
 
-  {%- endfor %}
+    {%- endfor %}
+
+  # New flow with authentication token
+  # https://docs.gitlab.com/runner/register/
+  {%- else %}
+gitlab-runner_unregister:
+  cmd.run:
+    - name: |
+        if gitlab-runner list 2>&1 | grep -q "{{ pillar["gitlab-runner"]["name"] }}"; then
+          echo "Unregistering existing runner '{{ pillar["gitlab-runner"]["name"] }}'"
+          gitlab-runner unregister --name "{{ pillar["gitlab-runner"]["name"] }}"
+        else
+          echo "Runner '{{ pillar["gitlab-runner"]["name"] }}' not found, skipping unregister"
+        fi
+
+gitlab-runner_register:
+  cmd.run:
+    - name: |
+        gitlab-runner register \
+          --non-interactive \
+          --url "{{ pillar["gitlab-runner"]["gitlab"]["url"] }}" \
+          --token "{{ pillar["gitlab-runner"]["gitlab"]["authentication_token"] }}" \
+          --executor "{{ pillar["gitlab-runner"]["executor"] }}" \
+          {% if "register_opts" in pillar["gitlab-runner"] %}{{ pillar["gitlab-runner"]["register_opts"] }}{% endif %} \
+          --name "{{ pillar["gitlab-runner"]["name"] }}"
+
+  {%- endif %}
+
+# Ensure concurrent is set in config
+gitlab-runner_config_concurrency:
+  file.replace:
+    - name: /etc/gitlab-runner/config.toml
+    - pattern: '^concurrent = .*'
+    - repl: 'concurrent = {{ pillar["gitlab-runner"]["concurrency"] }}'
+    - prepend_if_not_found: True
+    - backup: False
+
+# Ensure listen_address if set in pillar
+{%- if "listen_address" in pillar["gitlab-runner"] %}
+gitlab-runner_config_listen_address:
+  file.replace:
+    - name: /etc/gitlab-runner/config.toml
+    - pattern: '^listen_address = .*'
+    - repl: "listen_address = '{{ pillar["gitlab-runner"]["listen_address"] }}'"
+    - prepend_if_not_found: True
+    - backup: False
+
+{%- endif %}
+
+# Issue gitlab-runner restart to apply changes in config
+gitlab-runner_service_restart:
+  cmd.run:
+    - name: gitlab-runner restart
+    - onchanges:
+      - file: gitlab-runner_config_concurrency
+      {%- if "listen_address" in pillar["gitlab-runner"] %}
+      - file: gitlab-runner_config_listen_address
+      {%- endif %}
 
   {%- if "keys" in pillar["gitlab-runner"] %}
 gitlab-runner_ssh_dir:

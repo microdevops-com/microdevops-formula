@@ -1,11 +1,37 @@
 # vi: set ft=yaml:
 
+# New flow with authentication token
+# https://docs.gitlab.com/runner/register/
+gitlab-runner:
+  gitlab:
+    url: https://gitlab.example.com/
+    authentication_token: glrt-xxxxxxxxxxxxxxxxxxxx
+  #register_opts: "" # optional, additional options for gitlab-runner register command
+  #listen_address: "0.0.0.0:8093" # optional, defines an address (<host>:<port>) the Prometheus metrics HTTP server should listen on. 
+  name: some-runner1.example.com # mandatory, name is used to register and unregister runner on consequent runs
+  executor: docker # mandatory, executor type
+  concurrency: 50 # mandatory, concurrency defines how many jobs can be run in parallel runner server wide
+  docker_group: True # optional, add runner user to docker group to use docker
+  keys: # optional, put keys into runner home .ssh
+    id_ed25519:
+      priv: |
+        -----BEGIN OPENSSH PRIVATE KEY-----
+        ...
+        -----END OPENSSH PRIVATE KEY-----
+      pub: |
+        ssh-ed25519 AAAA...
+  #docker_clean_cron: # optional, clean everything in docker
+  #  minute: 10
+  #  hour: 4
+
+# Old flow with registration token
+# https://docs.gitlab.com/runner/register/
 gitlab-runner:
   gitlab:
     url: https://gitlab.example.com/
     admin_token: xxxxxxxxxxxxxxxxxxx # needed to cleanup runners in projects
     registration_token: xxxxxxxxxxxxxxxxxx # since approx 15.4 version of GitLab you cannot register project level runners with instance level token, use any legit project registration token here
-  register_opts: "--locked --docker-privileged --docker-image 'docker:stable' --access-level='ref_protected'"
+  register_opts: "--locked --docker-privileged --docker-image 'docker:stable' --access-level='ref_protected'" # optional, additional options for gitlab-runner register command
   listen_address: "0.0.0.0:8093" # optional, defines an address (<host>:<port>) the Prometheus metrics HTTP server should listen on. 
   name: some-runner1.example.com
   executor: docker
@@ -26,3 +52,4 @@ gitlab-runner:
   #docker_clean_cron: # optional, clean everything in docker
   #  minute: 10
   #  hour: 4
+
