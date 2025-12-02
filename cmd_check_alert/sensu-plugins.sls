@@ -52,7 +52,7 @@ sensu-plugins_repo:
     - clean_file: True
 
 
-    {%- elif grains["os_family"] == "Debian" and grains["oscodename"] in ["jammy", "bookworm", "noble"] and grains["osarch"] not in ["arm64"] %}
+    {%- elif grains["os_family"] == "Debian" and grains["oscodename"] in ["jammy", "bookworm", "noble", "plucky"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
