@@ -33,7 +33,7 @@ sensu-plugins_mkdir_fix:
 
     {%- endif %}
 
-    {%- if grains["os_family"] == "Debian" and grains["oscodename"] not in ["buster", "bullseye", "jammy", "bookworm", "noble"] and grains["osarch"] not in ["arm64"] %}
+    {%- if grains["os_family"] == "Debian" and grains["oscodename"] not in ["buster", "bullseye", "jammy", "bookworm", "noble", "plucky"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
@@ -52,13 +52,25 @@ sensu-plugins_repo:
     - clean_file: True
 
 
-    {%- elif grains["os_family"] == "Debian" and grains["oscodename"] in ["jammy", "bookworm", "noble", "plucky"] and grains["osarch"] not in ["arm64"] %}
+    {%- elif grains["os_family"] == "Debian" and grains["oscodename"] in ["jammy", "bookworm", "noble"] and grains["osarch"] not in ["arm64"] %}
 sensu-plugins_repo:
   pkgrepo.managed:
     - humanname: Sensu Plugins
     - name: deb https://packagecloud.io/sensu/community/ubuntu/ focal main
     - file: /etc/apt/sources.list.d/sensu_community.list
     - key_url: https://packagecloud.io/sensu/community/gpgkey
+    - clean_file: True
+
+    {%- elif grains["os_family"] == "Debian" and grains["oscodename"] in ["plucky"] and grains["osarch"] not in ["arm64"] %}
+# Plucky requires signedby:
+# Failed to configure repo 'deb https://packagecloud.io/sensu/community/ubuntu/ focal main': missing 'signedby' option when apt-key is missing
+sensu-plugins_repo:
+  pkgrepo.managed:
+    - humanname: Sensu Plugins
+    - name: deb [signed-by=/usr/share/keyrings/sensu-community-archive-keyring.gpg] https://packagecloud.io/sensu/community/ubuntu/ focal main
+    - file: /etc/apt/sources.list.d/sensu_community.list
+    - key_url: https://packagecloud.io/sensu/community/gpgkey
+    - keyring: /usr/share/keyrings/sensu-community-archive-keyring.gpg
     - clean_file: True
 
     {%- endif %}
