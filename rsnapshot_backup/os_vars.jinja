@@ -7,7 +7,7 @@ set data_expand = {
 %}
 {%
 set db_ps = {
-  "ubuntu": {
+  "debian": {
     "MYSQL": "/usr/sbin/mysqld",
     "POSTGRESQL": "bin/postgres -D",
     "MONGODB": "/usr/bin/mongod"
@@ -19,21 +19,22 @@ set db_ps = {
   }
 }
 %}
-{% do db_ps.update({"precise": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"trusty": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"xenial": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"stretch": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"bionic": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"focal": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"jammy": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"noble": db_ps["ubuntu"]}) %}
-{% do db_ps.update({"bookworm": db_ps["ubuntu"]}) %}
+{% do db_ps.update({"precise": db_ps["debian"]}) %}
+{% do db_ps.update({"trusty": db_ps["debian"]}) %}
+{% do db_ps.update({"xenial": db_ps["debian"]}) %}
+{% do db_ps.update({"stretch": db_ps["debian"]}) %}
+{% do db_ps.update({"bionic": db_ps["debian"]}) %}
+{% do db_ps.update({"focal": db_ps["debian"]}) %}
+{% do db_ps.update({"jammy": db_ps["debian"]}) %}
+{% do db_ps.update({"noble": db_ps["debian"]}) %}
+{% do db_ps.update({"plucky": db_ps["debian"]}) %}
+{% do db_ps.update({"bookworm": db_ps["debian"]}) %}
 {% do db_ps.update({"CentOS Linux 7 (Core)": db_ps["centos"]}) %}
 {% do db_ps.update({"CentOS Linux 8 (Core)": db_ps["centos"]}) %}
 {% do db_ps.update({"CentOS Linux 8": db_ps["centos"]}) %}
 {%
 set data_dirs_to_find = {
-  "ubuntu": [
+  "debian": [
     "find / -maxdepth 1 -type d",
     "find /opt -maxdepth 1 -type d",
     "find /usr -maxdepth 1 -type d",
@@ -42,25 +43,26 @@ set data_dirs_to_find = {
   ]
 }
 %}
-{% do data_dirs_to_find.update({"precise": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"trusty": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"xenial": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"stretch": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"bionic": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"focal": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"jammy": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"noble": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"bookworm": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"CentOS Linux 7 (Core)": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"CentOS Linux 8 (Core)": data_dirs_to_find["ubuntu"]}) %}
-{% do data_dirs_to_find.update({"CentOS Linux 8": data_dirs_to_find["ubuntu"]}) %}
+{% do data_dirs_to_find.update({"precise": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"trusty": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"xenial": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"stretch": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"bionic": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"focal": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"jammy": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"noble": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"plucky": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"bookworm": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"CentOS Linux 7 (Core)": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"CentOS Linux 8 (Core)": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"CentOS Linux 8": data_dirs_to_find["debian"]}) %}
 {#
 We list here only dirs that usually do not have to be backed up completely. For example, we check subdirs of /opt, but do not usually backup the whole /opt.
 https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard and good sense used as reference.
 #}
 {%
 set data_dirs_to_skip = {
-  "ubuntu": [
+  "debian": [
     "/",
     "/.gem",
     "/bin",
@@ -182,15 +184,16 @@ set data_dirs_to_skip = {
   ]
 }
 %}
-{% do data_dirs_to_skip.update({"precise": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"trusty": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"xenial": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"stretch": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"bionic": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"focal": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"jammy": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"noble": data_dirs_to_skip["ubuntu"]}) %}
-{% do data_dirs_to_skip.update({"bookworm": data_dirs_to_skip["ubuntu"]}) %}
+{% do data_dirs_to_skip.update({"precise": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"trusty": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"xenial": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"stretch": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"bionic": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"focal": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"jammy": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"noble": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"plucky": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"bookworm": data_dirs_to_skip["debian"]}) %}
 {% do data_dirs_to_skip.update({"CentOS Linux 7 (Core)": data_dirs_to_skip["centos"]}) %}
 {% do data_dirs_to_skip.update({"CentOS Linux 8 (Core)": data_dirs_to_skip["centos"]}) %}
 {% do data_dirs_to_skip.update({"CentOS Linux 8": data_dirs_to_skip["centos"]}) %}
