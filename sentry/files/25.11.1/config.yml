@@ -1,0 +1,159 @@
+# While a lot of configuration in Sentry can be changed via the UI, for all
+# new-style config (as of 8.0) you can also declare values here in this file
+# to enforce defaults or to ensure they cannot be changed via the UI. For more
+# information see the Sentry documentation.
+
+###############
+# Mail Server #
+###############
+
+mail.backend: '{{ salt["pillar.get"]("sentry:config:email:backend", "smtp") }}'  # Use dummy if you want to disable email entirely
+mail.host: '{{ salt["pillar.get"]("sentry:config:email:host", "smtp") }}'
+mail.port: {{ salt["pillar.get"]("sentry:config:email:port", "25") }}
+mail.username: '{{ salt["pillar.get"]("sentry:config:email:username", "") }}'
+mail.password: '{{ salt["pillar.get"]("sentry:config:email:password", "") }}'
+# NOTE: `mail.use-tls` and `mail.use-ssl` are mutually exclusive and should not
+#        appear at the same time. Only uncomment one of them.
+mail.use-tls: {{ salt["pillar.get"]("sentry:config:email:tls", "false") }}
+#mail.use-ssl: {{ salt["pillar.get"]("sentry:config:email:ssl", "false") }}
+
+# NOTE: The following 2 configs (mail.from and mail.list-namespace) are set
+#       through SENTRY_MAIL_HOST in sentry.conf.py so remove those first if
+#       you want your values in this file to be effective!
+
+# The email address to send on behalf of
+# mail.from: 'root@localhost' or ...
+mail.from: '{{ salt["pillar.get"]("sentry:config:email:from", "root@localhost") }}'
+
+# The mailing list namespace for emails sent by this Sentry server.
+# This should be a domain you own (often the same domain as the domain
+# part of the `mail.from` configuration parameter value) or `localhost`.
+# mail.list-namespace: 'localhost'
+
+# If you'd like to configure email replies, enable this.
+mail.enable-replies: {{ salt["pillar.get"]("sentry:config:email:enable_replies", False) }}
+
+# When email-replies are enabled, this value is used in the Reply-To header
+mail.reply-hostname: '{{ salt["pillar.get"]("sentry:config:email:reply_hostname", "") }}'
+
+# If you're using mailgun for inbound mail, set your API key and configure a
+# route to forward to /api/hooks/mailgun/inbound/
+# Also don't forget to set `mail.enable-replies: true` above.
+# mail.mailgun-api-key: ''
+
+###################
+# System Settings #
+###################
+
+# This is the main URL prefix where Sentry can be accessed.
+# Sentry will use this to create links to its different parts of the web UI.
+# This is most helpful if you are using an external reverse proxy.
+system.url-prefix: '{{ salt["pillar.get"]("sentry:url") }}'
+
+# Most of the time, this should NOT be changed. It's used for communication
+# between containers. `web` is the container's name, and `9000` is the
+# default port opened by the Sentry backend (this is NOT the public port).
+#
+# If you want to change the publicly exposed domain or port, you should change
+# `system.url-prefix` above instead, along with `SENTRY_BIND` in `.env` file.
+# Also see https://develop.sentry.dev/self-hosted/#productionalizing.
+system.internal-url-prefix: 'http://web:9000'
+
+# If this file ever becomes compromised, it's important to generate a new key.
+# Changing this value will result in all current sessions being invalidated.
+# A new key can be generated with `$ sentry config generate-secret-key`
+#
+# If you are using SENTRY_SYSTEM_SECRET_KEY that is being set on your `.env` or `.env.custom` file,
+# you should remove this line below as it won't be used anyway.
+system.secret-key: '{{ salt["pillar.get"]("sentry:secret") }}'
+
+# The ``redis.clusters`` setting is used, unsurprisingly, to configure Redis
+# clusters. These clusters can be then referred to by name when configuring
+# backends such as the cache, digests, or TSDB backend.
+# redis.clusters:
+#   default:
+#     hosts:
+#       0:
+#         host: 127.0.0.1
+#         port: 6379
+
+system.admin-email: '{{ salt["pillar.get"]("sentry:admin_email") }}'
+
+################
+# File storage #
+################
+
+# Uploaded media uses these `filestore` settings. The available
+# backends are either `filesystem` or `s3`.
+
+filestore.backend: 'filesystem'
+filestore.options:
+  location: '/data/files'
+dsym.cache-path: '/data/dsym-cache'
+releasefile.cache-path: '/data/releasefile-cache'
+
+# filestore.backend: 's3'
+# filestore.options:
+#   access_key: 'AKIXXXXXX'
+#   secret_key: 'XXXXXXX'
+#   bucket_name: 's3-bucket-name'
+
+symbolicator.enabled: true
+symbolicator.options:
+  url: "http://symbolicator:3021"
+
+transaction-events.force-disable-internal-project: true
+
+######################
+# GitHub Integration #
+######################
+
+# Refer to https://develop.sentry.dev/integrations/github/ for setup instructions.
+
+# github-login.extended-permissions: ['repo']
+# github-app.id: GITHUB_APP_ID
+# github-app.name: 'GITHUB_APP_NAME'
+# github-app.webhook-secret: 'GITHUB_WEBHOOK_SECRET' # Use only if configured in GitHub
+# github-app.client-id: 'GITHUB_CLIENT_ID'
+# github-app.client-secret: 'GITHUB_CLIENT_SECRET'
+# github-app.private-key: |
+#   -----BEGIN RSA PRIVATE KEY-----
+#   privatekeyprivatekeyprivatekeyprivatekey
+#   privatekeyprivatekeyprivatekeyprivatekey
+#   privatekeyprivatekeyprivatekeyprivatekey
+#   privatekeyprivatekeyprivatekeyprivatekey
+#   privatekeyprivatekeyprivatekeyprivatekey
+#   -----END RSA PRIVATE KEY-----
+
+#####################
+# Slack Integration #
+#####################
+
+# Refer to https://develop.sentry.dev/integrations/slack/ for setup instructions.
+
+# slack.client-id: <'client id'>
+# slack.client-secret: <client secret>
+# slack.signing-secret: <signing secret>
+## If legacy-app is True use verification-token instead of signing-secret
+# slack.verification-token: <verification token>
+
+
+#######################
+# Discord Integration #
+#######################
+
+# Refer to https://develop.sentry.dev/integrations/discord/
+
+# discord.application-id: "<application id>"
+# discord.public-key: "<public key>"
+# discord.client-secret: "<client secret>"
+# discord.bot-token: "<bot token>"
+
+{% if "google_auth" in pillar["sentry"]["config"] -%}
+###############
+# Google Auth #
+###############
+
+auth-google.client-id: {{ pillar["sentry"]["config"]["google_auth"]["client_id"] }}
+auth-google.client-secret: {{ pillar["sentry"]["config"]["google_auth"]["client_secret"] }}
+{%- endif %}
