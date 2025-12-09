@@ -9,6 +9,13 @@ incus:
       vm: True
     debian/bookworm/amd64:
       source: images:debian/bookworm/amd64
+  files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
+    managed:
+      install-iso:
+        - name: /media/iso/v0.3.3-node-k8s-1.33.6.iso
+          source: https://github.com/SomeBlackMagic/kube-livecd/releases/download/v0.3.3/node-k8s-1.33.6.iso
+          source_hash: sha256=157edad115a703c00e8570ad3c77e9b3ba6897fbf96bc43386b301c7abce6881
+          makedirs: True
   profiles:
     br0:
       devices:
@@ -136,3 +143,62 @@ incus:
         - hostname_and_hosts.sh:
           - __CONTAINER_NAME__
           - 111.111.111.111
+    k8s-node.example.com: # example with cloud-init
+      vm: True
+      init_flags: --empty
+      devices:
+        root:
+          type: disk
+          path: /
+          pool: vg_md1
+          size: 10GB
+        enp5s0:
+          type: nic
+          nictype: bridged
+          parent: br1
+        install-iso:
+          type: disk
+          source: /media/iso/v0.3.3-node-k8s-1.33.6.iso
+          boot.priority: 10
+          readonly: true
+        cloud-init: # mandatory as is, if cloud-init is used
+          type: disk
+          source: "cloud-init:config"
+      config:
+        limits.cpu: 2
+        limits.memory: 2GB
+        security.secureboot: false
+        # do not remove "#cloud-config" line below, needed for cloud-init to work, see https://linuxcontainers.org/incus/docs/main/cloud-init/#cloud-init-and-virtual-machines
+        # cloud init configs below are just to demonstrate cloud-init usage, modify as needed
+        cloud-init.user-data: |
+          #cloud-config
+          hostname: k8s-node.example.com
+          ssh_pwauth: false
+
+          users:
+            - name: ubuntu
+              groups: sudo
+              shell: /bin/bash
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              ssh_authorized_keys:
+                - ssh-ed25519 AAAA......
+
+          package_update: false
+          package_upgrade: false
+
+          runcmd:
+            - [ sh, -c, "echo 'cloud-init executed' > /root/ci.txt" ]
+        cloud-init.network-config: |
+          version: 2
+          ethernets:
+            enp5s0:
+              dhcp4: false
+              addresses:
+                - 10.0.10.2/24
+              gateway4: 10.0.10.1
+              nameservers:
+                addresses:
+                  - 1.1.1.1
+                  - 8.8.8.8
+      profiles:
+        - autostart

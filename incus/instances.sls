@@ -1,4 +1,12 @@
 {% if pillar["incus"] is defined and "instances" in pillar["incus"] %}
+
+  {%- set files = pillar["incus"].get("files", {}) %}
+  {%- if files is none %}
+    {%- set files = {} %}
+  {%- endif %}
+  {%- set file_manager_defaults = {"default_user": "root", "default_group": "root"} %}
+  {%- include "_include/file_manager/init.sls" with context %}
+
   {%- for instance_name_dots, instance_val in pillar["incus"]["instances"].items() %}
     {%- set a_loop = loop %}
     {%- if "only" not in pillar["incus"] or instance_name_dots in pillar["incus"]["only"] %}
@@ -31,10 +39,31 @@ incus_instance_device_set_{{ a_loop.index }}_{{ b_loop.index }}_{{ loop.index }}
 
       {%- if "config" in instance_val %}
         {%- for config_key, config_val in instance_val["config"].items() %}
+          {%- if config_key.startswith("cloud-init.") %}
+# For config_key names that start from cloud-init we inject the values using temp files to avoid issues with special characters.
+incus_config_tempfile_{{ a_loop.index}}_{{ loop.index }}:
+  file.managed:
+    - name: /tmp/incus_config_{{ instance_name }}_{{ config_key }}
+    - contents: {{ config_val | yaml_encode }}
+    - user: root
+    - group: root
+    - mode: 644
+
 incus_config_set_{{ a_loop.index}}_{{ loop.index }}:
   cmd.run:
-    - name: incus config set {{ instance_name }} {{ config_key }} {{ config_val }}
+    - name: incus config set {{ instance_name }} {{ config_key }} - < /tmp/incus_config_{{ instance_name }}_{{ config_key }}
 
+incus_config_tempfile_cleanup_{{ a_loop.index}}_{{ loop.index }}:
+  file.absent:
+    - name: /tmp/incus_config_{{ instance_name }}_{{ config_key }}
+
+          {%- else %}
+# For other values we set them using `incus config set my-instance config_key=config_val`.
+incus_config_set_{{ a_loop.index}}_{{ loop.index }}:
+  cmd.run:
+    - name: incus config set {{ instance_name }} {{ config_key }}={{ config_val }}
+
+          {%- endif %}
         {%- endfor %}
       {%- endif %}
 
@@ -50,7 +79,7 @@ incus_start_{{ loop.index }}:
         {%- if not ("skip_wait_exec_true" in instance_val and instance_val["skip_wait_exec_true"]) %}
 incus_wait_{{ loop.index }}:
   cmd.run:
-    - name: timeout 30s bash -c "until incus exec {{ instance_name }} true; do sleep 1; done"
+    - name: 'timeout 30s bash -c "until incus exec {{ instance_name }} true; do sleep 1; done; incus exec {{ instance_name }} echo Success: VM agent is responsive"'
 
         {%- endif %}
 
