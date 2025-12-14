@@ -1,0 +1,26 @@
+name: Release Formula by Salt Bundle
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - '.saltbundle.yaml'
+      - '**.sls'
+      - '**.jinja'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Salt Bundle Release
+        uses: SomeBlackMagic/salt-bundle/.github/actions/salt-bundle-release@master
+        with:
+          formulas-dir: ./
+          index-branch: gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
