@@ -10,7 +10,7 @@ cmd_check_alert:
         timeout: 120
         severity: fatal
       checks:
-        salt-minion:
+        docker-alive:
           cmd: docker run --rm alpine true
           service: service
           resource: __hostname__:docker
