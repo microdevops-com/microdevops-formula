@@ -4,13 +4,14 @@
 # - 25.5.1
 # - 25.10.0
 # - 25.11.1
+# - 25.12.1
 #
 # Each supported version should have config folder in files here.
 
 sentry:
   acme_account: example.com
   acme_domain: sentry.example.com
-  version: 25.10.0
+  version: 25.12.1
   secret: "secretsecretsecretsecretsecretsecretsecretsecretse" # cat /dev/urandom | tr -dc 'abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*(-_=+)' | fold -w 50 | head -n 1 # see https://github.com/getsentry/sentry/blob/22.11.0/src/sentry/runner/settings.py#L14
   url: https://sentry.example.com
   admin_email: admin@example.com
