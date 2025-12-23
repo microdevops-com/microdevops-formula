@@ -18,6 +18,7 @@ ufw:
       to_port: '8200,8201'
 
 vault:
+  version: '1.21.1'  # Vault version to install from https://releases.hashicorp.com/vault/
   privileged_token: 'abc.XXXXXXXXXXXXXXXXXXXXXXXX'
   unseal_keys:
     - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
@@ -34,6 +35,14 @@ vault:
   audit:
     enable: true
     logfile: /var/log/vault_audit.log
+  restore:
+    snapshot_path: /home/alex.k/vault_25-12-17_amethyst.snap
+    unseal_keys:
+      - 'WFQkG4aalw+GyUtLkfJwOWldmpo4ZFCuhId4URs7uRSk'
+      - 'Ld0Y+4E8kToyUx97F/owhFH4G6UlR4PWh0sGKoXBA7wR'
+      - '2Td1kTr/V67HEGqCTtJJfYNVIzV9GVbkYfD6zehGi3sj'
+      - 'CJRNoHrAU82g2AVjVwtmXGpO/OjvZM8zh9Bnkq5S8KDj'
+      - 'b0DV9/nS/I4OGR0muztvzodRMTdjez/g9LV/6UlFi8xF'
   env_vars:
     VAULT_ADDR: "https://{{ grains['fqdn'] }}:8200"
     VAULT_API_ADDR: "https://{{ grains['fqdn'] }}:8200"
@@ -87,7 +96,7 @@ vault:
     enable_raft: True
   audit:
     enable: true
-    logfile: /var/log/vault_audit.log
+    logfile: /var/log/vault_audit.log  
   env_vars:
     VAULT_ADDR: "https://{{ nodename }}:8200"
   config: |
@@ -112,3 +121,5 @@ vault:
     }
     enable_response_header_hostname = true
     enable_response_header_raft_node_id = true
+
+
