@@ -10,12 +10,26 @@ gitlab-runner:
   name: some-runner1.example.com # mandatory, name is used to register and unregister runner on consequent runs
   executor: shell # mandatory, executor type
   #register_opts: "" # optional, additional options for gitlab-runner register command
-  # --- docker executor example ---
-  #executor: docker
-  #register_opts: "--docker-image 'docker:stable' --docker-privileged" # docker executor requires docker image to be specified and privileged mode to run docker in docker
-  # --- docker executor example ---
   concurrency: 50 # mandatory, concurrency defines how many jobs can be run in parallel runner server wide
   docker_group: True # optional, add runner user to docker group to use docker
+  # --- docker executor with dind example start ---
+  # docker executor requires docker image to be specified and privileged mode to run docker in docker (dind)
+  # more info:
+  # - https://docs.gitlab.com/runner/executors/docker/#use-docker-in-docker-with-privileged-mode
+  # - https://docs.gitlab.com/ci/docker/using_docker_build/#use-the-docker-executor-with-docker-in-docker
+  # - https://docs.gitlab.com/ci/docker/using_docker_build/#make-docker-in-docker-builds-faster-with-docker-layer-caching
+  # key points for gitlab-ci.yml:
+  # variables:
+  #  DOCKER_DRIVER: overlay2
+  #  DOCKER_TLS_CERTDIR: "/certs"
+  # default:
+  #   image: docker:29.1.4-cli
+  #   services:
+  #     - docker:29.1.4-dind
+  #executor: docker
+  #register_opts: "--docker-image 'docker:29.1.4-cli' --docker-privileged --docker-volumes '/certs/client'"
+  #docker_group: False # not needed with dind
+  # --- docker executor with dind example end ---
   keys: # optional, put keys into runner home .ssh
     id_ed25519:
       priv: |
