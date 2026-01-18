@@ -87,6 +87,10 @@ rsnapshot_backup_yaml:
           postgresql_noclean: {{ host_backups_item["postgresql_noclean"] }}
           {%- endif %}
           #
+          {%- if "postgresql_skip_globals" in host_backups_item %}
+          postgresql_skip_globals: {{ host_backups_item["postgresql_skip_globals"] }}
+          {%- endif %}
+          #
           {%- if "mysql_noevents" in host_backups_item %}
           mysql_noevents: {{ host_backups_item["mysql_noevents"] }}
           {%- endif %}
