@@ -3,6 +3,7 @@
 # note on ionice + nice: full options not listed here as an example, but can be used like: ionice -c 2 -n 7 nice -n 7
 
 rsnapshot_backup:
+  #hostname_override: myserver.example.com # optional, override detected hostname, useful if FQDN is not set properly on the server
   sources:
     srv1.example.com:
       - type: ... # gereic params for all types

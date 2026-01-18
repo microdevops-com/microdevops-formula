@@ -58,6 +58,9 @@ rsnapshot_backup_yaml:
     - dataset:
         enabled: True
         comment: This file is managed by Salt, local changes will be overwritten.
+  {%- if hostname_override in pillar["rsnapshot_backup"] %}
+        hostname_override: {{ pillar["rsnapshot_backup"]["hostname_override"] }}
+  {%- endif %}
         items:
         - enabled: False # The first item in the dataset list is always empty, just to have at least somthing in the list, if no backups found (empty dataset produces errors)
           number: -1
