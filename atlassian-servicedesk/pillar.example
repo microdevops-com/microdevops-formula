@@ -3,7 +3,8 @@ atlassian-servicedesk:
     source: 'salt://atlassian/addon/atlassian-addon-v1.2.3/atlassian-addon.addon'
     target: '/opt/atlassian/atlassian-addon.addon'
     javaopts: '-javaagent:/opt/atlassian/atlassian-addon.addon'
-  version: 5.1.0
+  version: 11.2.1
+  java_version: 21
   acme_configs:
     - name: example_com
       domains:

@@ -32,11 +32,17 @@ nginx_files_1:
             client_max_body_size 1000m;
   {%- if pillar["atlassian-servicedesk"]["nginx_forwards"] is defined %}
     {%- for domain in pillar["atlassian-servicedesk"]["nginx_forwards"] %}
+      {%- set ns = namespace(cert_domain=domain) %}
+      {%- for acme_config in pillar["atlassian-servicedesk"]["acme_configs"] %}
+        {%- if domain in acme_config["domains"] %}
+          {%- set ns.cert_domain = acme_config["domains"][0] %}
+        {%- endif %}
+      {%- endfor %}
             server {
                 listen 443 ssl;
                 server_name {{ domain }};
-                ssl_certificate /opt/acme/cert/atlassian-servicedesk_{{ domain }}_fullchain.cer;
-                ssl_certificate_key /opt/acme/cert/atlassian-servicedesk_{{ domain }}_key.key;
+                ssl_certificate /opt/acme/cert/atlassian-servicedesk_{{ ns.cert_domain }}_fullchain.cer;
+                ssl_certificate_key /opt/acme/cert/atlassian-servicedesk_{{ ns.cert_domain }}_key.key;
                 return 301 https://{{ pillar["atlassian-servicedesk"]["http_proxyName"] }}$request_uri;
             }
     {%- endfor %}
@@ -96,7 +102,7 @@ servicedesk-dependencies:
     - pkgs:
       - libxslt1.1
       - xsltproc
-      - openjdk-17-jdk
+      - openjdk-{{ pillar["atlassian-servicedesk"].get("java_version", 17) }}-jdk
 
 servicedesk:
   file.managed:
@@ -331,3 +337,4 @@ servicedesk-enable-SSOSeraphAuthenticator:
     - watch_in:
       - service: servicedesk
 {% endif %}
+
