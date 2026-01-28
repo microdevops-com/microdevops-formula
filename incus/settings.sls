@@ -34,6 +34,15 @@ incus_image_pillar_{{ loop.index }}:
     {%- endfor %}
   {%- endif %}
 
+  {%- if "config" in pillar["incus"] %}
+    {%- for config_key, config_val in pillar["incus"]["config"].items() %}
+incus_host_config_set_{{ loop.index }}:
+  cmd.run:
+    - name: incus config set {{ config_key }}={{ config_val }}
+
+    {%- endfor %}
+  {%- endif %}
+
 incus_profile_create_autostart:
   cmd.run:
     - name: incus profile list | grep -q -e "| autostart *|" || incus profile create autostart

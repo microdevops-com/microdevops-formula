@@ -1,6 +1,9 @@
 # vi: set ft=yaml:
 
 incus:
+  config: # optional, host config values to apply
+    core.metrics_address: ":8444"
+    core.metrics_authentication: False
   images: # optional, images to predownload on server, no images are preloaded by default
     ubuntu/jammy/amd64: # alias
       source: images:ubuntu/jammy/amd64
