@@ -12,6 +12,15 @@ bootstrap_sshd_prohibit_password:
         sshd -T | grep -i permitrootlogin | grep -q -e without-password -e prohibit-password
 
 bootstrap_sshd_prohibit_password_service:
+  {%- if grains["oscodename"] in ["noble"] %}
+  service.running:
+    - name: ssh
+    - enable: True
+    - reload: True
+    - watch:
+      - file: bootstrap_sshd_prohibit_password
+
+  {%- else %}
   service.running:
     - name: sshd
     - enable: True
@@ -19,4 +28,5 @@ bootstrap_sshd_prohibit_password_service:
     - watch:
       - file: bootstrap_sshd_prohibit_password
 
+  {%- endif %}
 {% endif %}
