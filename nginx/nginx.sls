@@ -44,6 +44,7 @@ nginx_enable:
       - pkg: nginx_deps
   {% endif %}
 
+  {% if not ("configs_management_disabled" in pillar["nginx"] and pillar["nginx"]["configs_management_disabled"]) %}
 nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
@@ -78,6 +79,8 @@ nginx_dhparam:
     - name: '[ ! -f /etc/ssl/certs/dhparam.pem ] && openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048 || /bin/true'
     - env:
       - RANDFILE: /root/.rnd
+
+  {% endif %}
 
   {%- set files = pillar["nginx"].get("files", {}) %}
   {%- if files is none %}
