@@ -1,7 +1,7 @@
 nginx:
   enabled: True
   configs: nginx/app_hosting # Mandatory, specified directory w/ predefined nginx.conf
-  #configs_management_disabled: True # optional, disable config management at all, just setup nginx
+  #configs_management_disabled: True # optional, disable config management at all, just install nginx
   ondrej_ppa: True # Optional, enabled support of custom repository from Ondřej Surý | Default: False
   custom_set: 'extras' # Optional, let you install the custom nginx packages set | Allowed values: 'light', 'core', 'full', 'extras'
   files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
