@@ -283,6 +283,7 @@ rsnapshot_backup_yaml:
           #
           {%- if "docker_mode" in host_backups_item %}
           docker_mode: {{ host_backups_item["docker_mode"] }}
+          {%- endif %}
           #
           {%- if "docker_container" in host_backups_item %}
           docker_container: {{ host_backups_item["docker_container"] }}
