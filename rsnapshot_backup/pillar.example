@@ -163,6 +163,7 @@ rsnapshot_backup:
         #dump_attempts: 3 # optional, try N times to perform dump, one time by default, combine with ignore_remote_dump_failed: True, otherwise it will not be synced even if it was dumped successfully with retries
         #docker_mode: True # optional, use docker exec to run pg_dump commands inside docker container
         #docker_container: mypg1 # optional, docker container name or id, default is "empty", when docker_mode is True dump will be run inside specified container, "directory" type is not supported in docker mode
+        #db_user: mypg1user # optional, user to connect to postgresql inside docker container, by default current system user is used
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available

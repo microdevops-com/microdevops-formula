@@ -288,6 +288,10 @@ rsnapshot_backup_yaml:
           {%- if "docker_container" in host_backups_item %}
           docker_container: {{ host_backups_item["docker_container"] }}
           {%- endif %}
+          #
+          {%- if "db_user" in host_backups_item %}
+          db_user: {{ host_backups_item["db_user"] }}
+          {%- endif %}
           # Per backup host item is higher priority than per backup item
           {%- if "rsnapshot_prefix_cmd" in backup %}
           rsnapshot_prefix_cmd: {{ backup["rsnapshot_prefix_cmd"] }}
