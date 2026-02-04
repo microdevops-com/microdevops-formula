@@ -280,6 +280,13 @@ rsnapshot_backup_yaml:
           {%- if "postgresql_dump_type" in host_backups_item %}
           postgresql_dump_type: {{ host_backups_item["postgresql_dump_type"] }}
           {%- endif %}
+          #
+          {%- if "docker_mode" in host_backups_item %}
+          docker_mode: {{ host_backups_item["docker_mode"] }}
+          #
+          {%- if "docker_container" in host_backups_item %}
+          docker_container: {{ host_backups_item["docker_container"] }}
+          {%- endif %}
           # Per backup host item is higher priority than per backup item
           {%- if "rsnapshot_prefix_cmd" in backup %}
           rsnapshot_prefix_cmd: {{ backup["rsnapshot_prefix_cmd"] }}

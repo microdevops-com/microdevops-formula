@@ -161,6 +161,8 @@ rsnapshot_backup:
                                          # recommended with 'pg_dump_args: --jobs=REASONABLE_NUMBER --compress=zstd' if zstd is supported by pg_dump version
         #ignore_remote_dump_failed: True # optional, ignore remote dump failed error, useful if you have a lot of databases and some of them have errors, but anyway you want to sync other dumps
         #dump_attempts: 3 # optional, try N times to perform dump, one time by default, combine with ignore_remote_dump_failed: True, otherwise it will not be synced even if it was dumped successfully with retries
+        #docker_mode: True # optional, use docker exec to run pg_dump commands inside docker container
+        #docker_container: mypg1 # optional, docker container name or id, default is "empty", when docker_mode is True dump will be run inside specified container, "directory" type is not supported in docker mode
       - type: MONGODB_SSH # dump mongodb over ssh, then rsync dump dir over ssh
         data:
           - ALL # special meaning, expands to all databases available
