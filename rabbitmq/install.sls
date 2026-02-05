@@ -2,7 +2,6 @@
 
   {% from "acme/macros.jinja" import verify_and_issue %}
 
-
 # Short hostname must be resolved to the same host, otherwise it will fail to start.
 # rabbitmq1 -> other server
 # rabbitmq1.xxx.domain.com -> this server
@@ -10,7 +9,11 @@
 # Use grains["host"] for short name.
 rabbit_hosts:
   host.present:
+  {%- if "local_ip" in pillar["rabbitmq"] %}
+    - ip: {{ pillar["rabbitmq"]["local_ip"] }}
+  {%- else %}
     - ip: 127.0.1.1
+  {%- endif %}
     - names:
       - {{ grains["host"] }}
 
@@ -41,15 +44,28 @@ rabbitmq_repo:
         deb [arch=amd64 signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://deb1.rabbitmq.com/rabbitmq-server/{{ grains["os"].lower() }}/{{ grains["oscodename"] }} {{ grains["oscodename"] }} main
         deb [arch=amd64 signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://deb2.rabbitmq.com/rabbitmq-server/{{ grains["os"].lower() }}/{{ grains["oscodename"] }} {{ grains["oscodename"] }} main
  
-
 rabbit_pkg:
+  {%- if "version" in pillar["rabbitmq"] %}
+    {%- if pillar["rabbitmq"]["version"] == "latest" %}
   pkg.latest:
     - refresh: True
     - pkgs:
         - rabbitmq-server
+    {%- else %}
+  pkg.installed:
+    - refresh: True
+    - pkgs:
+        - rabbitmq-server: '{{ pillar["rabbitmq"]["version"] }}*'
+    {%- endif %}
+  {%- else %}
+  pkg.installed:
+    - refresh: True
+    - pkgs:
+        - rabbitmq-server
+  {%- endif %}
     - reload_modules: True
 
-  {% if "rabbitmq_management" in pillar["rabbitmq"].get("plugins", []) and pillar["rabbitmq"]["management_domain"] is defined %}
+  {%- if "rabbitmq_management" in pillar["rabbitmq"].get("plugins", []) and pillar["rabbitmq"]["management_domain"] is defined %}
 
     {%- set domains = pillar["rabbitmq"]["management_domain"] ~ " " ~ pillar["rabbitmq"].get("subjectAltNames","") -%}
 
@@ -59,7 +75,7 @@ rabbit_cert_perm_1:
   file.managed:
     - name: /opt/acme/cert/rabbitmq_{{ pillar["rabbitmq"]["management_domain"] }}_key.key
     - mode: 644
-  {% endif %}
+  {%- endif %}
 
 rabbit_service_1:
   file.directory:
@@ -86,12 +102,12 @@ rabbit_config_1:
     - group: rabbitmq
     - contents: |
         # This file is managed by Salt, changes will be overwritten
-  {% if "rabbitmq_management" in pillar["rabbitmq"].get("plugins", []) and pillar["rabbitmq"]["management_domain"] is defined %}
+  {%- if "rabbitmq_management" in pillar["rabbitmq"].get("plugins", []) and pillar["rabbitmq"]["management_domain"] is defined %}
         management.ssl.port = {{ pillar["rabbitmq"]["management_port"] }}
         management.ssl.cacertfile = /opt/acme/cert/rabbitmq_{{ pillar["rabbitmq"]["management_domain"] }}_ca.cer
         management.ssl.certfile = /opt/acme/cert/rabbitmq_{{ pillar["rabbitmq"]["management_domain"] }}_cert.cer
         management.ssl.keyfile = /opt/acme/cert/rabbitmq_{{ pillar["rabbitmq"]["management_domain"] }}_key.key
-  {% endif %}
+  {%- endif %}
   {%- for config_line in pillar["rabbitmq"].get("config", []) %}
         {{ config_line }}
   {%- endfor %}

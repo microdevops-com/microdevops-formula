@@ -1,6 +1,8 @@
 # vi: set ft=yaml:
 
 rabbitmq:
+  version: 4.2.3 # optional, specific version or latest, if omitted, install latest first, then keep it without upgrades
+  #local_ip: 1.2.3.4 # optional, make sure /etc/hosts has short hostname resolution to this local IP, otherwise rabbitmq will not start, if omitted, 127.0.1.1 is used
   config: # optional
     - 'key = val' # see https://github.com/rabbitmq/rabbitmq-server/blob/v3.7.x/docs/rabbitmq.conf.example, each item is copied as is
   admin:
