@@ -260,6 +260,9 @@ vault_service_restart:
         - file: /etc/vault.d/vault.env
         - file: /usr/lib/systemd/system/vault.service.d/disable-core-dump.conf
         - file: /usr/lib/systemd/system/vault.service.d/capabilities.conf
+  {% if use_binary %}
+        - cmd: vault_extract_to_usrbin
+  {% endif %}
   {% if pillar["vault"]["snapshots"] is defined %}
   {% set snapshots_dir = pillar["vault"]["snapshots"]["dir"] | default("/opt/vault/snapshots") %}
   {% set cron_minute = pillar["vault"]["snapshots"]["cron_minute"] | default(range(6, 54) | random) %}
@@ -315,4 +318,5 @@ vault_snapshot_cron:
 
   {% endif %}
 {% endif %}
+
 
