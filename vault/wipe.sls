@@ -9,6 +9,8 @@
 vault_wipe_stop:
   service.dead:
     - name: vault
+    - require_in:
+      - user: vault_user
 
 # Remove storage/raft directories
 {% for p in wipe_paths %}
@@ -47,3 +49,4 @@ include:
   - vault.initialization
 
 {% endif %}
+
