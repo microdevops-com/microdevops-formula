@@ -35,7 +35,7 @@ promtail_data_dirs:
          string with one or more `- job_name: …` blocks.
          Salt deep-merges dicts, so multiple pillar SLS files each add their
          own key and they all end up here.
-         If config_scrape_parts is empty or absent, a stub job is used.
+         If config_scrape_parts is empty or absent, a warning is issued and Promtail will not be deployed.
        ================================================================ #}
     {% set config_deployed = { 'is_ready': false } %}
     {% if "config_global_part" in pillar["promtail"] %}
