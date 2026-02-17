@@ -175,10 +175,19 @@ systemd-reload:
     - onchanges:
       - file: /etc/systemd/system/promtail.service
 
+    {# On CentOS 7 (Python 3.6) service.running fails due to capture_output bug,
+       using cmd.run as a workaround #}
+    {%- if grains['os'] == 'CentOS' and grains['osmajorrelease'] == 7 %}
+promtail_systemd_3:
+  cmd.run:
+    - name: systemctl enable promtail && systemctl start promtail
+    - unless: systemctl is-active promtail
+    {%- else %}
 promtail_systemd_3:
   service.running:
     - name: promtail
     - enable: True
+    {%- endif %}
 
 promtail_systemd_4:
   cmd.run:
