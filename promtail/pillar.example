@@ -1,3 +1,60 @@
+### NEW: config_global_part + config_scrape_parts (recommended for multi-pillar merge)
+###
+### Split promtail config into two pieces that live in SEPARATE pillar SLS files:
+###   config_global_part  — string: everything above scrape_configs (server, clients, limits…)
+###   config_scrape_parts — dict:  each key is a unique name, value is a YAML string
+###                         containing one or more `- job_name: …` blocks
+###
+### Salt deep-merges dicts, so when multiple pillar SLS files each add their own
+### key to config_scrape_parts, all keys end up in the compiled pillar.
+### The formula iterates over all values (sorted by key) and assembles them under
+### `scrape_configs:`.
+###
+### If config_scrape_parts is empty or absent, a default stub job is used (no errors).
+###
+### Targeting is done ONLY via top_sls — job pillar SLS files contain no targets.
+###
+### See pillar/promtail/examples/ for complete working examples.
+
+# --- Global pillar (attach to '*' in top_sls) ---
+# promtail:
+#   binary:
+#     link: https://github.com/grafana/loki/releases/download/v2.7.3/promtail-linux-amd64.zip
+#   config_global_part: |
+#     server:
+#       http_listen_port: 9080
+#       grpc_listen_port: 0
+#     positions:
+#       filename: /tmp/positions.yaml
+#     clients:
+#       - url: https://loki.example.com/loki/api/v1/push
+#     limits_config:
+#       readline_rate_enabled: true
+#       readline_rate_drop: false
+
+# --- Job pillar (attach to matching servers in top_sls) ---
+# promtail:
+#   config_scrape_parts:
+#     nginx_access: |
+#       - job_name: nginx_access_logs
+#         static_configs:
+#         - labels:
+#             job: nginx
+#             __path__: /var/log/nginx/*access.log
+
+# --- Another job pillar (same server can get both) ---
+# promtail:
+#   config_scrape_parts:
+#     mysql_slowlog: |
+#       - job_name: mysql_slowlog
+#         static_configs:
+#         - labels:
+#             job: mysql_slowlog
+#             __path__: /var/log/mysql/*slow.log
+
+
+### FULL CONFIG (single pillar, no merge)
+
 {%- set promtail_version = "2.7.3" -%}
 {%- set host = grains['fqdn'] -%}
 {%- set loki_server = "loki.example.com" -%}
@@ -95,3 +152,4 @@ promtail:
           job: app-1
           host: {{ host }}
           __path__: /var/log/app-1/*log
+
