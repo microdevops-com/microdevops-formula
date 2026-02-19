@@ -4,6 +4,8 @@ mailcow:
     driver: "json-file"
     options:
       tag: "{% raw -%}{{.ImageName}}|{{.Name}}|tst{%- endraw %}"
+  apparmor_unconfined: true          # adds security_opt: apparmor:unconfined to all containers (needed for Debian 12)
+  postfix_tlspol_in_override: true   # include postfix-tlspol-mailcow container in docker-compose.override.yml (newer mailcow versions)
   acme_account: example.com         # used only when SKIP_LETS_ENCRYPT=y
   enable_ipv6: true    # DO NOT CHANGE THIS PARAMETER IF YOU ARE NOT SURE, because if you once disable ipv6 using this parameter, it will not work to turn it back on by setting the value to true
   solr_enable: false   # This option is added for backward compatibility with older versions. In newer versions this option should be set to false
@@ -56,3 +58,4 @@ mailcow:
       header_checks: 'regexp:/opt/postfix/conf/header_checks'
     header_checks: |
       /^Subject:/     WARN
+
