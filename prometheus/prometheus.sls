@@ -302,6 +302,8 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
 prometheus_container_restart_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker restart prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - require:
+      - docker_container: prometheus_container_{{ loop.index }}_{{ i_loop.index }}
     - onchanges:
       - file: prometheus_config_{{ loop.index }}_{{ i_loop.index }}
 
