@@ -446,6 +446,8 @@ prometheus_redis-exporter_container_restart_{{ loop.index }}_{{ i_loop.index }}:
     - name: docker restart redis-exporter-{{ domain['name'] }}-{{ instance['name'] }}
     - onchanges:
       - file: prometheus_redis-exporter_password-file_{{ loop.index }}_{{ i_loop.index }}
+    - require:
+      - docker_container: prometheus_redis-exporter_container_{{ loop.index }}_{{ i_loop.index }}
         {%- endif %}
       {%- endif %}
 
