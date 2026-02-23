@@ -292,14 +292,18 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
         - 127.0.0.1:{{ instance['port'] }}:9090/tcp
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}:/prometheus-data:rw
-    - watch:
-        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}/etc/prometheus.yml
       {% if instance['retention_time'] is defined and instance['retention_time'] is not none %}
         {% set retention_time_arg = '--storage.tsdb.retention.time=' + instance['retention_time'] %}
       {% else %}
         {% set retention_time_arg = '' %}
       {% endif %}
     - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data {{ retention_time_arg }} --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
+
+prometheus_container_restart_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker restart prometheus-{{ domain['name'] }}-{{ instance['name'] }}
+    - onchanges:
+      - file: prometheus_config_{{ loop.index }}_{{ i_loop.index }}
 
 prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
   cron.present:
@@ -353,6 +357,12 @@ prometheus_statsd-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter:/statsd-exporter-data:rw
     - command: --statsd.mapping-config=/statsd-exporter-data/statsd_mapping.yml
+
+prometheus_statsd-exporter_container_restart_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker restart statsd-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - onchanges:
+      - file: prometheus_statsd-exporter_config_{{ loop.index }}_{{ i_loop.index }}
       {%- endif %}
       {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
 prometheus_blackbox-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
@@ -373,6 +383,12 @@ prometheus_blackbox-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-blackbox-exporter/config.yml:/blackbox-exporter/config.yml:rw
     - command: --config.file=/blackbox-exporter/config.yml
+
+prometheus_blackbox-exporter_container_restart_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker restart blackbox-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - onchanges:
+      - file: prometheus_blackbox-exporter_config_{{ loop.index }}_{{ i_loop.index }}
       {%- endif %}
       {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
 prometheus_pagespeed-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
@@ -413,20 +429,24 @@ prometheus_redis-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
         {%- if   'redis_password_file' in  instance['redis-exporter']    and 'command' in     instance['redis-exporter'] %}
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json:/redis-exporter/redis-password-file.json:rw
-    - watch:
-        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json {{ instance['redis-exporter']['command'] }}
           {%- elif 'redis_password_file' not in instance['redis-exporter'] and 'command' in     instance['redis-exporter'] %}
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json {{ instance['redis-exporter']['command'] }}
           {%- elif 'redis_password_file' in     instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json:/redis-exporter/redis-password-file.json:rw
-    - watch:
-        - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter/redis-password-file.json
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json
           {%- elif 'redis_password_file' not in  instance['redis-exporter'] and 'command' not in instance['redis-exporter'] %}
     - command: --redis.addr= --redis.password-file=/redis-exporter/redis-password-file.json
           {%- endif %}
+
+        {%- if 'redis_password_file' in instance['redis-exporter'] %}
+prometheus_redis-exporter_container_restart_{{ loop.index }}_{{ i_loop.index }}:
+  cmd.run:
+    - name: docker restart redis-exporter-{{ domain['name'] }}-{{ instance['name'] }}
+    - onchanges:
+      - file: prometheus_redis-exporter_password-file_{{ loop.index }}_{{ i_loop.index }}
+        {%- endif %}
       {%- endif %}
 
       {% if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
@@ -511,3 +531,4 @@ nginx_reload_cron:
     - hour: 6
 
 {% endif %}
+
