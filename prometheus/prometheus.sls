@@ -393,6 +393,8 @@ prometheus_blackbox-exporter_container_restart_{{ loop.index }}_{{ i_loop.index 
     - name: docker restart blackbox-exporter-{{ domain['name'] }}-{{ instance['name'] }}
     - onchanges:
       - file: prometheus_blackbox-exporter_config_{{ loop.index }}_{{ i_loop.index }}
+    - require:
+      - docker_container: prometheus_blackbox-exporter_container_{{ loop.index }}_{{ i_loop.index }}
       {%- endif %}
       {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
 prometheus_pagespeed-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
