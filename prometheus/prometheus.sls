@@ -363,6 +363,8 @@ prometheus_statsd-exporter_container_restart_{{ loop.index }}_{{ i_loop.index }}
     - name: docker restart statsd-exporter-{{ domain['name'] }}-{{ instance['name'] }}
     - onchanges:
       - file: prometheus_statsd-exporter_config_{{ loop.index }}_{{ i_loop.index }}
+    - require:
+      - docker_container: prometheus_statsd-exporter_container_{{ loop.index }}_{{ i_loop.index }}
       {%- endif %}
       {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
 prometheus_blackbox-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
