@@ -80,6 +80,12 @@ docker_app_container_{{ loop.index }}:
     - networks: {{ app["networks"] | replace("__APP_NAME__", app_name) }}
       {%- endif %}
     - privileged: {{ app["privileged"] | default(False) }}
+      {%- if app["retries_docker_running"] is defined %}
+    - retry:
+        attempts: {{ app["retries_docker_running"] }}
+        interval: {{ app.get("retries_interval_docker_running", 5) }}
+        until: True
+      {%- endif %}
       {%- if "command" in app %}
     - command : {{ app["command"] }}
       {%- endif %}

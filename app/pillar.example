@@ -301,6 +301,8 @@ app:
           ... # see above
         binds: # optional, see https://docs.saltproject.io/en/latest/ref/states/all/salt.states.docker_container.html#salt.states.docker_container.running, salt has different meaning for binds
           - /var/www/proto/app/data:/app/data:rw
+        #retries_docker_running: 3 # optional, retries for docker_container.running only
+        #retries_interval_docker_running: 5 # optional, seconds between retries, works only if retries_docker_running count is defined
         #volumes: # optional
         #  - ...
         #volumes_from: ... # optional
