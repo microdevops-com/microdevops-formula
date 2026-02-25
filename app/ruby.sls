@@ -1,4 +1,14 @@
-{% if pillar["app"] is defined and "ruby" in pillar["app"] and "apps" in pillar["app"]["ruby"] %}
+{% if pillar["_errors"] is defined %}
+app_ruby_pillar_render_errors:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        ERROR: There are pillar errors, so nothing has been done.
+        {{ pillar["_errors"] | json() }}
+
+{% elif pillar["app"] is defined and "ruby" in pillar["app"] and "apps" in pillar["app"]["ruby"] %}
 
   {%- set app_type = "ruby" %}
 

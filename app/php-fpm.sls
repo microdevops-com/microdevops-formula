@@ -1,4 +1,14 @@
-{% if pillar["app"] is defined and "php-fpm" in pillar["app"] and "apps" in pillar["app"]["php-fpm"] %}
+{% if pillar["_errors"] is defined %}
+app_php-fpm_pillar_render_errors:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        ERROR: There are pillar errors, so nothing has been done.
+        {{ pillar["_errors"] | json() }}
+
+{% elif pillar["app"] is defined and "php-fpm" in pillar["app"] and "apps" in pillar["app"]["php-fpm"] %}
 
   {%- set app_type = "php-fpm" %}
 

@@ -1,4 +1,14 @@
-{% if pillar["app"] is defined and "static" in pillar["app"] and "apps" in pillar["app"]["static"] %}
+{% if pillar["_errors"] is defined %}
+app_static_pillar_render_errors:
+  test.configurable_test_state:
+    - name: nothing_done
+    - changes: False
+    - result: False
+    - comment: |
+        ERROR: There are pillar errors, so nothing has been done.
+        {{ pillar["_errors"] | json() }}
+
+{% elif pillar["app"] is defined and "static" in pillar["app"] and "apps" in pillar["app"]["static"] %}
 
   {%- set app_type = "static" %}
 
