@@ -80,6 +80,17 @@ vmagent: # https://docs.victoriametrics.com/vmagent/#features
       remoteWrite.basicAuth.username: user1
       remoteWrite.basicAuth.password: password1
       promscrape.config: /etc/victoriametrics/promscrape.yaml
+      # for multiple remoteWrite destinations use lists for args 
+      # that need to be repeated with different values
+      remoteWrite.url:
+        - https://vm1.tsdb.example.com/api/v1/write
+        - https://vm2.tsdb.example.com/api/v1/write
+      remoteWrite.basicAuth.username:
+        - user1
+        - user2
+      remoteWrite.basicAuth.password:
+        - password1
+        - password2
     files:
       managed:
         promscrape:
@@ -155,5 +166,6 @@ vmalert:
             source: salt://victoriametrics/files/vmalert/rules/microdevops_agent_disk_alert.yaml
             filetype: binary
             makedirs: True
+
 
 
