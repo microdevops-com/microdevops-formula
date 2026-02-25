@@ -16,7 +16,8 @@ prometheus:
         - name: prod
           port: 9090 # docker published port, nginx will forward /prod to it
           image: prom/prometheus
-          #retention_time: 30d # optional
+          extra_args: '--web.enable-remote-write-receiver' # optional, extra command-line flags appended to prometheus container command
+          retention_time: 30d # optional
           auth:
             - developer1: password1
             - developer2: password2
@@ -206,3 +207,4 @@ prometheus:
             statsd_tcp_port: 8126
             mapping-config:
               mappings: []
+

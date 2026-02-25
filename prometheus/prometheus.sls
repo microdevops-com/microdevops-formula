@@ -1,6 +1,6 @@
 {% if pillar['prometheus'] is defined and pillar['prometheus'] is not none %}
 
-  {% from "acme/macros.jinja" import verify_and_issue %}
+  {%- from "acme/macros.jinja" import verify_and_issue %}
 
   {%- if pillar["docker-ce"] is not defined %}
     {%- set docker_ce = {"version": pillar["prometheus"]["docker-ce_version"],
@@ -67,7 +67,7 @@ nginx_files_1:
       {%- endif %}
                     proxy_pass http://localhost:{{ instance['port'] }}/{{ instance['name'] }}/;
                 }
-      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+      {%- if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
                 location /{{ instance['name'] }}/pushgateway/ {
         {%- if instance['auth'] is defined and instance['auth'] is not none %}
                     auth_basic "Prometheus {{ instance['name'] }}";
@@ -81,7 +81,7 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['pushgateway']['port'] }}/;
                 }
       {%- endif %}
-      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+      {%- if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
                 location /{{ instance['name'] }}/statsd-exporter/ {
         {%- if instance['auth'] is defined and instance['auth'] is not none %}
                     auth_basic "Prometheus {{ instance['name'] }}";
@@ -93,7 +93,7 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['statsd-exporter']['port'] }}/;
                 }
       {%- endif %}
-      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+      {%- if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
                 location /{{ instance['name'] }}/blackbox-exporter/ {
         {%- if instance['auth'] is defined and instance['auth'] is not none %}
                     auth_basic "Prometheus {{ instance['name'] }}";
@@ -105,7 +105,7 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['blackbox-exporter']['port'] }}/;
                 }
       {%- endif %}
-      {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
+      {%- if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
                 location /{{ instance['name'] }}/pagespeed-exporter/ {
         {%- if instance['auth'] is defined and instance['auth'] is not none %}
                     auth_basic "Prometheus {{ instance['name'] }}";
@@ -118,7 +118,7 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['pagespeed-exporter']['port'] }}/;
                 }
       {%- endif %}
-      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+      {%- if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
                 location /{{ instance['name'] }}/redis-exporter/ {
         {%- if instance['auth'] is defined and instance['auth'] is not none %}
                     auth_basic "Prometheus {{ instance['name'] }}";
@@ -131,10 +131,10 @@ nginx_files_1:
                     proxy_pass http://localhost:{{ instance['redis-exporter']['port'] }}/;
                 }
       {%- endif %}
-      {% if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
+      {%- if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
         {%- set x_loop = loop %}
         {%- for mailcow_exporter_name, mailcow_exporter_params in instance['mailcow-exporters'].items() %}
-          {% if mailcow_exporter_params['enabled'] %}
+          {%- if mailcow_exporter_params['enabled'] %}
                 location /{{ instance['name'] }}/mailcow-exporter/{{ mailcow_exporter_name }} {
             {%- if instance['auth'] is defined and instance['auth'] is not none %}
                     auth_basic "Prometheus {{ instance['name'] }}";
@@ -193,7 +193,7 @@ prometheus_dir_{{ loop.index }}_{{ i_loop.index }}:
     - mode: 755
     - makedirs: True
 
-      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+      {%- if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
 prometheus_pushgateway_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-pushgateway
@@ -201,7 +201,7 @@ prometheus_pushgateway_dir_{{ loop.index }}_{{ i_loop.index }}:
     - makedirs: True
       {%- endif %}
 
-      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+      {%- if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
 prometheus_statsd-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-statsd-exporter
@@ -221,7 +221,7 @@ prometheus_statsd-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
     - dataset: {{ instance['statsd-exporter']['mapping-config'] }}
       {%- endif %}
 
-      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+      {%- if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
 prometheus_blackbox-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-blackbox-exporter
@@ -241,7 +241,7 @@ prometheus_blackbox-exporter_config_{{ loop.index }}_{{ i_loop.index }}:
     - dataset: {{ instance['blackbox-exporter']['config'] }}
       {%- endif %}
 
-      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+      {%- if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
 prometheus_redis-exporter_dir_{{ loop.index }}_{{ i_loop.index }}:
   file.directory:
     - name: /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}-redis-exporter
@@ -292,12 +292,17 @@ prometheus_container_{{ loop.index }}_{{ i_loop.index }}:
         - 127.0.0.1:{{ instance['port'] }}:9090/tcp
     - binds:
         - /opt/prometheus/{{ domain['name'] }}/{{ instance['name'] }}:/prometheus-data:rw
-      {% if instance['retention_time'] is defined and instance['retention_time'] is not none %}
-        {% set retention_time_arg = '--storage.tsdb.retention.time=' + instance['retention_time'] %}
-      {% else %}
-        {% set retention_time_arg = '' %}
-      {% endif %}
-    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data {{ retention_time_arg }} --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api
+      {%- if instance['retention_time'] is defined and instance['retention_time'] is not none %}
+        {%- set retention_time_arg = '--storage.tsdb.retention.time=' + instance['retention_time'] %}
+      {%- else %}
+        {%- set retention_time_arg = '' %}
+      {%- endif %}
+      {%- if instance['extra_args'] is defined and instance['extra_args'] is not none %}
+        {%- set extra_args = instance['extra_args'] %}
+      {%- else %}
+        {%- set extra_args = '' %}
+      {%- endif %}
+    - command: --config.file=/prometheus-data/etc/prometheus.yml --storage.tsdb.path=/prometheus-data {{ retention_time_arg }} --web.external-url=https://{{ domain['name'] }}/{{ instance['name'] }}/ --web.enable-admin-api {{ extra_args }}
 
 prometheus_container_restart_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
@@ -315,7 +320,7 @@ prometheus_snapshot_cron_{{ loop.index }}_{{ i_loop.index }}:
     - minute: 20
     - hour: 6
 
-      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+      {%- if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
 prometheus_pushgateway_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['pushgateway']['image'] }}
@@ -338,7 +343,7 @@ prometheus_pushgateway_container_{{ loop.index }}_{{ i_loop.index }}:
     - command: --persistence.file=/pushgateway-data/persistence_file
       {%- endif %}
 
-      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+      {%- if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
 prometheus_statsd-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['statsd-exporter']['image'] }}
@@ -368,7 +373,7 @@ prometheus_statsd-exporter_container_restart_{{ loop.index }}_{{ i_loop.index }}
     - require:
       - docker_container: prometheus_statsd-exporter_container_{{ loop.index }}_{{ i_loop.index }}
       {%- endif %}
-      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+      {%- if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
 prometheus_blackbox-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['blackbox-exporter']['image'] }}
@@ -396,7 +401,7 @@ prometheus_blackbox-exporter_container_restart_{{ loop.index }}_{{ i_loop.index 
     - require:
       - docker_container: prometheus_blackbox-exporter_container_{{ loop.index }}_{{ i_loop.index }}
       {%- endif %}
-      {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
+      {%- if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
 prometheus_pagespeed-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['pagespeed-exporter']['image'] }}
@@ -417,7 +422,7 @@ prometheus_pagespeed-exporter_container_{{ loop.index }}_{{ i_loop.index }}:
         {%- endif %}
       {%- endif %}
 
-      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+      {%- if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
 prometheus_redis-exporter_image_{{ loop.index }}_{{ i_loop.index }}:
   cmd.run:
     - name: docker pull {{ instance['redis-exporter']['image'] }}
@@ -457,10 +462,10 @@ prometheus_redis-exporter_container_restart_{{ loop.index }}_{{ i_loop.index }}:
         {%- endif %}
       {%- endif %}
 
-      {% if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
+      {%- if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
         {%- set x_loop = loop %}
         {%- for mailcow_exporter_name, mailcow_exporter_params in instance['mailcow-exporters'].items() %}
-          {% if mailcow_exporter_params['enabled'] %}
+          {%- if mailcow_exporter_params['enabled'] %}
 prometheus_mailcow-exporter_image_{{ loop.index }}_{{ i_loop.index }}_{{ x_loop.index }}:
   cmd.run:
     - name: docker pull {{ mailcow_exporter_params['image'] }}
@@ -476,7 +481,7 @@ prometheus_mailcow-exporter_container_{{ loop.index }}_{{ i_loop.index }}_{{ x_l
         - prometheus-{{ domain['name'] }}-{{ instance['name'] }}
     - publish:
         - 127.0.0.1:{{ mailcow_exporter_params['port'] }}:9099/tcp
-            {% if 'env_vars' in mailcow_exporter_params %}
+            {%- if 'env_vars' in mailcow_exporter_params %}
     - environment:
               {%- for var_key, var_val in mailcow_exporter_params["env_vars"].items() %}
         - {{ var_key }}: {{ var_val }}
@@ -499,25 +504,25 @@ nginx_domain_index_{{ loop.index }}:
     {%- endif %}
     {%- for instance in domain['instances'] %}
         <a href="{{ instance['name'] }}/">{{ instance['name'] }}</a><br>
-      {% if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
+      {%- if instance['pushgateway'] is defined and instance['pushgateway'] is not none and instance['pushgateway']['enabled'] %}
         <a href="{{ instance['name'] }}/pushgateway/">{{ instance['name'] }}/pushgateway</a><br>
       {%- endif %}
-      {% if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
+      {%- if instance['statsd-exporter'] is defined and instance['statsd-exporter'] is not none and instance['statsd-exporter']['enabled'] %}
         <a href="{{ instance['name'] }}/statsd-exporter/">{{ instance['name'] }}/statsd-exporter</a><br>
       {%- endif %}
-      {% if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
+      {%- if instance['blackbox-exporter'] is defined and instance['blackbox-exporter'] is not none and instance['blackbox-exporter']['enabled'] %}
         <a href="{{ instance['name'] }}/blackbox-exporter/">{{ instance['name'] }}/blackbox-exporter</a><br>
       {%- endif %}
-      {% if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
+      {%- if instance['pagespeed-exporter'] is defined and instance['pagespeed-exporter'] is not none and instance['pagespeed-exporter']['enabled'] %}
         <a href="{{ instance['name'] }}/pagespeed-exporter/">{{ instance['name'] }}/pagespeed-exporter</a><br>
       {%- endif %}
-      {% if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
+      {%- if instance['redis-exporter'] is defined and instance['redis-exporter'] is not none and instance['redis-exporter']['enabled'] %}
         <a href="{{ instance['name'] }}/redis-exporter/">{{ instance['name'] }}/redis-exporter</a><br>
       {%- endif %}
-      {% if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
+      {%- if instance['mailcow-exporters'] is defined and instance['mailcow-exporters'] is not none %}
         {%- set x_loop = loop %}
         {%- for mailcow_exporter_name, mailcow_exporter_params in instance['mailcow-exporters'].items() %}
-          {% if mailcow_exporter_params['enabled'] %}
+          {%- if mailcow_exporter_params['enabled'] %}
         <a href="{{ instance['name'] }}/mailcow-exporter/">{{ instance['name'] }}/mailcow-exporter/{{ mailcow_exporter_name }}</a><br>
           {%- endif %}
         {%- endfor %}
@@ -538,5 +543,4 @@ nginx_reload_cron:
     - minute: 15
     - hour: 6
 
-{% endif %}
-
+{%- endif %}
