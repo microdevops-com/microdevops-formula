@@ -78,7 +78,13 @@
 
   {%- set vmargslist = [] %}
   {%- for k, v in vm_data.get("args", {}).items() %}
-    {%- do vmargslist.append("-" ~ k ~ "=" ~ v) %}
+    {%- if v is iterable and v is not string and v is not mapping %}
+      {%- for item in v %}
+        {%- do vmargslist.append("-" ~ k ~ "=" ~ item) %}
+      {%- endfor %}
+    {%- else %}
+      {%- do vmargslist.append("-" ~ k ~ "=" ~ v) %}
+    {%- endif %}
   {%- endfor %}
 
   {%- if kind != "vmalert" %}
@@ -127,3 +133,4 @@
       - file: {{ kind }}_{{ vm_name }}_systemd_unit
       - cmd: {{ kind }}_{{ vm_name }}_archive_extract
 {%- endif %}
+
