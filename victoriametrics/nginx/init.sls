@@ -29,6 +29,7 @@
 
   {%- endfor %}
 
+
 {{ kind }}_{{ vm_name }}_nginx_files_1:
   file.managed:
     - name: /etc/nginx/sites-available/{{ service_name }}.conf

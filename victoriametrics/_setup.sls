@@ -64,27 +64,59 @@
 
   {%- set service_name = kind if vm_name == "main" else kind ~ "-" ~ vm_name %}
 
+  {%- set vmargskeys = [] %}
+  {%- set vmargslist = [] %}
+
+  {%- set vmargs = [] %}
+  {%- set vm_data_args = vm_data.get("args", []) %}
+  {%- if vm_data_args is mapping %}
+     {% do vmargs.append(vm_data_args) %}
+  {%- else %}
+     {% do vmargs.extend(vm_data_args) %}
+  {%- endif %}
+
+  {# Populate args from pillar #}
+  {%- for arg in vmargs %}
+    {%- for k, v in arg.items() %}
+      {%- do vmargskeys.append(k) %}
+      {% if v is string %}
+        {%- do vmargslist.append({k: v.format(vm_name=vm_name)}) %}
+      {%- else %}
+        {%- do vmargslist.append({k: v}) %}
+      {%- endif %}
+    {%- endfor %}
+  {%- endfor %}
+
+  {# Populate args from defaults if not set in pillar #}
+  {%- for arg in defaults[kind]["args"] %}
+    {%- for k, v in arg.items() %}
+      {% if k not in vmargskeys %}
+        {%- do vmargslist.append({k: v.format(vm_name=vm_name)}) %}
+      {% endif %}
+    {%- endfor %}
+  {%- endfor %}
+
+  {%- do vm_data.update({"settings":{}}) %}
+  {%- for arg in vmargslist %}
+    {%- for k, v in arg.items() %}
+      {%- if k == defaults[kind]["arg_storage"]  %}
+        {%- do vm_data["settings"].update({"storage_dir": v}) %}
+      {%- endif %}
+      {%- if k == "httpListenAddr" %}
+        {%- do vm_data["settings"].update({k: v}) %}
+      {%- endif %}
+    {% endfor %}
+  {% endfor %}
+
+    
   {%- if ( kind in ["vmserver", "vmalert"] ) and vm_data.get("nginx", {}) and vm_data.get("nginx",{}).get("enabled", True) %}
     {%- include "victoriametrics/nginx/init.sls" %}
   {%- endif %}
 
-  {%- do defaults[kind]["args"].update(vm_data.get("args", {})) %}
-  {%- do vm_data.setdefault("args", {}).update(defaults[kind]["args"]) %}
-  {%- if kind != "vmalert" %}
-    {%- set arg_storage = defaults[kind]["arg_storage"] %}
-    {%- set data_dir = vm_data.get(arg_storage, defaults[kind]["args"][arg_storage]).format(vm_name=vm_name) %}
-    {%- do vm_data["args"].update({arg_storage: data_dir}) %}
-  {%- endif %}
-
-  {%- set vmargslist = [] %}
-  {%- for k, v in vm_data.get("args", {}).items() %}
-    {%- do vmargslist.append("-" ~ k ~ "=" ~ v) %}
-  {%- endfor %}
-
   {%- if kind != "vmalert" %}
 {{ kind }}_{{ vm_name }}_storage_dir:
   file.directory:
-    - name: {{ vm_data["args"][arg_storage] }}
+    - name: {{ vm_data["settings"]["storage_dir"] }}
     - makedirs: True
     - user: root
     - group: root
@@ -95,6 +127,14 @@
     - name: {{ service_target }}
     - source: {{ service_target.rsplit("/", maxsplit=1)[0] }}/{{ defaults[kind]["original_name"] }}
     - force: True
+
+  {# Transform in joinable list #}
+  {%- set vmargslistjoin = [] %}
+  {%- for arg in vmargslist %}
+    {%- for k, v in arg.items() %}
+        {%- do vmargslistjoin.append("-" ~ k ~ "=" ~ v) %}
+    {% endfor %}
+  {% endfor %}
 
 {{ kind }}_{{ vm_name }}_systemd_unit:
   file.managed:
@@ -112,7 +152,7 @@
         StartLimitInterval=0
         Restart=on-failure
         RestartSec=1
-        ExecStart={{ service_target }} {{ " ".join(vmargslist) }}
+        ExecStart={{ service_target }} {{ " ".join(vmargslistjoin) }}
 
         [Install]
         WantedBy=multi-user.target
