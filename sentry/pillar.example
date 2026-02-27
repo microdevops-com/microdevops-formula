@@ -5,6 +5,9 @@
 # - 25.10.0
 # - 25.11.1
 # - 25.12.1
+# - 26.1.0
+# - 26.2.0
+# - 26.2.1
 #
 # Each supported version should have config folder in files here.
 
