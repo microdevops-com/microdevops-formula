@@ -11,7 +11,7 @@ server {
 }
 
 upstream {{ service_name }} {
-    server {{ vm_data["args"]["httpListenAddr"] }};
+    server {{ vm_data["settings"]["httpListenAddr"] }};
     keepalive 10;
 }
 

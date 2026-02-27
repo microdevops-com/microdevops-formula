@@ -55,9 +55,9 @@ vmserver:
       version: v1.101.0 # optional, will not overwrite the binary files, if version matches
 
     args: # https://docs.victoriametrics.com/single-server-victoriametrics/#list-of-command-line-flags
-      httpListenAddr: 0.0.0.0:8428 # optional, default
-      storageDataPath: /var/lib/victoriametrics/__VM_NAME__ # optional, default
-      retentionPeriod: 1 # If suffix isn't set, then the duration is counted in months (default 1)
+      - httpListenAddr: 0.0.0.0:8428 # optional, default
+      - storageDataPath: /var/lib/victoriametrics/__VM_NAME__ # optional, default
+      - retentionPeriod: 1 # If suffix isn't set, then the duration is counted in months (default 1)
                          # following optional suffixes are supported: s (second), m (minute), h (hour), d (day), w (week), y (year)
     files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manage
 
@@ -75,11 +75,11 @@ vmagent: # https://docs.victoriametrics.com/vmagent/#features
                    # will not redownload the archive, if hash matches
       version: v1.101.0 # optional, will not overwrite the binary files, if version matches
     args: # https://docs.victoriametrics.com/vmagent/#advanced-usage
-      remoteWrite.tmpDataPath: /var/lib/vmagent/__VM_NAME__/remotewrite-data # optional, default
-      remoteWrite.url: https://vm.tsdb.example.com/api/v1/write
-      remoteWrite.basicAuth.username: user1
-      remoteWrite.basicAuth.password: password1
-      promscrape.config: /etc/victoriametrics/promscrape.yaml
+      - remoteWrite.tmpDataPath: /var/lib/vmagent/__VM_NAME__/remotewrite-data # optional, default
+      - remoteWrite.url: https://vm.tsdb.example.com/api/v1/write
+      - remoteWrite.basicAuth.username: user1
+      - remoteWrite.basicAuth.password: password1
+      - promscrape.config: /etc/victoriametrics/promscrape.yaml
     files:
       managed:
         promscrape:
@@ -143,11 +143,11 @@ vmalert:
       version: v1.101.0 # optional, will not overwrite the binary files, if version matches
 
     args: # https://docs.victoriametrics.com/single-server-victoriametrics/#list-of-command-line-flags
-      httpListenAddr: 127.0.0.1:8880 # optional, default
-      datasource.url: http://localhost:8428 # optional, default
-      rule: /etc/victoriametrics/vmalert/rules/*yaml  # optional, default
-      notifier.url: http://localhost:9093 # optional, default
-      evaluationInterval: 10s # optional, default
+      - httpListenAddr: 127.0.0.1:8880 # optional, default
+      - datasource.url: http://localhost:8428 # optional, default
+      - rule: /etc/victoriametrics/vmalert/rules/*yaml  # optional, default
+      - notifier.url: http://localhost:9093 # optional, default
+      - evaluationInterval: 10s # optional, default
     files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manage
       managed:
         vmalert_rules_disk_alert:
