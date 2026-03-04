@@ -158,12 +158,16 @@
         WantedBy=multi-user.target
 
 {{ kind }}_{{ vm_name }}_systemd_daemon-reload:
-  service.running:
-    - name: {{ service_name }}.service
-    - enable: True
-    - require:
-      - cmd: {{ kind }}_{{ vm_name }}_archive_extract
-    - watch:
+  cmd.run:
+    - name: systemctl daemon-reload && systemctl enable {{ service_name }}.service && systemctl restart {{ service_name }}.service
+    - onchanges:
       - file: {{ kind }}_{{ vm_name }}_systemd_unit
       - cmd: {{ kind }}_{{ vm_name }}_archive_extract
+
+{{ kind }}_{{ vm_name }}_systemd_running:
+  cmd.run:
+    - name: systemctl is-active {{ service_name }}.service || systemctl start {{ service_name }}.service
+    - require:
+      - cmd: {{ kind }}_{{ vm_name }}_archive_extract
 {%- endif %}
+

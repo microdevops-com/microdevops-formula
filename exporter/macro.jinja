@@ -1,5 +1,9 @@
 {%- import_yaml "exporter/defaults.yaml" as defaults %}
 
+{#- Normalize osarch: x86_64 -> amd64, aarch64 -> arm64 for GitHub release URLs #}
+{%- set _osarch_map = {"x86_64": "amd64", "aarch64": "arm64"} %}
+{%- set _osarch = _osarch_map.get(grains["osarch"], grains["osarch"]) %}
+
 
 {%- macro install_dir(settings, prefix=[]) %}
 {{ "_".join(prefix) }}_install_dir:
@@ -31,7 +35,7 @@
     - shell: /bin/bash
     - cwd: {{ settings["install_dir"] }}
     - watch_in:
-      - service: {{ "_".join(prefix) }}_systemd
+      - cmd: {{ "_".join(prefix) }}_systemd
   {%- if extractor.get("clean", True) %}
   file.absent:
     - name: {{ output }}
@@ -49,7 +53,7 @@
     - group: root
     - shell: /bin/bash
     - watch_in:
-      - service: {{ "_".join(prefix) }}_systemd
+      - cmd: {{ "_".join(prefix) }}_systemd
   {%- if settings.get("version", "") %}
     - unless: 
       - "[[ $(cat {{ settings["install_dir"] }}/.salt_version_info) =~ {{ settings["version"] }} ]]"
@@ -105,7 +109,7 @@
       - "[[ ! $({{ dir }}/venv/bin/pip freeze -r {{ requirements_txt }} 2>&1) =~ WARNING ]]"
   {%- endif %}
     - watch_in:
-      - service: {{ "_".join(prefix) }}_systemd
+      - cmd: {{ "_".join(prefix) }}_systemd
 {%- endmacro %}
 
 
@@ -130,11 +134,13 @@
        type: {{ type }}
        settings: {{ settings }}
        defaults: {{ defaults["systemd"] }}
-  service.running:
-    - name: exporter_{{ name }}.service
-    - enable: True
-    - watch:
+  cmd.run:
+    - name: systemctl daemon-reload && systemctl enable exporter_{{ name }}.service && systemctl restart exporter_{{ name }}.service
+    - onchanges:
       - file: {{ "_".join(prefix) }}_systemd
+{{ "_".join(prefix) }}_systemd_running:
+  cmd.run:
+    - name: systemctl is-active exporter_{{ name }}.service || systemctl start exporter_{{ name }}.service
 {%- endmacro %}
 
 
@@ -160,7 +166,7 @@
   {# define format_source #}
   {%- set format_source = {"tag": settings.get("version",""),
                            "tag_vstrip": settings.get("version","").lstrip("v"),
-                           "osarch": grains["osarch"],
+                           "osarch": _osarch,
                            "cpuarch": grains["cpuarch"],
                            "kernel": grains["kernel"],
                            "kernel_lower": grains["kernel"].lower() } %}
@@ -177,7 +183,8 @@
   {%- set file = defaults["salt_cache_dir"] ~ "/" ~ type ~ "/" ~ file_src.split("/")[-1] %} 
 
   {# define format_base #}
-  {%- set format_base = {"name": name, "type": type, "file": file, "install_dir": settings["install_dir"]} %}
+  {%- set format_base = {"name": name, "type": type, "file": file, "install_dir": settings["install_dir"],
+                          "osarch": _osarch, "kernel_lower": grains["kernel"].lower()} %}
 
   {# format args #}
   {%- do settings.update({"args": settings["args"].format(**format_base) }) %}
@@ -240,3 +247,4 @@
   {{ service(name, type, settings, prefix) }}
 
 {%- endmacro %}
+
