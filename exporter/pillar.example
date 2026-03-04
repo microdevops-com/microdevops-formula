@@ -36,6 +36,15 @@ exporter:
       --collector.interrupts
 
 
+openvpn:
+  type: openvpn
+  version: v1.1.3
+  args:
+    -openvpn.listen-address :9176 
+    -openvpn.loglevel debug 
+    -openvpn.status-files /var/log/openvpn/openvpn-status.log
+
+
   bb_sites_1:
     type: blackbox
 

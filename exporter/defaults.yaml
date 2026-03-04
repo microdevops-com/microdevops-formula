@@ -121,3 +121,17 @@ exporter:
       dst: "{install_dir}/pagespeed_exporter"
     exec: "{install_dir}/pagespeed_exporter {args}"
     args: ""
+
+  openvpn:
+    store: github
+    version: latest
+    source: "https://github.com/natrontech/openvpn-exporter/releases/download/{tag}/openvpn-exporter_{tag}_{kernel_lower}_{osarch}.tar.gz"
+    install_dir: "/opt/exporter/{type}/{name}"
+    tar:
+      args: ''
+    move:
+      src: "{install_dir}/openvpn-exporter-{kernel_lower}-{osarch}"
+      dst: "{install_dir}/openvpn-exporter"
+    exec: "{install_dir}/openvpn-exporter {args}"
+    args: ""
+
