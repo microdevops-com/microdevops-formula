@@ -72,7 +72,10 @@ create /etc/nginx/sites-available/{{ pillar["authentik"]["domain"] }}.conf:
           }
           location / {
             proxy_pass https://{{ pillar["authentik"]["domain"] | replace(".","_") }};
-            proxy_http_version 1.1;
+            proxy_buffer_size       128k;
+            proxy_buffers           4 256k;
+            proxy_busy_buffers_size 256k;
+            proxy_http_version      1.1;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
             proxy_set_header Host              $host;
@@ -131,7 +134,10 @@ nginx_files_1:
             }
             location / {
               proxy_pass https://{{ pillar["authentik"]["domain"] | replace(".","_") }};
-              proxy_http_version 1.1;
+              proxy_buffer_size       128k;
+              proxy_buffers           4 256k;
+              proxy_busy_buffers_size 256k;
+              proxy_http_version      1.1;
               proxy_set_header X-Forwarded-Proto $scheme;
               proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
               proxy_set_header Host              $host;
