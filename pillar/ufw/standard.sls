@@ -6,7 +6,7 @@ ufw:
       proto: tcp
       from:
         {{ vars["Office_And_VPN"] }}
-      to_port: 22,80,443,19999
+      to_port: 22,80,443
     standard_ssh_backup_servers:
       proto: tcp
       from:

@@ -4,11 +4,6 @@ ufw_simple:
   enabled: True
   logging: 'off'
   allow:
-    netdata_1:
-      proto: 'tcp'
-      from:
-        {{ vars['Office_And_VPN'] }}
-      to_port: '19999'
     ssh_1:
       proto: 'tcp'
       from:
@@ -21,11 +16,6 @@ ufw_simple:
       to_port: '22'
   delete:
     allow:
-      netdata_1:
-        proto: 'tcp'
-        from:
-          {{ vars['Delete_Office_And_VPN'] }}
-        to_port: '19999'
       ssh_1:
         proto: 'tcp'
         from:
