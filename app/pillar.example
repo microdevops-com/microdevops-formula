@@ -272,7 +272,9 @@ app:
               }
 
   docker:
-    docker-ce_version: 18.06.1 # optional, do not manage docker installation if omitted
+    version: 18.06.1 # optional, do not manage docker installation if omitted
+    #docker-ce_version: 18.06.1 # old name for previous key, wrongly named, still supported for backward compatibility, but will be removed in future
+    #daemon_json: '{"iptables": false}' # optional, to manage /etc/docker/daemon.json, '{"iptables": false}' by default
     #networks: # optional, create custom docker networks
     #  proto:
     #    subnet: 172.18.0.0/24

@@ -15,9 +15,14 @@ docker_pillar_render_errors:
   {%- include "app/_pkg.sls" with context %}
   {%- include "app/_pre_deploy.sls" with context %}
 
-  {%- if pillar["app"]["docker"]["docker-ce_version"] is defined %}
-    {%- set docker_ce = {"version": pillar["app"]["docker"]["docker-ce_version"],
-                         "daemon_json": '{"iptables": false}'} %}
+  # app:docker:docker-ce_version - legacy wrongly named key
+  # app:docker:version - correct key name
+  # app:docker:daemon_json - optional, if not set, it will be set to '{"iptables": false}' by default
+  {%- set docker_version = pillar["app"]["docker"].get("version", pillar["app"]["docker"].get("docker-ce_version")) %}
+  {%- set docker_daemon_json = pillar["app"]["docker"].get("daemon_json", '{"iptables": false}') %}
+  # if docker_version is defined and not empty, include docker-ce.sls with the specified version and daemon_json
+  {%- if docker_version is defined and docker_version %}
+    {%- set docker_ce = {"version": docker_version, "daemon_json": docker_daemon_json} %}
     {%- include "docker-ce/docker-ce.sls" with context %}
   {%- endif %}
 
