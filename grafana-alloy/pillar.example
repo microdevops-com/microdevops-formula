@@ -1,0 +1,82 @@
+# Grafana Alloy Pillar Configuration Example
+# This file shows all available configuration options for grafana-alloy
+
+grafana-alloy:
+  # REQUIRED: Binary download link
+  # The URL to download the Grafana Alloy binary from
+  binary:
+    link: https://github.com/grafana/alloy/releases/download/v1.14.1/alloy-linux-amd64.zip
+
+  # OPTIONAL: ACME/Let's Encrypt domain for HTTPS
+  # Only set this if you want to enable HTTPS with automatic certificate renewal
+  acme_domain: alloy.example.com
+
+  # OPTIONAL: Disable Promtail service
+  # Set to true if you don't want promtail running alongside alloy
+  disable_promtail: false
+
+  # ============================================================================
+  # Configuration Options: Choose ONE of the following approaches
+  # ============================================================================
+  
+  # OPTION 1: Use complete config file directly
+  # Set this if you have a complete, ready-to-use Alloy configuration
+  config: |
+    logging {
+      level  = "info"
+      format = "json"
+    }
+    
+    discovery.docker "docker_sd" {
+      host = "unix:///var/run/docker.sock"
+    }
+    
+    prometheus.scrape "prometheus" {
+      targets = discovery.docker.docker_sd.targets
+      forward_to = [prometheus.remote_write.remote.receiver]
+    }
+    
+    prometheus.remote_write "remote" {
+      endpoint {
+        url = "http://prometheus:9090/api/v1/write"
+      }
+    }
+
+  # ============================================================================
+  # OPTION 2: Use global part + scrape parts (modular approach)
+  # Set config_global_part AND config_scrape_parts if you prefer modular configuration
+  # IMPORTANT: Both must be set together, and config_scrape_parts must have at least one job
+  
+  # config_global_part: |
+  #   logging {
+  #     level  = "info"
+  #     format = "json"
+  #   }
+  #   
+  #   discovery.docker "docker_sd" {
+  #     host = "unix:///var/run/docker.sock"
+  #   }
+  
+  # config_scrape_parts:
+  #   prometheus_job: |
+  #     prometheus.scrape "prometheus" {
+  #       targets = discovery.docker.docker_sd.targets
+  #       forward_to = [prometheus.remote_write.remote.receiver]
+  #     }
+  #     prometheus.remote_write "remote" {
+  #       endpoint {
+  #         url = "http://prometheus:9090/api/v1/write"
+  #       }
+  #     }
+  #   
+  #   loki_job: |
+  #     discovery.docker "docker_loki" {
+  #       host = "unix:///var/run/docker.sock"
+  #     }
+  #     loki.write "loki" {
+  #       endpoint {
+  #         url = "http://loki:3100/loki/api/v1/push"
+  #       }
+  #     }
+
+
