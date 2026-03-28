@@ -50,6 +50,7 @@ metabase:
           plugins: # use to install clickhouse plugin
             clickhouse: 0.7.5
           java_timezone: UTC
+          #nginx_proxy_timeout: 300 # optional, nginx proxy timeouts, 300 by default
           db:
             type: postgres
             host: metabase1.example.com
