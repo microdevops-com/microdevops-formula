@@ -17,7 +17,7 @@
 - Make migration from LXD manually if needed right after after install and before incus init: https://linuxcontainers.org/incus/docs/main/howto/server_migrate_lxd/
   - Stop containers and VMs manually, sometimes there are issues on stopping them
   - `lxc config unset core.trust_password`
-  - `lxd-to-incus`
+  - `lxd-to-incus`, if not found: `wget https://dl.stgraber.org/lxd-to-incus; chmod +x lxd-to-incus`
   - `incus ls` to check if all containers and VMs are migrated
   - Remove snapd optionally:
     - `apt autoremove --purge snapd`
