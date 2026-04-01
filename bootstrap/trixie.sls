@@ -40,7 +40,7 @@ pkg_latest:
       - apt-listchanges
       - gnupg
       - python3-apt
-      - software-properties-common
+      #- software-properties-common # https://unix.stackexchange.com/questions/800959/debian-13-unable-to-locate-package-software-properties-common
       # man
       - doc-debian
       - info
@@ -50,7 +50,6 @@ pkg_latest:
       - at
       - rsnapshot
       - util-linux-locales
-      - mlocate
       # libs
       - ncurses-term
       # diag
@@ -60,7 +59,7 @@ pkg_latest:
       - htop
       - nload
       - lsof
-      - dnsutils
+      - bind9-dnsutils
       - psmisc
       - telnet
       - strace

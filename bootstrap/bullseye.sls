@@ -18,6 +18,7 @@ pkg_latest:
     - refresh: True
     - pkgs:
       # console tools
+      - nnn
       - vim
       - nano
       - links
