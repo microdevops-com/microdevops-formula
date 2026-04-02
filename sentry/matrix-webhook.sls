@@ -57,6 +57,12 @@ matrix-sentry-webhooks_clone_fom_git:
     - name: {{ pillar["sentry"]["webhooks"]["matrix"]["repo"] }}
     - target: /opt/matrix-sentry-webhooks
 
+matrix-sentry-webhooks_logdir:
+  file.directory:
+    - name: /opt/matrix-sentry-webhooks/logs
+    - mode: 755
+    - makedirs: True
+
 bocker_build_matrix-sentry-webhooks:
   docker_image.present:
     - name:  {{ pillar["sentry"]["webhooks"]["matrix"]["image"] }}
@@ -72,6 +78,8 @@ matrix-sentry-webhooks_container:
     - image: {{ pillar["sentry"]["webhooks"]["matrix"]["image"] }}
     - detach: True
     - restart_policy: unless-stopped
+    - binds:
+        - /opt/matrix-sentry-webhooks/logs:/app/logs:rw
     - publish:
        - "127.0.0.1:{{ pillar["sentry"]["webhooks"]["matrix"]["env_vars"]["APP_PORT"] }}:{{ pillar["sentry"]["webhooks"]["matrix"]["env_vars"]["APP_PORT"] }}/tcp"
     - environment:
