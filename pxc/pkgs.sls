@@ -19,6 +19,18 @@ pxc_release_enable_repo_{{ loop.index }}:
 
   {%- endfor %}
 
+  {%- if grains["oscodename"] == "noble" %}
+# Temp hack for noble as percona-tools/qpress are not yet available for noble
+pxc_release_noble_hack:
+  file.replace:
+    - name: /etc/apt/sources.list.d/percona-tools-release.list
+    - pattern: 'noble'
+    - repl: 'jammy'
+    - require:
+      - pkg: pxc_repo_deb
+
+  {%- endif %}
+
 # Install prereqs after repo enabling - to refresh only once
 pxc_prereq_pkgs:
   pkg.installed:
