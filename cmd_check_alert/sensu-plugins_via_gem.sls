@@ -19,16 +19,12 @@ sensu-plugins_ruby_dependencies_1:
         - ruby-rubygems
         - ruby-dev
 
-# Ensure /opt/sensu-plugins-ruby/embedded exists
-sensu-plugins_ruby_dependencies_2:
-  file.directory:
-    - name: /opt/sensu-plugins-ruby/embedded
-
 # Symlink /opt/sensu-plugins-ruby/embedded/bin -> /usr/local/bin for backwards compatibility
-sensu-plugins_ruby_dependencies_3:
+sensu-plugins_ruby_dependencies_2:
   file.symlink:
     - name: /opt/sensu-plugins-ruby/embedded/bin
     - target: /usr/local/bin
+    - makedirs: True
 
     {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
