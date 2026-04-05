@@ -29,6 +29,7 @@ set db_ps = {
 {% do db_ps.update({"noble": db_ps["debian"]}) %}
 {% do db_ps.update({"plucky": db_ps["debian"]}) %}
 {% do db_ps.update({"bookworm": db_ps["debian"]}) %}
+{% do db_ps.update({"trixie": db_ps["debian"]}) %}
 {% do db_ps.update({"CentOS Linux 7 (Core)": db_ps["centos"]}) %}
 {% do db_ps.update({"CentOS Linux 8 (Core)": db_ps["centos"]}) %}
 {% do db_ps.update({"CentOS Linux 8": db_ps["centos"]}) %}
@@ -53,6 +54,7 @@ set data_dirs_to_find = {
 {% do data_dirs_to_find.update({"noble": data_dirs_to_find["debian"]}) %}
 {% do data_dirs_to_find.update({"plucky": data_dirs_to_find["debian"]}) %}
 {% do data_dirs_to_find.update({"bookworm": data_dirs_to_find["debian"]}) %}
+{% do data_dirs_to_find.update({"trixie": data_dirs_to_find["debian"]}) %}
 {% do data_dirs_to_find.update({"CentOS Linux 7 (Core)": data_dirs_to_find["debian"]}) %}
 {% do data_dirs_to_find.update({"CentOS Linux 8 (Core)": data_dirs_to_find["debian"]}) %}
 {% do data_dirs_to_find.update({"CentOS Linux 8": data_dirs_to_find["debian"]}) %}
@@ -194,6 +196,7 @@ set data_dirs_to_skip = {
 {% do data_dirs_to_skip.update({"noble": data_dirs_to_skip["debian"]}) %}
 {% do data_dirs_to_skip.update({"plucky": data_dirs_to_skip["debian"]}) %}
 {% do data_dirs_to_skip.update({"bookworm": data_dirs_to_skip["debian"]}) %}
+{% do data_dirs_to_skip.update({"trixie": data_dirs_to_skip["debian"]}) %}
 {% do data_dirs_to_skip.update({"CentOS Linux 7 (Core)": data_dirs_to_skip["centos"]}) %}
 {% do data_dirs_to_skip.update({"CentOS Linux 8 (Core)": data_dirs_to_skip["centos"]}) %}
 {% do data_dirs_to_skip.update({"CentOS Linux 8": data_dirs_to_skip["centos"]}) %}

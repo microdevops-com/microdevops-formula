@@ -38,7 +38,7 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-{% if grains["oscodename"] in ["bookworm"] %}
+{% if grains["oscodename"] in ["bookworm", "noble", "trixie"] %}
           cmd: :; ! journalctl -k | grep -i "Completion-Wait loop timed out" -m 10
 {% else %}
           cmd: :; ! grep -i "Completion-Wait loop timed out" -m 10 /var/log/kern.log
@@ -50,7 +50,7 @@ cmd_check_alert:
           # We need to catch this only on host machines as containers share the kernel with the host
           disabled: True
 {% endif %}
-{% if grains["oscodename"] in ["bookworm"] %}
+{% if grains["oscodename"] in ["bookworm", "noble", "trixie"] %}
           cmd: :; ! journalctl -k | grep -i "watchdog.*BUG.*soft lockup - CPU.*stuck" -m 10
 {% else %}
           cmd: :; ! grep -i "watchdog.*BUG.*soft lockup - CPU.*stuck" -m 10 /var/log/kern.log

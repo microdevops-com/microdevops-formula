@@ -9,7 +9,7 @@ bash_misc_byobu_bashrc:
     - source: salt://bash/files/byobu/bashrc
     - show_changes: False
 
-{% if grains["oscodename"] in ["xenial", "bionic", "focal", "jammy", "bookworm"] %}
+{% if grains["oscodename"] in ["xenial", "bionic", "focal", "jammy", "bookworm", "noble", "trixie"] %}
 bash_misc_skel_bashrc:
   file.managed:
     - name: /etc/skel/.bashrc

@@ -16,7 +16,7 @@ pyenv_deps_1:
       - wget
       - curl
       - llvm
-  {%- if grains["oscodename"] in ["focal", "jammy", "bookworm"] %}
+  {%- if grains["oscodename"] in ["focal", "jammy", "bookworm", "noble", "trixie"] %}
       - python3-pip
   {%- else %}
       - python-pip
