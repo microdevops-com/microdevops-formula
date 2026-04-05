@@ -1,25 +1,44 @@
-resolvers_test:
+test_resolv:
   cmd.run:
+# If pillar["bootstrap"]["test"]["resolv"] is set to "works", only check resolving works, otherwise check for specific resolvers
+{% if pillar["bootstrap"].get("test", {}).get("resolv") == "works" %}
     - name: |
-{% if grains["oscodename"] in ["bionic", "focal", "jammy", "bookworm", "noble", "trixie"] %}
+        ping -c 1 google.com && \
+        ping -c 1 cloudflare.com
+{% else %}
+    {%- if grains["oscodename"] in ["bionic", "focal", "jammy", "bookworm", "noble", "trixie"] %}
+    - name: |
         grep "nameserver 8.8.8.8" /run/systemd/resolve/resolv.conf && \
         grep "nameserver 8.8.4.4" /run/systemd/resolve/resolv.conf && \
         grep "nameserver 1.1.1.1" /run/systemd/resolve/resolv.conf
-{% elif grains["oscodename"] == "bullseye" %}
-        grep "nameserver 1.1.1.1" /etc/resolv.conf
-{% elif grains["osfinger"] == "CentOS Linux-7" %}
-        grep "nameserver 8.8.8.8" /etc/resolv.conf && \
-        grep "nameserver 8.8.4.4" /etc/resolv.conf && \
-        grep "nameserver 1.1.1.1" /etc/resolv.conf
+    {%- endif %}
 {% endif %}
 
-full_hostname:
+full_hostname_in_hostname:
   cmd.run:
     - name: |
-        grep {{ grains["id"] }} /etc/hostname && \
-        grep {{ grains["id"] }} /etc/hosts && \
-        hostname | grep {{ grains["id"] }} && \
-        hostname -f | grep {{ grains["id"] }} && \
+        grep {{ grains["id"] }} /etc/hostname
+
+full_hostname_in_hosts:
+  cmd.run:
+    - name: |
+        grep {{ grains["id"] }} /etc/hosts
+
+full_hostname_hostname_cmd:
+  cmd.run:
+    - name: |
+        hostname | grep {{ grains["id"] }}
+
+full_hostname_hostname_f_cmd:
+  cmd.run:
+    - name: |
+        hostname -f | grep {{ grains["id"] }}
+
+# Skip this if pillar["bootstrap"]["test"]["skip_domain_in_resolv_conf"] is set to True, otherwise check for specific search domain
+{% if not pillar["bootstrap"].get("test", {}).get("skip_domain_in_resolv_conf") %}
+domain_in_resolv_conf:
+  cmd.run:
+    - name: |
   {%- if "domain" in pillar["bootstrap"] %}
         grep "search {{ pillar["bootstrap"]["domain"] }}" /etc/resolv.conf
   {%- elif "network" in pillar["bootstrap"] and "domain" in pillar["bootstrap"]["network"] %}
@@ -27,12 +46,7 @@ full_hostname:
   {%- else %}
         grep "search local" /etc/resolv.conf
   {%- endif %}
-
-memory_accounting:
-  cmd.run:
-    - name: |
-        grep cgroup_enable=memory /proc/cmdline && \
-        grep swapaccount=1 /proc/cmdline
+{% endif %}
 
 {% if grains["virtual"] == "physical" %}
 smartd_test:

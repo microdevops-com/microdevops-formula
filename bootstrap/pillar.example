@@ -17,6 +17,9 @@ bootstrap:
     foo: salt://files/foo.deb
     baz: ftp://someothersite.org/baz.deb
     qux: /minion/path/to/qux.deb
+  #test:
+  #  resolv: works # just check resolving works, skip checking 8.8.8.8, 8.8.4.4, 1.1.1.1 in resolvers
+  #  skip_domain_in_resolv_conf: True # skip testing resolver domain
 
   files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
     managed: # recurse|directory|symlink|managed|absent
