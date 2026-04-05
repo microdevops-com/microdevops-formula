@@ -1,5 +1,5 @@
 include:
-{% if grains["oscodename"] in ["trixie"] %}
+{% if grains["oscodename"] in ["noble", "trixie"] %}
   - .sensu-plugins_via_gem
 {% else %}
   - .sensu-plugins
