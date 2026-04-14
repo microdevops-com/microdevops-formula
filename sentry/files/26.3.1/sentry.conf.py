@@ -399,7 +399,6 @@ SENTRY_FEATURES.update(
             "organizations:insights-initial-modules",
             "organizations:insights-addon-modules",
             "organizations:insights-modules-use-eap",
-            "organizations:standalone-span-ingestion",
             "organizations:starfish-mobile-appstart",
             "organizations:on-demand-metrics-extraction",
             "projects:span-metrics-extraction",
