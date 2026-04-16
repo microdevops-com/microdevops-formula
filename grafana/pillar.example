@@ -26,6 +26,9 @@ grafana:
             version: latest
             {% set renderer_port = 8081 %}
             port: {{ renderer_port }}
+            # The service requires a secret token to be present in all render requests.
+            # generated with 'openssl rand -hex 32'.
+            renderer_token = 7f551c24fb0c9911596dd59b60a5c00eccbed032b32e1eeb196705b2d693ae9c
           config: |
             instance_name = grafana.example.com-prod
             [server]
@@ -57,6 +60,9 @@ grafana:
             [rendering]
             server_url = http://{{ grains['fqdn'] }}:{{ renderer_port }}/render
             callback_url = https://grafana.example.com/prod/
+            # The service requires a secret token to be present in all render requests.
+            # generated with 'openssl rand -hex 32'.
+            renderer_token = 7f551c24fb0c9911596dd59b60a5c00eccbed032b32e1eeb196705b2d693ae9c
         - name: dev
           port: 3001
           image: grafana/grafana-oss:latest-ubuntu
