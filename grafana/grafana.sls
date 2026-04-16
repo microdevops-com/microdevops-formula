@@ -189,6 +189,10 @@ gf_image_renderer_run_container_{{ loop.index }}_{{ i_loop.index }}:
     - restart_policy: unless-stopped
     - publish:
         - {{ instance["image_renderer"]["port"] }}:8081/tcp
+        {%- if instance["image_renderer"].get("renderer_token") %}
+    - environment:
+        - AUTH_TOKEN={{ instance["image_renderer"]["renderer_token"] }}
+        {%- endif %}
       {%- endif %}
 
 grafana_image_{{ loop.index }}_{{ i_loop.index }}:
