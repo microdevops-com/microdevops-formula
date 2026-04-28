@@ -32,14 +32,35 @@ atlantis_config_repos:
     - contents: |
         {{ pillar['atlantis']['repos'] | indent(8) }}
 
-atlantis_binary:
-  archive.extracted:
-    - name: /opt/atlantis/bin
-    - source: https://github.com/runatlantis/atlantis/releases/download/v{{ pillar['atlantis']['version'] }}/atlantis_linux_amd64.zip
+atlantis_install_dir:
+  file.directory:
+    - name: /opt/atlantis/versions/{{ pillar['atlantis']['version'] }}
     - user: 0
     - group: 0
+    - mode: '0755'
+    - makedirs: True
+
+atlantis_binary:
+  archive.extracted:
+    - name: /opt/atlantis/versions/{{ pillar['atlantis']['version'] }}
+    - source: https://github.com/runatlantis/atlantis/releases/download/v{{ pillar['atlantis']['version'] }}/atlantis_linux_amd64.zip
+    - source_hash: https://github.com/runatlantis/atlantis/releases/download/v{{ pillar['atlantis']['version'] }}/checksums.txt
+    - user: root
+    - group: root
     - enforce_toplevel: False
-    - skip_verify: True
+    - if_missing: /opt/atlantis/versions/{{ pillar['atlantis']['version'] }}/atlantis
+    - require:
+      - file: atlantis_install_dir
+
+atlantis_symlink:
+  file.symlink:
+    - name: /opt/atlantis/bin/atlantis
+    - target: /opt/atlantis/versions/{{ pillar['atlantis']['version'] }}/atlantis
+    - force: True
+    - require:
+      - archive: atlantis_binary
+    - watch_in:
+      - service: atlantis
 
 atlantis_systemd_1:
   file.managed:
@@ -61,7 +82,7 @@ systemd-reload:
   cmd.run:
     - name: systemctl daemon-reload
     - onchanges:
-      - file: /etc/systemd/system/atlantis.service
+      - file: atlantis_systemd_1
 
 atlantis_systemd_2:
   service.running:
@@ -72,8 +93,11 @@ atlantis_systemd_3:
   cmd.run:
     - name: systemctl restart atlantis
     - onchanges:
-      - file: /etc/systemd/system/atlantis.service
-      - file: /opt/atlantis/etc/config.yaml
-      - file: /opt/atlantis/etc/repos.yaml
+      - file: atlantis_systemd_1
+      - file: atlantis_config
+      - file: atlantis_config_repos
+      - file: atlantis_symlink
+    - require:
+      - cmd: systemd-reload
 {% endif %}
 
