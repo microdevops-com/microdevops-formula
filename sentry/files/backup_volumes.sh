@@ -16,7 +16,7 @@ mkdir -p /opt/sentry/backup/volumes/
     docker run --rm --volumes-from sentry-self-hosted-zookeeper-1	-v /opt/sentry/backup/volumes/:/backup ubuntu tar cf /backup/sentry-self-hosted-zookeeper-1.tar	/var/lib/zookeeper/data  /var/lib/zookeeper/log
   fi
   if docker ps -a --format '{{.Names}}' | grep -q 'sentry-self-hosted-vroom-1'; then
-    docker run --rm --volumes-from sentry-self-hosted-vroom-1		-v /opt/sentry/backup/volumes/:/backup ubuntu tar cf /backup/sentry-self-hosted-vroom-1.tar		/var/lib/sentry-profiles
+    docker run --rm --volumes-from sentry-self-hosted-vroom-1		-v /opt/sentry/backup/volumes/:/backup ubuntu tar cf /backup/sentry-self-hosted-vroom-1.tar		/var/vroom/sentry-profiles
   fi
   ##
 [[ -f /opt/sentry/.env.custom ]] && docker-compose --file /opt/sentry/docker-compose.yml --env-file /opt/sentry/.env.custom up -d || docker-compose --file /opt/sentry/docker-compose.yml up -d
