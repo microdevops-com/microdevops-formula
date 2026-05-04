@@ -33,6 +33,27 @@ gitlab:
   #  #    -----BEGIN PRIVATE KEY-----
   #  #    ...
   #  #    -----END PRIVATE KEY-----
+  #nginx_configs: # optional, deploy arbitrary configs to /etc/gitlab/nginx/conf.d/
+  #  custom-redirect.conf: |
+  #    server {
+  #      listen 80;
+  #      listen 443 ssl;
+  #      server_name old.example.com;
+  #      ssl_certificate /etc/ssl/old.example.com/ssl.crt;
+  #      ssl_certificate_key /etc/ssl/old.example.com/ssl.key;
+  #      return 301 https://gitlab.example.com$request_uri;
+  #    }
+  #  # Use together with config_additions: nginx['default_server_enabled'] = false
+  #  # to block direct access via server IP (returns 403 instead of showing GitLab).
+  #  # ssl_reject_handshake drops the TLS handshake for HTTPS without needing a cert.
+  #  default-server.conf: |
+  #    server {
+  #      listen 80 default_server;
+  #      listen 443 ssl default_server;
+  #      ssl_reject_handshake on;
+  #      server_name _;
+  #      return 403;
+  #    }
   mattermost: # optional, enable bundled mattermost instance
     domain: mattermost.example.com
     acme_account: example.com
@@ -109,6 +130,9 @@ gitlab:
   #config_additions: |
   #  sidekiq['queue_groups'] = ['*'] * 8 # https://docs.gitlab.com/ee/administration/sidekiq/extra_sidekiq_processes.html
   #  sidekiq['max_concurrency'] = 10 # has been deprecated since 16.9 and was removed in 17.0. Starting with GitLab 17.0, `sidekiq['max_concurrency']` will be removed.
+  #  # Disable bundled default_server so a custom one can be defined via nginx_configs.
+  #  # Required when adding your own default_server block (e.g. the 403 catch-all above).
+  #  nginx['default_server_enabled'] = false
   post_install: |
     #!/bin/bash
     echo "run post install script"

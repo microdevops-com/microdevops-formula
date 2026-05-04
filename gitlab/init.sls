@@ -106,6 +106,17 @@ gitlab_nginx_redirect:
 
   {%- endif %}
 
+  {%- if "nginx_configs" in pillar["gitlab"] %}
+    {%- for config_name, config_contents in pillar["gitlab"]["nginx_configs"].items() %}
+
+gitlab_nginx_config_{{ config_name }}:
+  file.managed:
+    - name: /etc/gitlab/nginx/conf.d/{{ config_name }}
+    - contents: {{ config_contents | yaml_encode }}
+
+    {%- endfor %}
+  {%- endif %}
+
   {%- if "mattermost" in pillar["gitlab"] %}
     {%- if "acme_account" in pillar["gitlab"]["mattermost"] %}
 
@@ -348,6 +359,11 @@ gitlab_reconfigure:
   {%- if "redirect" in pillar["gitlab"] %}
       - file: /etc/gitlab/nginx/conf.d/redirect.conf
   {%- endif %}
+  {%- if "nginx_configs" in pillar["gitlab"] %}
+    {%- for config_name in pillar["gitlab"]["nginx_configs"] %}
+      - file: gitlab_nginx_config_{{ config_name }}
+    {%- endfor %}
+  {%- endif %}
     - require:
   {%- if "acme_account" in pillar["gitlab"] %}
       - cmd: /opt/acme/home/{{ pillar["gitlab"]["acme_account"] }}/verify_and_issue.sh gitlab *
@@ -361,6 +377,11 @@ gitlab_restart:
       - file: /etc/gitlab/gitlab.rb
   {%- if "redirect" in pillar["gitlab"] %}
       - file: /etc/gitlab/nginx/conf.d/redirect.conf
+  {%- endif %}
+  {%- if "nginx_configs" in pillar["gitlab"] %}
+    {%- for config_name in pillar["gitlab"]["nginx_configs"] %}
+      - file: gitlab_nginx_config_{{ config_name }}
+    {%- endfor %}
   {%- endif %}
     - require:
   {%- if "acme_account" in pillar["gitlab"] %}
