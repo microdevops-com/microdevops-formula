@@ -28,6 +28,18 @@ sentry:
     AccountID 012345
     LicenseKey foobarbazbuz
     EditionIDs GeoLite2-City
+  # Optional: docker-compose.override.yml content for tweaking upstream services
+  # (memory limits, extra env vars, etc.). Written as-is to
+  # /opt/sentry/docker-compose.override.yml and auto-merged by docker-compose.
+  # See: https://docs.docker.com/compose/multiple-compose-files/merge/
+  # compose_override: |
+  #   services:
+  #     clickhouse:
+  #       environment:
+  #         MAX_MEMORY_USAGE_RATIO: "0.2" # limit clickhouse RAM to 20% of host
+  #     kafka:
+  #       environment:
+  #         KAFKA_HEAP_OPTS: '-Xmx512m -Xms512m'
   config:
     # compose_profiles: errors-only # optional for versions 24.8.0+
     single_organization: True
