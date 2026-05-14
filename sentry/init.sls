@@ -112,6 +112,18 @@ sentry_geoip_conf:
     - mode: 0644
     - contents: {{ pillar["sentry"]["geoip_conf"] | yaml_encode }}
 
+  {%- if "compose_override" in pillar["sentry"] %}
+sentry_compose_override:
+  file.managed:
+    - name: /opt/sentry/docker-compose.override.yml
+    - mode: 0644
+    - contents: {{ pillar["sentry"]["compose_override"] | yaml_encode }}
+  {%- else %}
+sentry_compose_override_absent:
+  file.absent:
+    - name: /opt/sentry/docker-compose.override.yml
+  {%- endif %}
+
 sentry_create_env_custom:
   file.copy:
     - name: /opt/sentry/.env.custom
