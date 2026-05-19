@@ -17,7 +17,7 @@
 sentry:
   acme_account: example.com
   acme_domain: sentry.example.com
-  version: 26.3.1
+  version: 26.4.2
   secret: "secretsecretsecretsecretsecretsecretsecretsecretse" # cat /dev/urandom | tr -dc 'abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*(-_=+)' | fold -w 50 | head -n 1 # see https://github.com/getsentry/sentry/blob/22.11.0/src/sentry/runner/settings.py#L14
   url: https://sentry.example.com
   admin_email: admin@example.com
@@ -33,14 +33,14 @@ sentry:
   # (memory limits, extra env vars, etc.). Written as-is to
   # /opt/sentry/docker-compose.override.yml and auto-merged by docker-compose.
   # See: https://docs.docker.com/compose/multiple-compose-files/merge/
-  # compose_override: |
-  #   services:
-  #     clickhouse:
-  #       environment:
-  #         MAX_MEMORY_USAGE_RATIO: "0.2" # limit clickhouse RAM to 20% of host
-  #     kafka:
-  #       environment:
-  #         KAFKA_HEAP_OPTS: '-Xmx512m -Xms512m'
+  #compose_override: |
+  #  services:
+  #    clickhouse:
+  #      environment:
+  #        MAX_MEMORY_USAGE_RATIO: "0.2" # limit clickhouse RAM to 20% of host
+  #    kafka:
+  #      environment:
+  #        KAFKA_HEAP_OPTS: '-Xmx512m -Xms512m'
   config:
     # compose_profiles: errors-only # optional for versions 24.8.0+
     single_organization: True
