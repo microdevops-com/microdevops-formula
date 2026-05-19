@@ -3,6 +3,7 @@
 rabbitmq:
   version: 4.2.3 # optional, specific version or latest, if omitted, install latest first, then keep it without upgrades
   #local_ip: 1.2.3.4 # optional, make sure /etc/hosts has short hostname resolution to this local IP, otherwise rabbitmq will not start, if omitted, 127.0.1.1 is used
+  #enable_all_feature_flag: True # optional, runs `rabbitmqctl enable_feature_flag all` BEFORE the package upgrade on the currently-installed broker; required before upgrading across major versions that drop older feature-flag states. Skipped silently on fresh installs.
   config: # optional
     - 'key = val' # see https://github.com/rabbitmq/rabbitmq-server/blob/v3.7.x/docs/rabbitmq.conf.example, each item is copied as is
   admin:
@@ -14,6 +15,17 @@ rabbitmq:
   acme_account: example.com # acme state account
   plugins: # optional
     - rabbitmq_management
+    # community plugin, downloaded as .ez and enabled. Pick a URL whose plugin version
+    # matches RabbitMQ major.minor (RabbitMQ 4.2.x -> plugin 4.2.x). The on-disk filename
+    # is derived from the URL via basename. Removing the entry stops managing it; disable
+    # manually on the host if needed.
+    # Cleanup of stale copies runs in both /usr/lib/rabbitmq/lib/rabbitmq_server-<VER>/plugins
+    # and /usr/lib/rabbitmq/plugins. By default only files matching the safe pattern
+    # `<name>-<digit>*` are removed. Set force_cleanup: True to widen the pattern to
+    # `<name>-*` so files like `<name>.bak` or `<name>-foo` are also removed.
+    - name: rabbitmq_delayed_message_exchange
+      url: https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases/download/v4.2.0/rabbitmq_delayed_message_exchange-4.2.0.ez
+      #force_cleanup: True   # optional, default False
   vhosts:
     - name: vhost_a
       present: True

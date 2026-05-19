@@ -43,7 +43,18 @@ rabbitmq_repo:
         ##
         deb [arch=amd64 signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://deb1.rabbitmq.com/rabbitmq-server/{{ grains["os"].lower() }}/{{ grains["oscodename"] }} {{ grains["oscodename"] }} main
         deb [arch=amd64 signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://deb2.rabbitmq.com/rabbitmq-server/{{ grains["os"].lower() }}/{{ grains["oscodename"] }} {{ grains["oscodename"] }} main
- 
+
+  {#- Optional: enable all feature flags on the currently-installed broker before any
+      upgrade. Required before upgrading to a major RabbitMQ version that drops support
+      for older feature-flag states. Safe no-op on fresh installs (onlyif skips when the
+      broker is not yet up). #}
+  {%- if pillar["rabbitmq"].get("enable_all_feature_flag", False) %}
+rabbit_enable_feature_flag:
+  cmd.run:
+    - name: rabbitmqctl enable_feature_flag all
+    - onlyif: rabbitmqctl status 2>/dev/null | grep -q Uptime
+  {%- endif %}
+
 rabbit_pkg:
   {%- if "version" in pillar["rabbitmq"] %}
     {%- if pillar["rabbitmq"]["version"] == "latest" %}
@@ -116,6 +127,45 @@ rabbit_service_4:
   cmd.run:
     - name: systemctl daemon-reload
 
+  {#- Download community plugin .ez files BEFORE the broker restart, so all .ez referenced
+      by /etc/rabbitmq/enabled_plugins are on disk when the broker starts. Otherwise
+      rabbitmq-plugins enable for any other plugin fails with plugins_not_found for the
+      community ones that are already recorded as enabled. #}
+  {%- for plugin in pillar["rabbitmq"].get("plugins", []) %}
+    {%- if plugin is mapping %}
+rabbit_plugin_{{ loop.index }}_download:
+  cmd.run:
+    - name: |
+        set -eo pipefail
+        RMQVER=$(dpkg-query -W -f='${Version}' rabbitmq-server | sed -E 's/^[0-9]+://;s/[-+~].*//')
+        DEST_DIR="/usr/lib/rabbitmq/lib/rabbitmq_server-${RMQVER}/plugins"
+        DEST_FILE="${DEST_DIR}/$(basename '{{ plugin["url"] }}')"
+        # remove stale copies of this plugin from both the active versioned dir and the
+        # system-wide /usr/lib/rabbitmq/plugins dir. -type f leaves bundled-plugin dirs
+        # like amqp10_client-3.13.6/ untouched. ! -path "$DEST_FILE" preserves our target
+        # if it is already at the requested version.
+        # Default pattern is the safe `<name>-<digit>*` (versioned files only). Set
+        # `force_cleanup: True` on the pillar entry to widen it to `<name>-*` so any file
+        # with the plugin name prefix is removed (e.g. `<name>.bak`, `<name>-foo`).
+        for D in "$DEST_DIR" "/usr/lib/rabbitmq/plugins"; do
+          [ -d "$D" ] || continue
+      {%- if plugin.get("force_cleanup", False) %}
+          find "$D" -maxdepth 1 -type f -name '{{ plugin["name"] }}-*' ! -path "$DEST_FILE" -print -delete
+      {%- else %}
+          find "$D" -maxdepth 1 -type f -name '{{ plugin["name"] }}-[0-9]*' ! -path "$DEST_FILE" -print -delete
+      {%- endif %}
+        done
+        if [ ! -f "$DEST_FILE" ]; then
+          curl -fsSL -o "${DEST_FILE}.tmp" '{{ plugin["url"] }}'
+          mv "${DEST_FILE}.tmp" "$DEST_FILE"
+          chmod 644 "$DEST_FILE"
+          echo "downloaded $(basename '{{ plugin["url"] }}')"
+        fi
+    - require:
+      - pkg: rabbit_pkg
+    {%- endif %}
+  {%- endfor %}
+
 rabbit_service_5:
   cmd.run:
     - name: service rabbitmq-server restart
@@ -138,9 +188,17 @@ rabbit_fix_salt_module:
         timeout 2m bash -c 'salt-call saltutil.refresh_modules'; } || true
 
   {%- for plugin in pillar["rabbitmq"].get("plugins", []) %}
+    {%- if plugin is mapping %}
+rabbit_plugin_{{ loop.index }}:
+  rabbitmq_plugin.enabled:
+    - name: '{{ plugin["name"] }}'
+    - require:
+      - cmd: rabbit_plugin_{{ loop.index }}_download
+    {%- else %}
 rabbit_plugin_{{ loop.index }}:
   rabbitmq_plugin.enabled:
     - name: {{ plugin }}
+    {%- endif %}
   {%- endfor %}
 
 {% endif %}
