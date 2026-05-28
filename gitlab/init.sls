@@ -14,12 +14,26 @@
 
   {% from "acme/macros.jinja" import verify_and_issue %}
 
+gitlab_repo_keyringdir:
+  file.directory:
+    - name: /etc/apt/keyrings
+    - user: root
+    - group: root
+
 gitlab_repo:
-  pkgrepo.managed:
-    - humanname: Gitlab Repository
-    - name: deb https://packages.gitlab.com/gitlab/gitlab-{{ pillar["gitlab"]["distribution"] }}/{{ grains["os"]|lower }}/ {{ grains["oscodename"] }} main
-    - file: /etc/apt/sources.list.d/gitlab.list
-    - key_url: https://packages.gitlab.com/gitlab/gitlab-{{ pillar["gitlab"]["distribution"] }}/gpgkey
+  pkg.installed:
+    - pkgs: [wget, gpg]
+  cmd.run:
+    - name: |
+        wget -O /tmp/gitlab_key.asc https://packages.gitlab.com/gitlab/gitlab-{{ pillar["gitlab"]["distribution"] }}/gpgkey
+        gpg --batch --yes --no-tty --dearmor --output /etc/apt/keyrings/gitlab.gpg /tmp/gitlab_key.asc
+    - creates: /etc/apt/keyrings/gitlab.gpg
+    - require:
+      - file: gitlab_repo_keyringdir
+  file.managed:
+    - name: /etc/apt/sources.list.d/gitlab.list
+    - contents: |
+        deb [signed-by=/etc/apt/keyrings/gitlab.gpg] https://packages.gitlab.com/gitlab/gitlab-{{ pillar["gitlab"]["distribution"] }}/{{ grains["os"]|lower }}/ {{ grains["oscodename"] }} main
 
   {%- if "acme_account" in pillar["gitlab"] %}
 
