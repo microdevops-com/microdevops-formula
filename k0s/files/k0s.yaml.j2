@@ -1,0 +1,47 @@
+{%- set pillar_spec = salt['pillar.get']('k0s:config:spec', {}) %}
+{%- set default_config = {
+  'apiVersion': 'k0s.k0sproject.io/v1beta1',
+  'kind': 'ClusterConfig',
+  'metadata': {
+    'name': 'k0s',
+  },
+  'spec': {
+    'api': {
+      'address': '',
+      'sans': [],
+    },
+    'network': {
+      'provider': 'kuberouter',
+      'podCIDR': '10.244.0.0/16',
+      'serviceCIDR': '10.96.0.0/12',
+    },
+    'storage': {
+      'type': 'etcd',
+    },
+    'telemetry': {
+      'enabled': false,
+    },
+  },
+} %}
+{%- set config = salt['slsutil.merge'](default_config, {'spec': pillar_spec}, strategy='recurse') %}
+{%- set api = config.get('spec', {}).get('api', {}) %}
+{%- set configured_address = api.get('address', '') %}
+{%- set resolved = namespace(address='') %}
+{%- if not configured_address %}
+{%-   for interface, addresses in grains.get('ip4_interfaces', {}).items() %}
+{%-     if not resolved.address and not interface.startswith('lo') and not interface.startswith('docker') %}
+{%-       for address in addresses %}
+{%-         if not resolved.address and address and not address.startswith('127.') %}
+{%-           set resolved.address = address %}
+{%-         endif %}
+{%-       endfor %}
+{%-     endif %}
+{%-   endfor %}
+{%-   set _ = api.update({'address': resolved.address}) %}
+{%- endif %}
+{%- set api_address = api.get('address', '') %}
+{%- set sans = api.get('sans', []) or [] %}
+{%- if api_address and api_address not in sans %}
+{%-   set _ = api.update({'sans': [api_address] + sans}) %}
+{%- endif %}
+{{ config | yaml(false) }}

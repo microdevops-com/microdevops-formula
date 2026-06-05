@@ -1,0 +1,33 @@
+k0s:
+  version: 'v1.30.2+k0s.0'
+  role: single
+  config_path: /etc/k0s/k0s.yaml
+  data_dir: /var/lib/k0s
+  extra_args: ''
+  install:
+    binary_url: ''
+    checksum: ''
+  config:
+    spec:
+      network:
+        provider: kuberouter
+        podCIDR: 10.244.0.0/16
+        serviceCIDR: 10.96.0.0/12
+      storage:
+        type: etcd
+      telemetry:
+        enabled: false
+  controller:
+    enable_worker: false
+    no_taints: false
+  worker:
+    join_token: ''
+    api_address: ''
+    profile: default
+  token:
+    ttl: 24
+    path: /etc/k0s/worker-join-token
+  service:
+    enabled: true
+    running: true
+  manifests: []
