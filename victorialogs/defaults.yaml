@@ -1,0 +1,14 @@
+salt_cache_dir: /var/cache/salt/VictoriaLogs
+
+# VictoriaLogs is shipped as a single static binary inside a tar.gz on GitHub.
+# The binary inside the archive is named "victoria-logs-prod".
+github:
+  tags_url: https://api.github.com/repos/VictoriaMetrics/VictoriaLogs/releases/latest
+  source: https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{release}/victoria-logs-linux-{arch}-{release}.tar.gz
+  source_hash: https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{release}/victoria-logs-linux-{arch}-{release}_checksums.txt
+
+original_name: victoria-logs-prod
+target: /usr/local/bin/victoria-logs
+data_path: /var/lib/victorialogs
+user: victorialogs
+service_args: -retentionPeriod=30d -httpListenAddr=:9428 -loggerFormat=json
