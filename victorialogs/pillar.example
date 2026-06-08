@@ -1,0 +1,11 @@
+# Minimal example, installs the latest release from GitHub with defaults:
+victorialogs:
+  version: latest
+
+# Full example:
+victorialogs:
+  version: latest         # optional, default. "latest" or a tag like "v1.50.0" (leading "v" optional).
+  target: /usr/local/bin/victoria-logs   # optional, default. Absolute path to the installed binary.
+  data_path: /var/lib/victorialogs       # optional, default. Storage path (passed as -storageDataPath).
+  user: victorialogs                     # optional, default. System user/group the service runs as;
+  service_args: -retentionPeriod=30d -httpListenAddr=:9428 -loggerFormat=json   # optional, default.
