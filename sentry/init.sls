@@ -124,6 +124,28 @@ sentry_compose_override_absent:
     - name: /opt/sentry/docker-compose.override.yml
   {%- endif %}
 
+  {#- Optional knobs patched straight into the upstream-cloned main /opt/sentry/docker-compose.yml, #}
+  {#- as an alternative (or addition) to the compose_override file above. #}
+  {%- if "clickhouse_max_memory_usage_ratio" in pillar["sentry"] %}
+sentry_compose_clickhouse_max_memory_usage_ratio:
+  file.replace:
+    - name: /opt/sentry/docker-compose.yml
+    - pattern: '^( *MAX_MEMORY_USAGE_RATIO: *).*$'
+    - repl: '\g<1>{{ pillar["sentry"]["clickhouse_max_memory_usage_ratio"] }}'
+    - count: 1
+    - backup: False
+  {%- endif %}
+
+  {%- if "kafka_heap_opts" in pillar["sentry"] %}
+sentry_compose_kafka_heap_opts:
+  file.replace:
+    - name: /opt/sentry/docker-compose.yml
+    - pattern: '^( *KAFKA_PROCESS_ROLES:.*\n)(?:^ *KAFKA_HEAP_OPTS:.*\n)?'
+    - repl: '\g<1>      KAFKA_HEAP_OPTS: "{{ pillar["sentry"]["kafka_heap_opts"] }}"\n'
+    - count: 1
+    - backup: False
+  {%- endif %}
+
 sentry_create_env_custom:
   file.copy:
     - name: /opt/sentry/.env.custom
