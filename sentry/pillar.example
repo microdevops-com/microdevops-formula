@@ -12,13 +12,14 @@
 # - 26.4.1
 # - 26.4.2
 # - 26.5.0
+# - 26.5.2
 #
 # Each supported version should have config folder in files here.
 
 sentry:
   acme_account: example.com
   acme_domain: sentry.example.com
-  version: 26.5.0
+  version: 26.5.2
   secret: "secretsecretsecretsecretsecretsecretsecretsecretse" # cat /dev/urandom | tr -dc 'abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*(-_=+)' | fold -w 50 | head -n 1 # see https://github.com/getsentry/sentry/blob/22.11.0/src/sentry/runner/settings.py#L14
   url: https://sentry.example.com
   admin_email: admin@example.com
@@ -42,6 +43,13 @@ sentry:
   #    kafka:
   #      environment:
   #        KAFKA_HEAP_OPTS: '-Xmx512m -Xms512m'
+  # Optional: the same two knobs, but patched in place into the MAIN
+  # /opt/sentry/docker-compose.yml (after the upstream repo is cloned) instead of
+  # via the override file above. Use these when the values must live in the main
+  # compose file itself. Both mechanisms can be combined; if a value is set in
+  # both, the override file wins (docker-compose merges it on top).
+  #clickhouse_max_memory_usage_ratio: '0.2'  # sets MAX_MEMORY_USAGE_RATIO on the clickhouse service
+  #kafka_heap_opts: '-Xmx512m -Xms512m'       # sets KAFKA_HEAP_OPTS on the kafka service
   config:
     # compose_profiles: errors-only # optional for versions 24.8.0+
     single_organization: True
