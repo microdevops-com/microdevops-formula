@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cat > /etc/systemd/network/enp5s0.network <<- EOM
+cat > /etc/systemd/network/10-static.network <<- EOM
 [Match]
-Name=enp5s0
+MACAddress=$6
 
 [Network]
 Address=$1/$2
