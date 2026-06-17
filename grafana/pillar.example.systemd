@@ -1,0 +1,24 @@
+# Native (systemd-managed) Grafana install from the official apt repo.
+# Apply with:
+#   salt 'minion-id' state.apply grafana.systemd
+grafana:
+  systemd:
+    version: latest # or pin a version, e.g. 11.1.0
+    port: 3000
+    admin_password: xxxxxxxxxxxxxxxxxxx
+    config: | ## leave default one intact if not defined, othervise replaces content
+      instance_name = grafana.another-example.com-prod
+      [server]
+      root_url = https://grafana.another-example.com/prod
+      serve_from_sub_path = true
+      [database]
+      url = postgres://another-grafana-prod:xxx@grafana1.example.com:5432/another-grafana-prod
+      [log]
+      level = info
+      mode = console file
+      filters = rendering:debug
+      [rendering]
+      server_url = http://{{ grains['fqdn'] }}:{{ renderer_port }}/render
+      callback_url = https://grafana.another-example.com/prod/
+      [unified_alerting.screenshots]
+      capture = true
