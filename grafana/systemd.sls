@@ -31,15 +31,25 @@ grafana_systemd_pkg:
     - require:
       - pkgrepo: grafana_systemd_repo
 
-grafana_systemd_defaults:
-  file.managed:
+# Set port and admin password via environment in the package-provided
+# defaults file, keeping the rest of its content (GRAFANA_USER, DATA_DIR, etc.) intact
+grafana_systemd_default_port:
+  file.replace:
     - name: /etc/default/grafana-server
-    - user: root
-    - group: root
-    - mode: 644
-    - contents: |
-        GF_SERVER_HTTP_PORT={{ grafana["port"] }}
-        GF_SECURITY_ADMIN_PASSWORD={{ grafana["admin_password"] }}
+    - pattern: '^GF_SERVER_HTTP_PORT=.*'
+    - repl: 'GF_SERVER_HTTP_PORT={{ grafana["port"] }}'
+    - append_if_not_found: True
+    - backup: False
+    - require:
+      - pkg: grafana_systemd_pkg
+
+grafana_systemd_default_admin_password:
+  file.replace:
+    - name: /etc/default/grafana-server
+    - pattern: '^GF_SECURITY_ADMIN_PASSWORD=.*'
+    - repl: 'GF_SECURITY_ADMIN_PASSWORD={{ grafana["admin_password"] }}'
+    - append_if_not_found: True
+    - backup: False
     - require:
       - pkg: grafana_systemd_pkg
 
@@ -60,7 +70,8 @@ grafana_systemd_service:
     - name: grafana-server
     - enable: True
     - watch:
-      - file: grafana_systemd_defaults
+      - file: grafana_systemd_default_port
+      - file: grafana_systemd_default_admin_password
   {%- if grafana["config"] is defined and grafana["config"] is not none %}
       - file: grafana_systemd_config
   {%- endif %}
