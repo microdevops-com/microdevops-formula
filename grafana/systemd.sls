@@ -31,8 +31,6 @@ grafana_systemd_pkg:
     - require:
       - pkgrepo: grafana_systemd_repo
 
-# Set port and admin password via environment in the package-provided
-# defaults file, keeping the rest of its content (GRAFANA_USER, DATA_DIR, etc.) intact
 grafana_systemd_default_port:
   file.replace:
     - name: /etc/default/grafana-server
