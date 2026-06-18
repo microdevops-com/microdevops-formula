@@ -1,0 +1,31 @@
+# Grafana OSS via official standalone Linux tarballs.
+# Version/source resolution uses Grafana's API because package archive names
+# include build IDs that are not derivable from the version alone.
+
+type: grafana
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: grafana
+  group: grafana
+
+svc:
+  version_resolver: grafana
+  version: latest
+  source: "" # intended, keep empty
+  tar:
+    unpack: "grafana-{tag}"
+    args: "--strip-components 1"
+  exec: "{install_dir}/bin/grafana server --homepath={install_dir}"
+
+systemd:
+  Service:
+    ExecStart: "{exec}"
+    User: "{user_name}"
+    Group: "{user_group}"
+    WorkingDirectory: "{install_dir}"
+
+nginx:
+  manage: false
+  upstream: "127.0.0.1:3000"

@@ -1,0 +1,39 @@
+# VictoriaMetrics single-node server - same release-archive shape as
+# VictoriaLogs, packaged under a different binary name (victoria-metrics-prod).
+# https://github.com/VictoriaMetrics/VictoriaMetrics
+#
+# Note: an established victoriametrics/ formula already exists in this repo;
+# this preset is a binsvc design driver (proving multi-instance support for
+# the same archive-fetch shape victorialogs uses), not a replacement for it.
+
+type: victoriametrics
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: victoriametrics
+  group: victoriametrics
+
+svc:
+  version_resolver: github
+  version: latest
+  source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-{osarch}-{tag}.tar.gz"
+  tar:
+    unpack: victoria-metrics-prod
+  move:
+    src: "{install_dir}/victoria-metrics-prod"
+    dst: "{install_dir}/victoriametrics"
+  exec: "{install_dir}/victoriametrics"
+  args:
+    - httpListenAddr: "127.0.0.1:8428"
+    - storageDataPath: "{install_dir}/data"
+    - retentionPeriod: "1"
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false

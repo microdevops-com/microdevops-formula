@@ -1,0 +1,344 @@
+import os
+import sys
+from collections import OrderedDict
+from unittest.mock import MagicMock, patch
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from lib import (
+    deep_format, expand,
+    merge,
+    normalize_osarch, archive_path, tar_extract_command, version_check,
+    repo_from_source, repo_url, latest_from_release, resolve_latest,
+    GITHUB_RELEASES_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
+    render_unit, merge_args, join_args,
+)
+
+
+# ── substitute ────────────────────────────────────────────────────────────────
+
+def test_deep_format_recurses_into_nested_structures():
+    value = {
+        "name": "{instance}-server",
+        "args": ["--listen={addr}", "--name={instance}"],
+        "nested": {"path": "{install_dir}/bin/{instance}"},
+        "untouched": 42,
+    }
+    result = deep_format(value, {"instance": "vl_main", "addr": "0.0.0.0:9428", "install_dir": "/opt/vl_main"})
+    assert result == {
+        "name": "vl_main-server",
+        "args": ["--listen=0.0.0.0:9428", "--name=vl_main"],
+        "nested": {"path": "/opt/vl_main/bin/vl_main"},
+        "untouched": 42,
+    }
+    assert value["name"] == "{instance}-server"  # original untouched
+
+
+def test_deep_format_leaves_unknown_placeholders_intact():
+    result = deep_format({"path": "{install_dir}/{unknown}"}, {"install_dir": "/opt/app"})
+    assert result == {"path": "/opt/app/{unknown}"}
+
+
+def test_expand_resolves_self_references_regardless_of_order():
+    mapping = {
+        "exec": "{install_dir}/{name} {args}",
+        "args": "--config={install_dir}/config.yml",
+        "install_dir": "/opt/services/{name}",
+        "name": "victorialogs",
+    }
+    result = expand(mapping, scope={"type": "logs"})
+    assert result["install_dir"] == "/opt/services/victorialogs"
+    assert result["args"] == "--config=/opt/services/victorialogs/config.yml"
+    assert result["exec"] == "/opt/services/victorialogs/victorialogs --config=/opt/services/victorialogs/config.yml"
+
+
+def test_expand_does_not_mutate_input():
+    mapping = {"install_dir": "/opt/{name}", "name": "vl"}
+    expand(mapping)
+    assert mapping == {"install_dir": "/opt/{name}", "name": "vl"}
+
+
+# ── merge ─────────────────────────────────────────────────────────────────────
+
+def test_merge_overrides_scalars_left_to_right():
+    assert merge({"version": "v1.0"}, {"version": "v2.0"}, {"version": "v3.0"}) == {"version": "v3.0"}
+
+
+def test_merge_recurses_into_nested_dicts():
+    defaults = {"fetch": {"version_resolver": "github", "tar": {"args": "--strip-components=1"}}, "user": {"name": "root"}}
+    preset = {"fetch": {"source": "https://example.com/{name}.tar.gz"}}
+    instance = {"fetch": {"version": "v1.9.0"}, "install_dir": "/opt/services/main"}
+    result = merge(defaults, preset, instance)
+    assert result == {
+        "fetch": {
+            "version_resolver": "github",
+            "tar": {"args": "--strip-components=1"},
+            "source": "https://example.com/{name}.tar.gz",
+            "version": "v1.9.0",
+        },
+        "user": {"name": "root"},
+        "install_dir": "/opt/services/main",
+    }
+
+
+def test_merge_replaces_lists_wholesale():
+    assert merge({"args": ["--a"]}, {"args": ["--b", "--c"]}) == {"args": ["--b", "--c"]}
+
+
+def test_merge_ignores_falsy_layers():
+    assert merge({"a": 1}, {}, None, {"b": 2}) == {"a": 1, "b": 2}
+
+
+def test_merge_does_not_mutate_inputs():
+    defaults = {"fetch": {"tar": {"args": "x"}}}
+    instance = {"fetch": {"version": "v1"}}
+    result = merge(defaults, instance)
+    result["fetch"]["tar"]["args"] = "mutated"
+    assert defaults["fetch"]["tar"]["args"] == "x"
+
+
+# ── fetch ─────────────────────────────────────────────────────────────────────
+
+def test_normalize_osarch_maps_known_aliases_and_passes_through_others():
+    assert normalize_osarch("x86_64") == "amd64"
+    assert normalize_osarch("aarch64") == "arm64"
+    assert normalize_osarch("amd64") == "amd64"
+
+
+def test_archive_path_joins_cache_dir_kind_and_url_basename():
+    source = "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
+    assert archive_path("/var/cache/salt/binsvc/", "victoriametrics", source) == (
+        "/var/cache/salt/binsvc/victoriametrics/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
+    )
+
+
+def test_tar_extract_command_includes_optional_args_and_unpack():
+    assert tar_extract_command("/cache/a.tar.gz", "/opt/app") == (
+        "tar --no-same-owner --directory /opt/app --extract --file /cache/a.tar.gz"
+    )
+    assert tar_extract_command("/cache/a.tar.gz", "/opt/app", args="--strip-components=1", unpack="binary") == (
+        "tar --strip-components=1 --no-same-owner --directory /opt/app --extract --file /cache/a.tar.gz binary"
+    )
+
+
+def test_version_check_builds_bash_regex_guard():
+    assert version_check("/opt/app/bin", "v1.9.0") == "[[ $(/opt/app/bin -version 2>&1) =~ v1.9.0 ]]"
+
+
+# ── release ───────────────────────────────────────────────────────────────────
+
+def test_repo_from_source_extracts_owner_repo_from_release_url():
+    source = "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-{osarch}-{tag}.tar.gz"
+    assert repo_from_source(source) == "VictoriaMetrics/VictoriaMetrics"
+
+
+def test_repo_url_fills_repo_placeholder():
+    template = "https://api.github.com/repos/{repo}/releases/latest"
+    source = "https://github.com/prometheus/node_exporter/releases/download/{tag}/node_exporter-{tag}.tar.gz"
+    assert repo_url(template, source) == "https://api.github.com/repos/prometheus/node_exporter/releases/latest"
+
+
+def test_latest_from_release_strips_known_suffixes():
+    assert latest_from_release({"tag_name": "v1.101.0-cluster"}) == "v1.101.0"
+    assert latest_from_release({"tag_name": "v1.101.0"}) == "v1.101.0"
+
+
+def test_resolve_latest_returns_unchanged_when_version_is_already_concrete():
+    svc = {"version_resolver": "github", "version": "v1.9.0", "source": "https://github.com/owner/repo/releases/..."}
+    assert resolve_latest(svc, "github") is svc
+
+
+def test_resolve_latest_returns_unchanged_when_no_source():
+    svc = {"version_resolver": "github", "version": "latest"}
+    assert resolve_latest(svc, "github") is svc
+
+
+def test_resolve_latest_fetches_and_resolves_tag():
+    svc = {
+        "version_resolver": "github",
+        "version": "latest",
+        "source": "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{tag}/victoria-logs-linux-amd64-{tag}.tar.gz",
+    }
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"tag_name": "v1.50.0"}
+
+    with patch("lib.requests.get", return_value=mock_response) as mock_get:
+        result = resolve_latest(svc, "github")
+
+    mock_get.assert_called_once_with("https://api.github.com/repos/VictoriaMetrics/VictoriaLogs/releases/latest", timeout=10)
+    mock_response.raise_for_status.assert_called_once()
+    assert result["version"] == "v1.50.0"
+    assert result["tag"] == "v1.50.0"
+    assert result["source"] == svc["source"]
+
+
+def test_resolve_latest_strips_cluster_suffix():
+    svc = {
+        "version_resolver": "github",
+        "version": "latest",
+        "source": "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-amd64-{tag}.tar.gz",
+    }
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"tag_name": "v1.101.0-cluster"}
+    with patch("lib.requests.get", return_value=mock_response) as mock_get:
+        result = resolve_latest(svc, "github")
+    mock_get.assert_called_once_with("https://api.github.com/repos/VictoriaMetrics/VictoriaMetrics/releases/latest", timeout=10)
+    assert result["version"] == "v1.101.0"
+    assert result["tag"] == "v1.101.0"
+
+
+def test_resolve_latest_grafana_picks_latest_stable_and_linux_package():
+    svc = {"version_resolver": "grafana", "version": "latest"}
+    versions_response = MagicMock()
+    versions_response.json.return_value = {
+        "items": [
+            {"version": "13.1.0-27729613434", "channels": {"nightly": True, "stable": False}},
+            {"version": "13.0.2", "channels": {"stable": True}},
+        ]
+    }
+    packages_response = MagicMock()
+    packages_response.json.return_value = {
+        "items": [
+            {
+                "version": "13.0.2",
+                "os": "linux",
+                "arch": "arm64",
+                "url": "https://example.com/grafana_13.0.2_linux_arm64.tar.gz",
+            },
+            {
+                "version": "13.0.2",
+                "os": "linux",
+                "arch": "amd64",
+                "url": "https://example.com/grafana_13.0.2_linux_amd64.tar.gz",
+                "sha256": "abc123",
+                "links": [
+                    {"rel": "self", "href": "/self"},
+                    {"rel": "download", "href": "https://download.example.com/grafana_13.0.2_linux_amd64.tar.gz"},
+                ],
+            },
+        ]
+    }
+
+    with patch("lib.requests.get", side_effect=[versions_response, packages_response]) as mock_get:
+        result = resolve_latest(svc, "grafana", {"osarch": "amd64"})
+
+    assert mock_get.call_args_list[0].args == (GRAFANA_VERSIONS_URL,)
+    assert mock_get.call_args_list[0].kwargs == {"timeout": 10}
+    assert mock_get.call_args_list[1].args == (GRAFANA_PACKAGES_URL.format(version="13.0.2"),)
+    assert mock_get.call_args_list[1].kwargs == {"timeout": 10}
+    assert result["version"] == "13.0.2"
+    assert result["tag"] == "13.0.2"
+    assert result["source"] == "https://download.example.com/grafana_13.0.2_linux_amd64.tar.gz"
+    assert result["source_hash"] == "sha256=abc123"
+
+
+def test_resolve_latest_grafana_resolves_concrete_version_package_without_source():
+    svc = {"version_resolver": "grafana", "version": "13.0.1"}
+    packages_response = MagicMock()
+    packages_response.json.return_value = {
+        "items": [
+            {
+                "version": "13.0.1",
+                "os": "linux",
+                "arch": "amd64",
+                "url": "https://example.com/grafana_13.0.1_linux_amd64.tar.gz",
+            },
+        ]
+    }
+
+    with patch("lib.requests.get", return_value=packages_response) as mock_get:
+        result = resolve_latest(svc, "grafana", {"osarch": "amd64"})
+
+    mock_get.assert_called_once_with(GRAFANA_PACKAGES_URL.format(version="13.0.1"), timeout=10)
+    assert result["version"] == "13.0.1"
+    assert result["tag"] == "13.0.1"
+    assert result["source"] == "https://example.com/grafana_13.0.1_linux_amd64.tar.gz"
+
+
+def test_resolve_latest_unknown_resolver_raises():
+    svc = {"version": "latest", "source": "https://example.com/app.tar.gz"}
+    try:
+        resolve_latest(svc, "unknown")
+    except ValueError as exc:
+        assert "unknown version_resolver" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+# ── systemd ───────────────────────────────────────────────────────────────────
+
+def test_render_unit_produces_ini_with_repeated_keys_for_lists():
+    sections = OrderedDict([
+        ("Unit", OrderedDict([("Description", "victorialogs vl_main"), ("After", ["network.target", "disk.target"])])),
+        ("Service", OrderedDict([("Type", "simple"), ("ExecStart", "/opt/app/bin -arg=1")])),
+        ("Install", OrderedDict([("WantedBy", "multi-user.target")])),
+    ])
+    assert render_unit(sections) == (
+        "[Unit]\n"
+        "Description=victorialogs vl_main\n"
+        "After=network.target\n"
+        "After=disk.target\n"
+        "\n"
+        "[Service]\n"
+        "Type=simple\n"
+        "ExecStart=/opt/app/bin -arg=1\n"
+        "\n"
+        "[Install]\n"
+        "WantedBy=multi-user.target\n"
+    )
+
+
+def test_join_args_from_mapping():
+    assert join_args({"httpListenAddr": "0.0.0.0:8428", "retentionPeriod": 1}) in (
+        "-httpListenAddr=0.0.0.0:8428 -retentionPeriod=1",
+        "-retentionPeriod=1 -httpListenAddr=0.0.0.0:8428",
+    )
+
+
+def test_join_args_from_ordered_list_preserves_order_and_repeats():
+    args = [{"remoteWrite.url": "https://a.example.com/write"}, {"remoteWrite.url": "https://b.example.com/write"}]
+    assert join_args(args) == "-remoteWrite.url=https://a.example.com/write -remoteWrite.url=https://b.example.com/write"
+
+
+def test_merge_args_overrides_one_flag_and_keeps_the_rest_in_order():
+    preset = [{"httpListenAddr": "127.0.0.1:9428"}, {"storageDataPath": "/data"}, {"retentionPeriod": "1"}]
+    instance = [{"httpListenAddr": "127.0.0.1:9429"}]
+    assert merge_args(preset, instance) == [
+        {"httpListenAddr": "127.0.0.1:9429"},
+        {"storageDataPath": "/data"},
+        {"retentionPeriod": "1"},
+    ]
+
+
+def test_merge_args_appends_new_flags_in_first_seen_order():
+    preset = [{"httpListenAddr": "127.0.0.1:9428"}]
+    instance = [{"retentionPeriod": "30d"}, {"httpListenAddr": "127.0.0.1:9429"}]
+    assert merge_args(preset, instance) == [
+        {"httpListenAddr": "127.0.0.1:9429"},
+        {"retentionPeriod": "30d"},
+    ]
+
+
+def test_merge_args_accepts_plain_mapping_layers_too():
+    assert merge_args({"httpListenAddr": "127.0.0.1:9428", "retentionPeriod": "1"}, {"retentionPeriod": "30d"}) == [
+        {"httpListenAddr": "127.0.0.1:9428"},
+        {"retentionPeriod": "30d"},
+    ]
+
+
+def test_merge_args_passes_through_a_single_layer_untouched():
+    layer = [{"remoteWrite.url": "https://a.example.com/write"}, {"remoteWrite.url": "https://b.example.com/write"}]
+    assert merge_args(None, layer) == layer
+    assert merge_args(layer, None) == layer
+
+
+def test_merge_args_falls_back_to_wholesale_replace_when_a_layer_repeats_a_flag():
+    preset = [{"remoteWrite.url": "https://a.example.com/write"}, {"remoteWrite.url": "https://b.example.com/write"}]
+    instance = [{"httpListenAddr": "127.0.0.1:9429"}]
+    assert merge_args(preset, instance) == instance
+    assert merge_args(instance, preset) == preset
+
+
+def test_merge_args_returns_empty_list_for_no_layers():
+    assert merge_args() == []
+    assert merge_args(None, None) == []

@@ -1,0 +1,138 @@
+# binsvc - run N instances of a statically-built binary
+# (VictoriaMetrics, VictoriaLogs, Grafana, Loki, Prometheus, exporters, ...)
+# under systemd, each independently configured.
+#
+# Resolution per instance, see binsvc/init.sls / readme.md for the full story:
+#   1. settings = merge(binsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
+#      - everything here merges deep-dict-wise / replaces-wholesale, EXCEPT
+#        svc.args, which is merged by flag name (merge_args in lib.py), so
+#        an instance can override e.g. just httpListenAddr from a preset's
+#        args without restating storageDataPath/retentionPeriod/... too
+#        (see vl_secondary below)
+#   2. every {placeholder} string anywhere in `settings` is expanded in two
+#      passes - first against grain-derived identity + the instance's own
+#      static keys (name/type/version/tag/tag_vstrip/osarch/...), then again
+#      once install_dir/exec/args/user_name/user_group are themselves known.
+#   3. building blocks run in order: user/ssh, config, svc (fetch), systemd, nginx
+#
+# Available placeholders (anywhere in an instance's settings):
+#   {name}          instance key (the dict key under binsvc:instances)
+#   {type}          preset name, or {name} if no preset is used
+#   {version}       svc.version, resolved if it was "latest"
+#   {tag}           release tag (usually == version, e.g. "v1.9.0")
+#   {tag_vstrip}    {tag} with a leading "v" stripped (e.g. "1.9.0")
+#   {osarch}        GOARCH-style arch (amd64/arm64/...)
+#   {kernel_lower}  lowercased kernel grain (e.g. "linux")
+#   {cpuarch}       cpuarch grain
+#   {install_dir}   resolved install_dir (2nd pass only)
+#   {exec}          resolved svc.exec path (2nd pass only)
+#   {args}          svc.args joined into "-flag=value ..." (2nd pass only)
+#   {user_name}     resolved user.name, default "root" (2nd pass only)
+#   {user_group}    resolved user.group, default {user_name} (2nd pass only)
+
+
+binsvc:
+
+  # Per-preset overrides, deep-merged over the bundled salt://binsvc/presets/
+  # files - only specify what differs. Omit a preset entirely to use it as-is.
+  presets:
+    victorialogs:
+      svc:
+        version: v1.9.0   # pin instead of tracking "latest"
+
+  instances:
+
+    # --- minimal: a single VictoriaLogs instance, defaults all the way ---
+    vl_main:
+      preset: victorialogs
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vlogs
+        group: vlogs
+      svc:
+        version: latest
+
+    # --- a second, independent instance of the same preset on the same host ---
+    vl_secondary:
+      preset: victorialogs
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vlogs-secondary
+        group: vlogs-secondary
+      svc:
+        version: v1.8.0
+        # args is merged with the preset's by flag name (merge_args in lib.py)
+        # rather than replaced wholesale, so overriding just the listen address
+        # here still keeps the preset's storageDataPath/retentionPeriod intact.
+        args:
+          - httpListenAddr: "127.0.0.1:9429"
+      nginx:
+        manage: true
+        upstream: "127.0.0.1:9429"
+        server_names:
+          - logs2.example.com
+        ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
+        ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
+        auth_basic:
+          - username: admin
+            password: change-me
+
+    # --- VictoriaMetrics from a direct URL instead of "latest"/a tag ---
+    vm_main:
+      preset: victoriametrics
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vmetrics
+        group: vmetrics
+      svc:
+        source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
+        source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0_checksums.txt"
+        version: v1.101.0
+      config:
+        main:
+          name: "{install_dir}/scrape.yml"
+          contents:
+            global:
+              scrape_interval: 30s
+
+    # --- Grafana from the official standalone tarball ---
+    grafana_main:
+      preset: grafana
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: grafana
+        group: grafana
+      nginx:
+        manage: true
+        upstream: "127.0.0.1:3000"
+        server_names:
+          - grafana.example.com
+        ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
+        ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
+
+    # --- no preset at all: every building block driven straight from pillar ---
+    custom_exporter:
+      type: my_exporter
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: my_exporter
+        group: my_exporter
+      svc:
+        source: "https://example.com/downloads/my_exporter-{osarch}.tar.gz"
+        version: "1.2.3"
+        move:
+          src: "{file}"
+          dst: "{install_dir}/my_exporter"
+        exec: "{install_dir}/my_exporter"
+        args:
+          - web.listen-address: "127.0.0.1:9200"
+      systemd:
+        Service:
+          ExecStart: "{exec} {args}"
+          User: "{user_name}"
+          Group: "{user_group}"

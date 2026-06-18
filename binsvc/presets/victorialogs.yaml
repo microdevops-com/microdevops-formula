@@ -1,0 +1,36 @@
+# VictoriaLogs - single static binary shipped as a .tar.gz per release.
+# https://github.com/VictoriaMetrics/VictoriaLogs
+
+type: victorialogs
+
+install_dir: "/opt/services/{type}/{name}"
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: victorialogs
+  group: victorialogs
+
+svc:
+  version_resolver: github
+  version: latest
+  source: "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{tag}/victoria-logs-linux-{osarch}-{tag}.tar.gz"
+  tar:
+    unpack: victoria-logs-prod
+  move:
+    src: "{install_dir}/victoria-logs-prod"
+    dst: "{install_dir}/victorialogs"
+  exec: "{install_dir}/victorialogs"
+  args:
+    - httpListenAddr: "127.0.0.1:9428"
+    - storageDataPath: "{install_dir}/data"
+    - retentionPeriod: "30d"
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false

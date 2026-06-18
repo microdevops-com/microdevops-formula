@@ -1,0 +1,26 @@
+cache_dir: /var/cache/salt/binsvc
+
+install_dir: "/opt/services/{type}/{name}"
+
+user:
+  manage: false
+  name: root
+  group: root
+
+nginx:
+  manage: false
+
+systemd:
+  manage: true
+  unit: "binsvc_{name}"
+  Unit:
+    Description: "binsvc: {type} ({name})"
+    After: network.target
+  Service:
+    Type: simple
+    Restart: on-failure
+    StartLimitBurst: 5
+    StartLimitInterval: 1
+    WorkingDirectory: "{install_dir}"
+  Install:
+    WantedBy: multi-user.target
