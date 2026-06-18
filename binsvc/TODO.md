@@ -222,6 +222,20 @@ rewrite its own binary) and **not** added to the `changed` restart-trigger list
 `{install_dir}`→`{name}`) is covered by `tests/test_lib.py`; the
 `File.directory`/`recurse` behavior is render-path only.
 
+### [ ] 15. Cross-instance aggregation (`gather`) — vmagent scrape configs
+**Design settled 2026-06; no code yet (needs a `vmagent` preset first).** Full
+decisions in `docs/extending-with-app-blocks.md` → "Cross-instance aggregation".
+
+A consumer (vmagent) renders one config gathered from other instances' pillar
+(exporters declare a `scrape_config`). Settled: **pull not push** (stateless,
+order-independent, orphan-free); **generalize the scan, scope the merge** — one
+pure key-parameterized `gather(instances, key, selector)` helper in `lib.py`, but
+merge+render stay in the consumer block (no pub/sub framework, no `provides`
+envelope); **selector-scoped, never "scan all"** (multi-vmagent); contributions
+**literal** in v1 (no cross-scope expansion / flag-parsing); **host-local**; verbatim
+job dict with `job_name` dedup; **no magic placeholder** in `expand`. First feature
+where one instance reads others — flag the non-locality in WHITEPAPER when built.
+
 ---
 
 ## Resolved / decisions on record (do not relitigate)
