@@ -1,16 +1,18 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://binsvc/lib.py import render_config
+from salt://binsvc/lib.py import render_config, deep_format
 
 # Renders the instance's config file(s) from `settings["config"]`, a dict of
-# named entries each describing one file:
+# named entries each describing one file. The entry's key is available as
+# `{confname}` within the entry, so a filename can be declared once (as the key)
+# instead of repeated in `name`:
 #
 #   config:
-#     main:
-#       name: "{install_dir}/config.yml"
-#       format: yaml                       # optional: yaml (default), ini, json
-#       contents: {retentionPeriod: 30d}   # dict/list -> rendered via format; strings used verbatim
+#     custom.ini:                          # {confname} == "custom.ini"
+#       name: "{install_dir}/conf/{confname}"
+#       format: ini                        # optional: yaml (default), ini, json
+#       contents: {server: {http_port: 3000}}  # dict/list -> rendered via format; strings used verbatim
 #     extra:
 #       name: "{install_dir}/extra.conf"
 #       source: salt://my-formula/files/extra.conf.jinja
@@ -33,6 +35,11 @@ def config_files(prefix, settings):
     for key, item in config.items():
         if not isinstance(item, dict) or "name" not in item:
             continue
+
+        # {confname} = this entry's key; narrow late expansion (like
+        # fetch_archive's {file}), so the filename lives in one place. Other
+        # placeholders are already resolved by init.sls and left untouched.
+        item = deep_format(item, {"confname": key})
 
         item_id = "{}_{}".format(sid, key)
         kwargs = dict(name=item["name"],

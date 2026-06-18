@@ -118,11 +118,13 @@ user:
 #     - "{install_dir}/data"
 
 # Config files. Each named entry renders one File.managed and contributes to the
-# systemd restart watch list. Use either `contents` or `source`.
+# systemd restart watch list. Use either `contents` or `source`. The entry key is
+# available within the entry as {confname}, so a filename can be declared once
+# (as the key) instead of repeated in `name`.
 #
 # config:
-#   main_yaml:
-#     name: "{install_dir}/config.yml"
+#   config.yml:                 # {confname} == "config.yml"
+#     name: "{install_dir}/{confname}"
 #     format: yaml              # yaml (default), yml, ini, json
 #     user: "{user_name}"       # defaults to service user/root
 #     group: "{user_group}"     # defaults to service group/root

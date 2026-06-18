@@ -27,8 +27,8 @@ svc:
     - "{install_dir}/data"
 
 config:
-  main:
-    name: "{install_dir}/conf/custom.ini"
+  custom.ini:
+    name: "{install_dir}/conf/{confname}"
     format: ini
     contents:
       server:
