@@ -1,5 +1,13 @@
 cache_dir: /var/cache/salt/binsvc
 
+# TTL (seconds) for the on-disk cache of version/source API responses, shared
+# across render processes on the render host. Collapses a many-minion highstate
+# (or repeated salt-ssh runs) into one API call per URL per window, and lets a
+# stale entry be served if a refresh fails. 0 disables caching (direct request
+# every time). Does NOT help minions rendering behind a shared NAT egress IP -
+# see WHITEPAPER.md §10.
+resolve_cache_ttl: 3600
+
 install_dir: "/opt/services/{type}/{name}"
 
 user:

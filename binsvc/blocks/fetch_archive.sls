@@ -73,4 +73,21 @@ def fetch_archive(prefix, settings):
                      user="root", group="root", mode="755",
                      require=changed)
 
+    # Service-owned writable state. Extraction runs as root with --no-same-owner,
+    # so anything the archive *ships* lands root-owned; dirs the service must
+    # write into (e.g. Grafana's data/db, plugins, logs) must be the service
+    # user's. Kept distinct from the root-owned program files on purpose - a
+    # compromised service can't rewrite its own binary. recurse fixes ownership
+    # of any contents the tarball shipped. Not added to `changed`: an ownership
+    # fixup isn't a "new binary" restart trigger. data_dirs are already concrete
+    # here (init.sls expands {install_dir}/... before dispatch).
+    for index, data_dir in enumerate(svc.get("data_dirs", [])):
+        File.directory(sid + "_data_dir_" + str(index),
+                       name=data_dir,
+                       user=owner.get("name", "root"),
+                       group=owner.get("group", "root"),
+                       makedirs=True,
+                       recurse=["user", "group"],
+                       require=changed)
+
     return changed

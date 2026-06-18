@@ -28,23 +28,23 @@ helpers at module top. Validated via real `salt-call` / `salt-ssh` render (unit
 tests don't exercise the pyobjects path). Docs updated: `lib.py` docstring,
 `readme.md`, `WHITEPAPER.md` §3.
 
-### [ ] 2. `resolve_latest` does unbounded network I/O at render time
-**Where:** `lib.py` `resolve_latest()` (the `requests.get(url)` call).
+### [x] 2. `resolve_latest` render-time network I/O — hardened
+**Resolved 2026-06-18.**
 
-**Partial 2026-06-18:** `_get_json()` now calls `requests.get(...,
-timeout=10)`, covering the timeout part for GitHub and Grafana resolvers.
-Token/auth, render-time coupling docs, and caching remain open.
+- Timeout: `_get_json` calls `requests.get(..., timeout=10)`.
+- On-disk TTL cache (`cached_get_json`, `resolve_cache_ttl` default 1h): collapses
+  a many-minion highstate / repeated salt-ssh runs into one API call per URL per
+  window, shared across render processes via `flock` + atomic writes, with
+  serve-stale-on-error so a GitHub blip/rate-limit doesn't fail the render.
+  Covers GitHub and Grafana.
+- Optional `binsvc:github_token` (top-level pillar) → Bearer auth on the github
+  resolver only (never sent to grafana.com, kept out of the cache key); lifts
+  GitHub to 5000 req/hr. This is the mitigation for the **NAT unhappy path**
+  (minions rendering locally behind a shared egress IP don't share the cache
+  filesystem).
 
-**Why:** Runs during *rendering*. No timeout → a hung GitHub socket hangs the
-whole render. No auth → unauthenticated GitHub API is 60 req/hr/IP; a master
-rendering many minions or frequent highstates will hit the limit and fail the
-*render* (not just serve a stale version). If GitHub is down the instance
-fails to compile.
-
-**What to do:**
-- Support an optional GitHub token (env var or pillar) to lift the 60/hr cap.
-- Document that `version: latest` couples render to a third-party API; pinning
-  is the safe default. Consider caching the resolved tag per run.
+Tests in `tests/test_lib.py`; documented in WHITEPAPER §10, `defaults.yaml`,
+`pillar.example`. Render/concurrency path itself is render-only (not unit-tested).
 
 ### [ ] 3. Binaries are fetched unverified by default
 **Where:** `presets/victorialogs.yaml`, `presets/victoriametrics.yaml`
@@ -90,28 +90,14 @@ flips to binsvc-managed systemd (tarball has no postinst, so `systemd.manage`
 goes true + the preset gains a `systemd:` section); WHITEPAPER §4/§8/§10 + readme
 need updating *as part of the change* (don't pre-edit — keep doc/code in sync).
 
-### [ ] 12. Verify grafana preset against a real tarball (homepath / unpack dir)
-**Where:** `presets/grafana.yaml`. Found during review of the item-11
-implementation, 2026-06-18. These only surface at *runtime* — a render won't
-catch either.
+### [x] 12. Grafana preset validated against a real tarball
+**Resolved 2026-06-18 — a real salt-ssh run installs and runs Grafana.**
 
-**Why:**
-- **`--homepath` likely wrong.** `svc.exec` runs `{install_dir}/bin/grafana` and
-  `WorkingDirectory` is `{install_dir}` — both consistent with `tar.args:
-  --strip-components 1` (archive contents land at install_dir root). But the same
-  exec passes `--homepath={install_dir}/grafana`, a subdir that won't exist after
-  a strip-1 extract, so Grafana won't find `conf/`/`public/`. Almost certainly
-  should be `--homepath={install_dir}`. The binary-path and homepath assume
-  different layouts — they can't both be right.
-- **`tar.unpack: "grafana-{tag}"` unconfirmed.** Assumes the tarball's top dir is
-  `grafana-<version>` (no `v`). If it's actually `grafana-v<version>` or similar,
-  `--strip-components 1` + member-extraction silently extracts nothing → empty
-  install_dir.
-
-**What to do:** Download one resolved tarball; confirm the top-dir name and the
-`bin/`/`conf/`/`public/` layout; fix `homepath` (and `unpack` if needed). Also
-confirm `grafana -version` works for `fetch_archive`'s `version_check` unless-guard
-(ties to #5 — `version_check` assumes `binary -version`).
+`--homepath` was fixed to `{install_dir}` and `tar.unpack: "grafana-{tag}"`
+matches the real tarball top-dir (strip-1 extract + service start succeed).
+Residual, tracked under #5: whether `fetch_archive`'s `version_check`
+unless-guard (`grafana -version`) makes a *second* run a no-op or re-extracts is
+a separate idempotency question (`version_check` assumes `binary -version`).
 
 ---
 
@@ -216,6 +202,25 @@ Generic — many tools need it.
 Mind the systemd-ordering split (`docs/extending-with-app-blocks.md`): some
 commands must run *before* service start, some *after* (need a running
 service) — design the phase handling alongside the app-block dispatch registry.
+
+### [x] 13. `svc.data_dirs` — service-owned writable state dirs
+**Implemented & validated 2026-06-18 (code + unit test; confirmed by a real
+salt-ssh Grafana run). Documented in readme, pillar.example, WHITEPAPER §10.**
+
+`fetch_archive` extracts as root with `--no-same-owner`, so anything the archive
+*ships* lands root-owned, and a service that must write into archive-provided
+dirs (Grafana's `data/` db, plugins, logs) can't. (VL/VM don't hit this — their
+writable `storageDataPath` doesn't exist post-extract, so the service creates it
+under the user-owned `install_dir` itself.) Added an optional `svc.data_dirs`
+list: after extraction, each is `File.directory`'d owned by the service user with
+`recurse=[user,group]` (fixing ownership of any shipped contents). Deliberately
+kept distinct from the root-owned program files (a compromised service can't
+rewrite its own binary) and **not** added to the `changed` restart-trigger list
+(an ownership fixup isn't a "new binary" event). Grafana preset sets
+`data_dirs: ["{install_dir}/data"]` (covers db/logs/plugins — all default under
+`{homepath}/data`). Pure-logic side (`expand` resolving the list through
+`{install_dir}`→`{name}`) is covered by `tests/test_lib.py`; the
+`File.directory`/`recurse` behavior is render-path only.
 
 ---
 

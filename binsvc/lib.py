@@ -10,7 +10,17 @@ Sections: substitute · merge · fetch · release · systemd
 """
 
 import copy
+import fcntl
+import hashlib
+import json
+import logging
+import os
+import tempfile
+import time
+
 import requests
+
+log = logging.getLogger(__name__)
 
 
 # ── substitute ───────────────────────────────────────────────────────────────
@@ -132,10 +142,124 @@ GRAFANA_VERSIONS_URL = "https://grafana.com/api/grafana/versions"
 GRAFANA_PACKAGES_URL = "https://grafana.com/api/grafana/versions/{version}/packages"
 
 
-def _get_json(url, timeout=10):
-    response = requests.get(url, timeout=timeout)
+def _get_json(url, timeout=10, headers=None):
+    kwargs = {"timeout": timeout}
+    if headers:
+        kwargs["headers"] = headers
+    response = requests.get(url, **kwargs)
     response.raise_for_status()
     return response.json()
+
+
+# --- on-disk resolve cache (rate-limit + resilience) --------------------------
+#
+# Resolution runs at render time. Rendering for many minions on one host (master
+# / salt-ssh controller), or repeated salt-ssh runs, would otherwise hit a fresh
+# API request every time and blow the unauthenticated GitHub limit (60 req/hr/IP).
+# A small TTL'd file cache, shared across render PROCESSES on that host, collapses
+# them into one request per URL per TTL, and serves the last-known value if a
+# refresh fails (so a GitHub blip / rate-limit doesn't fail the render).
+#
+# KNOWN UNHAPPY PATH (accepted): minions that render locally behind a shared NAT
+# egress IP share the rate-limit budget but NOT this filesystem, so the cache
+# can't help them. Use a GitHub token there. See WHITEPAPER.md §10.
+
+
+def _cache_path(cache_dir, url):
+    digest = hashlib.sha256(url.encode("utf-8")).hexdigest()
+    return os.path.join(cache_dir, "resolve", digest + ".json")
+
+
+def _read_cache_entry(path):
+    try:
+        with open(path, "r") as handle:
+            return json.load(handle)
+    except (IOError, OSError, ValueError):
+        return None
+
+
+def _cache_fresh(entry, ttl):
+    return isinstance(entry, dict) and (time.time() - entry.get("at", 0)) < ttl
+
+
+def _atomic_write_json(path, payload):
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=directory, prefix=".tmp_")
+    try:
+        with os.fdopen(fd, "w") as handle:
+            json.dump(payload, handle)
+        os.rename(tmp, path)  # atomic on POSIX, same filesystem
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+class _file_lock:
+    """Cross-process advisory lock (flock); auto-released on close/process exit."""
+
+    def __init__(self, path):
+        self.path = path
+        self.fd = None
+
+    def __enter__(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        self.fd = os.open(self.path, os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(self.fd, fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, *exc):
+        fcntl.flock(self.fd, fcntl.LOCK_UN)
+        os.close(self.fd)
+
+
+def cached_get_json(url, cache_dir, ttl, timeout=10, headers=None):
+    """JSON GET with an on-disk TTL cache shared across render processes.
+
+    Fast path: a fresh entry is read without locking. On a cold/expired entry an
+    flock serializes contenders so only one process makes the real request
+    (re-checked after acquiring the lock - someone may have just filled it); the
+    result is written atomically. If the refresh fails but a (stale) entry exists,
+    the stale value is served rather than failing the render; a failure with no
+    cache at all propagates. See the cache-section comment for the NAT caveat.
+    """
+    path = _cache_path(cache_dir, url)
+
+    entry = _read_cache_entry(path)
+    if _cache_fresh(entry, ttl):
+        return entry["data"]
+
+    with _file_lock(path + ".lock"):
+        entry = _read_cache_entry(path)  # double-check under lock
+        if _cache_fresh(entry, ttl):
+            return entry["data"]
+        try:
+            # headers (e.g. auth) affect the request, not the key: the response
+            # for a URL is the same regardless of which token fetched it.
+            data = _get_json(url, timeout, headers)
+            _atomic_write_json(path, {"at": time.time(), "data": data})
+            return data
+        except Exception:
+            if entry is not None:
+                log.warning("binsvc: resolve refresh failed, serving stale cache for %s", url)
+                return entry["data"]
+            raise
+
+
+def _get_json_via_context(url, context, headers=None):
+    """Fetch JSON, honoring an optional on-disk cache configured in `context`
+    (`cache_dir` + `resolve_cache_ttl`). Without a usable cache config, falls back
+    to a direct request - so resolvers don't care whether caching is enabled.
+    `headers` is the resolver's business (e.g. the GitHub auth header) - kept out
+    of the cache key on purpose."""
+    cache_dir = context.get("cache_dir")
+    ttl = context.get("resolve_cache_ttl", 0)
+    if cache_dir and ttl and ttl > 0:
+        return cached_get_json(url, cache_dir, ttl, headers=headers)
+    return _get_json(url, headers=headers)
 
 
 def repo_from_source(source):
@@ -160,12 +284,16 @@ def latest_from_release(body, strip=("-cluster",)):
 def github_latest(svc, context=None):
     """Latest published GitHub release tag (e.g. 'v1.50.0'); strips -cluster.
     Resolves only `version: latest`, and needs a source URL to derive the repo;
-    returns None (nothing to resolve) otherwise."""
+    returns None (nothing to resolve) otherwise. An optional `github_token` in
+    context is sent as a Bearer auth header (lifts the 60->5000 req/hr limit) -
+    GitHub only, never to other resolvers' endpoints."""
     if svc.get("version") != "latest" or "source" not in svc:
         return None
-    return {
-        "version": latest_from_release(_get_json(repo_url(GITHUB_RELEASES_URL, svc["source"])))
-    }
+    context = context or {}
+    token = context.get("github_token")
+    headers = {"Authorization": "Bearer {}".format(token)} if token else None
+    body = _get_json_via_context(repo_url(GITHUB_RELEASES_URL, svc["source"]), context, headers)
+    return {"version": latest_from_release(body)}
 
 
 def _grafana_download_url(package):
@@ -195,7 +323,7 @@ def grafana_latest(svc, context=None):
     version = svc.get("version")
     if version == "latest":
         version = None
-        for item in _get_json(GRAFANA_VERSIONS_URL).get("items", []):
+        for item in _get_json_via_context(GRAFANA_VERSIONS_URL, context).get("items", []):
             if item.get("channels", {}).get("stable"):
                 version = item["version"]
                 break
@@ -203,7 +331,7 @@ def grafana_latest(svc, context=None):
             raise RuntimeError("no stable grafana version found in versions API")
 
     packages_url = GRAFANA_PACKAGES_URL.format(version=version)
-    for package in _get_json(packages_url).get("items", []):
+    for package in _get_json_via_context(packages_url, context).get("items", []):
         if package.get("os") == "linux" and package.get("arch") == osarch:
             source = _grafana_download_url(package)
             if not source:

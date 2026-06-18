@@ -1,7 +1,10 @@
+import json
 import os
 import sys
 from collections import OrderedDict
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -11,6 +14,7 @@ from lib import (
     normalize_osarch, archive_path, tar_extract_command, version_check,
     repo_from_source, repo_url, latest_from_release, resolve_latest,
     GITHUB_RELEASES_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
+    cached_get_json, _cache_path,
     render_unit, merge_args, join_args,
 )
 
@@ -56,6 +60,22 @@ def test_expand_does_not_mutate_input():
     mapping = {"install_dir": "/opt/{name}", "name": "vl"}
     expand(mapping)
     assert mapping == {"install_dir": "/opt/{name}", "name": "vl"}
+
+
+def test_expand_resolves_data_dirs_list_through_install_dir():
+    # fetch_archive's svc.data_dirs lean on expand resolving a list of strings
+    # that reference {install_dir}, which itself references {name} - so it needs
+    # the multi-round self-reference folding, not just a single pass.
+    settings = {
+        "name": "g1",
+        "install_dir": "/opt/services/grafana/{name}",
+        "svc": {"data_dirs": ["{install_dir}/data", "{install_dir}/plugins"]},
+    }
+    result = expand(settings)
+    assert result["svc"]["data_dirs"] == [
+        "/opt/services/grafana/g1/data",
+        "/opt/services/grafana/g1/plugins",
+    ]
 
 
 # ── merge ─────────────────────────────────────────────────────────────────────
@@ -255,6 +275,33 @@ def test_resolve_latest_grafana_resolves_concrete_version_package_without_source
     assert result["source"] == "https://example.com/grafana_13.0.1_linux_amd64.tar.gz"
 
 
+def test_github_resolver_sends_bearer_token_when_configured():
+    svc = {
+        "version_resolver": "github",
+        "version": "latest",
+        "source": "https://github.com/owner/repo/releases/download/{tag}/app-{tag}.tar.gz",
+    }
+    resp = MagicMock()
+    resp.json.return_value = {"tag_name": "v9.9.9"}
+    with patch("lib.requests.get", return_value=resp) as mock_get:
+        result = resolve_latest(svc, "github", {"github_token": "secret-token"})
+    assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer secret-token"}
+    assert result["version"] == "v9.9.9"
+
+
+def test_github_resolver_sends_no_auth_header_without_token():
+    svc = {
+        "version_resolver": "github",
+        "version": "latest",
+        "source": "https://github.com/owner/repo/releases/download/{tag}/app-{tag}.tar.gz",
+    }
+    resp = MagicMock()
+    resp.json.return_value = {"tag_name": "v9.9.9"}
+    with patch("lib.requests.get", return_value=resp) as mock_get:
+        resolve_latest(svc, "github", {})
+    assert "headers" not in mock_get.call_args.kwargs
+
+
 def test_resolve_latest_unknown_resolver_raises():
     svc = {"version": "latest", "source": "https://example.com/app.tar.gz"}
     try:
@@ -263,6 +310,48 @@ def test_resolve_latest_unknown_resolver_raises():
         assert "unknown version_resolver" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+# ── resolve cache ───────────────────────────────────────────────────────────────
+
+def _age_cache_entry(cache_dir, url, by_seconds):
+    path = _cache_path(cache_dir, url)
+    with open(path) as handle:
+        entry = json.load(handle)
+    entry["at"] -= by_seconds
+    with open(path, "w") as handle:
+        json.dump(entry, handle)
+
+
+def test_cached_get_json_serves_within_ttl_without_refetching(tmp_path):
+    with patch("lib._get_json", return_value={"v": 1}) as mock_get:
+        first = cached_get_json("https://x/api", str(tmp_path), ttl=3600)
+        second = cached_get_json("https://x/api", str(tmp_path), ttl=3600)
+    assert first == second == {"v": 1}
+    assert mock_get.call_count == 1  # second read served from disk, no network
+
+
+def test_cached_get_json_refetches_after_ttl_expires(tmp_path):
+    with patch("lib._get_json", side_effect=[{"v": 1}, {"v": 2}]) as mock_get:
+        assert cached_get_json("https://x/api", str(tmp_path), ttl=3600) == {"v": 1}
+        _age_cache_entry(str(tmp_path), "https://x/api", 10000)
+        assert cached_get_json("https://x/api", str(tmp_path), ttl=3600) == {"v": 2}
+    assert mock_get.call_count == 2
+
+
+def test_cached_get_json_serves_stale_when_refresh_fails(tmp_path):
+    with patch("lib._get_json", return_value={"v": 1}):
+        cached_get_json("https://x/api", str(tmp_path), ttl=3600)
+    _age_cache_entry(str(tmp_path), "https://x/api", 10000)
+    with patch("lib._get_json", side_effect=RuntimeError("rate limited")):
+        result = cached_get_json("https://x/api", str(tmp_path), ttl=3600)
+    assert result == {"v": 1}  # stale served rather than failing the render
+
+
+def test_cached_get_json_raises_when_no_cache_and_fetch_fails(tmp_path):
+    with patch("lib._get_json", side_effect=RuntimeError("down")):
+        with pytest.raises(RuntimeError):
+            cached_get_json("https://x/api", str(tmp_path), ttl=3600)
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────

@@ -33,6 +33,13 @@
 
 binsvc:
 
+  # Optional GitHub API token for `version: latest` resolution (github resolver).
+  # Lifts the unauthenticated 60 req/hr/IP limit to 5000/hr - the fix for minions
+  # rendering behind a shared NAT egress IP, where the on-disk resolve cache can't
+  # be shared (see WHITEPAPER.md §10). Sent only to api.github.com, never to other
+  # resolvers' endpoints. A secret - keep it in secured/encrypted pillar.
+  # github_token: ghp_xxxxxxxxxxxxxxxxxxxx
+
   # Per-preset overrides, deep-merged over the bundled salt://binsvc/presets/
   # files - only specify what differs. Omit a preset entirely to use it as-is.
   presets:
@@ -131,6 +138,13 @@ binsvc:
         exec: "{install_dir}/my_exporter"
         args:
           - web.listen-address: "127.0.0.1:9200"
+        # Dirs the service must write into that the archive ships root-owned
+        # (sqlite db, plugins, logs, ...). Made service-user-owned after
+        # extraction, recursively; program files stay root-owned. The grafana
+        # preset uses this for "{install_dir}/data"; most stateless exporters
+        # need nothing here.
+        # data_dirs:
+        #   - "{install_dir}/data"
       systemd:
         Service:
           ExecStart: "{exec} {args}"

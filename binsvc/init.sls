@@ -49,8 +49,15 @@ def load_preset(name):
 # --- "latest" version resolution ---------------------------------------------
 
 def resolve_latest_version(svc_settings):
-    """Delegate version/source resolution to lib.py's named resolver registry."""
-    context = {"osarch": normalize_osarch(grains("osarch") or "")}
+    """Delegate version/source resolution to lib.py's named resolver registry.
+    Passes the shared resolve-cache config (DEFAULTS, not per-instance: the cache
+    is keyed by API URL and shared across instances/minions on the render host)."""
+    context = {
+        "osarch": normalize_osarch(grains("osarch") or ""),
+        "cache_dir": DEFAULTS.get("cache_dir"),
+        "resolve_cache_ttl": DEFAULTS.get("resolve_cache_ttl", 0),
+        "github_token": pillar("binsvc:github_token", None),
+    }
     return resolve_latest(svc_settings, svc_settings.get("version_resolver", "github"), context)
 
 

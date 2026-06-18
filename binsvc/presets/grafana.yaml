@@ -18,6 +18,10 @@ svc:
     unpack: "grafana-{tag}"
     args: "--strip-components 1"
   exec: "{install_dir}/bin/grafana server --homepath={install_dir}"
+  # Extraction is root-owned; Grafana needs to write its sqlite db, plugins and
+  # logs (all default to under {homepath}/data) - so that tree must be grafana-owned.
+  data_dirs:
+    - "{install_dir}/data"
 
 systemd:
   Service:

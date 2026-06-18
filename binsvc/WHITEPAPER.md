@@ -110,8 +110,9 @@ Per instance, `init.sls`:
    recursively; everything else (incl. **lists**) is replaced wholesale by the
    more-specific layer. (`svc.args` is the one exception — §10.)
 3. **Resolve version/source** (`resolve_latest_version` → `lib.py`'s
-   `resolve_latest`, which does the HTTP via `requests.get`) — through the
-   named `svc.version_resolver` (`github` by default). GitHub only resolves
+   `resolve_latest`, which does the HTTP via `requests.get`, cached on the render
+   host — §10) — through the named `svc.version_resolver` (`github` by default).
+   GitHub only resolves
    `version: latest`, freezing `svc.version`/`svc.tag` to the concrete release
    tag and requiring `svc.source` as the URL template. Grafana resolves both
    `latest` and concrete versions through its packages API, filling
@@ -262,6 +263,34 @@ replacements or a migration invitation.
   matching normalized `osarch`, then fill `source` and `source_hash`. Requiring
   users to guess or copy the full URL for pinned versions would make the preset
   less correct than the API.
+- **Program files root-owned; writable state via `svc.data_dirs`.** `fetch_archive`
+  extracts as root (`--no-same-owner`), so program files are root-owned — a
+  compromised service can't rewrite its own binary. Dirs the service must write
+  into are declared in `svc.data_dirs` and made service-user-owned (recursively,
+  to fix ownership of contents the archive shipped) after extraction. Don't
+  "simplify" by extracting as the service user or `chown -R`-ing the whole tree —
+  that collapses the split. VL/VM need no `data_dirs` (their writable
+  `storageDataPath` doesn't exist post-extract, so the service creates it under
+  the user-owned install_dir); Grafana does, because its tarball ships the data
+  dir root-owned.
+- **Version resolution is cached on disk at render time, with a NAT caveat.**
+  Resolution runs during rendering, so a many-minion highstate (or repeated
+  salt-ssh runs) would otherwise hit a fresh API request each time and blow the
+  unauthenticated GitHub limit (60 req/hr/IP). `cached_get_json` (`lib.py`) keeps
+  a TTL'd file cache under `{cache_dir}/resolve/` (`resolve_cache_ttl`, default
+  1h, `0` disables), shared across render *processes* on the host: a lock-free
+  read on a fresh entry; an `flock`-guarded, double-checked single refresh on a
+  cold/expired one; atomic temp+rename writes; and **serve-stale-on-error** so a
+  GitHub blip or rate-limit serves the last-known value instead of failing the
+  render. It also makes a whole highstate resolve `latest` to one consistent
+  version. **Known, accepted unhappy path:** minions that render *locally* behind
+  a shared NAT egress IP share the rate-limit budget but **not** this filesystem,
+  so the cache can't help them — use a GitHub token (TODO #2) there. (Whether
+  rendering is host-shared depends on your setup; the cache is best-effort and a
+  harmless no-op for any render that doesn't share the cache dir.) An optional
+  top-level `binsvc:github_token` pillar lifts GitHub to 5000 req/hr (sent as a
+  Bearer header by the github resolver only, never to grafana.com, and kept out
+  of the cache key) — this is the mitigation for the NAT path.
 
 ## 11. Where to look for what
 
