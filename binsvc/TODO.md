@@ -95,7 +95,7 @@ need updating *as part of the change* (don't pre-edit — keep doc/code in sync)
 
 `--homepath` was fixed to `{install_dir}` and `tar.unpack: "grafana-{tag}"`
 matches the real tarball top-dir (strip-1 extract + service start succeed).
-Residual, tracked under #5: whether `fetch_archive`'s `version_check`
+Residual, tracked under #14: whether `fetch_archive`'s `version_check`
 unless-guard (`grafana -version`) makes a *second* run a no-op or re-extracts is
 a separate idempotency question (`version_check` assumes `binary -version`).
 
@@ -103,32 +103,23 @@ a separate idempotency question (`version_check` assumes `binary -version`).
 
 ## P2 — docs / honesty
 
-### [ ] 4. Stale docstring in `lib.py` still asserts the old (wrong) globals story
-**Where:** `lib.py` module docstring, ~lines 4–5: "...makes every function
-available in block files' `__globals__` automatically since lib is imported
-before blocks."
+### [x] 4. lib.py docstring corrected
+**Resolved (via item 1's per-block-import approach).** The docstring now
+describes blocks carrying their own top-level `from salt://binsvc/lib.py import`
+lines (pyobjects populates each block's frozen globals at the block's own
+import) — the old "lands in block `__globals__` automatically" claim is gone.
+(The `sys.modules` injection #4 originally pointed at was itself superseded by
+item 1, so the docstring reflects the final mechanism.)
 
-**Why:** This is the *old, incorrect* claim already corrected in `WHITEPAPER.md`
-and `readme.md` this session. The frozen-globals snapshot means it was never
-true; the actual mechanism is the `sys.modules` injection (see item 1).
-
-**What to do:** Fix the docstring to describe the real mechanism (or, if item 1
-lands the per-block-import approach, describe *that*). Keep it short.
-
-### [ ] 5. Trim doc-to-code ratio; temper "generic reusable lib" framing
-**Where:** `WHITEPAPER.md` (440 lines for ~600 lines of code), §10's
-"future application/ rewrite" framing.
-
-**Why:** Heavy prose drifts out of sync (item 4 is proof). Also, only
-`expand`/`merge`/`render_unit`/`join_args` are genuinely generic — `lib.py`'s
-fetch/release helpers are domain-specific: `latest_from_release` hardcodes VM's
-`-cluster` strip, `repo_from_source` assumes a github.com URL shape,
-`version_check` assumes `binary -version` grep-able output.
-
-**What to do:** Lean WHITEPAPER toward "decisions + gotchas," let tests document
-behavior. State plainly that the reusable surface for any future app-mgmt
+### [x] 5. WHITEPAPER trimmed; "generic reusable lib" framing tempered
+**Resolved 2026-06-18.** WHITEPAPER cut from ~459 to ~307 lines (decisions +
+gotchas; tests document behavior — later growth is genuine new decisions, not
+prose). §10 states plainly that the reusable nucleus for a future app-mgmt
 rewrite is the *pipeline shape* (merge→expand→dispatch + the `changed`
-contract), not the fetch/release helpers.
+contract), **not** the fetch/release/systemd helpers, which are
+binary-service-specific. The domain-specificity of those helpers as a *code*
+concern (`version_check` assuming `binary -version`) moved to #14 (it was a code
+item bundled into this doc one).
 
 ---
 
@@ -163,6 +154,17 @@ be committed — but they're sitting in the working tree. Cosmetic.
 
 **What to do:** Nothing required; optionally `git clean`-ignore is already
 handled. Verify they're absent from the first commit.
+
+### [x] 14. `version_check` made data-driven (`svc.version_check`), no default
+**Resolved 2026-06-18.** The hardcoded `binary -version` guard is gone; the
+extract `unless` is now an explicit, templated `svc.version_check` command
+(`{binary}`/`{file}` filled in `fetch_archive`, the rest by `expand`). **No
+default** (user's call): without it the archive re-extracts and the service
+restarts every apply — so all three bundled presets declare
+`[[ $({binary} -version 2>&1) =~ {tag} ]]` explicitly. `lib.py`'s `version_check`
+helper + its test were removed (dead). Documented WHITEPAPER §10, readme,
+pillar.example. (Grafana `-version` confirmed working by the user; the run-twice
+idempotency check is now just "does the preset's version_check match" — render-path.)
 
 ---
 

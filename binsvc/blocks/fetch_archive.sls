@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://binsvc/lib.py import archive_path, tar_extract_command, version_check, deep_format
+from salt://binsvc/lib.py import archive_path, tar_extract_command, deep_format
 
 # Generalizes exporter/macro.jinja's download/tar/move/executable macros and
 # victoriametrics/_setup.sls's archive handling into one reusable block.
@@ -52,10 +52,17 @@ def fetch_archive(prefix, settings):
         extract_kwargs = dict(name=command, shell="/bin/bash", user="root", group="root",
                               require=[File(sid + "_archive")])
 
-        version = svc.get("version")
-        binary = svc.get("exec", "").split()[0] if svc.get("exec") else None
-        if version and binary:
-            extract_kwargs["unless"] = [version_check(binary, version)]
+        # Idempotency guard is opt-in and explicit per preset/instance: with no
+        # svc.version_check the archive re-extracts every run - so the extract
+        # reports "changed" and the service restarts every apply. That is the
+        # documented cost of having no default guard; presets declare one. The
+        # value is a raw `unless` command (exit 0 = already current, skip);
+        # {binary} (exec's first token) and {file} are filled here, the rest
+        # ({version}/{tag}/{install_dir}/...) by init.sls's expand.
+        check = svc.get("version_check")
+        if check:
+            binary = svc.get("exec", "").split()[0] if svc.get("exec") else ""
+            extract_kwargs["unless"] = [deep_format(check, dict(file_scope, binary=binary))]
 
         Cmd.run(sid + "_extract", **extract_kwargs)
         changed = [Cmd(sid + "_extract")]

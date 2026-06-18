@@ -136,6 +136,12 @@ binsvc:
           src: "{file}"
           dst: "{install_dir}/my_exporter"
         exec: "{install_dir}/my_exporter"
+        # Opt-in idempotency: with no version_check the archive re-extracts (and
+        # the service restarts) every run. {binary} = exec's first token; {tag}/
+        # {version}/{install_dir} are already resolved. For a binary with no
+        # version flag, check a stamp file or any command (exit 0 = up to date),
+        # or omit this entirely to accept re-extract-every-run.
+        version_check: "[[ $({binary} -version 2>&1) =~ {version} ]]"
         args:
           - web.listen-address: "127.0.0.1:9200"
         # Dirs the service must write into that the archive ships root-owned

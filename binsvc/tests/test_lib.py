@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from lib import (
     deep_format, expand,
     merge,
-    normalize_osarch, archive_path, tar_extract_command, version_check,
+    normalize_osarch, archive_path, tar_extract_command,
     repo_from_source, repo_url, latest_from_release, resolve_latest,
     GITHUB_RELEASES_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
     cached_get_json, _cache_path,
@@ -139,10 +139,6 @@ def test_tar_extract_command_includes_optional_args_and_unpack():
     assert tar_extract_command("/cache/a.tar.gz", "/opt/app", args="--strip-components=1", unpack="binary") == (
         "tar --strip-components=1 --no-same-owner --directory /opt/app --extract --file /cache/a.tar.gz binary"
     )
-
-
-def test_version_check_builds_bash_regex_guard():
-    assert version_check("/opt/app/bin", "v1.9.0") == "[[ $(/opt/app/bin -version 2>&1) =~ v1.9.0 ]]"
 
 
 # ── release ───────────────────────────────────────────────────────────────────

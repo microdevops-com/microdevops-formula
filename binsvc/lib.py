@@ -123,12 +123,6 @@ def tar_extract_command(archive, install_dir, args="", unpack=""):
     return " ".join(parts)
 
 
-def version_check(binary, version):
-    """`unless` guard: true (= skip re-extracting) once `binary -version`
-    already reports `version`."""
-    return "[[ $({} -version 2>&1) =~ {} ]]".format(binary, version)
-
-
 # ── release ───────────────────────────────────────────────────────────────────
 # Version/source resolution. GitHub uses /releases/latest (NOT /tags — that
 # endpoint is unsorted and for VictoriaMetrics/VictoriaLogs returns tags that

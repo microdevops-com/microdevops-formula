@@ -21,6 +21,9 @@ svc:
     src: "{install_dir}/victoria-logs-prod"
     dst: "{install_dir}/victorialogs"
   exec: "{install_dir}/victorialogs"
+  # Opt-in idempotency guard (no default): skip re-extract when the binary
+  # already reports {tag}. {binary} = exec's first token.
+  version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
   args:
     - httpListenAddr: "127.0.0.1:9428"
     - storageDataPath: "{install_dir}/data"

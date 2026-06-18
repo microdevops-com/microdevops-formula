@@ -273,6 +273,17 @@ replacements or a migration invitation.
   `storageDataPath` doesn't exist post-extract, so the service creates it under
   the user-owned install_dir); Grafana does, because its tarball ships the data
   dir root-owned.
+- **Re-extract idempotency (`svc.version_check`) is opt-in, no default.** The
+  extract `Cmd`'s `unless` guard comes from an explicit `svc.version_check` raw
+  command (templated; `{binary}` = exec's first token and `{file}` filled in the
+  block, the rest by `expand`). There is deliberately **no built-in default**:
+  the old hardcoded `[[ $(<binary> -version 2>&1) =~ <ver> ]]` silently assumed a
+  `-version` flag, which won't hold for every future service. The cost of no
+  default is real and intended — a preset/instance with **no** `version_check`
+  re-extracts every run, so the extract reports "changed" and the service
+  restarts every apply. Every bundled preset declares one explicitly; binaries
+  with no version flag can point it at a stamp file or any command (exit 0 = up
+  to date), or omit it to accept restart-on-every-apply.
 - **Version resolution is cached on disk at render time, with a NAT caveat.**
   Resolution runs during rendering, so a many-minion highstate (or repeated
   salt-ssh runs) would otherwise hit a fresh API request each time and blow the

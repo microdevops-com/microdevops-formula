@@ -24,6 +24,9 @@ svc:
     src: "{install_dir}/victoria-metrics-prod"
     dst: "{install_dir}/victoriametrics"
   exec: "{install_dir}/victoriametrics"
+  # Opt-in idempotency guard (no default): skip re-extract when the binary
+  # already reports {tag}. {binary} = exec's first token.
+  version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
   args:
     - httpListenAddr: "127.0.0.1:8428"
     - storageDataPath: "{install_dir}/data"
