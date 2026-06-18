@@ -67,7 +67,7 @@ For every entry under `binsvc:instances`:
 |---|---|---|
 | `fetch_archive` | `svc` | download an archive or bare binary, optionally `tar`-extract and/or `move` it into `install_dir`, ensure it's executable; make any `svc.data_dirs` service-user-owned for writable state (program files stay root-owned). Re-extract is guarded by an optional `svc.version_check` `unless` command — **no default**, so without it the archive re-extracts (and the service restarts) every run |
 | `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage` |
-| `config_file` | `config` | render named config file(s) from `contents` (dict/list -> YAML) or `source`+`template` |
+| `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
 | `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
 | `nginx_vhost` | `nginx` | reverse-proxy vhost (upstream, optional TLS + basic auth) - no-op unless `nginx.manage` |
 

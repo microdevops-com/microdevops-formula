@@ -101,6 +101,7 @@ binsvc:
       config:
         main:
           name: "{install_dir}/scrape.yml"
+          # Optional format: yaml (default), ini, json.
           contents:
             global:
               scrape_interval: 30s

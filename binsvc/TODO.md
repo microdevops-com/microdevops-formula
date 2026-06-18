@@ -125,15 +125,11 @@ item bundled into this doc one).
 
 ## P3 — polish / smaller
 
-### [ ] 6. `config_file` is YAML-centric but named broadly
-**Where:** `blocks/config_file.sls` (`yaml.safe_dump` of `contents`).
+### [x] 6. `config_file` is YAML-centric but named broadly
+**Resolved 2026-06-18.**
 
-**Why:** grafana.ini / prometheus / loki want INI/TOML, not YAML. The name
-promises more than the body delivers. Documented as narrow, but the gap will
-bite whoever adds a TOML/INI-config service.
-
-**What to do:** Either support a `format:` hint (yaml/ini/toml/raw) or rename to
-signal the YAML/source-only scope. Low priority until a non-YAML service needs it.
+Outcome note: `config[*].format` now supports yaml/ini/json through tested
+`lib.render_config`; Grafana uses `format: ini` for `conf/custom.ini`.
 
 ### [ ] 7. nginx basic-auth secrets in plaintext pillar, rewritten every run
 **Where:** `blocks/nginx_vhost.sls` (`Webutil.user_exists(..., force=True)`),
@@ -174,9 +170,8 @@ Source: app-blocks design discussion, 2026-06-18. These are *generic* missing
 mechanisms (not app-specific work) surfaced while planning extended app
 management — see `docs/extending-with-app-blocks.md`. Filling them lets
 ~80% of "extended Grafana/Loki/Prometheus management" be expressed as preset
-data over generic blocks, with no app-specific code. Together with #6
-(INI/TOML output for `config_file`) they form the vocabulary an app block
-would compose.
+data over generic blocks, with no app-specific code. `config_file` now covers
+yaml/ini/json; TOML can be added later if a real consumer needs it.
 
 ### [ ] 9. `config_dir` block — render N files into a directory
 **Where:** new `blocks/config_dir.sls`; dispatched like other blocks from

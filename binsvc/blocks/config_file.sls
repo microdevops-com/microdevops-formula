@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-import yaml
+from salt://binsvc/lib.py import render_config
 
 # Renders the instance's config file(s) from `settings["config"]`, a dict of
 # named entries each describing one file:
@@ -9,7 +9,8 @@ import yaml
 #   config:
 #     main:
 #       name: "{install_dir}/config.yml"
-#       contents: {retentionPeriod: 30d}   # dict/list -> rendered as YAML; strings used verbatim
+#       format: yaml                       # optional: yaml (default), ini, json
+#       contents: {retentionPeriod: 30d}   # dict/list -> rendered via format; strings used verbatim
 #     extra:
 #       name: "{install_dir}/extra.conf"
 #       source: salt://my-formula/files/extra.conf.jinja
@@ -46,7 +47,7 @@ def config_files(prefix, settings):
         elif "contents" in item:
             contents = item["contents"]
             if isinstance(contents, (dict, list)):
-                contents = yaml.safe_dump(contents, default_flow_style=False)
+                contents = render_config(contents, item.get("format", "yaml"))
             kwargs["contents"] = contents
 
         File.managed(item_id, **kwargs)

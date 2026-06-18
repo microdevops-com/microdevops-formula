@@ -6,12 +6,14 @@ files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
 Directly importable by pytest for unit tests.
 
-Sections: substitute · merge · fetch · release · systemd
+Sections: substitute · merge · fetch · release · config · systemd
 """
 
+import configparser
 import copy
 import fcntl
 import hashlib
+import io
 import json
 import logging
 import os
@@ -19,6 +21,7 @@ import tempfile
 import time
 
 import requests
+import yaml
 
 log = logging.getLogger(__name__)
 
@@ -361,6 +364,54 @@ def resolve_latest(svc_settings, resolver_name, context=None):
     resolved.update(patch)
     resolved["tag"] = resolved["version"]
     return resolved
+
+
+# ── config ────────────────────────────────────────────────────────────────────
+# Render a config-file body from structured `contents` in a chosen format.
+# Kept in lib.py so format behavior is unit-tested without a minion.
+
+
+def render_config(contents, fmt="yaml"):
+    """Render `contents` to a config-file body string in `fmt` (yaml|ini|json).
+
+    Raises ValueError on an unsupported format. Placeholders in `contents` are
+    already expanded by init.sls before this runs.
+    """
+    if fmt in ("yaml", "yml"):
+        return yaml.safe_dump(contents, default_flow_style=False)
+    if fmt == "json":
+        return json.dumps(contents, indent=2) + "\n"
+    if fmt == "ini":
+        return _render_ini(contents)
+    raise ValueError("unsupported config format: {!r}".format(fmt))
+
+
+def _render_ini(contents):
+    """Render one-level INI sections: {section: {key: value}}.
+
+    Raises on non-mapping input or deeper nesting so bad pillar fails clearly
+    instead of flattening into a surprising file.
+    """
+    if not isinstance(contents, dict):
+        raise ValueError("ini config must be a mapping of sections, got {}".format(type(contents).__name__))
+
+    # interpolation=None: a literal % in a value (e.g. a time format like %Y)
+    # must not be parsed as interpolation syntax - configparser otherwise raises.
+    # optionxform=str: preserve key case (configparser lowercases keys by default).
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str
+    for section, options in contents.items():
+        if not isinstance(options, dict):
+            raise ValueError("ini config: section {!r} must map to a dict".format(section))
+        parser[section] = {}
+        for key, value in options.items():
+            if isinstance(value, (dict, list)):
+                raise ValueError("ini supports section/key/value only; {}.{} is nested".format(section, key))
+            parser[section][key] = str(value)
+
+    buf = io.StringIO()
+    parser.write(buf)
+    return buf.getvalue()
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────

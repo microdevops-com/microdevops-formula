@@ -5,6 +5,7 @@ from collections import OrderedDict
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -15,7 +16,7 @@ from lib import (
     repo_from_source, repo_url, latest_from_release, resolve_latest,
     GITHUB_RELEASES_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
     cached_get_json, _cache_path,
-    render_unit, merge_args, join_args,
+    render_config, render_unit, merge_args, join_args,
 )
 
 
@@ -348,6 +349,56 @@ def test_cached_get_json_raises_when_no_cache_and_fetch_fails(tmp_path):
     with patch("lib._get_json", side_effect=RuntimeError("down")):
         with pytest.raises(RuntimeError):
             cached_get_json("https://x/api", str(tmp_path), ttl=3600)
+
+
+# ── config ────────────────────────────────────────────────────────────────────
+
+def test_render_config_yaml_round_trips():
+    rendered = render_config({"a": {"b": 1}}, "yaml")
+    assert yaml.safe_load(rendered) == {"a": {"b": 1}}
+
+
+def test_render_config_json_round_trips():
+    rendered = render_config({"a": {"b": 1}}, "json")
+    assert json.loads(rendered) == {"a": {"b": 1}}
+    assert rendered.endswith("\n")
+
+
+def test_render_config_ini_renders_sections_and_stringifies_values():
+    rendered = render_config({"server": {"http_port": 3000}}, "ini")
+    assert "[server]" in rendered
+    assert "http_port = 3000" in rendered
+
+
+def test_render_config_ini_preserves_key_case():
+    # configparser lowercases option names by default - _render_ini must not.
+    rendered = render_config({"section": {"MixedCaseKey": "x"}}, "ini")
+    assert "MixedCaseKey = x" in rendered
+
+
+def test_render_config_ini_allows_percent_in_values():
+    # a literal % (e.g. a time format) must not be parsed as interpolation.
+    rendered = render_config({"log": {"fmt": "%Y-%m-%d"}}, "ini")
+    assert "fmt = %Y-%m-%d" in rendered
+
+
+def test_render_config_ini_rejects_deeper_nesting():
+    with pytest.raises(ValueError):
+        render_config({"a": {"b": {"c": 1}}}, "ini")
+
+
+def test_render_config_ini_rejects_non_mapping():
+    with pytest.raises(ValueError):
+        render_config(["x"], "ini")
+
+
+def test_render_config_unknown_format_raises():
+    with pytest.raises(ValueError):
+        render_config({}, "toml")
+
+
+def test_render_config_defaults_to_yaml():
+    assert render_config({"a": 1}) == render_config({"a": 1}, "yaml")
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────

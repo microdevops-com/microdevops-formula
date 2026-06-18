@@ -242,9 +242,10 @@ replacements or a migration invitation.
   PHP-FPM/LEMP is out of scope (owned by `app/`). Unifying "download a binary"
   with "deploy a PHP app with fpm pools" would yield a worse abstraction.
 - **`config_file` is intentionally narrow** — one or two managed files per
-  instance (`contents` as YAML, or `source`+`template`). Not a replacement for
-  `_include/file_manager`; an instance needing many files should use a dedicated
-  block. (See `TODO.md` #6 re: non-YAML formats.)
+  instance. `contents` renders through `render_config` as yaml/ini/json, or an
+  entry can use `source`+`template`. It is still not a replacement for
+  `_include/file_manager`; provisioning directories remain a separate
+  `config_dir` gap (TODO #9).
 - **Future `application/` rewrite.** The reusable nucleus is `expand`/`merge` +
   the `dispatch`/`changed` contract + the merge pipeline — *not* the
   fetch/release/systemd helpers, which are binary-service-specific and would need

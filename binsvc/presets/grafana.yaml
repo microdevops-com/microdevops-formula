@@ -26,6 +26,16 @@ svc:
   data_dirs:
     - "{install_dir}/data"
 
+config:
+  main:
+    name: "{install_dir}/conf/custom.ini"
+    format: ini
+    contents:
+      server:
+        http_port: 3000
+      paths:
+        data: "{install_dir}/data"
+
 systemd:
   Service:
     ExecStart: "{exec}"

@@ -43,7 +43,7 @@ config or bakes in behavior other tools also need. That's exactly
 |---|---|---|
 | Provision datasources | YAML files in `/etc/grafana/provisioning/datasources/` | generic `config_dir` (N files) → preset data |
 | Provision dashboards | provider YAML + dashboard JSON files | generic `config_dir` → preset data |
-| Edit `grafana.ini` | render an INI file | `config_file` + an INI/TOML `format:` hint (TODO #6) |
+| Edit `grafana.ini` | render an INI file | `config_file` with `format: ini` |
 | Install plugins | `grafana-cli plugins install …` + restart | generic `commands`/`exec` block |
 | API provisioning | idempotent upsert via Grafana HTTP API, after start | thin `blocks/grafana.sls` + pure `lib.py` helpers |
 
@@ -58,7 +58,7 @@ Alertmanager will want the same `config_dir` / `commands` / INI capabilities).
      contract. Covers any tool with a provisioning/conf.d directory.
    - `commands` / `exec` — run ordered commands with `onchanges`/`unless`,
      return `changed`. Covers `grafana-cli`, cache warms, one-shot migrations.
-   - INI/TOML output for `config_file` (TODO #6).
+   - TOML output for `config_file` only if a real consumer needs it; INI/JSON/YAML are already covered.
    After these, ~80% of "extended Grafana management" is **preset/pillar data
    over generic blocks, zero Grafana code**.
 2. **Add a thin app block only for the residue.** If you want a friendly pillar
