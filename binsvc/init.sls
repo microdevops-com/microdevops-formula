@@ -15,6 +15,7 @@ from salt://binsvc/lib.py import expand, merge, normalize_osarch, resolve_latest
 from salt://binsvc/blocks/fetch_archive.sls import fetch_archive
 from salt://binsvc/blocks/user_ssh.sls import user_and_ssh
 from salt://binsvc/blocks/config_file.sls import config_files
+from salt://binsvc/blocks/commands.sls import run_commands
 from salt://binsvc/blocks/systemd_unit.sls import systemd_unit
 from salt://binsvc/blocks/nginx_vhost.sls import nginx_vhost
 from salt://binsvc/utils.sls import get_salt_file
@@ -68,9 +69,10 @@ def dispatch(prefix, settings):
     """Run the building blocks an instance's merged settings call for, in a
     fixed order: user/ssh and config first (the fetch step's install_dir owner
     and systemd's restart-on-change both depend on them), then the fetch
-    archive fetch, then systemd - wired via the `changed` requisite-list
-    contract so it restarts whenever the binary or config actually changed -
-    then nginx."""
+    archive fetch, pre-systemd commands, systemd, post-systemd commands, then
+    nginx. Fetch/config changes are wired via the `changed` requisite-list
+    contract so systemd restarts whenever the binary or config actually
+    changed."""
 
     user_and_ssh(prefix, settings)
     changed = list(config_files(prefix, settings) or [])
@@ -79,8 +81,13 @@ def dispatch(prefix, settings):
     if svc:
         changed = list(fetch_archive(prefix, settings) or []) + changed
 
+    run_commands(prefix, settings, phase="pre", require=changed)
+
+    running = None
     if settings.get("systemd", {}).get("manage", True):
-        systemd_unit(prefix, settings, watch=changed)
+        running = systemd_unit(prefix, settings, watch=changed)
+
+    run_commands(prefix, settings, phase="post", require=running)
 
     nginx_vhost(prefix, settings)
 

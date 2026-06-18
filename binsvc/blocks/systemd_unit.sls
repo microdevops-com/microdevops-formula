@@ -35,3 +35,5 @@ def systemd_unit(prefix, settings, watch=None):
 
     Cmd.run(sid + "_running",
             name="systemctl is-active {0}.service || systemctl start {0}.service".format(unit_name))
+
+    return [Cmd(sid + "_running")]

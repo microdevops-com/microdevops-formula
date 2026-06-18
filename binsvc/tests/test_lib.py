@@ -16,6 +16,7 @@ from lib import (
     repo_from_source, repo_url, latest_from_release, resolve_latest,
     GITHUB_RELEASES_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
     cached_get_json, _cache_path,
+    select_commands,
     render_config, render_unit, merge_args, join_args,
 )
 
@@ -349,6 +350,44 @@ def test_cached_get_json_raises_when_no_cache_and_fetch_fails(tmp_path):
     with patch("lib._get_json", side_effect=RuntimeError("down")):
         with pytest.raises(RuntimeError):
             cached_get_json("https://x/api", str(tmp_path), ttl=3600)
+
+
+# ── commands ─────────────────────────────────────────────────────────────────
+
+def test_select_commands_filters_by_phase_and_defaults_to_post():
+    commands = OrderedDict([
+        ("setup", {"cmd": "setup", "phase": "pre"}),
+        ("api", {"cmd": "api"}),
+    ])
+    assert select_commands(commands, "pre", {}) == [("setup", commands["setup"])]
+    assert select_commands(commands, "post", {}) == [("api", commands["api"])]
+
+
+def test_select_commands_when_set_skips_missing_or_falsy_and_includes_truthy():
+    commands = OrderedDict([
+        ("reset", {"cmd": "reset", "when_set": "admin_password"}),
+    ])
+    assert select_commands(commands, "post", {}) == []
+    assert select_commands(commands, "post", {"admin_password": ""}) == []
+    assert select_commands(commands, "post", {"admin_password": "secret"}) == [("reset", commands["reset"])]
+
+
+def test_select_commands_skips_malformed_entries():
+    commands = OrderedDict([
+        ("bad_scalar", "echo bad"),
+        ("bad_missing_cmd", {"phase": "post"}),
+        ("good", {"cmd": "echo good"}),
+    ])
+    assert select_commands(commands, "post", {}) == [("good", commands["good"])]
+
+
+def test_select_commands_preserves_declaration_order():
+    commands = OrderedDict([
+        ("first", {"cmd": "1"}),
+        ("second", {"cmd": "2"}),
+        ("third", {"cmd": "3"}),
+    ])
+    assert [name for name, _ in select_commands(commands, "post", {})] == ["first", "second", "third"]
 
 
 # ── config ────────────────────────────────────────────────────────────────────

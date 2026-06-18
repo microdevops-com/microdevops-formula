@@ -36,6 +36,16 @@ config:
       paths:
         data: "{install_dir}/data"
 
+commands:
+  # Set a top-level `admin_password` on the instance to enable this semantic
+  # action. The generic commands block only knows how to run the command.
+  reset_admin_password:
+    when_set: admin_password
+    cmd: "{install_dir}/bin/grafana cli --homepath={install_dir} admin reset-admin-password --password-from-stdin"
+    stdin: "{admin_password}"
+    runas: "{user_name}"
+    phase: pre
+
 systemd:
   Service:
     ExecStart: "{exec}"

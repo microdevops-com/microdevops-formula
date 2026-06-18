@@ -13,7 +13,8 @@
 #      passes - first against grain-derived identity + the instance's own
 #      static keys (name/type/version/tag/tag_vstrip/osarch/...), then again
 #      once install_dir/exec/args/user_name/user_group are themselves known.
-#   3. building blocks run in order: user/ssh, config, svc (fetch), systemd, nginx
+#   3. building blocks run in order: user/ssh, config, svc (fetch), commands(pre),
+#      systemd, commands(post), nginx
 #
 # Available placeholders (anywhere in an instance's settings):
 #   {name}          instance key (the dict key under binsvc:instances)
@@ -110,6 +111,9 @@ binsvc:
     grafana_main:
       preset: grafana
       install_dir: "/opt/services/{type}/{name}"
+      # Set Grafana's admin password (secured/encrypted pillar - it reaches the
+      # grafana CLI via stdin, not argv). Omit to leave Grafana's default.
+      admin_password: "change-me"
       user:
         manage: true
         name: grafana

@@ -1,0 +1,226 @@
+# Generic binsvc preset - reference template for the full supported feature set.
+#
+# This preset is intentionally inert by default: it documents the available
+# settings without declaring an active `svc`, `config`, `commands`, `ssh`, or
+# nginx vhost. Copy only the parts you need into an instance or a
+# `binsvc:presets:generic` override. Any `{placeholder}` string below is resolved
+# by init.sls's two-pass expand pipeline.
+#
+# Common placeholders:
+#   {name}          instance key under binsvc:instances
+#   {type}          preset name, or {name} if no preset is used
+#   {version}       svc.version after resolver runs
+#   {tag}           release tag, usually == version
+#   {tag_vstrip}    {tag} without a leading "v"
+#   {osarch}        normalized arch: amd64, arm64, ...
+#   {kernel_lower}  lowercased kernel grain
+#   {cpuarch}       cpuarch grain
+#   {install_dir}   resolved install_dir
+#   {exec}          resolved svc.exec
+#   {args}          svc.args rendered as "-flag=value ..."
+#   {user_name}     resolved user.name, default root
+#   {user_group}    resolved user.group, default {user_name}
+
+type: generic
+
+# Global/default-level knobs. Usually keep these in defaults.yaml or top-level
+# pillar, not per preset.
+#
+# cache_dir: /var/cache/salt/binsvc
+# resolve_cache_ttl: 3600
+# install_dir: "/opt/services/{type}/{name}"
+# github_token: ghp_xxxxxxxxxxxxxxxxxxxx  # top-level binsvc pillar only; secret
+
+# Service user. `user.manage: false` means "run as an externally-managed user".
+# Extra keys accepted by Salt's user.present can be passed through here, except
+# manage/name/group/groups which binsvc handles explicitly.
+user:
+  manage: false
+  name: root
+  group: root
+  # home: "/opt/services/{type}"
+  # groups:
+  #   - adm
+  # shell: /usr/sbin/nologin
+  # system: true
+
+# Optional SSH identity for the managed user. This block only runs when
+# `user.manage: true`.
+#
+# ssh:
+#   keys:
+#     id_ed25519: |
+#       -----BEGIN OPENSSH PRIVATE KEY-----
+#       ...
+#       -----END OPENSSH PRIVATE KEY-----
+#   authorized_keys:
+#     - "ssh-ed25519 AAAA... operator@example"
+#   config: |
+#     Host github.com
+#       StrictHostKeyChecking yes
+#   known_hosts:
+#     timeout: 5
+#     config: "{install_dir}/.ssh/known_hosts"
+#     # entries are "host:port[:enc[:key]]"; enc defaults to ssh-ed25519.
+#     hosts:
+#       - "github.com:22:ssh-ed25519:AAAA..."
+
+# Archive/binary fetch. Declare this block when the instance should download
+# and install a binary. `version_resolver` controls only how version/source are
+# resolved; actual fetching is always archive/file based.
+#
+# svc:
+#   # github: resolves `version: latest` via GitHub /releases/latest and needs
+#   # `source` as a URL template containing {tag}. Concrete versions keep the
+#   # provided source as-is.
+#   version_resolver: github
+#   version: latest
+#   source: "https://github.com/owner/repo/releases/download/{tag}/app-linux-{osarch}-{tag}.tar.gz"
+#   # Optional integrity check. Without it, fetch_archive sets skip_verify=True.
+#   # May be a sha256=... value or a checksum-file URL supported by Salt.
+#   source_hash: "https://github.com/owner/repo/releases/download/{tag}/app-linux-{osarch}-{tag}_checksums.txt"
+#
+#   # grafana: resolves latest/concrete versions through grafana.com packages API
+#   # and fills source/source_hash itself. Keep source empty/omitted there.
+#   # version_resolver: grafana
+#   # version: latest
+#
+#   # If omitted, the downloaded file itself is treated as the executable input.
+#   tar:
+#     # Extra tar flags, e.g. strip the top archive directory.
+#     args: "--strip-components 1"
+#     # Optional member/path to extract. May use {file} in this block.
+#     unpack: "app-{tag}"
+#
+#   # Optional post-extract rename/move. {file} is the local cached archive path.
+#   move:
+#     src: "{install_dir}/app"
+#     dst: "{install_dir}/bin/app"
+#
+#   # First token is used for executable chmod and as {binary} in version_check.
+#   exec: "{install_dir}/bin/app"
+#
+#   # Opt-in idempotency guard for extraction. Exit 0 means "already current".
+#   # With no version_check, extraction reports changed every run and systemd
+#   # restarts every run. {binary} and {file} are filled by fetch_archive.
+#   version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
+#
+#   # Args may be a mapping or an ordered list of single-key mappings. Preset and
+#   # instance svc.args merge by flag name unless a layer repeats a flag, in which
+#   # case the later layer replaces wholesale.
+#   args:
+#     - web.listen-address: "127.0.0.1:9000"
+#     - storage.path: "{install_dir}/data"
+#
+#   # Writable dirs shipped or needed by the service. These become service-user
+#   # owned after extraction; program files stay root-owned.
+#   data_dirs:
+#     - "{install_dir}/data"
+
+# Config files. Each named entry renders one File.managed and contributes to the
+# systemd restart watch list. Use either `contents` or `source`.
+#
+# config:
+#   main_yaml:
+#     name: "{install_dir}/config.yml"
+#     format: yaml              # yaml (default), yml, ini, json
+#     user: "{user_name}"       # defaults to service user/root
+#     group: "{user_group}"     # defaults to service group/root
+#     mode: "640"               # default 644
+#     makedirs: true            # default true
+#     contents:
+#       server:
+#         listen: "127.0.0.1:9000"
+#   main_ini:
+#     name: "{install_dir}/app.ini"
+#     format: ini
+#     contents:
+#       server:
+#         http_port: 9000
+#   main_json:
+#     name: "{install_dir}/config.json"
+#     format: json
+#     contents:
+#       enabled: true
+#   templated:
+#     name: "{install_dir}/extra.conf"
+#     source: salt://my-formula/files/extra.conf.jinja
+#     template: jinja           # default jinja when source is used
+
+# One-shot commands. Entries run in declaration order, never feed the
+# fetch/config changed -> systemd restart contract, and should carry their own
+# `unless` or `onlyif` when they must be idempotent.
+#
+# commands:
+#   pre_setup:
+#     # Required command string. It is placeholder-expanded before dispatch.
+#     cmd: "install -d -m 0750 -o {user_name} -g {user_group} {install_dir}/state"
+#     # Optional phase: pre runs after fetch/config and before systemd; post
+#     # runs after systemd is running. Default is post.
+#     phase: pre
+#     # Optional gate: skip the entry unless this top-level settings key exists
+#     # and is truthy. Useful for semantic inputs like admin_password.
+#     when_set: setup_enabled
+#     # Optional Salt cmd.run passthroughs supported by the block.
+#     cwd: "{install_dir}"
+#     runas: "{user_name}"
+#     unless: "test -d {install_dir}/state"
+#     onlyif: "test -x {exec}"
+#     env:
+#       APP_HOME: "{install_dir}"
+#     output_loglevel: info
+#   post_secret:
+#     cmd: "{exec} admin reset-password --password-from-stdin"
+#     phase: post
+#     when_set: admin_password
+#     # stdin is preferred for secrets. The block defaults output_loglevel to
+#     # quiet whenever stdin is present, unless explicitly overridden.
+#     stdin: "{admin_password}"
+
+# Keep this reference preset inert when applied as-is: DEFAULTS enables systemd,
+# so without this a bare `preset: generic` would try to start a unit with no
+# ExecStart. A real service built on this preset sets `manage: true`.
+systemd:
+  manage: false
+
+# systemd unit rendering. `systemd.manage: false` skips unit creation/start.
+# Sections are rendered as INI; list values render as repeated directives.
+#
+# systemd:
+#   manage: true
+#   unit: "binsvc_{name}"
+#   Unit:
+#     Description: "binsvc: {type} ({name})"
+#     After:
+#       - network.target
+#       - local-fs.target
+#   Service:
+#     Type: simple
+#     ExecStart: "{exec} {args}"
+#     User: "{user_name}"
+#     Group: "{user_group}"
+#     WorkingDirectory: "{install_dir}"
+#     Restart: on-failure
+#   Install:
+#     WantedBy: multi-user.target
+
+# Optional nginx reverse proxy. `auth_basic` passwords should live in secured or
+# encrypted pillar; the current implementation rewrites htpasswd entries.
+nginx:
+  manage: false
+  # vhost_name: "{name}"          # default: instance name
+  # upstream: "127.0.0.1:9000"
+  # server_names:
+  #   - app.example.com
+  # ssl_cert: /etc/ssl/certs/app.fullchain.pem
+  # ssl_key: /etc/ssl/private/app.key
+  # auth_basic:
+  #   - username: admin
+  #     password: change-me
+
+# Top-level semantic values are allowed and become visible to placeholder
+# expansion because expand folds top-level settings keys into scope. Presets can
+# use this to expose friendly inputs over generic mechanisms.
+#
+# admin_password: "change-me"
+# setup_enabled: true

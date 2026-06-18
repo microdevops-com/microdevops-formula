@@ -54,7 +54,8 @@ For every entry under `binsvc:instances`:
      `systemd.Service.ExecStart: "{exec} {args}"` just works, without
      resorting to fragile nested-placeholder syntax like `{svc[exec]}`.
 4. **Dispatch** the building blocks that apply, in a fixed order:
-   `user_ssh` -> `config_file` -> `fetch_archive` -> `systemd_unit` -> `nginx_vhost`.
+   `user_ssh` -> `config_file` -> `fetch_archive` -> `commands(pre)` ->
+   `systemd_unit` -> `commands(post)` -> `nginx_vhost`.
    `fetch_archive` and `config_file` each return the list of pyobjects requisite
    references that mean "the binary/config changed"; `dispatch`
    threads that list into `systemd_unit`'s `watch`, so the service restarts
@@ -68,10 +69,11 @@ For every entry under `binsvc:instances`:
 | `fetch_archive` | `svc` | download an archive or bare binary, optionally `tar`-extract and/or `move` it into `install_dir`, ensure it's executable; make any `svc.data_dirs` service-user-owned for writable state (program files stay root-owned). Re-extract is guarded by an optional `svc.version_check` `unless` command — **no default**, so without it the archive re-extracts (and the service restarts) every run |
 | `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage` |
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
+| `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets |
 | `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
 | `nginx_vhost` | `nginx` | reverse-proxy vhost (upstream, optional TLS + basic auth) - no-op unless `nginx.manage` |
 
-`svc`/`systemd`/`nginx`/`config`/`user`/`ssh` are all optional; an instance
+`svc`/`systemd`/`nginx`/`config`/`commands`/`user`/`ssh` are all optional; an instance
 that doesn't set a block's key simply skips it.
 
 ## The `lib.py` layer
@@ -98,3 +100,7 @@ Bundled, ready-to-use type configs (`victorialogs`, `victoriametrics`,
 `binsvc:presets:<name>` pillar overrides - so instances only need to specify
 what differs from the bundled defaults (typically just `install_dir`, `user`,
 `svc.version`, and `nginx`).
+
+`presets/generic.yaml` is a safe, mostly-commented reference preset documenting
+the full current feature surface: fetch/version resolution, config rendering,
+commands syntax, systemd, nginx, user/SSH, and placeholder behavior.

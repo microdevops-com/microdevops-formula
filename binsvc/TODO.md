@@ -187,18 +187,21 @@ knowledge — just "render this set of files here."
 `changed` contract (§6 of WHITEPAPER) so systemd/reload threads correctly.
 Derive state IDs from `prefix` (multi-instance safe).
 
-### [ ] 10. `commands` / `exec` block — run ordered commands
+### [x] 10. `commands` / `exec` block — run ordered commands
+**Resolved 2026-06-18.**
+
+Outcome note: added a generic `commands` block with tested `select_commands`
+filtering (`phase`, `when_set`, malformed-entry skip), pre/post-systemd
+dispatch ordering, and Grafana's `reset_admin_password` as preset data fed by a
+semantic top-level `admin_password` via stdin. Commands do not feed the restart
+`changed` contract; entries should use `unless`/`onlyif` when they need
+idempotency.
+
 **Where:** new `blocks/commands.sls` (or `exec.sls`); dispatched from `init.sls`.
 
 **Why:** Things like `grafana-cli plugins install …`, one-shot migrations, cache
 warms. Currently no generic way to run ordered commands as a building block.
 Generic — many tools need it.
-
-**What to do:** A block running an ordered list of commands with
-`onchanges`/`unless`/`cwd`/`runas` support, returning the `changed` contract.
-Mind the systemd-ordering split (`docs/extending-with-app-blocks.md`): some
-commands must run *before* service start, some *after* (need a running
-service) — design the phase handling alongside the app-block dispatch registry.
 
 ### [x] 13. `svc.data_dirs` — service-owned writable state dirs
 **Implemented & validated 2026-06-18 (code + unit test; confirmed by a real

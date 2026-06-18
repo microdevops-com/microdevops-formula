@@ -6,7 +6,7 @@ files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
 Directly importable by pytest for unit tests.
 
-Sections: substitute · merge · fetch · release · config · systemd
+Sections: substitute · merge · fetch · release · commands · config · systemd
 """
 
 import configparser
@@ -364,6 +364,29 @@ def resolve_latest(svc_settings, resolver_name, context=None):
     resolved.update(patch)
     resolved["tag"] = resolved["version"]
     return resolved
+
+
+# ── commands ──────────────────────────────────────────────────────────────────
+# Pure selection logic for the commands block. The Salt block only emits states.
+
+
+def select_commands(commands, phase, settings):
+    """Pick command entries for `phase`, preserving declaration order.
+
+    Skips malformed entries, entries for another phase (default: post), and
+    entries gated by `when_set` when the named settings key is absent/falsy.
+    """
+    selected = []
+    for name, item in (commands or {}).items():
+        if not isinstance(item, dict) or "cmd" not in item:
+            continue
+        if item.get("phase", "post") != phase:
+            continue
+        when = item.get("when_set")
+        if when is not None and not settings.get(when):
+            continue
+        selected.append((name, item))
+    return selected
 
 
 # ── config ────────────────────────────────────────────────────────────────────

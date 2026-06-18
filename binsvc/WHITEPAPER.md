@@ -155,12 +155,15 @@ expansions compose better than ever-earlier global phases.
 `dispatch(prefix, settings)` runs, per instance, in fixed order:
 
 ```
-user_and_ssh → config_files → fetch_archive → systemd_unit(watch=changed) → nginx_vhost
+user_and_ssh → config_files → fetch_archive → commands(pre)
+  → systemd_unit(watch=changed) → commands(post) → nginx_vhost
 ```
 
 Order matters: `fetch_archive` needs the install-dir owner (from `user_and_ssh`)
 before it creates the dir; `systemd_unit` must know everything that triggers a
-restart before wiring `onchanges`.
+restart before wiring `onchanges`; `commands(pre)` runs after binary/config are
+in place and before service start; `commands(post)` runs after the service is
+known running when systemd is managed.
 
 **The contract**: `config_files` and `fetch_archive` return a *list of
 pyobjects requisite references* (`[File(id)]`, `[Cmd(id)]`,
@@ -170,6 +173,13 @@ into its `onchanges` alongside the unit file. **No block hardcodes another
 block's state IDs** — adding a config mechanism never requires touching
 `systemd_unit`; it only honors the contract (return the list, or
 `None`/`[]` if nothing changed).
+
+The same decoupling pattern handles post-systemd ordering: `systemd_unit`
+returns its "service is running" requisite and `dispatch` passes that as
+`commands(post)`'s `require`. If systemd management is disabled, post commands
+still render, just without a service-running requisite. Commands deliberately
+do **not** feed the `changed` list; setup commands are not "new binary/config"
+events and should carry their own `unless`/`onlyif` if they need idempotency.
 
 binsvc is archive-only today. Package fetch support was deliberately removed
 when no planned users remained; if package support returns, it should come back
@@ -246,6 +256,14 @@ replacements or a migration invitation.
   entry can use `source`+`template`. It is still not a replacement for
   `_include/file_manager`; provisioning directories remain a separate
   `config_dir` gap (TODO #9).
+- **`commands` is a generic mechanism, not app logic.** Entries run in
+  declaration order and default to `phase: post` (after service start), because
+  API calls and CLIs often need a live service. Use `phase: pre` only for setup
+  that must happen before first start and does not need the service's migrated
+  runtime state. `when_set` gates optional semantic inputs before placeholder
+  expansion can leave a literal like `{admin_password}`; `stdin` is preferred
+  for secrets. Commands do not trigger systemd restarts through the
+  `changed`/`watch` contract; use explicit `unless`/`onlyif` for idempotency.
 - **Future `application/` rewrite.** The reusable nucleus is `expand`/`merge` +
   the `dispatch`/`changed` contract + the merge pipeline — *not* the
   fetch/release/systemd helpers, which are binary-service-specific and would need
