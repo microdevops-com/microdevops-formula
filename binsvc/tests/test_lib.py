@@ -14,7 +14,7 @@ from lib import (
     merge,
     normalize_osarch, archive_path, tar_extract_command,
     repo_from_source, repo_url, latest_from_release, resolve_latest,
-    GITHUB_RELEASES_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
+    GITHUB_RELEASES_URL, GITHUB_RELEASES_LIST_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
     cached_get_json, _cache_path,
     select_commands,
     collect_scrape_jobs, append_at_path,
@@ -273,6 +273,85 @@ def test_resolve_latest_strips_cluster_suffix():
     mock_get.assert_called_once_with("https://api.github.com/repos/VictoriaMetrics/VictoriaMetrics/releases/latest", timeout=10)
     assert result["version"] == "v1.101.0"
     assert result["tag"] == "v1.101.0"
+
+
+def test_resolve_latest_github_versionsort_picks_highest_version_release():
+    svc = {
+        "version_resolver": "github_versionsort",
+        "version": "latest",
+        "source": "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-amd64-{tag}.tar.gz",
+    }
+    resp = MagicMock()
+    resp.json.return_value = [
+        {"tag_name": "v1.136.11"},
+        {"tag_name": "v1.145.0"},
+        {"tag_name": "v1.144.0"},
+    ]
+
+    with patch("lib.requests.get", return_value=resp) as mock_get:
+        result = resolve_latest(svc, "github_versionsort")
+
+    mock_get.assert_called_once_with(
+        GITHUB_RELEASES_LIST_URL.format(repo="VictoriaMetrics/VictoriaMetrics", page=1),
+        timeout=10,
+    )
+    assert result["version"] == "v1.145.0"
+    assert result["tag"] == "v1.145.0"
+
+
+def test_resolve_latest_github_versionsort_strips_cluster_suffix_and_ignores_prerelease():
+    svc = {
+        "version_resolver": "github_versionsort",
+        "version": "latest",
+        "source": "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-amd64-{tag}.tar.gz",
+    }
+    resp = MagicMock()
+    resp.json.return_value = [
+        {"tag_name": "v1.145.1-rc1", "prerelease": True},
+        {"tag_name": "v1.144.0-cluster"},
+        {"tag_name": "v1.143.0", "draft": True},
+    ]
+
+    with patch("lib.requests.get", return_value=resp):
+        result = resolve_latest(svc, "github_versionsort")
+
+    assert result["version"] == "v1.144.0"
+    assert result["tag"] == "v1.144.0"
+
+
+def test_resolve_latest_github_versionsort_follows_release_pages():
+    svc = {
+        "version_resolver": "github_versionsort",
+        "version": "latest",
+        "source": "https://github.com/owner/repo/releases/download/{tag}/app-{tag}.tar.gz",
+    }
+    page1 = MagicMock()
+    page1.json.return_value = [{"tag_name": "v1.{}.0".format(index)} for index in range(100)]
+    page2 = MagicMock()
+    page2.json.return_value = [{"tag_name": "v1.100.0"}]
+
+    with patch("lib.requests.get", side_effect=[page1, page2]) as mock_get:
+        result = resolve_latest(svc, "github_versionsort")
+
+    assert [call.args[0] for call in mock_get.call_args_list] == [
+        GITHUB_RELEASES_LIST_URL.format(repo="owner/repo", page=1),
+        GITHUB_RELEASES_LIST_URL.format(repo="owner/repo", page=2),
+    ]
+    assert result["version"] == "v1.100.0"
+
+
+def test_github_versionsort_resolver_sends_bearer_token_when_configured():
+    svc = {
+        "version_resolver": "github_versionsort",
+        "version": "latest",
+        "source": "https://github.com/owner/repo/releases/download/{tag}/app-{tag}.tar.gz",
+    }
+    resp = MagicMock()
+    resp.json.return_value = [{"tag_name": "v9.9.9"}]
+    with patch("lib.requests.get", return_value=resp) as mock_get:
+        result = resolve_latest(svc, "github_versionsort", {"github_token": "secret-token"})
+    assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer secret-token"}
+    assert result["version"] == "v9.9.9"
 
 
 def test_resolve_latest_grafana_picks_latest_stable_and_linux_package():

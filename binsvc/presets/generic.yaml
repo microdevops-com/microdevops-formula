@@ -76,6 +76,12 @@ user:
 #   version_resolver: github
 #   version: latest
 #   source: "https://github.com/owner/repo/releases/download/{tag}/app-linux-{osarch}-{tag}.tar.gz"
+#
+#   # github_versionsort: lists GitHub releases and picks the highest
+#   # semver-like tag. Use for repos whose /releases/latest can point at an LTS
+#   # branch instead of the highest current version.
+#   # version_resolver: github_versionsort
+#
 #   # Optional integrity check. Without it, fetch_archive sets skip_verify=True.
 #   # May be a sha256=... value or a checksum-file URL supported by Salt.
 #   source_hash: "https://github.com/owner/repo/releases/download/{tag}/app-linux-{osarch}-{tag}_checksums.txt"

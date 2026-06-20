@@ -18,6 +18,7 @@ import io
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 
@@ -172,14 +173,17 @@ def tar_extract_command(archive, install_dir, args="", unpack=""):
 
 
 # ── release ───────────────────────────────────────────────────────────────────
-# Version/source resolution. GitHub uses /releases/latest (NOT /tags — that
-# endpoint is unsorted and for VictoriaMetrics/VictoriaLogs returns tags that
-# were never published as releases; /releases/latest is what GitHub itself
-# labels "Latest"). Grafana has a separate packages API because archive URLs
-# contain build IDs that are not derivable from the version alone.
+# Version/source resolution. GitHub's default resolver uses /releases/latest
+# (NOT /tags — that endpoint is unsorted and can return tags that were never
+# published as releases). Repos with LTS release branches can instead use
+# github_versionsort, which lists releases and picks the highest semver-like tag
+# rather than GitHub's "latest" pointer. Grafana has a separate packages API
+# because archive URLs contain build IDs that are not derivable from the version
+# alone.
 
 
 GITHUB_RELEASES_URL = "https://api.github.com/repos/{repo}/releases/latest"
+GITHUB_RELEASES_LIST_URL = "https://api.github.com/repos/{repo}/releases?per_page=100&page={page}"
 GRAFANA_VERSIONS_URL = "https://grafana.com/api/grafana/versions"
 GRAFANA_PACKAGES_URL = "https://grafana.com/api/grafana/versions/{version}/packages"
 
@@ -323,6 +327,18 @@ def latest_from_release(body, strip=("-cluster",)):
     return tag
 
 
+def _github_headers(context):
+    token = (context or {}).get("github_token")
+    return {"Authorization": "Bearer {}".format(token)} if token else None
+
+
+def _version_key(tag, strip=("-cluster",)):
+    for suffix in strip:
+        tag = tag.replace(suffix, "")
+    numbers = re.findall(r"\d+", tag.lstrip("v"))
+    return tuple(int(part) for part in numbers) if numbers else None
+
+
 def github_latest(svc, context=None):
     """Latest published GitHub release tag (e.g. 'v1.50.0'); strips -cluster.
     Resolves only `version: latest`, and needs a source URL to derive the repo;
@@ -332,10 +348,42 @@ def github_latest(svc, context=None):
     if svc.get("version") != "latest" or "source" not in svc:
         return None
     context = context or {}
-    token = context.get("github_token")
-    headers = {"Authorization": "Bearer {}".format(token)} if token else None
+    headers = _github_headers(context)
     body = _get_json_via_context(repo_url(GITHUB_RELEASES_URL, svc["source"]), context, headers)
     return {"version": latest_from_release(body)}
+
+
+def github_versionsort_latest(svc, context=None):
+    """Highest semver-like published GitHub release tag.
+
+    Use for repos whose GitHub "latest" pointer can point at an LTS branch. This
+    still reads releases, not tags, so it ignores repo tags that were never
+    published as downloadable releases.
+    """
+    if svc.get("version") != "latest" or "source" not in svc:
+        return None
+
+    context = context or {}
+    headers = _github_headers(context)
+    template = GITHUB_RELEASES_LIST_URL.replace("{repo}", repo_from_source(svc["source"]))
+    candidates = []
+    page = 1
+    while True:
+        releases = _get_json_via_context(template.format(page=page), context, headers)
+        for release in releases:
+            if release.get("draft") or release.get("prerelease"):
+                continue
+            tag = latest_from_release(release)
+            key = _version_key(tag)
+            if key is not None:
+                candidates.append((key, tag))
+        if len(releases) < 100:
+            break
+        page += 1
+
+    if not candidates:
+        raise RuntimeError("no version-like GitHub releases found for {}".format(repo_from_source(svc["source"])))
+    return {"version": max(candidates, key=lambda item: item[0])[1]}
 
 
 def _grafana_download_url(package):
@@ -386,7 +434,11 @@ def grafana_latest(svc, context=None):
     raise RuntimeError("no grafana linux package found for arch {!r} and version {!r}".format(osarch, version))
 
 
-VERSION_RESOLVERS = {"github": github_latest, "grafana": grafana_latest}
+VERSION_RESOLVERS = {
+    "github": github_latest,
+    "github_versionsort": github_versionsort_latest,
+    "grafana": grafana_latest,
+}
 
 
 def resolve_latest(svc_settings, resolver_name, context=None):

@@ -42,10 +42,12 @@ For every entry under `binsvc:instances`:
    for the app. The default `github` resolver turns `version: latest` into a
    concrete GitHub release tag using `/releases/latest` (NOT `/tags` - the
    tags endpoint isn't sorted by date/semver and can return tags that were
-   never published as releases). The `grafana` resolver uses Grafana's API to
-   resolve both latest/concrete versions and the real package URL, because
-   Grafana archive names contain build IDs that are not derivable from the
-   version alone.
+   never published as releases). `github_versionsort` instead lists GitHub
+   releases and picks the highest semver-like tag, for repos whose
+   `/releases/latest` can point at an LTS branch. The `grafana` resolver uses
+   Grafana's API to resolve both latest/concrete versions and the real package
+   URL, because Grafana archive names contain build IDs that are not derivable
+   from the version alone.
 3. **Expand placeholders**, in two passes (`expand` in `lib.py`):
    - *Phase 1* against grain-derived identity (`osarch`, `kernel_lower`,
      `cpuarch`) plus the instance's own static keys (`name`, `type`,

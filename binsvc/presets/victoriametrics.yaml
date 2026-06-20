@@ -15,7 +15,7 @@ user:
   group: victoriametrics
 
 svc:
-  version_resolver: github
+  version_resolver: github_versionsort
   version: latest
   source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-{osarch}-{tag}.tar.gz"
   tar:

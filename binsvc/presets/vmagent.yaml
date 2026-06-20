@@ -14,7 +14,7 @@ user:
   group: vmagent
 
 svc:
-  version_resolver: github
+  version_resolver: github_versionsort
   version: latest
   source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-{osarch}-{tag}.tar.gz"
   source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-{osarch}-{tag}_checksums.txt"

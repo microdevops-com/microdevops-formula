@@ -115,12 +115,11 @@ binsvc:
 3. **Resolve version/source** (`resolve_latest_version` → `lib.py`'s
    `resolve_latest`, which does the HTTP via `requests.get`, cached on the render
    host — §10) — through the named `svc.version_resolver` (`github` by default).
-   GitHub only resolves
-   `version: latest`, freezing `svc.version`/`svc.tag` to the concrete release
-   tag and requiring `svc.source` as the URL template. Grafana resolves both
-   `latest` and concrete versions through its packages API, filling
-   `svc.source` and `svc.source_hash` because the tarball URL contains a build
-   ID that is not derivable from the version alone (§10).
+   GitHub resolvers only resolve `version: latest`, freezing `svc.version`/
+   `svc.tag` to the concrete release tag and requiring `svc.source` as the URL
+   template. Grafana resolves both `latest` and concrete versions through its
+   packages API, filling `svc.source` and `svc.source_hash` because the tarball
+   URL contains a build ID that is not derivable from the version alone (§10).
 4. **Expand placeholders, two passes** (`expand`, §5).
 5. **Inject gathered scrape jobs** when `scrape_collect` is set. `vmagent` uses
    this to append literal jobs from matching producers' `scrape` stanzas into
@@ -236,12 +235,15 @@ replacements or a migration invitation.
 
 (For *open* items and follow-ups, see `TODO.md`. These are closed.)
 
-- **`/releases/latest`, not `/tags`.** GitHub's `/tags` is unsorted (repo-internal
-  order, not date/semver). For VictoriaMetrics/VictoriaLogs its first entry was
-  `v1.121.0` while the actual latest *release* was `v1.50.0` — those tags exist in
-  git history (shared from the broader VM tag namespace) but were never published
-  as releases. `/tags` silently installs a wrong, higher-looking version with no
-  error. The tags-based code path was removed entirely rather than left as a trap.
+- **GitHub release resolvers read releases, not tags.** GitHub's `/tags` is
+  unsorted (repo-internal order, not date/semver) and can include tags never
+  published as downloadable releases. The default `github` resolver uses
+  `/releases/latest`, which matches GitHub's own latest-release pointer. Repos
+  with LTS branches can use `github_versionsort`: it lists releases, filters out
+  prereleases/drafts, strips known suffixes like `-cluster`, and picks the
+  highest semver-like tag. VictoriaMetrics-family presets use this because
+  GitHub's latest pointer can target an LTS branch while a higher current
+  release exists.
 - **Wholesale list-merge, with one exception.** `merge` replaces lists wholesale
   (append/index/key-merge strategies are ambiguous and formula-specific;
   "more-specific layer wins" is predictable). The exception is **`svc.args`**:

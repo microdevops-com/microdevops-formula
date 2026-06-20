@@ -246,11 +246,11 @@ others — flagged in WHITEPAPER §10.
   "deploy a PHP app with fpm pools" would produce a worse abstraction. Keep
   them separate. (Original open question from project kickoff — resolved by the
   shape the code took.)
-- **[x] "latest" resolves via GitHub `/releases/latest`, not `/tags`.**
-  `/tags` is unsorted and (for VictoriaMetrics/VictoriaLogs) returns tags never
-  published as releases — silently picks a wrong, higher-looking version. The
-  tags-based path was removed entirely rather than left as a trap. See
-  `lib.py` release section + `WHITEPAPER.md` §4. Don't "simplify" this back.
+- **[x] GitHub resolvers read releases, not `/tags`.**
+  `/tags` is unsorted and can return tags never published as releases. The
+  default `github` resolver uses `/releases/latest`; `github_versionsort` lists
+  releases and picks the highest semver-like tag for repos with LTS latest
+  pointers. See `lib.py` release section + `WHITEPAPER.md` §10.
 - **[x] `merge` replaces lists wholesale; `svc.args` is the one exception**
   (merged by flag name via `merge_args`). Not generalized into `merge` because
   the "ordered list of single-key mappings" shape isn't universal. See
