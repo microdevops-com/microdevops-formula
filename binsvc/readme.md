@@ -32,10 +32,11 @@ For every entry under `binsvc:instances`:
    `binsvc:presets:<preset>` pillar override) -> the instance's own pillar.
    Later layers win; dicts merge recursively, everything else (including
    lists) is replaced wholesale - **except `svc.args`**, which is re-merged
-   by flag name (`merge_args` in `lib.py`) right after when args are structured,
-   so an instance can override e.g. just `httpListenAddr` from a preset's `args`
-   without restating `storageDataPath`/`retentionPeriod`/etc. A raw string
-   `svc.args` is used as-is and replaces the previous layer wholesale.
+   by flag name (`merge_args` in `lib.py`) right after. Mapping entries render
+   as `{args_prefix}key=value`; string entries inside an args list render
+   literally, so value-less flags like `--livereload` can be mixed in. A
+   top-level raw string `svc.args` is still a complete args line and replaces
+   the previous layer wholesale.
    `init.sls` does this for all instances first so consumers can gather merged
    producer stanzas from the same host.
 2. **Resolve version/source**: `svc.version_resolver` selects resolver logic
@@ -53,8 +54,9 @@ For every entry under `binsvc:instances`:
      `cpuarch`) plus the instance's own static keys (`name`, `type`,
      `version`, `tag`, `tag_vstrip`) - enough to resolve `install_dir`,
      `svc.source`, `svc.exec`, etc.
-   - *Phase 2* adds `install_dir`, `exec`, `args` (raw string, or structured
-     args joined as `{args_prefix}key=value`; default prefix `-`), `user_name`,
+   - *Phase 2* adds `install_dir`, `exec`, `args` (top-level raw string, or args
+     list joined from `{args_prefix}key=value` mappings and literal string
+     tokens; default prefix `-`), `user_name`,
      `user_group` - keys only knowable once phase 1 has run - so e.g.
      `systemd.Service.ExecStart: "{exec} {args}"` just works, without resorting
      to fragile nested-placeholder syntax like `{svc[exec]}`.

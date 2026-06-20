@@ -249,14 +249,16 @@ production path — these presets are not replacements or a migration invitation
   "more-specific layer wins" is predictable). The exception is **`svc.args`**:
   `merge_args` (tested) merges by flag name so an instance can override just
   `httpListenAddr` without restating the preset's other flags; `init.sls`
-  re-merges `svc.args` right after the generic merge. Structured args render as
-  `{args_prefix}key=value`, with `args_prefix` defaulting to `-`; raw string args
-  are passed through unchanged and replace wholesale. Deliberately **not**
+  re-merges `svc.args` right after the generic merge. Mapping entries render as
+  `{args_prefix}key=value`, with `args_prefix` defaulting to `-`; string entries
+  inside an args list are passed through as literal tokens for value-less flags.
+  A top-level raw string `svc.args` is also passed through unchanged, but
+  replaces the previous layer wholesale. Deliberately **not**
   generalized into `merge` — structured args' "ordered list of single-key
   mappings" shape is what makes by-name merging well-defined, and that shape
   isn't universal (cf. `nginx.auth_basic`/`servers`). `merge_args` also
-  falls back to wholesale replace when a layer is a string or repeats a flag
-  (e.g. multiple `remoteWrite.url`) rather than guess.
+  falls back to wholesale replace when a layer is a top-level string or repeats
+  a flag (e.g. multiple `remoteWrite.url`) rather than guess.
 - **ACME in `nginx_vhost` is a cross-formula dependency.** binsvc accepts
   per-server `acme_account` values, but never manages accounts; the separate
   `acme` state/pillar must create `/opt/acme/home/<acct>/verify_and_issue.sh`.

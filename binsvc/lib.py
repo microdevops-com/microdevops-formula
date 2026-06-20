@@ -612,47 +612,65 @@ def merge_args(*layers):
     """Merge structured `args` layers by flag name.
 
     Layers may be a `{flag: value}` mapping, an ordered list of single-key
-    mappings, or a raw string. Strings and repeated flags fall back to returning
-    the last non-empty layer unchanged because there is no reliable key-level
-    merge for those shapes.
+    mappings and/or raw string tokens, or a top-level raw string. A top-level
+    string and repeated flags fall back to returning the last non-empty layer
+    unchanged because there is no reliable key-level merge for those shapes.
     """
     non_empty = [layer for layer in layers if layer]
     if any(isinstance(layer, str) for layer in non_empty):
         return non_empty[-1] if non_empty else []
 
-    def pairs_of(layer):
+    def entries_of(layer):
         if not layer:
             return []
         if isinstance(layer, dict):
-            return list(layer.items())
-        return [pair for entry in layer for pair in entry.items()]
+            return [("key", key, value) for key, value in layer.items()]
+        entries = []
+        for entry in layer:
+            if isinstance(entry, str):
+                entries.append(("raw", entry, None))
+            else:
+                entries.extend(("key", key, value) for key, value in entry.items())
+        return entries
 
-    layer_pairs = [pairs_of(layer) for layer in non_empty]
+    layer_entries = [entries_of(layer) for layer in non_empty]
 
-    if any(len({key for key, _ in pairs}) != len(pairs) for pairs in layer_pairs):
-        return [{key: value} for key, value in layer_pairs[-1]] if layer_pairs else []
+    for entries in layer_entries:
+        keys = [key for kind, key, _ in entries if kind == "key"]
+        if len(set(keys)) != len(keys):
+            return non_empty[-1] if non_empty else []
 
     order = []
     values = {}
-    for pairs in layer_pairs:
-        for key, value in pairs:
+    for entries in layer_entries:
+        for kind, key, value in entries:
+            if kind == "raw":
+                order.append(("raw", key))
+                continue
             if key not in values:
-                order.append(key)
+                order.append(("key", key))
             values[key] = value
-    return [{key: values[key]} for key in order]
+    return [{value: values[value]} if kind == "key" else value
+            for kind, value in order]
 
 
 def join_args(args, prefix="-"):
-    """Turn `{flag: value}` (or an ordered list of single-key mappings, needed
-    when the same flag must repeat) into a command-line string.
+    """Turn `{flag: value}` (or an ordered list of single-key mappings/raw
+    string tokens) into a command-line string.
 
-    Raw string args are returned unchanged. Structured args render as
-    `{prefix}{flag}={value}`; `prefix` defaults to the short flag form.
+    Top-level raw string args are returned unchanged. Mapping entries render as
+    `{prefix}{flag}={value}`; raw string entries render as-is. `prefix` defaults
+    to the short flag form.
     """
     if isinstance(args, str):
         return args
     if isinstance(args, dict):
-        items = list(args.items())
+        items = [("{}{}={}".format(prefix, key, value)) for key, value in args.items()]
     else:
-        items = [pair for entry in args for pair in entry.items()]
-    return " ".join("{}{}={}".format(prefix, key, value) for key, value in items)
+        items = []
+        for entry in args:
+            if isinstance(entry, str):
+                items.append(entry)
+            else:
+                items.extend("{}{}={}".format(prefix, key, value) for key, value in entry.items())
+    return " ".join(items)

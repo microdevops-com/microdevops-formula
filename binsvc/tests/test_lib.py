@@ -728,8 +728,15 @@ def test_join_args_from_ordered_list_preserves_order_and_repeats():
     assert join_args(args) == "-remoteWrite.url=https://a.example.com/write -remoteWrite.url=https://b.example.com/write"
 
 
+def test_join_args_from_ordered_list_keeps_raw_string_tokens():
+    args = [{"httpListenAddr": "127.0.0.1:8428"}, "--livereload"]
+    assert join_args(args) == "-httpListenAddr=127.0.0.1:8428 --livereload"
+
+
 def test_join_args_supports_long_flag_prefix():
-    assert join_args([{"web.listen-address": "127.0.0.1:9100"}], "--") == "--web.listen-address=127.0.0.1:9100"
+    assert join_args([{"web.listen-address": "127.0.0.1:9100"}, "--collector.systemd"], "--") == (
+        "--web.listen-address=127.0.0.1:9100 --collector.systemd"
+    )
 
 
 def test_join_args_returns_raw_string_unchanged():
@@ -754,6 +761,27 @@ def test_merge_args_appends_new_flags_in_first_seen_order():
     assert merge_args(preset, instance) == [
         {"httpListenAddr": "127.0.0.1:9429"},
         {"retentionPeriod": "30d"},
+    ]
+
+
+def test_merge_args_preserves_raw_string_tokens_inside_lists():
+    preset = [{"httpListenAddr": "127.0.0.1:9428"}, {"storageDataPath": "/data"}]
+    instance = [{"httpListenAddr": "127.0.0.1:9429"}, "--livereload"]
+    assert merge_args(preset, instance) == [
+        {"httpListenAddr": "127.0.0.1:9429"},
+        {"storageDataPath": "/data"},
+        "--livereload",
+    ]
+
+
+def test_merge_args_keeps_raw_string_tokens_in_first_seen_order():
+    preset = ["--preset-flag", {"httpListenAddr": "127.0.0.1:9428"}]
+    instance = [{"retentionPeriod": "30d"}, "--instance-flag"]
+    assert merge_args(preset, instance) == [
+        "--preset-flag",
+        {"httpListenAddr": "127.0.0.1:9428"},
+        {"retentionPeriod": "30d"},
+        "--instance-flag",
     ]
 
 

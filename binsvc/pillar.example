@@ -9,7 +9,8 @@
 #        structured svc.args, which is merged by flag name (merge_args in
 #        lib.py), so an instance can override e.g. just httpListenAddr from a
 #        preset's args without restating storageDataPath/retentionPeriod/... too
-#        (raw string args replace wholesale; see vl_secondary below)
+#        (string entries inside args lists are literal tokens; top-level raw
+#        string args replace wholesale)
 #   2. each instance resolves version/source, then every {placeholder} string
 #      anywhere in `settings` is expanded in two
 #      passes - first against grain-derived identity + the instance's own
@@ -31,7 +32,7 @@
 #   {cpuarch}       cpuarch grain
 #   {install_dir}   resolved install_dir (2nd pass only)
 #   {exec}          resolved svc.exec path (2nd pass only)
-#   {args}          svc.args rendered with svc.args_prefix, or raw string args (2nd pass only)
+#   {args}          svc.args rendered with svc.args_prefix plus literal string tokens (2nd pass only)
 #   {user_name}     resolved user.name, default "root" (2nd pass only)
 #   {user_group}    resolved user.group, default {user_name} (2nd pass only)
 
