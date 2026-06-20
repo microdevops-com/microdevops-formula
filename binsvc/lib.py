@@ -553,15 +553,17 @@ def render_unit(sections):
 
 
 def merge_args(*layers):
-    """Merge `args` layers (each a `{flag: value}` mapping or an ordered list
-    of single-key mappings) by flag name, later layers winning. Lets an
-    instance override e.g. just `httpListenAddr` from a preset's `args`
-    without restating `storageDataPath`/`retentionPeriod`/etc. A flag keeps
-    the position of its first appearance; new flags are appended.
+    """Merge structured `args` layers by flag name.
 
-    Falls back to returning the last non-empty layer untouched when any single
-    layer repeats a flag name (e.g. several `remoteWrite.url` entries): by-name
-    merging of genuinely repeated flags is ambiguous."""
+    Layers may be a `{flag: value}` mapping, an ordered list of single-key
+    mappings, or a raw string. Strings and repeated flags fall back to returning
+    the last non-empty layer unchanged because there is no reliable key-level
+    merge for those shapes.
+    """
+    non_empty = [layer for layer in layers if layer]
+    if any(isinstance(layer, str) for layer in non_empty):
+        return non_empty[-1] if non_empty else []
+
     def pairs_of(layer):
         if not layer:
             return []
@@ -569,7 +571,7 @@ def merge_args(*layers):
             return list(layer.items())
         return [pair for entry in layer for pair in entry.items()]
 
-    layer_pairs = [pairs_of(layer) for layer in layers if layer]
+    layer_pairs = [pairs_of(layer) for layer in non_empty]
 
     if any(len({key for key, _ in pairs}) != len(pairs) for pairs in layer_pairs):
         return [{key: value} for key, value in layer_pairs[-1]] if layer_pairs else []
@@ -584,11 +586,17 @@ def merge_args(*layers):
     return [{key: values[key]} for key in order]
 
 
-def join_args(args):
+def join_args(args, prefix="-"):
     """Turn `{flag: value}` (or an ordered list of single-key mappings, needed
-    when the same flag must repeat) into a `-flag=value ...` string."""
+    when the same flag must repeat) into a command-line string.
+
+    Raw string args are returned unchanged. Structured args render as
+    `{prefix}{flag}={value}`; `prefix` defaults to the short flag form.
+    """
+    if isinstance(args, str):
+        return args
     if isinstance(args, dict):
         items = list(args.items())
     else:
         items = [pair for entry in args for pair in entry.items()]
-    return " ".join("-{}={}".format(key, value) for key, value in items)
+    return " ".join("{}{}={}".format(prefix, key, value) for key, value in items)

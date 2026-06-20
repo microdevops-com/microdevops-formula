@@ -252,8 +252,9 @@ others — flagged in WHITEPAPER §10.
   releases and picks the highest semver-like tag for repos with LTS latest
   pointers. See `lib.py` release section + `WHITEPAPER.md` §10.
 - **[x] `merge` replaces lists wholesale; `svc.args` is the one exception**
-  (merged by flag name via `merge_args`). Not generalized into `merge` because
-  the "ordered list of single-key mappings" shape isn't universal. See
+  (structured args merge by flag name via `merge_args`; raw string args replace
+  wholesale and render as-is). Not generalized into `merge` because the
+  "ordered list of single-key mappings" shape isn't universal. See
   `WHITEPAPER.md` §10.
 - **[x] Two-phase `expand`, no phase 3.** If tempted to add a phase or a new
   cross-referencing placeholder, prefer computing the value *inside* the block

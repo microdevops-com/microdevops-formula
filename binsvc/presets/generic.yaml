@@ -17,7 +17,7 @@
 #   {cpuarch}       cpuarch grain
 #   {install_dir}   resolved install_dir
 #   {exec}          resolved svc.exec
-#   {args}          svc.args rendered as "-flag=value ..."
+#   {args}          svc.args rendered with svc.args_prefix, or raw string args
 #   {user_name}     resolved user.name, default root
 #   {user_group}    resolved user.group, default {user_name}
 
@@ -111,9 +111,13 @@ user:
 #   # restarts every run. {binary} and {file} are filled by fetch_archive.
 #   version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
 #
-#   # Args may be a mapping or an ordered list of single-key mappings. Preset and
-#   # instance svc.args merge by flag name unless a layer repeats a flag, in which
-#   # case the later layer replaces wholesale.
+#   # Args may be a raw string, mapping, or ordered list of single-key mappings.
+#   # Structured args render as "{args_prefix}key=value"; args_prefix defaults
+#   # to "-" and can be set to "--" for long-form CLIs. Raw strings are used
+#   # as-is. Preset and instance structured svc.args merge by flag name unless a
+#   # layer is a string or repeats a flag, in which case the later layer replaces
+#   # wholesale.
+#   args_prefix: "-"
 #   args:
 #     - web.listen-address: "127.0.0.1:9000"
 #     - storage.path: "{install_dir}/data"

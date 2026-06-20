@@ -624,8 +624,14 @@ def test_join_args_from_ordered_list_preserves_order_and_repeats():
     assert join_args(args) == "-remoteWrite.url=https://a.example.com/write -remoteWrite.url=https://b.example.com/write"
 
 
-def test_join_args_allows_prefixed_flags_for_double_dash_cli():
-    assert join_args([{"-web.listen-address": "127.0.0.1:9100"}]) == "--web.listen-address=127.0.0.1:9100"
+def test_join_args_supports_long_flag_prefix():
+    assert join_args([{"web.listen-address": "127.0.0.1:9100"}], "--") == "--web.listen-address=127.0.0.1:9100"
+
+
+def test_join_args_returns_raw_string_unchanged():
+    assert join_args("--web.listen-address=127.0.0.1:9100 --collector.systemd") == (
+        "--web.listen-address=127.0.0.1:9100 --collector.systemd"
+    )
 
 
 def test_merge_args_overrides_one_flag_and_keeps_the_rest_in_order():
@@ -663,6 +669,13 @@ def test_merge_args_passes_through_a_single_layer_untouched():
 def test_merge_args_falls_back_to_wholesale_replace_when_a_layer_repeats_a_flag():
     preset = [{"remoteWrite.url": "https://a.example.com/write"}, {"remoteWrite.url": "https://b.example.com/write"}]
     instance = [{"httpListenAddr": "127.0.0.1:9429"}]
+    assert merge_args(preset, instance) == instance
+    assert merge_args(instance, preset) == preset
+
+
+def test_merge_args_falls_back_to_wholesale_replace_for_raw_string_layer():
+    preset = [{"httpListenAddr": "127.0.0.1:9428"}]
+    instance = "-httpListenAddr=127.0.0.1:9429 -retentionPeriod=30d"
     assert merge_args(preset, instance) == instance
     assert merge_args(instance, preset) == preset
 

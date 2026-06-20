@@ -146,8 +146,9 @@ nested-placeholder syntax (`{svc[exec]}`), `init.sls` runs `expand` **twice**:
   `kernel_lower`, `cpuarch`) + static keys (`name`, `type`, `version`, `tag`,
   `tag_vstrip`). Resolves `install_dir`, `svc.source`, `svc.exec`, …
 - **Phase 2** scope: phase 1 **plus** `install_dir`, `exec`, `args`
-  (`svc.args` joined to `-flag=value …` via `join_args`), `user_name`,
-  `user_group`. So `ExecStart: "{exec} {args}"` just works.
+  (raw string args, or structured `svc.args` joined through `join_args` using
+  `svc.args_prefix`, default `-`), `user_name`, `user_group`. So
+  `ExecStart: "{exec} {args}"` just works.
 
 A **third**, narrower expansion lives *inside* `fetch_archive.sls`:
 `tar`/`move` may reference `{file}` (the archive's local cache path, computed in
@@ -249,12 +250,14 @@ replacements or a migration invitation.
   "more-specific layer wins" is predictable). The exception is **`svc.args`**:
   `merge_args` (tested) merges by flag name so an instance can override just
   `httpListenAddr` without restating the preset's other flags; `init.sls`
-  re-merges `svc.args` right after the generic merge. Deliberately **not**
-  generalized into `merge` — `args`' "ordered list of single-key mappings" shape
-  is what makes by-name merging well-defined, and that shape isn't universal
-  (cf. `nginx.auth_basic`/`server_names`). `merge_args` also falls back to
-  wholesale replace when a layer repeats a flag (e.g. multiple `remoteWrite.url`)
-  rather than guess.
+  re-merges `svc.args` right after the generic merge. Structured args render as
+  `{args_prefix}key=value`, with `args_prefix` defaulting to `-`; raw string args
+  are passed through unchanged and replace wholesale. Deliberately **not**
+  generalized into `merge` — structured args' "ordered list of single-key
+  mappings" shape is what makes by-name merging well-defined, and that shape
+  isn't universal (cf. `nginx.auth_basic`/`server_names`). `merge_args` also
+  falls back to wholesale replace when a layer is a string or repeats a flag
+  (e.g. multiple `remoteWrite.url`) rather than guess.
 - **Two-phase expand, no phase 3.** See §5 — prefer computing a value inside the
   block that needs it over adding a global phase.
 - **Scope: prebuilt-binary service management, not app deployment.**

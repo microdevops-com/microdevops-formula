@@ -105,9 +105,9 @@ for instance_name, instance in instances.items():
     settings["name"] = instance_name
     settings.setdefault("type", preset_name or instance_name)
 
-    # svc.args merges by flag name rather than replacing wholesale so an
-    # instance can override e.g. just httpListenAddr from a preset's args
-    # without restating storageDataPath/retentionPeriod/... - see merge_args.
+    # Structured svc.args merge by flag name rather than replacing wholesale so
+    # an instance can override e.g. just httpListenAddr from a preset's args.
+    # Raw string args and repeated flags replace wholesale - see merge_args.
     preset_args = (preset.get("svc") or {}).get("args")
     instance_args = (instance.get("svc") or {}).get("args")
     if preset_args or instance_args:
@@ -146,7 +146,7 @@ for instance_name, raw_settings in merged.items():
     extra_scope = dict(base_scope,
                        install_dir=settings.get("install_dir", ""),
                        exec=svc.get("exec", ""),
-                       args=join_args(svc.get("args", [])),
+                       args=join_args(svc.get("args", []), svc.get("args_prefix", "-") or "-"),
                        user_name=user.get("name", "root"),
                        user_group=user.get("group", user.get("name", "root")))
     settings = expand(settings, extra_scope)

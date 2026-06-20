@@ -6,10 +6,10 @@
 #   1. all instances are merged first:
 #      settings = merge(binsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
 #      - everything here merges deep-dict-wise / replaces-wholesale, EXCEPT
-#        svc.args, which is merged by flag name (merge_args in lib.py), so
-#        an instance can override e.g. just httpListenAddr from a preset's
-#        args without restating storageDataPath/retentionPeriod/... too
-#        (see vl_secondary below)
+#        structured svc.args, which is merged by flag name (merge_args in
+#        lib.py), so an instance can override e.g. just httpListenAddr from a
+#        preset's args without restating storageDataPath/retentionPeriod/... too
+#        (raw string args replace wholesale; see vl_secondary below)
 #   2. each instance resolves version/source, then every {placeholder} string
 #      anywhere in `settings` is expanded in two
 #      passes - first against grain-derived identity + the instance's own
@@ -31,7 +31,7 @@
 #   {cpuarch}       cpuarch grain
 #   {install_dir}   resolved install_dir (2nd pass only)
 #   {exec}          resolved svc.exec path (2nd pass only)
-#   {args}          svc.args joined into "-flag=value ..." (2nd pass only)
+#   {args}          svc.args rendered with svc.args_prefix, or raw string args (2nd pass only)
 #   {user_name}     resolved user.name, default "root" (2nd pass only)
 #   {user_group}    resolved user.group, default {user_name} (2nd pass only)
 
@@ -138,8 +138,8 @@ binsvc:
         group: node_exporter
       svc:
         args:
-          # Leading "-" in the key renders as "--web.listen-address=...".
-          - "-web.listen-address": "127.0.0.1:9100"
+          # node_exporter preset sets args_prefix: "--".
+          - web.listen-address: "127.0.0.1:9100"
       # Override the preset's vmagent: ["*"] default to narrow this producer to
       # one local vmagent instance. Contributions are literal: no placeholders.
       scrape:
