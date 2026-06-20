@@ -1,7 +1,7 @@
 # VictoriaMetrics vmagent - remote-write agent shipped in the vmutils archive.
 # https://docs.victoriametrics.com/vmagent/
 #
-# This preset is intentionally close to `presets/victoriametrics.yaml`: same
+# This preset is intentionally close to `presets/vmserver.yaml`: same
 # GitHub release resolver, same archive family, different member binary
 # (`vmagent-prod`) and vmagent-specific flags/config.
 

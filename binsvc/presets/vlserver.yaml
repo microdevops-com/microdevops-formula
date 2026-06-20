@@ -1,15 +1,15 @@
-# VictoriaLogs - single static binary shipped as a .tar.gz per release.
+# VictoriaLogs vlserver - single static binary shipped as a .tar.gz per release.
 # https://github.com/VictoriaMetrics/VictoriaLogs
 
-type: victorialogs
+type: vlserver
 
 install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: true
   home: "/opt/services/{type}"
-  name: victorialogs
-  group: victorialogs
+  name: vlserver
+  group: vlserver
 
 svc:
   version_resolver: github_versionsort
@@ -20,8 +20,8 @@ svc:
     unpack: victoria-logs-prod
   move:
     src: "{install_dir}/victoria-logs-prod"
-    dst: "{install_dir}/victorialogs"
-  exec: "{install_dir}/victorialogs"
+    dst: "{install_dir}/vlserver"
+  exec: "{install_dir}/vlserver"
   # Opt-in idempotency guard (no default): skip re-extract when the binary
   # already reports {tag}. {binary} = exec's first token.
   version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"

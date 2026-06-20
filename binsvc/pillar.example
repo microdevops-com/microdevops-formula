@@ -48,7 +48,7 @@ binsvc:
   # Per-preset overrides, deep-merged over the bundled salt://binsvc/presets/
   # files - only specify what differs. Omit a preset entirely to use it as-is.
   presets:
-    victorialogs:
+    vlserver:
       svc:
         version: v1.9.0   # pin instead of tracking "latest"
 
@@ -56,7 +56,7 @@ binsvc:
 
     # --- minimal: a single VictoriaLogs instance, defaults all the way ---
     vlserver:
-      preset: victorialogs
+      preset: vlserver
       install_dir: "/opt/services/{type}/{name}"
       user:
         manage: true
@@ -67,7 +67,7 @@ binsvc:
 
     # --- a second, independent instance of the same preset on the same host ---
     vlserver_b:
-      preset: victorialogs
+      preset: vlserver
       install_dir: "/opt/services/{type}/{name}"
       user:
         manage: true
@@ -107,7 +107,7 @@ binsvc:
 
     # --- VictoriaMetrics from a direct URL instead of "latest"/a tag ---
     vmserver:
-      preset: victoriametrics
+      preset: vmserver
       install_dir: "/opt/services/{type}/{name}"
       user:
         manage: true

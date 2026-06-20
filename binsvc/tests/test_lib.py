@@ -52,12 +52,12 @@ def test_expand_resolves_self_references_regardless_of_order():
         "exec": "{install_dir}/{name} {args}",
         "args": "--config={install_dir}/config.yml",
         "install_dir": "/opt/services/{name}",
-        "name": "victorialogs",
+        "name": "vlserver",
     }
     result = expand(mapping, scope={"type": "logs"})
-    assert result["install_dir"] == "/opt/services/victorialogs"
-    assert result["args"] == "--config=/opt/services/victorialogs/config.yml"
-    assert result["exec"] == "/opt/services/victorialogs/victorialogs --config=/opt/services/victorialogs/config.yml"
+    assert result["install_dir"] == "/opt/services/vlserver"
+    assert result["args"] == "--config=/opt/services/vlserver/config.yml"
+    assert result["exec"] == "/opt/services/vlserver/vlserver --config=/opt/services/vlserver/config.yml"
 
 
 def test_expand_does_not_mutate_input():
@@ -200,8 +200,8 @@ def test_normalize_osarch_maps_known_aliases_and_passes_through_others():
 
 def test_archive_path_joins_cache_dir_kind_and_url_basename():
     source = "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
-    assert archive_path("/var/cache/salt/binsvc/", "victoriametrics", source) == (
-        "/var/cache/salt/binsvc/victoriametrics/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
+    assert archive_path("/var/cache/salt/binsvc/", "vmserver", source) == (
+        "/var/cache/salt/binsvc/vmserver/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
     )
 
 
@@ -697,13 +697,13 @@ def test_resolve_nginx_servers_defaults_to_no_servers():
 
 def test_render_unit_produces_ini_with_repeated_keys_for_lists():
     sections = OrderedDict([
-        ("Unit", OrderedDict([("Description", "victorialogs vl_main"), ("After", ["network.target", "disk.target"])])),
+        ("Unit", OrderedDict([("Description", "vlserver vl_main"), ("After", ["network.target", "disk.target"])])),
         ("Service", OrderedDict([("Type", "simple"), ("ExecStart", "/opt/app/bin -arg=1")])),
         ("Install", OrderedDict([("WantedBy", "multi-user.target")])),
     ])
     assert render_unit(sections) == (
         "[Unit]\n"
-        "Description=victorialogs vl_main\n"
+        "Description=vlserver vl_main\n"
         "After=network.target\n"
         "After=disk.target\n"
         "\n"

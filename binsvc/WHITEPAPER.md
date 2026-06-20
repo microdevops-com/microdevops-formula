@@ -32,7 +32,7 @@ for a future `application/` rewrite (§10).
 
 binsvc reads a dict of **instances** from pillar (`binsvc:instances`). Each
 instance names an optional **preset** (a bundled type config — "this is a
-victorialogs") plus per-instance overrides. For each instance, binsvc
+vlserver") plus per-instance overrides. For each instance, binsvc
 deep-merges `defaults.yaml` → preset → instance into one **settings** dict,
 expands every `{placeholder}` string against the instance's resolved identity
 (name, type, version, install dir, arch, …), then runs whichever **building
@@ -202,7 +202,7 @@ Every block receives a `prefix` (e.g. `["binsvc", "vl_main"]`) and derives
 disambiguate even when `{type}` is shared. Two instances of one preset never
 collide — as long as `{name}` appears in the relevant template (every bundled
 default/preset ensures it). `pillar.example`'s `vl_main`/`vl_secondary` proves
-it: two independent victorialogs side by side, distinct ports/users/units.
+it: two independent vlserver instances side by side, distinct ports/users/units.
 
 ## 8. Presets
 
