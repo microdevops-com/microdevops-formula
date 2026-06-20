@@ -46,18 +46,13 @@ tests don't exercise the pyobjects path). Docs updated: `lib.py` docstring,
 Tests in `tests/test_lib.py`; documented in WHITEPAPER §10, `defaults.yaml`,
 `pillar.example`. Render/concurrency path itself is render-only (not unit-tested).
 
-### [ ] 3. Binaries are fetched unverified by default
-**Where:** `presets/victorialogs.yaml`, `presets/victoriametrics.yaml`
-(`svc` has no `source_hash`); `blocks/fetch_archive.sls` falls back to
-`skip_verify=True` when no `source_hash` is given.
-
-**Why:** Supply-chain footgun — VL/VM binaries download with no integrity
-check by default. The `vm_main` *pillar example* uses VM's published
-`_checksums.txt`, but the *presets* don't, so the secure path is opt-in.
-
-**What to do:** Add a derivable `source_hash` URL to the github presets so
-verification is the default. (VM publishes `..._checksums.txt` alongside each
-release archive.)
+### [x] 3. Binaries are fetched unverified by default
+**Resolved 2026-06-20.** All three victoria* presets now ship a derivable
+`source_hash` pointing at the published `_checksums.txt` alongside each release
+archive (`victorialogs.yaml`, `victoriametrics.yaml`, `vmagent.yaml`), so
+integrity verification is the default rather than opt-in. `fetch_archive` still
+falls back to `skip_verify=True` only when a preset/instance declares no
+`source_hash` (kept for resolvers/sources that publish no checksum file).
 
 ### [x] 11. Remove `store`; introduce `version_resolver` (archive-only)
 **Resolved 2026-06-18.**
@@ -131,25 +126,24 @@ item bundled into this doc one).
 Outcome note: `config[*].format` now supports yaml/ini/json through tested
 `lib.render_config`; Grafana uses `format: ini` for `conf/custom.ini`.
 
-### [ ] 7. nginx basic-auth secrets in plaintext pillar, rewritten every run
+### [-] 7. nginx basic-auth secrets in plaintext pillar, rewritten every run
+**Closed 2026-06-20 — accepted known behavior, no change.**
 **Where:** `blocks/nginx_vhost.sls` (`Webutil.user_exists(..., force=True)`),
 `pillar.example` (`password: change-me`).
 
-**Why:** Passwords live in pillar plaintext; `force=True` rewrites the htpasswd
-entry on every run.
+Passwords in pillar plaintext and the `force=True` htpasswd rewrite are
+understood and accepted: secret-handling is an operator/pillar-encryption
+concern repo-wide, not a binsvc-specific defect, and the per-run rewrite is
+idempotent in effect. No behavioral change planned.
 
-**What to do:** Add a note in `pillar.example` that auth_basic credentials
-belong in secured/encrypted pillar. (Behavioral change optional.)
-
-### [ ] 8. Working-tree `.pyc` / pytest cache
+### [-] 8. Working-tree `.pyc` / pytest cache
+**Closed 2026-06-20 — cosmetic, ignored by design.**
 **Where:** `binsvc/__pycache__/lib.cpython-311.pyc`,
 `binsvc/tests/__pycache__/`, `binsvc/.pytest_cache/`.
 
-**Why:** `.gitignore` covers `__pycache__/` and `.pytest_cache/`, so they won't
-be committed — but they're sitting in the working tree. Cosmetic.
-
-**What to do:** Nothing required; optionally `git clean`-ignore is already
-handled. Verify they're absent from the first commit.
+`.gitignore` already covers `__pycache__/` and `.pytest_cache/`, so they never
+reach a commit. Their presence in the working tree is fine and expected after
+running tests — nothing to do.
 
 ### [x] 14. `version_check` made data-driven (`svc.version_check`), no default
 **Resolved 2026-06-18.** The hardcoded `binary -version` guard is gone; the
