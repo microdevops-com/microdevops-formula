@@ -217,15 +217,23 @@ systemd:
 #     WantedBy: multi-user.target
 
 # Optional nginx reverse proxy. `auth_basic` passwords should live in secured or
-# encrypted pillar; the current implementation rewrites htpasswd entries.
+# encrypted pillar; the current implementation rewrites htpasswd entries. ACME
+# DNS servers set only `acme_account`; binsvc derives cert paths and expects the
+# account to be managed by the separate acme state/pillar.
 nginx:
   manage: false
   # vhost_name: "{name}"          # default: instance name
   # upstream: "127.0.0.1:9000"
-  # server_names:
-  #   - app.example.com
-  # ssl_cert: /etc/ssl/certs/app.fullchain.pem
-  # ssl_key: /etc/ssl/private/app.key
+  # servers:
+  #   - names:
+  #       - app.example.com
+  #     acme_account: example_com
+  #   - names:
+  #       - app-internal.example.com
+  #     ssl_cert: /etc/ssl/certs/app.fullchain.pem
+  #     ssl_key: /etc/ssl/private/app.key
+  #   - names:
+  #       - app-plain.example.com
   # auth_basic:
   #   - username: admin
   #     password: change-me

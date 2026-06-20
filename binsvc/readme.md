@@ -83,10 +83,15 @@ opt in with `scrape_collect`, and duplicate `job_name` values fail the render.
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
 | `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets |
 | `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
-| `nginx_vhost` | `nginx` | reverse-proxy vhost (upstream, optional TLS + basic auth) - no-op unless `nginx.manage` |
+| `nginx_vhost` | `nginx` | reverse-proxy vhost (one upstream, `servers[]` blocks, optional per-server TLS + shared basic auth) - no-op unless `nginx.manage` |
 
 `svc`/`systemd`/`nginx`/`config`/`commands`/`user`/`ssh` are all optional; an instance
 that doesn't set a block's key simply skips it.
+
+`nginx.servers[]` entries declare `names` and exactly one TLS source:
+`acme_account`, `ssl_cert`+`ssl_key`, or neither. `acme_account` issues DNS ACME
+certs through the separately managed `acme` state/pillar; binsvc derives the
+`/opt/acme/cert/<vhost>_<first-name>_*` paths and does not manage accounts.
 
 ## The `lib.py` layer
 

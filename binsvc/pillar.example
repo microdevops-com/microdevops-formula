@@ -83,13 +83,27 @@ binsvc:
       nginx:
         manage: true
         upstream: "127.0.0.1:9429"
-        server_names:
-          - logs2.example.com
-        ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
-        ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
+        # auth_basic is top-level: applies to every server block below, one
+        # htpasswd file keyed on the vhost name.
         auth_basic:
           - username: admin
             password: change-me
+        servers:
+          # ACME DNS: write only acme_account; the block derives ssl_cert/
+          # ssl_key from /opt/acme/cert/<vhost>_<first-name>_{fullchain.cer,key.key}.
+          # The account must exist in pillar["acme"] and be applied by the acme
+          # state; binsvc does not manage acme accounts.
+          - names:
+              - logs.example.com
+            acme_account: example_com
+          # Operator-supplied certs:
+          - names:
+              - logs-internal.example.com
+            ssl_cert: /etc/ssl/certs/internal.fullchain.pem
+            ssl_key: /etc/ssl/private/internal.key
+          # No TLS -> HTTP only:
+          - names:
+              - logs-plain.example.com
 
     # --- VictoriaMetrics from a direct URL instead of "latest"/a tag ---
     vmserver:
@@ -164,10 +178,10 @@ binsvc:
       nginx:
         manage: true
         upstream: "127.0.0.1:3000"
-        server_names:
-          - grafana.example.com
-        ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
-        ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
+        servers:
+          - names:
+              - grafana.example.com
+            acme_account: example_com
 
     # --- no preset at all: every building block driven straight from pillar ---
     custom_exporter:

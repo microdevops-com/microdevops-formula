@@ -6,7 +6,7 @@ files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
 Directly importable by pytest for unit tests.
 
-Sections: substitute · merge · fetch · release · commands · config · systemd
+Sections: substitute · merge · scrape · fetch · release · commands · config · nginx · systemd
 """
 
 import configparser
@@ -532,6 +532,62 @@ def _render_ini(contents):
     buf = io.StringIO()
     parser.write(buf)
     return buf.getvalue()
+
+
+# ── nginx ─────────────────────────────────────────────────────────────────────
+# Pure nginx-vhost normalization used by blocks/nginx_vhost.sls.
+
+
+ACME_CERT_DIR = "/opt/acme/cert"
+
+
+def acme_cert_paths(vhost_name, first_domain, cert_dir=ACME_CERT_DIR):
+    """Return the fullchain/key paths written by acme's verify_and_issue.sh."""
+    base = "{}/{}_{}".format(cert_dir, vhost_name, first_domain)
+    return base + "_fullchain.cer", base + "_key.key"
+
+
+def resolve_nginx_servers(nginx, vhost_name):
+    """Validate and normalize nginx['servers'] into render-ready dicts.
+
+    Each server has names plus one TLS source: acme_account, ssl_cert+ssl_key,
+    or neither. ACME cert paths are derived from vhost_name and first domain.
+    """
+    out = []
+    for idx, server in enumerate(nginx.get("servers", [])):
+        names = server.get("names")
+        if not names or not isinstance(names, list):
+            raise ValueError(
+                "nginx server #{} for vhost {!r} needs a non-empty 'names' list"
+                .format(idx, vhost_name))
+
+        acme = server.get("acme_account")
+        cert = server.get("ssl_cert")
+        key = server.get("ssl_key")
+
+        if acme and (cert or key):
+            raise ValueError(
+                "nginx server {!r} sets both acme_account and ssl_cert/ssl_key "
+                "- pick one TLS source".format(names[0]))
+        if bool(cert) != bool(key):
+            raise ValueError(
+                "nginx server {!r} must set both ssl_cert and ssl_key, got only one"
+                .format(names[0]))
+
+        entry = {
+            "names": names,
+            "tls": False,
+            "acme_account": None,
+            "ssl_cert": None,
+            "ssl_key": None,
+        }
+        if acme:
+            cert, key = acme_cert_paths(vhost_name, names[0])
+            entry.update(tls=True, acme_account=acme, ssl_cert=cert, ssl_key=key)
+        elif cert:
+            entry.update(tls=True, ssl_cert=cert, ssl_key=key)
+        out.append(entry)
+    return out
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ from lib import (
     select_commands,
     collect_scrape_jobs, append_at_path,
     render_config, render_unit, merge_args, join_args,
+    acme_cert_paths, resolve_nginx_servers,
 )
 
 
@@ -587,6 +588,109 @@ def test_render_config_unknown_format_raises():
 
 def test_render_config_defaults_to_yaml():
     assert render_config({"a": 1}) == render_config({"a": 1}, "yaml")
+
+
+# ── nginx ─────────────────────────────────────────────────────────────────────
+
+def test_acme_cert_paths_match_acme_verify_and_issue_naming():
+    assert acme_cert_paths("vmserver", "vm.example.com") == (
+        "/opt/acme/cert/vmserver_vm.example.com_fullchain.cer",
+        "/opt/acme/cert/vmserver_vm.example.com_key.key",
+    )
+
+
+def test_resolve_nginx_servers_derives_acme_tls_paths():
+    result = resolve_nginx_servers({
+        "servers": [{"names": ["logs.example.com", "logs-alt.example.com"], "acme_account": "example_com"}],
+    }, "vlogs")
+    assert result == [{
+        "names": ["logs.example.com", "logs-alt.example.com"],
+        "tls": True,
+        "acme_account": "example_com",
+        "ssl_cert": "/opt/acme/cert/vlogs_logs.example.com_fullchain.cer",
+        "ssl_key": "/opt/acme/cert/vlogs_logs.example.com_key.key",
+    }]
+
+
+def test_resolve_nginx_servers_keeps_operator_supplied_tls_paths():
+    result = resolve_nginx_servers({
+        "servers": [{
+            "names": ["internal.example.com"],
+            "ssl_cert": "/etc/ssl/certs/internal.fullchain.pem",
+            "ssl_key": "/etc/ssl/private/internal.key",
+        }],
+    }, "app")
+    assert result == [{
+        "names": ["internal.example.com"],
+        "tls": True,
+        "acme_account": None,
+        "ssl_cert": "/etc/ssl/certs/internal.fullchain.pem",
+        "ssl_key": "/etc/ssl/private/internal.key",
+    }]
+
+
+def test_resolve_nginx_servers_supports_http_only_server():
+    result = resolve_nginx_servers({"servers": [{"names": ["plain.example.com"]}]}, "app")
+    assert result == [{
+        "names": ["plain.example.com"],
+        "tls": False,
+        "acme_account": None,
+        "ssl_cert": None,
+        "ssl_key": None,
+    }]
+
+
+def test_resolve_nginx_servers_preserves_mixed_server_order():
+    result = resolve_nginx_servers({
+        "servers": [
+            {"names": ["acme.example.com"], "acme_account": "example_com"},
+            {
+                "names": ["static.example.com"],
+                "ssl_cert": "/cert.pem",
+                "ssl_key": "/key.pem",
+            },
+            {"names": ["plain.example.com"]},
+        ],
+    }, "app")
+    assert [entry["names"][0] for entry in result] == [
+        "acme.example.com",
+        "static.example.com",
+        "plain.example.com",
+    ]
+    assert [entry["tls"] for entry in result] == [True, True, False]
+    assert result[0]["acme_account"] == "example_com"
+    assert result[1]["ssl_cert"] == "/cert.pem"
+    assert result[2]["ssl_cert"] is None
+
+
+def test_resolve_nginx_servers_rejects_ambiguous_acme_and_static_cert():
+    with pytest.raises(ValueError, match="sets both acme_account and ssl_cert/ssl_key"):
+        resolve_nginx_servers({
+            "servers": [{
+                "names": ["bad.example.com"],
+                "acme_account": "example_com",
+                "ssl_cert": "/cert.pem",
+                "ssl_key": "/key.pem",
+            }],
+        }, "app")
+
+
+def test_resolve_nginx_servers_rejects_partial_static_tls():
+    with pytest.raises(ValueError, match="must set both ssl_cert and ssl_key"):
+        resolve_nginx_servers({"servers": [{"names": ["bad.example.com"], "ssl_cert": "/cert.pem"}]}, "app")
+    with pytest.raises(ValueError, match="must set both ssl_cert and ssl_key"):
+        resolve_nginx_servers({"servers": [{"names": ["bad.example.com"], "ssl_key": "/key.pem"}]}, "app")
+
+
+def test_resolve_nginx_servers_rejects_missing_or_empty_names():
+    with pytest.raises(ValueError, match="needs a non-empty 'names' list"):
+        resolve_nginx_servers({"servers": [{}]}, "app")
+    with pytest.raises(ValueError, match="needs a non-empty 'names' list"):
+        resolve_nginx_servers({"servers": [{"names": []}]}, "app")
+
+
+def test_resolve_nginx_servers_defaults_to_no_servers():
+    assert resolve_nginx_servers({}, "app") == []
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────

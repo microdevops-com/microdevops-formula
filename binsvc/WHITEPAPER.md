@@ -255,9 +255,18 @@ replacements or a migration invitation.
   are passed through unchanged and replace wholesale. Deliberately **not**
   generalized into `merge` — structured args' "ordered list of single-key
   mappings" shape is what makes by-name merging well-defined, and that shape
-  isn't universal (cf. `nginx.auth_basic`/`server_names`). `merge_args` also
+  isn't universal (cf. `nginx.auth_basic`/`servers`). `merge_args` also
   falls back to wholesale replace when a layer is a string or repeats a flag
   (e.g. multiple `remoteWrite.url`) rather than guess.
+- **ACME in `nginx_vhost` is a cross-formula dependency.** binsvc accepts
+  per-server `acme_account` values, but never manages accounts; the separate
+  `acme` state/pillar must create `/opt/acme/home/<acct>/verify_and_issue.sh`.
+  The nginx block derives cert paths internally from vhost name and the first
+  domain instead of asking pillar to cross-reference expand placeholders, mirrors
+  the acme `verify_and_issue` command inline with `shell="/bin/bash"` and
+  `success_retcodes=[2]`, and makes nginx reload require issuance so `nginx -t`
+  sees cert files before validating the vhost. ACME renewal-triggered reloads
+  remain owned by the acme formula.
 - **Two-phase expand, no phase 3.** See §5 — prefer computing a value inside the
   block that needs it over adding a global phase.
 - **Scope: prebuilt-binary service management, not app deployment.**
