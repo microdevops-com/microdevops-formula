@@ -24,11 +24,18 @@ systemd:
   Unit:
     Description: "binsvc: {type} ({name})"
     After: network.target
+    # Cap auto-restarts: give up after StartLimitBurst starts within
+    # StartLimitIntervalSec, instead of looping forever. These belong in [Unit]
+    # (systemd ignores them under [Service]). The interval must comfortably
+    # exceed StartLimitBurst * RestartSec (5 * 10s = 50s) so all attempts fall
+    # in one window and the limit actually trips.
+    StartLimitIntervalSec: 60
+    StartLimitBurst: 5
   Service:
     Type: simple
     Restart: on-failure
-    StartLimitBurst: 5
-    StartLimitInterval: 1
+    # Wait 10s between restarts instead of hammering instantly.
+    RestartSec: 10
     WorkingDirectory: "{install_dir}"
   Install:
     WantedBy: multi-user.target

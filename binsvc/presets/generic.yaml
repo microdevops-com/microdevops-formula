@@ -206,6 +206,10 @@ systemd:
 #     After:
 #       - network.target
 #       - local-fs.target
+#     # Restart cap (StartLimit* live in [Unit], not [Service]). Defaults give
+#     # up after 5 starts within 60s; interval must exceed burst * RestartSec.
+#     StartLimitIntervalSec: 60
+#     StartLimitBurst: 5
 #   Service:
 #     Type: simple
 #     ExecStart: "{exec} {args}"
@@ -213,6 +217,7 @@ systemd:
 #     Group: "{user_group}"
 #     WorkingDirectory: "{install_dir}"
 #     Restart: on-failure
+#     RestartSec: 10            # pause between restarts
 #   Install:
 #     WantedBy: multi-user.target
 
