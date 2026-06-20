@@ -213,13 +213,12 @@ meant to be copied into pillar — `binsvc:presets:<name>` exists only for
 file. An instance needing something a preset lacks just sets the key directly
 (see `custom_exporter` in `pillar.example` — no preset at all).
 
-The three shipped presets are **design drivers** for archive-only service
-management with more than one version/source resolver:
-`victorialogs`/`victoriametrics` use GitHub release tags and source templates;
-`grafana` uses Grafana's version and packages APIs because the tarball URL is
-API data, not a stable format string. Standalone `victoriametrics/`/`grafana/`
-formulas already exist and remain the production path — these presets are not
-replacements or a migration invitation.
+The shipped presets are **design drivers** for archive-only service management
+with more than one version/source resolver: VictoriaMetrics-family presets use
+GitHub release tags and source templates; `grafana` uses Grafana's version and
+packages APIs because the tarball URL is API data, not a stable format string.
+Standalone `victoriametrics/`/`grafana/` formulas already exist and remain the
+production path — these presets are not replacements or a migration invitation.
 
 ## 9. Testing
 

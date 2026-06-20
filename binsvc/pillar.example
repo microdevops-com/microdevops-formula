@@ -126,7 +126,7 @@ binsvc:
               scrape_interval: 30s
 
     # --- vmagent from the vmutils archive, remote-writing to VictoriaMetrics ---
-    metrics:
+    vmagent:
       preset: vmagent
       install_dir: "/opt/services/{type}/{name}"
       user:

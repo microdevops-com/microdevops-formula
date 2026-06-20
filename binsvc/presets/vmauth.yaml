@@ -1,0 +1,55 @@
+# VictoriaMetrics vmauth - auth/proxy service shipped in the vmutils archive.
+# https://docs.victoriametrics.com/vmauth/
+#
+# Same archive family as vmagent, but with vmauth-specific binary and config.
+
+type: vmauth
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: vmauth
+  group: vmauth
+
+svc:
+  version_resolver: github_versionsort
+  version: latest
+  source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-{osarch}-{tag}.tar.gz"
+  source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-{osarch}-{tag}_checksums.txt"
+  tar:
+    unpack: vmauth-prod
+  move:
+    src: "{install_dir}/vmauth-prod"
+    dst: "{install_dir}/vmauth"
+  exec: "{install_dir}/vmauth"
+  # Opt-in idempotency guard (no default): skip re-extract when the binary
+  # already reports {tag}. {binary} = exec's first token.
+  version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
+  args:
+    - httpListenAddr: "127.0.0.1:8427"
+    - auth.config: "{install_dir}/auth.config.yml"
+
+config:
+  auth.config.yml:
+    name: "{install_dir}/{confname}"
+    contents:
+      users: []
+
+scrape:
+  # Self-monitoring is opt-in: this job ships ready but targets no vmagent by
+  # default ([] matches nothing). Set to ["*"] (any local vmagent) or a vmagent
+  # name/glob to enable.
+  vmagent: []
+  config:
+    - job_name: vmauth
+      static_configs:
+        - targets: ["127.0.0.1:8427"]
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false
