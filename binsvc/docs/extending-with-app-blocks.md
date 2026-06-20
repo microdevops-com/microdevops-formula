@@ -103,9 +103,10 @@ startup and "works on my machine."
 Current fixed order, for reference (§6):
 
 ```
-user_and_ssh → config_files → fetch_archive → systemd_unit → nginx_vhost
-                    │                                  │
-        pre-systemd app phase here          post-systemd app phase here
+user_and_ssh → config_files → fetch_archive → commands(pre)
+  → systemd_unit → commands(post) → nginx_vhost
+                    │                    │
+        pre-systemd app phase here        post-systemd app phase here
 ```
 
 ## Cross-instance aggregation (one instance reads others)
@@ -114,7 +115,8 @@ Some consumers need config assembled *from other instances* — e.g. a `vmagent`
 that scrapes the exporters on the same host: each exporter declares how it should
 be scraped, and vmagent renders one config gathering them. (The legacy answer was
 a `scrape_configs.d/*.yml` glob each exporter dropped a file into.) Decisions on
-record (design settled 2026-06; build when a `vmagent` preset exists — no code yet):
+record (design settled 2026-06; the `vmagent` preset now exists, gather/app-block
+code does not):
 
 - **Pull, not push; static facts, not a shared variable.** Producers (exporters)
   declare a static key in their own pillar; the consumer (vmagent) *pulls* and

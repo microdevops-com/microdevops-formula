@@ -96,7 +96,7 @@ that block's globals during the block import itself.
 ## Presets (`presets/*.yaml`)
 
 Bundled, ready-to-use type configs (`victorialogs`, `victoriametrics`,
-`grafana`) loaded lazily and cached per Salt run, deep-merged with optional
+`vmagent`, `node_exporter`, `grafana`) loaded lazily and cached per Salt run, deep-merged with optional
 `binsvc:presets:<name>` pillar overrides - so instances only need to specify
 what differs from the bundled defaults (typically just `install_dir`, `user`,
 `svc.version`, and `nginx`).

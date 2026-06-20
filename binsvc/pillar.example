@@ -51,7 +51,7 @@ binsvc:
   instances:
 
     # --- minimal: a single VictoriaLogs instance, defaults all the way ---
-    vl_main:
+    vlserver:
       preset: victorialogs
       install_dir: "/opt/services/{type}/{name}"
       user:
@@ -62,7 +62,7 @@ binsvc:
         version: latest
 
     # --- a second, independent instance of the same preset on the same host ---
-    vl_secondary:
+    vlserver_b:
       preset: victorialogs
       install_dir: "/opt/services/{type}/{name}"
       user:
@@ -88,7 +88,7 @@ binsvc:
             password: change-me
 
     # --- VictoriaMetrics from a direct URL instead of "latest"/a tag ---
-    vm_main:
+    vmserver:
       preset: victoriametrics
       install_dir: "/opt/services/{type}/{name}"
       user:
@@ -107,8 +107,52 @@ binsvc:
             global:
               scrape_interval: 30s
 
+    # --- vmagent from the vmutils archive, remote-writing to VictoriaMetrics ---
+    vmagent:
+      preset: vmagent
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vmagent
+        group: vmagent
+      svc:
+        # args is merged by flag name, so overriding only remoteWrite.url keeps
+        # the preset's tmpDataPath/httpListenAddr/promscrape.config flags.
+        args:
+          - remoteWrite.url: "http://127.0.0.1:8428/api/v1/write"
+      config:
+        promscrape:
+          contents:
+            global:
+              scrape_interval: 15s
+              scrape_timeout: 10s
+            scrape_configs:
+              - job_name: vmagent-self
+                static_configs:
+                  - targets:
+                      - "127.0.0.1:8429"
+
+    # --- Prometheus Node Exporter from the official GitHub release tarball ---
+    node_exporter:
+      preset: node_exporter
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: node_exporter
+        group: node_exporter
+      svc:
+        args:
+          # Leading "-" in the key renders as "--web.listen-address=...".
+          - "-web.listen-address": "127.0.0.1:9100"
+      # Reserved for future vmagent gather support (TODO #15); literal values.
+      scrape_config:
+        job_name: node
+        static_configs:
+          - targets:
+              - "127.0.0.1:9100"
+
     # --- Grafana from the official standalone tarball ---
-    grafana_main:
+    grafana:
       preset: grafana
       install_dir: "/opt/services/{type}/{name}"
       # Set Grafana's admin password (secured/encrypted pillar - it reaches the

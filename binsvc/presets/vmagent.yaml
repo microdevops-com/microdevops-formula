@@ -1,0 +1,54 @@
+# VictoriaMetrics vmagent - remote-write agent shipped in the vmutils archive.
+# https://docs.victoriametrics.com/vmagent/
+#
+# This preset is intentionally close to `presets/victoriametrics.yaml`: same
+# GitHub release resolver, same archive family, different member binary
+# (`vmagent-prod`) and vmagent-specific flags/config.
+
+type: vmagent
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: vmagent
+  group: vmagent
+
+svc:
+  version_resolver: github
+  version: latest
+  source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-{osarch}-{tag}.tar.gz"
+  source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-{osarch}-{tag}_checksums.txt"
+  tar:
+    unpack: vmagent-prod
+  move:
+    src: "{install_dir}/vmagent-prod"
+    dst: "{install_dir}/vmagent"
+  exec: "{install_dir}/vmagent"
+  # Opt-in idempotency guard (no default): skip re-extract when the binary
+  # already reports {tag}. {binary} = exec's first token.
+  version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
+  args:
+    - httpListenAddr: "127.0.0.1:8429"
+    - remoteWrite.tmpDataPath: "{install_dir}/data/remotewrite"
+    - remoteWrite.url: "http://127.0.0.1:8428/api/v1/write"
+    - promscrape.config: "{install_dir}/promscrape.yml"
+  data_dirs:
+    - "{install_dir}/data"
+
+config:
+  promscrape.yml:
+    name: "{install_dir}/{confname}"
+    contents:
+      global:
+        scrape_interval: 15s
+        scrape_timeout: 10s
+      scrape_configs: []
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false

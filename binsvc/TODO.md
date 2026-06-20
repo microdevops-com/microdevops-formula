@@ -223,8 +223,9 @@ rewrite its own binary) and **not** added to the `changed` restart-trigger list
 `File.directory`/`recurse` behavior is render-path only.
 
 ### [ ] 15. Cross-instance aggregation (`gather`) — vmagent scrape configs
-**Design settled 2026-06; no code yet (needs a `vmagent` preset first).** Full
-decisions in `docs/extending-with-app-blocks.md` → "Cross-instance aggregation".
+**Design settled 2026-06; no gather/app-block code yet.** The `vmagent` preset
+exists; full decisions are in `docs/extending-with-app-blocks.md` →
+"Cross-instance aggregation".
 
 A consumer (vmagent) renders one config gathered from other instances' pillar
 (exporters declare a `scrape_config`). Settled: **pull not push** (stateless,
