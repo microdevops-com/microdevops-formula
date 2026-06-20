@@ -18,6 +18,7 @@ svc:
   version_resolver: github_versionsort
   version: latest
   source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-{osarch}-{tag}.tar.gz"
+  source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-{osarch}-{tag}_checksums.txt"
   tar:
     unpack: victoria-metrics-prod
   move:
