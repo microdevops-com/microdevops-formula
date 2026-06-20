@@ -32,6 +32,16 @@ svc:
     - storageDataPath: "{install_dir}/data"
     - retentionPeriod: "1"
 
+scrape:
+  # Self-monitoring is opt-in: this job ships ready but targets no vmagent by
+  # default ([] matches nothing). Set to ["*"] (any local vmagent) or a vmagent
+  # name/glob to enable.
+  vmagent: []
+  config:
+    - job_name: victoriametrics
+      static_configs:
+        - targets: ["127.0.0.1:8428"]
+
 systemd:
   Service:
     ExecStart: "{exec} {args}"

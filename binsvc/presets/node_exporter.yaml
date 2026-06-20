@@ -28,6 +28,14 @@ svc:
     # Leading "-" in the key renders as a Prometheus-style "--flag=value".
     - "-web.listen-address": "127.0.0.1:9100"
 
+scrape:
+  # Any local vmagent scrapes this by default; override or set [] to opt out.
+  vmagent: ["*"]
+  config:
+    - job_name: node
+      static_configs:
+        - targets: ["127.0.0.1:9100"]
+
 systemd:
   Service:
     ExecStart: "{exec} {args}"

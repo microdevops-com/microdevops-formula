@@ -17,6 +17,7 @@ from lib import (
     GITHUB_RELEASES_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
     cached_get_json, _cache_path,
     select_commands,
+    collect_scrape_jobs, append_at_path,
     render_config, render_unit, merge_args, join_args,
 )
 
@@ -117,6 +118,75 @@ def test_merge_does_not_mutate_inputs():
     result = merge(defaults, instance)
     result["fetch"]["tar"]["args"] = "mutated"
     assert defaults["fetch"]["tar"]["args"] == "x"
+
+
+# ── scrape collection ────────────────────────────────────────────────────────
+
+def test_collect_scrape_jobs_matches_literal_and_glob_targets():
+    instances = OrderedDict([
+        ("node", {"scrape": {"vmagent": "metrics", "config": [{"job_name": "node"}]}}),
+        ("app", {"scrape": {"vmagent": ["vm-*"], "config": [{"job_name": "app"}]}}),
+        ("skip", {"scrape": {"vmagent": ["other"], "config": [{"job_name": "skip"}]}}),
+    ])
+    assert collect_scrape_jobs(instances, "metrics") == [{"job_name": "node"}]
+    assert collect_scrape_jobs(instances, "vm-main") == [{"job_name": "app"}]
+
+
+def test_collect_scrape_jobs_includes_consumer_own_stanza():
+    instances = OrderedDict([
+        ("metrics", {"scrape": {"vmagent": ["metrics"], "config": [{"job_name": "vmagent"}]}}),
+    ])
+    assert collect_scrape_jobs(instances, "metrics") == [{"job_name": "vmagent"}]
+
+
+def test_collect_scrape_jobs_accepts_scalar_vmagent():
+    instances = {"node": {"scrape": {"vmagent": "metrics", "config": [{"job_name": "node"}]}}}
+    assert collect_scrape_jobs(instances, "metrics") == [{"job_name": "node"}]
+
+
+def test_collect_scrape_jobs_requires_vmagent_when_scrape_present():
+    with pytest.raises(ValueError, match="'scrape' requires 'vmagent'"):
+        collect_scrape_jobs({"bad": {"scrape": {"config": [{"job_name": "bad"}]}}}, "metrics")
+
+
+def test_collect_scrape_jobs_matching_nothing_is_empty():
+    instances = {"node": {"scrape": {"vmagent": ["other"], "config": [{"job_name": "node"}]}}}
+    assert collect_scrape_jobs(instances, "metrics") == []
+
+
+def test_append_at_path_creates_missing_nodes_and_appends():
+    container = {}
+    result = append_at_path(container, "config:promscrape.yml:contents:scrape_configs", [{"job_name": "node"}])
+    assert result == {
+        "config": {
+            "promscrape.yml": {
+                "contents": {
+                    "scrape_configs": [{"job_name": "node"}],
+                },
+            },
+        },
+    }
+    assert result is container
+
+
+def test_append_at_path_preserves_existing_list_entries():
+    container = {"config": {"promscrape.yml": {"contents": {"scrape_configs": [{"job_name": "base"}]}}}}
+    append_at_path(container, "config:promscrape.yml:contents:scrape_configs", [{"job_name": "node"}])
+    assert container["config"]["promscrape.yml"]["contents"]["scrape_configs"] == [
+        {"job_name": "base"},
+        {"job_name": "node"},
+    ]
+
+
+def test_append_at_path_unique_key_rejects_duplicates():
+    container = {"config": {"promscrape.yml": {"contents": {"scrape_configs": [{"job_name": "node"}]}}}}
+    with pytest.raises(ValueError, match="duplicate job_name='node'"):
+        append_at_path(
+            container,
+            "config:promscrape.yml:contents:scrape_configs",
+            [{"job_name": "node"}],
+            unique_key="job_name",
+        )
 
 
 # ── fetch ─────────────────────────────────────────────────────────────────────

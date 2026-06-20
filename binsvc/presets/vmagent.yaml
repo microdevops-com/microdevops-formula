@@ -44,6 +44,18 @@ config:
         scrape_timeout: 10s
       scrape_configs: []
 
+scrape_collect: "config:promscrape.yml:contents:scrape_configs"
+
+scrape:
+  # Self-monitoring is opt-in: this job ships ready but targets no vmagent by
+  # default ([] matches nothing). Set to ["*"] (any local vmagent) or a vmagent
+  # name/glob to enable.
+  vmagent: []
+  config:
+    - job_name: vmagent
+      static_configs:
+        - targets: ["127.0.0.1:8429"]
+
 systemd:
   Service:
     ExecStart: "{exec} {args}"

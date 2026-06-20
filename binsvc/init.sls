@@ -10,7 +10,7 @@
 import logging
 import yaml
 
-from salt://binsvc/lib.py import expand, merge, normalize_osarch, resolve_latest, join_args, merge_args
+from salt://binsvc/lib.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, normalize_osarch, resolve_latest
 
 from salt://binsvc/blocks/fetch_archive.sls import fetch_archive
 from salt://binsvc/blocks/user_ssh.sls import user_and_ssh
@@ -92,10 +92,11 @@ def dispatch(prefix, settings):
     nginx_vhost(prefix, settings)
 
 
-# --- main loop: merge, expand, dispatch, per instance ------------------------
+# --- main loop: merge all, then expand/inject/dispatch per instance ----------
 
 instances = pillar("binsvc:instances", {})
 
+merged = {}
 for instance_name, instance in instances.items():
     preset_name = instance.get("preset")
     preset = load_preset(preset_name) if preset_name else {}
@@ -111,6 +112,11 @@ for instance_name, instance in instances.items():
     instance_args = (instance.get("svc") or {}).get("args")
     if preset_args or instance_args:
         settings.setdefault("svc", {})["args"] = merge_args(preset_args, instance_args)
+
+    merged[instance_name] = settings
+
+for instance_name, raw_settings in merged.items():
+    settings = merge(raw_settings)
 
     svc = settings.get("svc") or {}
     if "source" in svc:
@@ -144,5 +150,9 @@ for instance_name, instance in instances.items():
                        user_name=user.get("name", "root"),
                        user_group=user.get("group", user.get("name", "root")))
     settings = expand(settings, extra_scope)
+
+    if "scrape_collect" in settings:
+        jobs = collect_scrape_jobs(merged, instance_name)
+        append_at_path(settings, settings["scrape_collect"], jobs, unique_key="job_name")
 
     dispatch(["binsvc", instance_name], settings)

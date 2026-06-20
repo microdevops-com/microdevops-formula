@@ -114,9 +114,9 @@ user_and_ssh → config_files → fetch_archive → commands(pre)
 Some consumers need config assembled *from other instances* — e.g. a `vmagent`
 that scrapes the exporters on the same host: each exporter declares how it should
 be scraped, and vmagent renders one config gathering them. (The legacy answer was
-a `scrape_configs.d/*.yml` glob each exporter dropped a file into.) Decisions on
-record (design settled 2026-06; the `vmagent` preset now exists, gather/app-block
-code does not):
+a `scrape_configs.d/*.yml` glob each exporter dropped a file into.) This is
+implemented for vmagent via `collect_scrape_jobs`, `append_at_path`, and the
+consumer's `scrape_collect` colon path; no app-block registry was needed for v1.
 
 - **Pull, not push; static facts, not a shared variable.** Producers (exporters)
   declare a static key in their own pillar; the consumer (vmagent) *pulls* and
@@ -126,41 +126,38 @@ code does not):
   sides write" — that reintroduces ordering/state. Removing a producer from pillar
   removes its contribution, automatically.
 
-- **Generalize the *scan*, scope the *merge*.** The reusable part is one pure,
-  key-parameterized helper in `lib.py`:
-  `gather(instances, key, selector=None) -> ordered (name, value)`. Because `key`
-  is a parameter, it serves any future case for free
-  (`gather(instances, "scrape_config", …)` now; `gather(instances, "nginx_upstream", …)`
-  later) — **no pub/sub framework, no `provides`/channels envelope, no magic.**
-  The **merge + render stay in the consumer block**: scrape jobs are a *list-append*
-  (`scrape_configs: [...]`); another consumer might want dict-merge or dedup-by-key.
-  A generic "merge the bucket" would reintroduce the exact "which list-merge
-  strategy?" ambiguity binsvc refused (cf. `merge` wholesale vs `merge_args`). Only
-  generalize the merge if/when a **second** consumer's shape is in hand.
+- **Generalize only what is real.** The implemented reusable pieces are
+  `collect_scrape_jobs(merged_instances, consumer_name)` and
+  `append_at_path(container, path, items, unique_key="job_name")`. The former
+  scans merged instance settings for the known `scrape` shape; the latter handles
+  the list append at the consumer's configured path. No pub/sub framework, no
+  `provides` envelope, no generic merge strategy. Only generalize further if a
+  second consumer needs a different contribution shape.
 
-- **Selector-scoped, never "scan all".** "Collect every scrape_config" assumes one
+- **Selector-scoped, never "scan all".** "Collect every scrape job" assumes one
   vmagent per host, which contradicts binsvc's multi-instance reason for being.
-  A contribution names its target pool/agent (a label or `vmagent: <name>`); a
-  consumer gathers only what targets it. Default: an unlabeled contribution goes to
-  the sole vmagent; with >1, require explicit targeting and fail loudly on ambiguity.
+  Producers declare `scrape: {vmagent: <scalar-or-list-of-globs>, config: [...]}`;
+  `vmagent` is required when `scrape` is present, and a consumer gathers only
+  what matches its instance name. Matching nothing is a no-op.
 
 - **Contributions are literal (v1).** A value gathered from instance X's *raw*
-  pillar is **not** expanded in X's scope (the per-instance `expand` ran in a
-  separate, discarded loop iteration). So author scrape_config targets concretely
+  merged settings is **not** expanded in X's scope. `init.sls` does a two-pass
+  loop: pass 1 merges every instance, pass 2 resolves/expands the consumer and
+  injects gathered jobs after expansion. So author scrape targets concretely
   (`targets: ["127.0.0.1:9100"]`); don't reference X's `{install_dir}`/`{args}`.
   Do **not** derive the target by parsing X's listen flag — exporters disagree
   (`-httpListenAddr` vs `--web.listen-address`); that's the silently-tool-specific
-  trap. (v2, if wanted: expand each source in its own scope before gathering — a
-  bigger restructure; defer.)
+  trap. (v2, if wanted: expand each source in its own scope before gathering.)
 
 - **Host-local by design.** Pillar-scan sees only this minion's `binsvc:instances`
   (same boundary the file-glob had). Remote scrape targets go directly in the
   consumer's own config.
 
-- **Store the contribution verbatim; ensure key uniqueness.** Let `scrape_config`
-  be a Prometheus/VM scrape-job dict (or list); "how often/how" is just job fields
-  (`scrape_interval`, `metrics_path`, …). The consumer dedups/prefixes `job_name`
-  (e.g. from the instance name) so two producers can't collide.
+- **Store the contribution verbatim; ensure key uniqueness.** `scrape.config` is
+  a list of Prometheus/VM scrape-job dicts; "how often/how" is just job fields
+  (`scrape_interval`, `metrics_path`, …). `append_at_path(...,
+  unique_key="job_name")` fails the render if the final list has duplicate job
+  names, including duplicates between base config and gathered jobs.
 
 - **No magic placeholder.** Don't weave gathering into `expand` (e.g.
   `scrape_configs: {{ gathered(...) }}`). Keep it an explicit consumer-block step;
@@ -169,12 +166,8 @@ code does not):
 - **Flag the non-locality when built.** This is the first place vmagent's config
   *can't be understood from vmagent's own pillar* — you must scan every instance
   (Puppet exported-resources-style "action at a distance"). Acceptable, but contain
-  it: explicit + selector-scoped, and call it out in `WHITEPAPER.md`.
-
-Shape, when built: a pure `gather` helper in `lib.py` (unit-tested with fixtures)
-+ a thin `vmagent` app-block that calls it, merges (list-append) and renders via
-`config_file`/`render_config`, returning the `changed` ref so vmagent restarts on
-change.
+  it: explicit + selector-scoped, and call it out in `WHITEPAPER.md`. This is now
+  recorded there.
 
 ## Why not a parallel formula
 

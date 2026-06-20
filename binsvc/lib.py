@@ -12,6 +12,7 @@ Sections: substitute · merge · fetch · release · commands · config · syste
 import configparser
 import copy
 import fcntl
+import fnmatch
 import hashlib
 import io
 import json
@@ -95,6 +96,50 @@ def merge(*layers):
             else:
                 result[key] = copy.deepcopy(value)
     return result
+
+
+# ── scrape collection ─────────────────────────────────────────────────────────
+# Cross-instance scrape-config sharing for vmagent. Producers declare literal
+# jobs in `scrape`; consumers opt in with `scrape_collect`.
+
+
+def collect_scrape_jobs(merged_instances, consumer_name):
+    """Gather literal scrape jobs targeting `consumer_name`.
+
+    Producers use `scrape: {vmagent: <scalar|globs>, config: [<job>, ...]}`.
+    `vmagent` is required when `scrape` is present; matching nothing is a no-op.
+    """
+    jobs = []
+    for name, settings in merged_instances.items():
+        scrape = settings.get("scrape")
+        if not scrape:
+            continue
+        targets = scrape.get("vmagent")
+        if targets is None:
+            raise ValueError("instance {!r}: 'scrape' requires 'vmagent'".format(name))
+        if isinstance(targets, str):
+            targets = [targets]
+        if any(fnmatch.fnmatch(consumer_name, pat) for pat in targets):
+            jobs.extend(scrape.get("config") or [])
+    return jobs
+
+
+def append_at_path(container, path, items, sep=":", unique_key=None):
+    """Append `items` to the list at `path`, creating missing dict/list nodes."""
+    node = container
+    keys = path.split(sep)
+    for key in keys[:-1]:
+        node = node.setdefault(key, {})
+    target = node.setdefault(keys[-1], [])
+    target.extend(items)
+    if unique_key is not None:
+        seen = set()
+        for entry in target:
+            value = entry.get(unique_key)
+            if value in seen:
+                raise ValueError("duplicate {}={!r} at {!r}".format(unique_key, value, path))
+            seen.add(value)
+    return container
 
 
 # ── fetch ─────────────────────────────────────────────────────────────────────

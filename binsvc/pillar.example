@@ -3,17 +3,21 @@
 # under systemd, each independently configured.
 #
 # Resolution per instance, see binsvc/init.sls / readme.md for the full story:
-#   1. settings = merge(binsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
+#   1. all instances are merged first:
+#      settings = merge(binsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
 #      - everything here merges deep-dict-wise / replaces-wholesale, EXCEPT
 #        svc.args, which is merged by flag name (merge_args in lib.py), so
 #        an instance can override e.g. just httpListenAddr from a preset's
 #        args without restating storageDataPath/retentionPeriod/... too
 #        (see vl_secondary below)
-#   2. every {placeholder} string anywhere in `settings` is expanded in two
+#   2. each instance resolves version/source, then every {placeholder} string
+#      anywhere in `settings` is expanded in two
 #      passes - first against grain-derived identity + the instance's own
 #      static keys (name/type/version/tag/tag_vstrip/osarch/...), then again
 #      once install_dir/exec/args/user_name/user_group are themselves known.
-#   3. building blocks run in order: user/ssh, config, svc (fetch), commands(pre),
+#   3. if `scrape_collect` is set, literal jobs from matching instances'
+#      `scrape` stanzas are appended to the configured config path.
+#   4. building blocks run in order: user/ssh, config, svc (fetch), commands(pre),
 #      systemd, commands(post), nginx
 #
 # Available placeholders (anywhere in an instance's settings):
@@ -108,7 +112,7 @@ binsvc:
               scrape_interval: 30s
 
     # --- vmagent from the vmutils archive, remote-writing to VictoriaMetrics ---
-    vmagent:
+    metrics:
       preset: vmagent
       install_dir: "/opt/services/{type}/{name}"
       user:
@@ -120,17 +124,9 @@ binsvc:
         # the preset's tmpDataPath/httpListenAddr/promscrape.config flags.
         args:
           - remoteWrite.url: "http://127.0.0.1:8428/api/v1/write"
-      config:
-        promscrape:
-          contents:
-            global:
-              scrape_interval: 15s
-              scrape_timeout: 10s
-            scrape_configs:
-              - job_name: vmagent-self
-                static_configs:
-                  - targets:
-                      - "127.0.0.1:8429"
+      # The preset's scrape_collect appends matching producers' literal scrape
+      # jobs into config.promscrape.yml.contents.scrape_configs. It also ships
+      # its own vmagent self-scrape job.
 
     # --- Prometheus Node Exporter from the official GitHub release tarball ---
     node_exporter:
@@ -144,12 +140,15 @@ binsvc:
         args:
           # Leading "-" in the key renders as "--web.listen-address=...".
           - "-web.listen-address": "127.0.0.1:9100"
-      # Reserved for future vmagent gather support (TODO #15); literal values.
-      scrape_config:
-        job_name: node
-        static_configs:
-          - targets:
-              - "127.0.0.1:9100"
+      # Override the preset's vmagent: ["*"] default to narrow this producer to
+      # one local vmagent instance. Contributions are literal: no placeholders.
+      scrape:
+        vmagent: ["metrics"]
+        config:
+          - job_name: node
+            static_configs:
+              - targets:
+                  - "127.0.0.1:9100"
 
     # --- Grafana from the official standalone tarball ---
     grafana:

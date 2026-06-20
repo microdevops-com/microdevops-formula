@@ -101,7 +101,7 @@ binsvc:
       install_dir / user / ssh / svc / config / systemd / nginx: {...}
 ```
 
-Per instance, `init.sls`:
+`init.sls` first merges all instances, then resolves and dispatches each one:
 
 1. **Load preset** (`load_preset`) — parse `presets/<name>.yaml` once per run
    (`_preset_cache`), deep-merged with any `binsvc:presets:<name>` pillar
@@ -109,6 +109,9 @@ Per instance, `init.sls`:
 2. **Merge** — `settings = merge(defaults, preset, instance)`. Dicts merge
    recursively; everything else (incl. **lists**) is replaced wholesale by the
    more-specific layer. (`svc.args` is the one exception — §10.)
+   This pass runs for every instance before any instance is expanded or
+   dispatched, so a consumer can gather merged producer stanzas from the same
+   host without depending on declaration order.
 3. **Resolve version/source** (`resolve_latest_version` → `lib.py`'s
    `resolve_latest`, which does the HTTP via `requests.get`, cached on the render
    host — §10) — through the named `svc.version_resolver` (`github` by default).
@@ -119,7 +122,11 @@ Per instance, `init.sls`:
    `svc.source` and `svc.source_hash` because the tarball URL contains a build
    ID that is not derivable from the version alone (§10).
 4. **Expand placeholders, two passes** (`expand`, §5).
-5. **Dispatch** building blocks in fixed order, threading "what changed" into
+5. **Inject gathered scrape jobs** when `scrape_collect` is set. `vmagent` uses
+   this to append literal jobs from matching producers' `scrape` stanzas into
+   `config.promscrape.yml.contents.scrape_configs`, reusing the normal
+   `config_file` block.
+6. **Dispatch** building blocks in fixed order, threading "what changed" into
    systemd's restart trigger (§6).
 
 ## 5. Placeholder expansion: two phases, no third
@@ -282,6 +289,13 @@ replacements or a migration invitation.
   matching normalized `osarch`, then fill `source` and `source_hash`. Requiring
   users to guess or copy the full URL for pinned versions would make the preset
   less correct than the API.
+- **Cross-instance scrape sharing is the first intentional non-local read.**
+  `vmagent`'s rendered promscrape config may include jobs declared on exporter
+  instances, so it cannot always be understood from the vmagent pillar alone.
+  This Puppet-exported-resources-style non-locality is contained deliberately:
+  producers use an explicit `scrape.vmagent` selector, jobs are literal
+  operator-authored data, collection is host-local, and duplicate `job_name`
+  values fail the render instead of being renamed silently.
 - **Program files root-owned; writable state via `svc.data_dirs`.** `fetch_archive`
   extracts as root (`--no-same-owner`), so program files are root-owned — a
   compromised service can't rewrite its own binary. Dirs the service must write

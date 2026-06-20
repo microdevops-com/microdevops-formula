@@ -36,6 +36,8 @@ For every entry under `binsvc:instances`:
    override e.g. just `httpListenAddr` from a preset's `args` without
    restating `storageDataPath`/`retentionPeriod`/etc (see `vl_secondary` in
    `pillar.example`).
+   `init.sls` does this for all instances first so consumers can gather merged
+   producer stanzas from the same host.
 2. **Resolve version/source**: `svc.version_resolver` selects resolver logic
    for the app. The default `github` resolver turns `version: latest` into a
    concrete GitHub release tag using `/releases/latest` (NOT `/tags` - the
@@ -61,6 +63,13 @@ For every entry under `binsvc:instances`:
    threads that list into `systemd_unit`'s `watch`, so the service restarts
    exactly when it needs to - without any block hardcoding another block's
    state IDs.
+
+Before dispatch, an instance with `scrape_collect` gathers literal scrape jobs
+from all merged instances with a matching `scrape.vmagent` selector and appends
+them to the configured colon path, for example
+`config:promscrape.yml:contents:scrape_configs`. This is host-local by design:
+producers declare `scrape: {vmagent: <glob-or-list>, config: [...]}`, consumers
+opt in with `scrape_collect`, and duplicate `job_name` values fail the render.
 
 ## Building blocks (`blocks/*.sls`)
 
