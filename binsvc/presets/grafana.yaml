@@ -1,0 +1,58 @@
+# Grafana OSS via official standalone Linux tarballs.
+# Version/source resolution uses Grafana's API because package archive names
+# include build IDs that are not derivable from the version alone.
+
+type: grafana
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: grafana
+  group: grafana
+
+svc:
+  version_resolver: grafana
+  version: latest
+  source: "" # intended, keep empty
+  tar:
+    unpack: "grafana-{tag}"
+    args: "--strip-components 1"
+  exec: "{install_dir}/bin/grafana server --homepath={install_dir}"
+  # Opt-in idempotency guard (no default): skip re-extract when grafana already
+  # reports {tag}. {binary} = exec's first token ({install_dir}/bin/grafana).
+  version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
+  # Extraction is root-owned; Grafana needs to write its sqlite db, plugins and
+  # logs (all default to under {homepath}/data) - so that tree must be grafana-owned.
+  data_dirs:
+    - "{install_dir}/data"
+
+config:
+  custom.ini:
+    name: "{install_dir}/conf/{confname}"
+    format: ini
+    contents:
+      server:
+        http_port: 3000
+      paths:
+        data: "{install_dir}/data"
+
+commands:
+  # Set a top-level `admin_password` on the instance to enable this semantic
+  # action. The generic commands block only knows how to run the command.
+  reset_admin_password:
+    when_set: admin_password
+    cmd: "{install_dir}/bin/grafana cli --homepath={install_dir} admin reset-admin-password --password-from-stdin"
+    stdin: "{admin_password}"
+    runas: "{user_name}"
+    phase: pre
+
+systemd:
+  Service:
+    ExecStart: "{exec}"
+    User: "{user_name}"
+    Group: "{user_group}"
+    WorkingDirectory: "{install_dir}"
+
+nginx:
+  manage: false
+  upstream: "127.0.0.1:3000"

@@ -1,0 +1,52 @@
+# VictoriaLogs vlagent - log shipping agent shipped in the vlutils archive.
+# https://github.com/VictoriaMetrics/VictoriaLogs
+#
+# Same release resolver/archive family as vlserver, but with the vlagent binary.
+
+type: vlagent
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: vlagent
+  group: vlagent
+
+svc:
+  version_resolver: github_versionsort
+  version: latest
+  source: "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{tag}/vlutils-linux-{osarch}-{tag}.tar.gz"
+  source_hash: "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{tag}/vlutils-linux-{osarch}-{tag}_checksums.txt"
+  tar:
+    unpack: vlagent-prod
+  move:
+    src: "{install_dir}/vlagent-prod"
+    dst: "{install_dir}/vlagent"
+  exec: "{install_dir}/vlagent"
+  # Opt-in idempotency guard (no default): skip re-extract when the binary
+  # already reports {tag}. {binary} = exec's first token.
+  version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
+  args:
+    - httpListenAddr: "127.0.0.1:9429"
+    - remoteWrite.tmpDataPath: "{install_dir}/data/remotewrite"
+    - remoteWrite.url: "http://127.0.0.1:9428/insert/jsonline"
+  data_dirs:
+    - "{install_dir}/data"
+
+scrape:
+  # Self-monitoring is opt-in: this job ships ready but targets no vmagent by
+  # default ([] matches nothing). Set to ["*"] (any local vmagent) or a vmagent
+  # name/glob to enable.
+  vmagent: []
+  config:
+    - job_name: vlagent
+      static_configs:
+        - targets: ["127.0.0.1:9429"]
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false

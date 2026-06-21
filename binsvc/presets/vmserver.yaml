@@ -1,0 +1,53 @@
+# VictoriaMetrics single-node vmserver - same release-archive shape as
+# VictoriaLogs, packaged under a different upstream binary name.
+# https://github.com/VictoriaMetrics/VictoriaMetrics
+#
+# Note: an established victoriametrics/ formula already exists in this repo;
+# this preset is a binsvc design driver (proving multi-instance support for
+# the same archive-fetch shape vlserver uses), not a replacement for it.
+
+type: vmserver
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: vmserver
+  group: vmserver
+
+svc:
+  version_resolver: github_versionsort
+  version: latest
+  source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-{osarch}-{tag}.tar.gz"
+  source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/victoria-metrics-linux-{osarch}-{tag}_checksums.txt"
+  tar:
+    unpack: victoria-metrics-prod
+  move:
+    src: "{install_dir}/victoria-metrics-prod"
+    dst: "{install_dir}/vmserver"
+  exec: "{install_dir}/vmserver"
+  # Opt-in idempotency guard (no default): skip re-extract when the binary
+  # already reports {tag}. {binary} = exec's first token.
+  version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
+  args:
+    - httpListenAddr: "127.0.0.1:8428"
+    - storageDataPath: "{install_dir}/data"
+    - retentionPeriod: "1"
+
+scrape:
+  # Self-monitoring is opt-in: this job ships ready but targets no vmagent by
+  # default ([] matches nothing). Set to ["*"] (any local vmagent) or a vmagent
+  # name/glob to enable.
+  vmagent: []
+  config:
+    - job_name: vmserver
+      static_configs:
+        - targets: ["127.0.0.1:8428"]
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false

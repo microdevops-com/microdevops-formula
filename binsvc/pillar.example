@@ -1,0 +1,221 @@
+# binsvc - run N instances of a statically-built binary
+# (VictoriaMetrics, VictoriaLogs, Grafana, Loki, Prometheus, exporters, ...)
+# under systemd, each independently configured.
+#
+# Resolution per instance, see binsvc/init.sls / readme.md for the full story:
+#   1. all instances are merged first:
+#      settings = merge(binsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
+#      - everything here merges deep-dict-wise / replaces-wholesale, EXCEPT
+#        structured svc.args, which is merged by flag name (merge_args in
+#        lib.py), so an instance can override e.g. just httpListenAddr from a
+#        preset's args without restating storageDataPath/retentionPeriod/... too
+#        (string entries inside args lists are literal tokens; top-level raw
+#        string args replace wholesale)
+#   2. each instance resolves version/source, then every {placeholder} string
+#      anywhere in `settings` is expanded in two
+#      passes - first against grain-derived identity + the instance's own
+#      static keys (name/type/version/tag/tag_vstrip/osarch/...), then again
+#      once install_dir/exec/args/user_name/user_group are themselves known.
+#   3. if `scrape_collect` is set, literal jobs from matching instances'
+#      `scrape` stanzas are appended to the configured config path.
+#   4. building blocks run in order: user/ssh, config, svc (fetch), commands(pre),
+#      systemd, commands(post), nginx
+#
+# Available placeholders (anywhere in an instance's settings):
+#   {name}          instance key (the dict key under binsvc:instances)
+#   {type}          preset name, or {name} if no preset is used
+#   {version}       svc.version, resolved if it was "latest"
+#   {tag}           release tag (usually == version, e.g. "v1.9.0")
+#   {tag_vstrip}    {tag} with a leading "v" stripped (e.g. "1.9.0")
+#   {osarch}        GOARCH-style arch (amd64/arm64/...)
+#   {kernel_lower}  lowercased kernel grain (e.g. "linux")
+#   {cpuarch}       cpuarch grain
+#   {install_dir}   resolved install_dir (2nd pass only)
+#   {exec}          resolved svc.exec path (2nd pass only)
+#   {args}          svc.args rendered with svc.args_prefix plus literal string tokens (2nd pass only)
+#   {user_name}     resolved user.name, default "root" (2nd pass only)
+#   {user_group}    resolved user.group, default {user_name} (2nd pass only)
+
+
+binsvc:
+
+  # Optional GitHub API token for `version: latest` resolution (github resolver).
+  # Lifts the unauthenticated 60 req/hr/IP limit to 5000/hr - the fix for minions
+  # rendering behind a shared NAT egress IP, where the on-disk resolve cache can't
+  # be shared (see WHITEPAPER.md §10). Sent only to api.github.com, never to other
+  # resolvers' endpoints. A secret - keep it in secured/encrypted pillar.
+  # github_token: ghp_xxxxxxxxxxxxxxxxxxxx
+
+  # Per-preset overrides, deep-merged over the bundled salt://binsvc/presets/
+  # files - only specify what differs. Omit a preset entirely to use it as-is.
+  presets:
+    vlserver:
+      svc:
+        version: v1.9.0   # pin instead of tracking "latest"
+
+  instances:
+
+    # --- minimal: a single VictoriaLogs instance, defaults all the way ---
+    vlserver:
+      preset: vlserver
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vlogs
+        group: vlogs
+      svc:
+        version: latest
+
+    # --- a second, independent instance of the same preset on the same host ---
+    vlserver_b:
+      preset: vlserver
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vlogs-secondary
+        group: vlogs-secondary
+      svc:
+        version: v1.8.0
+        # args is merged with the preset's by flag name (merge_args in lib.py)
+        # rather than replaced wholesale, so overriding just the listen address
+        # here still keeps the preset's storageDataPath/retentionPeriod intact.
+        args:
+          - httpListenAddr: "127.0.0.1:9429"
+      nginx:
+        manage: true
+        upstream: "127.0.0.1:9429"
+        # auth_basic is top-level: applies to every server block below, one
+        # htpasswd file keyed on the vhost name.
+        auth_basic:
+          - username: admin
+            password: change-me
+        servers:
+          # ACME DNS: write only acme_account; the block derives ssl_cert/
+          # ssl_key from /opt/acme/cert/<vhost>_<first-name>_{fullchain.cer,key.key}.
+          # The account must exist in pillar["acme"] and be applied by the acme
+          # state; binsvc does not manage acme accounts.
+          - names:
+              - logs.example.com
+            acme_account: example_com
+          # Operator-supplied certs:
+          - names:
+              - logs-internal.example.com
+            ssl_cert: /etc/ssl/certs/internal.fullchain.pem
+            ssl_key: /etc/ssl/private/internal.key
+          # No TLS -> HTTP only:
+          - names:
+              - logs-plain.example.com
+
+    # --- VictoriaMetrics from a direct URL instead of "latest"/a tag ---
+    vmserver:
+      preset: vmserver
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vmserver
+        group: vmserver
+      svc:
+        source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
+        source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0_checksums.txt"
+        version: v1.101.0
+      config:
+        main:
+          name: "{install_dir}/scrape.yml"
+          # Optional format: yaml (default), ini, json.
+          contents:
+            global:
+              scrape_interval: 30s
+
+    # --- vmagent from the vmutils archive, remote-writing to VictoriaMetrics ---
+    vmagent:
+      preset: vmagent
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: vmagent
+        group: vmagent
+      svc:
+        # args is merged by flag name, so overriding only remoteWrite.url keeps
+        # the preset's tmpDataPath/httpListenAddr/promscrape.config flags.
+        args:
+          - remoteWrite.url: "http://127.0.0.1:8428/api/v1/write"
+      # The preset's scrape_collect appends matching producers' literal scrape
+      # jobs into config.promscrape.yml.contents.scrape_configs. It also ships
+      # its own vmagent self-scrape job.
+
+    # --- Prometheus Node Exporter from the official GitHub release tarball ---
+    exporter_node:
+      preset: exporter_node
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: exporter_node
+        group: exporter_node
+      svc:
+        args:
+          # exporter_node preset sets args_prefix: "--".
+          - web.listen-address: "127.0.0.1:9100"
+      # Override the preset's vmagent: ["*"] default to narrow this producer to
+      # one local vmagent instance. Contributions are literal: no placeholders.
+      scrape:
+        vmagent: ["metrics"]
+        config:
+          - job_name: node
+            static_configs:
+              - targets:
+                  - "127.0.0.1:9100"
+
+    # --- Grafana from the official standalone tarball ---
+    grafana:
+      preset: grafana
+      install_dir: "/opt/services/{type}/{name}"
+      # Set Grafana's admin password (secured/encrypted pillar - it reaches the
+      # grafana CLI via stdin, not argv). Omit to leave Grafana's default.
+      admin_password: "change-me"
+      user:
+        manage: true
+        name: grafana
+        group: grafana
+      nginx:
+        manage: true
+        upstream: "127.0.0.1:3000"
+        servers:
+          - names:
+              - grafana.example.com
+            acme_account: example_com
+
+    # --- no preset at all: every building block driven straight from pillar ---
+    custom_exporter:
+      type: my_exporter
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: my_exporter
+        group: my_exporter
+      svc:
+        source: "https://example.com/downloads/my_exporter-{osarch}.tar.gz"
+        version: "1.2.3"
+        move:
+          src: "{file}"
+          dst: "{install_dir}/my_exporter"
+        exec: "{install_dir}/my_exporter"
+        # Opt-in idempotency: with no version_check the archive re-extracts (and
+        # the service restarts) every run. {binary} = exec's first token; {tag}/
+        # {version}/{install_dir} are already resolved. For a binary with no
+        # version flag, check a stamp file or any command (exit 0 = up to date),
+        # or omit this entirely to accept re-extract-every-run.
+        version_check: "[[ $({binary} -version 2>&1) =~ {version} ]]"
+        args:
+          - web.listen-address: "127.0.0.1:9200"
+        # Dirs the service must write into that the archive ships root-owned
+        # (sqlite db, plugins, logs, ...). Made service-user-owned after
+        # extraction, recursively; program files stay root-owned. The grafana
+        # preset uses this for "{install_dir}/data"; most stateless exporters
+        # need nothing here.
+        # data_dirs:
+        #   - "{install_dir}/data"
+      systemd:
+        Service:
+          ExecStart: "{exec} {args}"
+          User: "{user_name}"
+          Group: "{user_group}"
