@@ -112,8 +112,8 @@ binsvc:
       install_dir: "/opt/services/{type}/{name}"
       user:
         manage: true
-        name: vmetrics
-        group: vmetrics
+        name: vmserver
+        group: vmserver
       svc:
         source: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
         source_hash: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0_checksums.txt"
@@ -144,16 +144,16 @@ binsvc:
       # its own vmagent self-scrape job.
 
     # --- Prometheus Node Exporter from the official GitHub release tarball ---
-    node_exporter:
-      preset: node_exporter
+    exporter_node:
+      preset: exporter_node
       install_dir: "/opt/services/{type}/{name}"
       user:
         manage: true
-        name: node_exporter
-        group: node_exporter
+        name: exporter_node
+        group: exporter_node
       svc:
         args:
-          # node_exporter preset sets args_prefix: "--".
+          # exporter_node preset sets args_prefix: "--".
           - web.listen-address: "127.0.0.1:9100"
       # Override the preset's vmagent: ["*"] default to narrow this producer to
       # one local vmagent instance. Contributions are literal: no placeholders.

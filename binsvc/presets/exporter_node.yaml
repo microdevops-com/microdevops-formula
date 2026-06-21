@@ -2,15 +2,15 @@
 # https://github.com/prometheus/node_exporter
 #
 # Ported from the legacy exporter state's `node` defaults into binsvc's
-# archive-only preset shape.
+# archive-only preset shape. Exporter presets use `exporter_<name>` identity.
 
-type: node_exporter
+type: exporter_node
 
 user:
   manage: true
   home: "/opt/services/{type}"
-  name: node_exporter
-  group: node_exporter
+  name: exporter_node
+  group: exporter_node
 
 svc:
   version_resolver: github
