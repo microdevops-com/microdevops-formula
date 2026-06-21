@@ -47,9 +47,10 @@ Tests in `tests/test_lib.py`; documented in WHITEPAPER §10, `defaults.yaml`,
 `pillar.example`. Render/concurrency path itself is render-only (not unit-tested).
 
 ### [x] 3. Binaries are fetched unverified by default
-**Resolved 2026-06-20.** All four victoria* presets now ship a derivable
+**Resolved 2026-06-20.** All five victoria* presets now ship a derivable
 `source_hash` pointing at the published `_checksums.txt` alongside each release
-archive (`vlserver.yaml`, `vmserver.yaml`, `vmagent.yaml`, `vmauth.yaml`), so
+archive (`vlserver.yaml`, `vlagent.yaml`, `vmserver.yaml`, `vmagent.yaml`,
+`vmauth.yaml`), so
 integrity verification is the default rather than opt-in. `fetch_archive` still
 falls back to `skip_verify=True` only when a preset/instance declares no
 `source_hash` (kept for resolvers/sources that publish no checksum file).
