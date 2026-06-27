@@ -143,8 +143,10 @@ template (`/opt/services/{type}/{name}`) only concrete *after* expansion, yet
 nested-placeholder syntax (`{svc[exec]}`), `init.sls` runs `expand` **twice**:
 
 - **Phase 1** scope: grain identity (`osarch` via `normalize_osarch`,
-  `kernel_lower`, `cpuarch`) + static keys (`name`, `type`, `version`, `tag`,
-  `tag_vstrip`). Resolves `install_dir`, `svc.source`, `svc.exec`, …
+  `kernel_lower`, `cpuarch`, `grain_id` = `grains:id`) + static keys (`name`,
+  `type`, `version`, `tag`, `tag_vstrip`) + operator-defined `binsvc:globals`
+  (overlaid via `merge_globals`, which raises if a global shadows a reserved
+  key — see §10). Resolves `install_dir`, `svc.source`, `svc.exec`, …
 - **Phase 2** scope: phase 1 **plus** `install_dir`, `exec`, `args`
   (raw string args, or structured `svc.args` joined through `join_args` using
   `svc.args_prefix`, default `-`), `user_name`, `user_group`. So
@@ -270,6 +272,27 @@ production path — these presets are not replacements or a migration invitation
   remain owned by the acme formula.
 - **Two-phase expand, no phase 3.** See §5 — prefer computing a value inside the
   block that needs it over adding a global phase.
+- **`binsvc:filter` gates dispatch, never the merge.** An operator-typed
+  selector string (`"name: vm* *gra*; preset: exporter*"`, semicolon clauses,
+  union semantics, `fnmatch` globs) scopes a `state.apply` to a subset of
+  instances. It is intentionally a small **string DSL**, not structured pillar,
+  because it is typed by hand on the CLI where nested `{"":{"":[""]}}` is
+  error-prone; `parse_filter` hardens it (`split(":", 1)`, fail loud on unknown
+  key / empty globs). The pass-1 loop still merges **all** instances so
+  `collect_scrape_jobs` sees the full set — only the pass-2 `dispatch` call is
+  filtered (unselected instances also skip the resolve/expand network cost).
+  This is **manual scoping, not change detection**: filtering to a new exporter
+  won't refresh vmagent's scrape config until vmagent is also in scope.
+- **`binsvc:globals` are scope, not settings.** Operator-defined placeholders
+  (`{foo}`) shared by every instance live in the **expand scope**, never in the
+  `defaults→preset→instance` merge — they are template variables, not per-instance
+  config. Values are **literal** (inserted verbatim, no recursive expansion).
+  A global that collides with a reserved/derived placeholder (`name`, `type`,
+  `grain_id`, …) **fails the render** via `merge_globals` rather than silently
+  shadowing it (a collision is almost always a typo). Reserved names always win
+  by being un-overridable, not by precedence. `{grain_id}` is the minion id
+  (`grains:id`) — named for the machinery, not "hostname", since the two can
+  diverge.
 - **Scope: prebuilt-binary service management, not app deployment.**
   PHP-FPM/LEMP is out of scope (owned by `app/`). Unifying "download a binary"
   with "deploy a PHP app with fpm pools" would yield a worse abstraction.

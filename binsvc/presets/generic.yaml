@@ -15,11 +15,13 @@
 #   {osarch}        normalized arch: amd64, arm64, ...
 #   {kernel_lower}  lowercased kernel grain
 #   {cpuarch}       cpuarch grain
+#   {grain_id}      minion id (grains:id)
 #   {install_dir}   resolved install_dir
 #   {exec}          resolved svc.exec
 #   {args}          svc.args rendered with svc.args_prefix, or raw string args
 #   {user_name}     resolved user.name, default root
 #   {user_group}    resolved user.group, default {user_name}
+#   plus any key from binsvc:globals (top-level pillar), e.g. {foo} below
 
 type: generic
 

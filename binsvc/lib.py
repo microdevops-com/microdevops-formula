@@ -77,6 +77,24 @@ def expand(mapping, scope=None, rounds=3):
     return result
 
 
+def merge_globals(reserved, global_vars, extra_reserved=()):
+    """Overlay operator-supplied `binsvc:globals` onto the reserved expand scope.
+
+    Globals are literal substitution values shared by every instance (e.g.
+    `{foo}`). Raises ValueError if a global key shadows a reserved/derived
+    placeholder (`name`, `type`, `grain_id`, ...) - that is almost always a typo
+    that would otherwise silently break the identity placeholders. `extra_reserved`
+    names additional reserved placeholders injected *after* this call (the phase-2
+    scope keys), so colliding with them fails loud here instead of being silently
+    overwritten in the second expand pass. Returns a new dict; inputs untouched."""
+    clash = set(global_vars or {}) & (set(reserved) | set(extra_reserved))
+    if clash:
+        raise ValueError(
+            "binsvc:globals keys shadow reserved placeholders: {}".format(
+                ", ".join(sorted(clash))))
+    return dict(reserved, **(global_vars or {}))
+
+
 # ── merge ─────────────────────────────────────────────────────────────────────
 # Deep dict merge for the defaults -> preset -> instance layering.
 # Generalizes salt.defaults.merge calls scattered through exporter/macro.jinja.
@@ -141,6 +159,64 @@ def append_at_path(container, path, items, sep=":", unique_key=None):
                 raise ValueError("duplicate {}={!r} at {!r}".format(unique_key, value, path))
             seen.add(value)
     return container
+
+
+# ── filter ────────────────────────────────────────────────────────────────────
+# Operator-typed `binsvc:filter` selector to scope `state.apply` to a subset of
+# instances. Parsing/matching only - the loop in init.sls still merges ALL
+# instances first (so scrape aggregation stays correct), then dispatches just
+# the selected ones.
+
+FILTER_KEYS = ("name", "preset")
+
+
+def parse_filter(spec):
+    """Parse a `binsvc:filter` selector string into {key: [globs]}.
+
+    Format: "name: vm* *gra*; preset: exporter*" - semicolon-separated clauses,
+    each "<key>: <glob> <glob> ...". Keys must be one of name/preset; an unknown
+    key or a clause with no globs raises (a typo fails loud instead of silently
+    selecting nothing). Returns {} for an empty/whitespace spec (no filter)."""
+    result = {}
+    for clause in (spec or "").split(";"):
+        clause = clause.strip()
+        if not clause:
+            continue
+        if ":" not in clause:
+            raise ValueError(
+                "binsvc:filter clause {!r} is not '<key>: <glob>...'".format(clause))
+        key, globs = clause.split(":", 1)
+        key = key.strip()
+        if key not in FILTER_KEYS:
+            raise ValueError(
+                "binsvc:filter key {!r} unknown; expected one of {}".format(
+                    key, ", ".join(FILTER_KEYS)))
+        patterns = globs.split()
+        if not patterns:
+            raise ValueError("binsvc:filter key {!r} has no globs".format(key))
+        result.setdefault(key, []).extend(patterns)
+    return result
+
+
+def select_instances(merged_instances, filter_spec):
+    """Return the set of instance names to dispatch for a parsed `filter_spec`.
+
+    Empty/None filter -> every instance. Otherwise union semantics: an instance
+    is selected if its name matches any `name` glob OR its preset matches any
+    `preset` glob. A preset-less instance can only be matched by name."""
+    if not filter_spec:
+        return set(merged_instances)
+    name_globs = filter_spec.get("name", [])
+    preset_globs = filter_spec.get("preset", [])
+    selected = set()
+    for name, settings in merged_instances.items():
+        if any(fnmatch.fnmatch(name, g) for g in name_globs):
+            selected.add(name)
+            continue
+        preset = settings.get("preset")
+        if preset is not None and any(fnmatch.fnmatch(preset, g) for g in preset_globs):
+            selected.add(name)
+    return selected
 
 
 # ── fetch ─────────────────────────────────────────────────────────────────────

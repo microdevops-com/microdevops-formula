@@ -30,11 +30,13 @@
 #   {osarch}        GOARCH-style arch (amd64/arm64/...)
 #   {kernel_lower}  lowercased kernel grain (e.g. "linux")
 #   {cpuarch}       cpuarch grain
+#   {grain_id}      minion id (grains:id), e.g. "host.dc1.example"
 #   {install_dir}   resolved install_dir (2nd pass only)
 #   {exec}          resolved svc.exec path (2nd pass only)
 #   {args}          svc.args rendered with svc.args_prefix plus literal string tokens (2nd pass only)
 #   {user_name}     resolved user.name, default "root" (2nd pass only)
 #   {user_group}    resolved user.group, default {user_name} (2nd pass only)
+#   {<global>}      any key under binsvc:globals (see below)
 
 
 binsvc:
@@ -45,6 +47,25 @@ binsvc:
   # be shared (see WHITEPAPER.md §10). Sent only to api.github.com, never to other
   # resolvers' endpoints. A secret - keep it in secured/encrypted pillar.
   # github_token: ghp_xxxxxxxxxxxxxxxxxxxx
+
+  # Scope a single `state.apply` to a subset of instances. Usually typed on the
+  # CLI, not stored here:
+  #   state.apply binsvc pillar='{binsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'
+  # Semicolon-separated "<key>: <glob>..." clauses; keys are name or preset
+  # (anything else fails loud). Union semantics: an instance applies if its name
+  # matches any name glob OR its preset matches any preset glob. All other
+  # instances are still merged (so a selected vmagent gathers every exporter's
+  # scrape job) but not dispatched. Omit to apply all instances.
+  # filter: "name: vm*"
+
+  # Operator-defined placeholders shared by every instance, usable as {key} in
+  # any settings string just like {name}/{type}/... Values are literal (no
+  # recursive expansion). A key that collides with a reserved placeholder
+  # (name/type/grain_id/...) fails the render loudly rather than silently
+  # shadowing it.
+  # globals:
+  #   dc: eu-west-1
+  #   remote_write: "https://vm.eu-west-1.example.com/api/v1/write"
 
   # Per-preset overrides, deep-merged over the bundled salt://binsvc/presets/
   # files - only specify what differs. Omit a preset entirely to use it as-is.
