@@ -37,8 +37,6 @@ For every entry under `binsvc:instances`:
    literally, so value-less flags like `--livereload` can be mixed in. A
    top-level raw string `svc.args` is still a complete args line and replaces
    the previous layer wholesale.
-   `init.sls` does this for all instances first so consumers can gather merged
-   producer stanzas from the same host.
 2. **Resolve version/source**: `svc.version_resolver` selects resolver logic
    for the app. The default `github` resolver turns `version: latest` into a
    concrete GitHub release tag using `/releases/latest` (NOT `/tags` - the
@@ -48,7 +46,8 @@ For every entry under `binsvc:instances`:
    `/releases/latest` can point at an LTS branch. The `grafana` resolver uses
    Grafana's API to resolve both latest/concrete versions and the real package
    URL, because Grafana archive names contain build IDs that are not derivable
-   from the version alone.
+   from the version alone. This network step runs only for instances **selected**
+   by `binsvc:filter` (all of them when no filter is given).
 3. **Expand placeholders**, in two passes (`expand` in `lib.py`):
    - *Phase 1* against grain-derived identity (`osarch`, `kernel_lower`,
      `cpuarch`, `grain_id` = the minion id) plus the instance's own static keys
@@ -68,22 +67,39 @@ For every entry under `binsvc:instances`:
    An optional `binsvc:filter` (usually typed on the CLI, e.g.
    `pillar='{binsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'`) scopes
    the apply to a subset: semicolon-separated `name`/`preset` glob clauses, union
-   semantics. It gates dispatch only - step 1 still merges every instance, so a
-   selected vmagent gathers all exporters' scrape jobs - while unselected
-   instances skip resolve/expand entirely. Manual scoping, not change detection:
-   a new exporter's job reaches vmagent only when vmagent is also in scope.
+   semantics. Steps 1 and 3 (merge + expand) still run for **every** instance so
+   a selected vmagent can gather any producer's scrape jobs; the filter gates
+   only the **resolution** (step 2) and **dispatch** (step 4). Manual scoping,
+   not change detection: a new exporter's job reaches vmagent only when vmagent
+   is also in scope.
    `fetch_archive` and `config_file` each return the list of pyobjects requisite
    references that mean "the binary/config changed"; `dispatch`
    threads that list into `systemd_unit`'s `watch`, so the service restarts
    exactly when it needs to - without any block hardcoding another block's
    state IDs.
 
-Before dispatch, an instance with `scrape_collect` gathers literal scrape jobs
-from all merged instances with a matching `scrape.vmagent` selector and appends
-them to the configured colon path, for example
-`config:promscrape.yml:contents:scrape_configs`. This is host-local by design:
-producers declare `scrape: {vmagent: <glob-or-list>, config: [...]}`, consumers
-opt in with `scrape_collect`, and duplicate `job_name` values fail the render.
+Resolution runs in two passes over `binsvc:instances`: **pass 1** merges and
+expands (steps 1-3) *every* instance into a fully formatted map; **pass 2**
+gathers cross-instance scrape jobs and dispatches (step 4) the selected subset.
+The split exists so a consumer can gather producers that were already formatted —
+including producers excluded from this apply.
+
+Before dispatch, an instance with `scrape_collect` gathers scrape jobs from all
+instances with a matching `scrape.vmagent` selector and appends them to the
+configured colon path, for example `config:promscrape.yml:contents:scrape_configs`.
+This is host-local by design: producers declare
+`scrape: {vmagent: <glob-or-list>, config: [...]}`, consumers opt in with
+`scrape_collect`, and duplicate `job_name` values fail the render.
+
+`scrape.config` is expanded by the **same two-phase pass as every other config**,
+in the **producer's** scope (a job is declared by the producer but rendered into
+the consumer's config, so it resolves against the producer) — `{name}`,
+`{grain_id}`, `{install_dir}`, etc. all work. One caveat from the filter: since
+the `latest` resolution is gated to selected instances, `{version}`/`{tag}` of a
+producer *not* in the selected subset stay unresolved until a full apply. For
+values outside the placeholder set, use Salt's own jinja in the **pillar**
+(`instance: {{ grains["fqdn"] }}`), which renders before binsvc sees it — pillar
+only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 
 ## Building blocks (`blocks/*.sls`)
 

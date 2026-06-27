@@ -85,8 +85,8 @@ def test_expand_resolves_data_dirs_list_through_install_dir():
 
 def test_merge_globals_overlays_operator_placeholders():
     scope = merge_globals(
-        {"name": "vl_main", "grain_id": "host.example"},
         {"foo": "bar", "dc": "eu-west"},
+        name="vl_main", grain_id="host.example",
     )
     assert scope == {
         "name": "vl_main",
@@ -97,23 +97,20 @@ def test_merge_globals_overlays_operator_placeholders():
 
 
 def test_merge_globals_tolerates_empty_or_none_globals():
-    reserved = {"name": "vl_main"}
-    assert merge_globals(reserved, {}) == reserved
-    assert merge_globals(reserved, None) == reserved
+    assert merge_globals({}, name="vl_main") == {"name": "vl_main"}
+    assert merge_globals(None, name="vl_main") == {"name": "vl_main"}
 
 
 def test_merge_globals_does_not_mutate_inputs():
-    reserved = {"name": "vl_main"}
     global_vars = {"foo": "bar"}
-    merge_globals(reserved, global_vars)
-    assert reserved == {"name": "vl_main"}
+    merge_globals(global_vars, name="vl_main")
     assert global_vars == {"foo": "bar"}
 
 
 def test_merge_globals_fails_loud_on_reserved_collision():
     with pytest.raises(ValueError) as exc:
-        merge_globals({"name": "vl_main", "type": "vlserver"},
-                      {"type": "oops", "name": "nope"})
+        merge_globals({"type": "oops", "name": "nope"},
+                      name="vl_main", type="vlserver")
     # message names the clashing keys so the typo is obvious
     assert "name" in str(exc.value)
     assert "type" in str(exc.value)
@@ -123,7 +120,7 @@ def test_merge_globals_fails_loud_on_phase2_placeholder_collision():
     # a global colliding with a phase-2 name (install_dir/exec/...) would be
     # silently overwritten in the second expand pass, so it must fail loud too.
     with pytest.raises(ValueError) as exc:
-        merge_globals({"name": "vl_main"}, {"install_dir": "/oops"},
+        merge_globals({"install_dir": "/oops"}, name="vl_main",
                       extra_reserved=("install_dir", "exec", "args"))
     assert "install_dir" in str(exc.value)
 

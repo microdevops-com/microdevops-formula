@@ -2,8 +2,10 @@
 # (VictoriaMetrics, VictoriaLogs, Grafana, Loki, Prometheus, exporters, ...)
 # under systemd, each independently configured.
 #
-# Resolution per instance, see binsvc/init.sls / readme.md for the full story:
-#   1. all instances are merged first:
+# Resolution, see binsvc/init.sls / readme.md for the full story. Pass 1 merges
+# and formats EVERY instance; pass 2 gathers cross-instance scrape jobs and
+# dispatches the selected subset:
+#   1. each instance is merged:
 #      settings = merge(binsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
 #      - everything here merges deep-dict-wise / replaces-wholesale, EXCEPT
 #        structured svc.args, which is merged by flag name (merge_args in
@@ -11,13 +13,14 @@
 #        preset's args without restating storageDataPath/retentionPeriod/... too
 #        (string entries inside args lists are literal tokens; top-level raw
 #        string args replace wholesale)
-#   2. each instance resolves version/source, then every {placeholder} string
-#      anywhere in `settings` is expanded in two
+#   2. each instance resolves version/source (only if selected - see filter),
+#      then every {placeholder} string anywhere in `settings` is expanded in two
 #      passes - first against grain-derived identity + the instance's own
-#      static keys (name/type/version/tag/tag_vstrip/osarch/...), then again
-#      once install_dir/exec/args/user_name/user_group are themselves known.
-#   3. if `scrape_collect` is set, literal jobs from matching instances'
-#      `scrape` stanzas are appended to the configured config path.
+#      static keys (name/type/version/tag/tag_vstrip/osarch/grain_id/...), then
+#      again once install_dir/exec/args/user_name/user_group are themselves
+#      known. scrape stanzas are expanded by this same pass, in producer scope.
+#   3. if `scrape_collect` is set, the (now-expanded) jobs from matching
+#      instances' `scrape` stanzas are appended to the configured config path.
 #   4. building blocks run in order: user/ssh, config, svc (fetch), commands(pre),
 #      systemd, commands(post), nginx
 #
@@ -177,7 +180,16 @@ binsvc:
           # exporter_node preset sets args_prefix: "--".
           - web.listen-address: "127.0.0.1:9100"
       # Override the preset's vmagent: ["*"] default to narrow this producer to
-      # one local vmagent instance. Contributions are literal: no placeholders.
+      # one local vmagent instance.
+      #
+      # scrape.config is expanded like any other config, in the PRODUCER's own
+      # scope (a job is declared here yet rendered into the consumer's config),
+      # so {name}/{type}/{grain_id}/{install_dir}/... all work. One caveat: under
+      # binsvc:filter, {version}/{tag} of a producer NOT in the selected subset
+      # stay unresolved (resolution is gated to selected instances) until a full
+      # apply. For values outside the placeholder set, use Salt jinja IN PILLAR
+      # (rendered before binsvc; pillar only, not a bundled presets/*.yaml, which
+      # is yaml.safe_load'd) - e.g. {{ grains["fqdn"] }}.
       scrape:
         vmagent: ["metrics"]
         config:
@@ -185,6 +197,8 @@ binsvc:
             static_configs:
               - targets:
                   - "127.0.0.1:9100"
+                labels:
+                  instance: "{grain_id}"
 
     # --- Grafana from the official standalone tarball ---
     grafana:
