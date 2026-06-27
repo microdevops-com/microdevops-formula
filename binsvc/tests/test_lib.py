@@ -10,7 +10,7 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from lib import (
-    deep_format, expand,
+    deep_format, expand, merge_globals,
     merge,
     normalize_osarch, archive_path, tar_extract_command,
     repo_from_source, repo_url, latest_from_release, resolve_latest,
@@ -80,6 +80,51 @@ def test_expand_resolves_data_dirs_list_through_install_dir():
         "/opt/services/grafana/g1/data",
         "/opt/services/grafana/g1/plugins",
     ]
+
+
+def test_merge_globals_overlays_operator_placeholders():
+    scope = merge_globals(
+        {"name": "vl_main", "grain_id": "host.example"},
+        {"foo": "bar", "dc": "eu-west"},
+    )
+    assert scope == {
+        "name": "vl_main",
+        "grain_id": "host.example",
+        "foo": "bar",
+        "dc": "eu-west",
+    }
+
+
+def test_merge_globals_tolerates_empty_or_none_globals():
+    reserved = {"name": "vl_main"}
+    assert merge_globals(reserved, {}) == reserved
+    assert merge_globals(reserved, None) == reserved
+
+
+def test_merge_globals_does_not_mutate_inputs():
+    reserved = {"name": "vl_main"}
+    global_vars = {"foo": "bar"}
+    merge_globals(reserved, global_vars)
+    assert reserved == {"name": "vl_main"}
+    assert global_vars == {"foo": "bar"}
+
+
+def test_merge_globals_fails_loud_on_reserved_collision():
+    with pytest.raises(ValueError) as exc:
+        merge_globals({"name": "vl_main", "type": "vlserver"},
+                      {"type": "oops", "name": "nope"})
+    # message names the clashing keys so the typo is obvious
+    assert "name" in str(exc.value)
+    assert "type" in str(exc.value)
+
+
+def test_merge_globals_fails_loud_on_phase2_placeholder_collision():
+    # a global colliding with a phase-2 name (install_dir/exec/...) would be
+    # silently overwritten in the second expand pass, so it must fail loud too.
+    with pytest.raises(ValueError) as exc:
+        merge_globals({"name": "vl_main"}, {"install_dir": "/oops"},
+                      extra_reserved=("install_dir", "exec", "args"))
+    assert "install_dir" in str(exc.value)
 
 
 # ── merge ─────────────────────────────────────────────────────────────────────

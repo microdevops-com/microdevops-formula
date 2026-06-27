@@ -51,8 +51,10 @@ For every entry under `binsvc:instances`:
    from the version alone.
 3. **Expand placeholders**, in two passes (`expand` in `lib.py`):
    - *Phase 1* against grain-derived identity (`osarch`, `kernel_lower`,
-     `cpuarch`) plus the instance's own static keys (`name`, `type`,
-     `version`, `tag`, `tag_vstrip`) - enough to resolve `install_dir`,
+     `cpuarch`, `grain_id` = the minion id) plus the instance's own static keys
+     (`name`, `type`, `version`, `tag`, `tag_vstrip`) and any operator-defined
+     `binsvc:globals` (literal `{key}` values shared by all instances; a key
+     clashing with a reserved one fails loud) - enough to resolve `install_dir`,
      `svc.source`, `svc.exec`, etc.
    - *Phase 2* adds `install_dir`, `exec`, `args` (top-level raw string, or args
      list joined from `{args_prefix}key=value` mappings and literal string

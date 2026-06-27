@@ -77,6 +77,24 @@ def expand(mapping, scope=None, rounds=3):
     return result
 
 
+def merge_globals(reserved, global_vars, extra_reserved=()):
+    """Overlay operator-supplied `binsvc:globals` onto the reserved expand scope.
+
+    Globals are literal substitution values shared by every instance (e.g.
+    `{foo}`). Raises ValueError if a global key shadows a reserved/derived
+    placeholder (`name`, `type`, `grain_id`, ...) - that is almost always a typo
+    that would otherwise silently break the identity placeholders. `extra_reserved`
+    names additional reserved placeholders injected *after* this call (the phase-2
+    scope keys), so colliding with them fails loud here instead of being silently
+    overwritten in the second expand pass. Returns a new dict; inputs untouched."""
+    clash = set(global_vars or {}) & (set(reserved) | set(extra_reserved))
+    if clash:
+        raise ValueError(
+            "binsvc:globals keys shadow reserved placeholders: {}".format(
+                ", ".join(sorted(clash))))
+    return dict(reserved, **(global_vars or {}))
+
+
 # ── merge ─────────────────────────────────────────────────────────────────────
 # Deep dict merge for the defaults -> preset -> instance layering.
 # Generalizes salt.defaults.merge calls scattered through exporter/macro.jinja.
