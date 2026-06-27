@@ -18,6 +18,7 @@ from lib import (
     cached_get_json, _cache_path,
     select_commands,
     collect_scrape_jobs, append_at_path,
+    parse_filter, select_instances,
     render_config, render_unit, merge_args, join_args,
     acme_cert_paths, resolve_nginx_servers,
 )
@@ -233,6 +234,85 @@ def test_append_at_path_unique_key_rejects_duplicates():
             [{"job_name": "node"}],
             unique_key="job_name",
         )
+
+
+# ── filter ────────────────────────────────────────────────────────────────────
+
+def test_parse_filter_parses_clauses_and_globs():
+    assert parse_filter("name: vm* *gra*; preset: exporter*") == {
+        "name": ["vm*", "*gra*"],
+        "preset": ["exporter*"],
+    }
+
+
+def test_parse_filter_empty_and_whitespace_mean_no_filter():
+    assert parse_filter("") == {}
+    assert parse_filter("   ;  ") == {}
+    assert parse_filter(None) == {}
+
+
+def test_parse_filter_repeated_key_unions_globs():
+    assert parse_filter("name: vm*; name: *gra*") == {"name": ["vm*", "*gra*"]}
+
+
+def test_parse_filter_splits_only_on_first_colon():
+    # a stray colon in the glob portion must not break parsing
+    assert parse_filter("name: a:b *c") == {"name": ["a:b", "*c"]}
+
+
+def test_parse_filter_rejects_unknown_key():
+    with pytest.raises(ValueError, match="unknown"):
+        parse_filter("preset: exp*; namee: vm*")
+
+
+def test_parse_filter_rejects_clause_without_colon():
+    with pytest.raises(ValueError, match="not '<key>"):
+        parse_filter("vm*")
+
+
+def test_parse_filter_rejects_key_with_no_globs():
+    with pytest.raises(ValueError, match="no globs"):
+        parse_filter("name: ; preset: exp*")
+
+
+def _merged_fixture():
+    return OrderedDict([
+        ("vm_main", {"preset": "vmserver"}),
+        ("vm_logs", {"preset": "vlserver"}),
+        ("grafana_eu", {"preset": "grafana"}),
+        ("node1", {"preset": "node_exporter"}),
+        ("custom", {}),  # preset-less instance
+    ])
+
+
+def test_select_instances_no_filter_selects_all():
+    merged = _merged_fixture()
+    assert select_instances(merged, {}) == set(merged)
+
+
+def test_select_instances_by_name_glob():
+    assert select_instances(_merged_fixture(), {"name": ["vm_*"]}) == {"vm_main", "vm_logs"}
+
+
+def test_select_instances_by_preset_glob():
+    assert select_instances(_merged_fixture(), {"preset": ["node_*"]}) == {"node1"}
+
+
+def test_select_instances_unions_name_and_preset():
+    selected = select_instances(_merged_fixture(),
+                                {"name": ["*gra*"], "preset": ["vmserver"]})
+    assert selected == {"grafana_eu", "vm_main"}
+
+
+def test_select_instances_presetless_only_matched_by_name():
+    # 'custom' has no preset, so a preset glob can't reach it; a name glob can
+    assert select_instances(_merged_fixture(), {"preset": ["*"]}) == {
+        "vm_main", "vm_logs", "grafana_eu", "node1"}
+    assert "custom" in select_instances(_merged_fixture(), {"name": ["custom"]})
+
+
+def test_select_instances_no_match_is_empty():
+    assert select_instances(_merged_fixture(), {"name": ["nope*"]}) == set()
 
 
 # ── fetch ─────────────────────────────────────────────────────────────────────

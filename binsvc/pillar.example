@@ -48,6 +48,16 @@ binsvc:
   # resolvers' endpoints. A secret - keep it in secured/encrypted pillar.
   # github_token: ghp_xxxxxxxxxxxxxxxxxxxx
 
+  # Scope a single `state.apply` to a subset of instances. Usually typed on the
+  # CLI, not stored here:
+  #   state.apply binsvc pillar='{binsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'
+  # Semicolon-separated "<key>: <glob>..." clauses; keys are name or preset
+  # (anything else fails loud). Union semantics: an instance applies if its name
+  # matches any name glob OR its preset matches any preset glob. All other
+  # instances are still merged (so a selected vmagent gathers every exporter's
+  # scrape job) but not dispatched. Omit to apply all instances.
+  # filter: "name: vm*"
+
   # Operator-defined placeholders shared by every instance, usable as {key} in
   # any settings string just like {name}/{type}/... Values are literal (no
   # recursive expansion). A key that collides with a reserved placeholder

@@ -65,6 +65,13 @@ For every entry under `binsvc:instances`:
 4. **Dispatch** the building blocks that apply, in a fixed order:
    `user_ssh` -> `config_file` -> `fetch_archive` -> `commands(pre)` ->
    `systemd_unit` -> `commands(post)` -> `nginx_vhost`.
+   An optional `binsvc:filter` (usually typed on the CLI, e.g.
+   `pillar='{binsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'`) scopes
+   the apply to a subset: semicolon-separated `name`/`preset` glob clauses, union
+   semantics. It gates dispatch only - step 1 still merges every instance, so a
+   selected vmagent gathers all exporters' scrape jobs - while unselected
+   instances skip resolve/expand entirely. Manual scoping, not change detection:
+   a new exporter's job reaches vmagent only when vmagent is also in scope.
    `fetch_archive` and `config_file` each return the list of pyobjects requisite
    references that mean "the binary/config changed"; `dispatch`
    threads that list into `systemd_unit`'s `watch`, so the service restarts

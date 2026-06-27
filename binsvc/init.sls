@@ -10,7 +10,7 @@
 import logging
 import yaml
 
-from salt://binsvc/lib.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, merge_globals, normalize_osarch, resolve_latest
+from salt://binsvc/lib.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances
 
 from salt://binsvc/blocks/fetch_archive.sls import fetch_archive
 from salt://binsvc/blocks/user_ssh.sls import user_and_ssh
@@ -125,7 +125,20 @@ for instance_name, instance in instances.items():
 
     merged[instance_name] = settings
 
+# Optional `binsvc:filter` (operator-typed, usually on the CLI) scopes this apply
+# to a subset of instances - e.g. pillar='{binsvc: {filter: "name: vm* *gra*"}}'.
+# It gates dispatch ONLY: `merged` above stays complete so a selected vmagent
+# still gathers every exporter's scrape job, and unselected instances skip the
+# expensive resolve/expand below entirely.
+selected = select_instances(merged, parse_filter(pillar("binsvc:filter", "")))
+if not selected and merged:
+    log.warning("binsvc:filter %r matched no instances; nothing to apply",
+                pillar("binsvc:filter", ""))
+
 for instance_name, raw_settings in merged.items():
+    if instance_name not in selected:
+        continue
+
     settings = merge(raw_settings)
 
     svc = settings.get("svc") or {}
