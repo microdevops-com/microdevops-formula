@@ -92,7 +92,15 @@ def dispatch(prefix, settings):
     nginx_vhost(prefix, settings)
 
 
-# --- main loop: merge all, then expand/inject/dispatch per instance ----------
+# --- main loop: merge+format every instance, then gather+dispatch the selected -
+#
+# Two passes, because cross-instance scrape collection needs every producer
+# already formatted. Pass 1 (merge + expand) is purely per-instance and runs for
+# ALL instances, so a selected consumer can gather any producer's expanded
+# `scrape` jobs - including producers excluded from this apply. Pass 2 gathers
+# and dispatches only the `selected` subset. Expansion is uniform: scrape configs
+# are expanded by the same two-phase pass as everything else, in the producer's
+# own scope - no separate formatting step.
 
 instances = pillar("binsvc:instances", {})
 
@@ -106,7 +114,17 @@ global_vars = pillar("binsvc:globals", {})
 # overwritten in the second expand pass.
 PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group")
 
-merged = {}
+# Optional `binsvc:filter` (operator-typed, usually on the CLI) scopes this apply
+# to a subset - e.g. pillar='{binsvc: {filter: "name: vm* *gra*"}}'. It gates the
+# expensive `latest` resolution (pass 1) and dispatch (pass 2); formatting itself
+# runs for every instance so cross-instance scrape gathering stays correct.
+selected = select_instances(instances, parse_filter(pillar("binsvc:filter", "")))
+if not selected and instances:
+    log.warning("binsvc:filter %r matched no instances; nothing to apply",
+                pillar("binsvc:filter", ""))
+
+# Pass 1: merge + two-phase expand every instance into a fully formatted dict.
+expanded = {}
 for instance_name, instance in instances.items():
     preset_name = instance.get("preset")
     preset = load_preset(preset_name) if preset_name else {}
@@ -123,43 +141,29 @@ for instance_name, instance in instances.items():
     if preset_args or instance_args:
         settings.setdefault("svc", {})["args"] = merge_args(preset_args, instance_args)
 
-    merged[instance_name] = settings
-
-# Optional `binsvc:filter` (operator-typed, usually on the CLI) scopes this apply
-# to a subset of instances - e.g. pillar='{binsvc: {filter: "name: vm* *gra*"}}'.
-# It gates dispatch ONLY: `merged` above stays complete so a selected vmagent
-# still gathers every exporter's scrape job, and unselected instances skip the
-# expensive resolve/expand below entirely.
-selected = select_instances(merged, parse_filter(pillar("binsvc:filter", "")))
-if not selected and merged:
-    log.warning("binsvc:filter %r matched no instances; nothing to apply",
-                pillar("binsvc:filter", ""))
-
-for instance_name, raw_settings in merged.items():
-    if instance_name not in selected:
-        continue
-
-    settings = merge(raw_settings)
-
     svc = settings.get("svc") or {}
-    if "source" in svc:
+    # Resolve `latest` only for selected instances - it's the one network step.
+    # Unselected producers still format (so consumers can gather their scrape
+    # jobs), but their {version}/{tag} stay at the unresolved value.
+    if "source" in svc and instance_name in selected:
         settings["svc"] = resolve_latest_version(svc)
         svc = settings["svc"]
 
     # Phase 1: resolve install_dir/source/exec against grain-derived identity
     # plus the instance's own static keys (name/type/version/tag/...).
     tag = svc.get("tag", svc.get("version", ""))
-    base_scope = merge_globals({
-        "name": instance_name,
-        "type": settings.get("type"),
-        "version": svc.get("version", ""),
-        "tag": tag,
-        "tag_vstrip": tag.lstrip("v"),
-        "osarch": normalize_osarch(grains("osarch") or ""),
-        "kernel_lower": (grains("kernel") or "").lower(),
-        "cpuarch": grains("cpuarch") or "",
-        "grain_id": grains("id") or "",
-    }, global_vars, extra_reserved=PHASE2_PLACEHOLDERS)
+    base_scope = merge_globals(global_vars,
+        extra_reserved=PHASE2_PLACEHOLDERS,
+        name=instance_name,
+        type=settings.get("type"),
+        version=svc.get("version", ""),
+        tag=tag,
+        tag_vstrip=tag.lstrip("v"),
+        osarch=normalize_osarch(grains("osarch") or ""),
+        kernel_lower=(grains("kernel") or "").lower(),
+        cpuarch=grains("cpuarch") or "",
+        grain_id=grains("id") or "",
+    )
     settings = expand(settings, base_scope)
 
     # Phase 2: a second pass for keys only resolvable once phase 1 has
@@ -175,8 +179,15 @@ for instance_name, raw_settings in merged.items():
                        user_group=user.get("group", user.get("name", "root")))
     settings = expand(settings, extra_scope)
 
+    expanded[instance_name] = settings
+
+# Pass 2: gather cross-instance scrape jobs and dispatch the selected instances.
+for instance_name, settings in expanded.items():
+    if instance_name not in selected:
+        continue
+
     if "scrape_collect" in settings:
-        jobs = collect_scrape_jobs(merged, instance_name)
+        jobs = collect_scrape_jobs(expanded, instance_name)
         append_at_path(settings, settings["scrape_collect"], jobs, unique_key="job_name")
 
     dispatch(["binsvc", instance_name], settings)

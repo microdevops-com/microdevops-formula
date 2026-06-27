@@ -101,7 +101,14 @@ binsvc:
       install_dir / user / ssh / svc / config / systemd / nginx: {...}
 ```
 
-`init.sls` first merges all instances, then resolves and dispatches each one:
+`init.sls` runs **two passes** over `binsvc:instances`. Pass 1 merges and
+formats *every* instance; pass 2 gathers cross-instance scrape jobs and
+dispatches the `selected` subset. The split exists because step 5's gather needs
+every producer already formatted — including producers excluded from this apply.
+Merge and format are purely per-instance, so they share one pass; only the
+gather is cross-instance, so it gets its own.
+
+**Pass 1 — for every instance:**
 
 1. **Load preset** (`load_preset`) — parse `presets/<name>.yaml` once per run
    (`_preset_cache`), deep-merged with any `binsvc:presets:<name>` pillar
@@ -109,9 +116,6 @@ binsvc:
 2. **Merge** — `settings = merge(defaults, preset, instance)`. Dicts merge
    recursively; everything else (incl. **lists**) is replaced wholesale by the
    more-specific layer. (`svc.args` is the one exception — §10.)
-   This pass runs for every instance before any instance is expanded or
-   dispatched, so a consumer can gather merged producer stanzas from the same
-   host without depending on declaration order.
 3. **Resolve version/source** (`resolve_latest_version` → `lib.py`'s
    `resolve_latest`, which does the HTTP via `requests.get`, cached on the render
    host — §10) — through the named `svc.version_resolver` (`github` by default).
@@ -120,10 +124,18 @@ binsvc:
    template. Grafana resolves both `latest` and concrete versions through its
    packages API, filling `svc.source` and `svc.source_hash` because the tarball
    URL contains a build ID that is not derivable from the version alone (§10).
-4. **Expand placeholders, two passes** (`expand`, §5).
+   **This is the one network step, and the only one `binsvc:filter` gates** — it
+   runs only for `selected` instances; unselected ones still format (so they can
+   be gathered) but keep their unresolved `version`/`tag`.
+4. **Expand placeholders, two passes** (`expand`, §5). Uniform: scrape stanzas
+   are expanded by this same pass, in the producer's own scope — there is no
+   separate scrape-formatting step.
+
+**Pass 2 — for every `selected` instance:**
+
 5. **Inject gathered scrape jobs** when `scrape_collect` is set. `vmagent` uses
-   this to append literal jobs from matching producers' `scrape` stanzas into
-   `config.promscrape.yml.contents.scrape_configs`, reusing the normal
+   this to append jobs from matching producers' (now-expanded) `scrape` stanzas
+   into `config.promscrape.yml.contents.scrape_configs`, reusing the normal
    `config_file` block.
 6. **Dispatch** building blocks in fixed order, threading "what changed" into
    systemd's restart trigger (§6).
@@ -272,17 +284,18 @@ production path — these presets are not replacements or a migration invitation
   remain owned by the acme formula.
 - **Two-phase expand, no phase 3.** See §5 — prefer computing a value inside the
   block that needs it over adding a global phase.
-- **`binsvc:filter` gates dispatch, never the merge.** An operator-typed
-  selector string (`"name: vm* *gra*; preset: exporter*"`, semicolon clauses,
-  union semantics, `fnmatch` globs) scopes a `state.apply` to a subset of
-  instances. It is intentionally a small **string DSL**, not structured pillar,
-  because it is typed by hand on the CLI where nested `{"":{"":[""]}}` is
-  error-prone; `parse_filter` hardens it (`split(":", 1)`, fail loud on unknown
-  key / empty globs). The pass-1 loop still merges **all** instances so
-  `collect_scrape_jobs` sees the full set — only the pass-2 `dispatch` call is
-  filtered (unselected instances also skip the resolve/expand network cost).
-  This is **manual scoping, not change detection**: filtering to a new exporter
-  won't refresh vmagent's scrape config until vmagent is also in scope.
+- **`binsvc:filter` gates resolution and dispatch, never merge/format.** An
+  operator-typed selector string (`"name: vm* *gra*; preset: exporter*"`,
+  semicolon clauses, union semantics, `fnmatch` globs) scopes a `state.apply` to
+  a subset of instances. It is intentionally a small **string DSL**, not
+  structured pillar, because it is typed by hand on the CLI where nested
+  `{"":{"":[""]}}` is error-prone; `parse_filter` hardens it (`split(":", 1)`,
+  fail loud on unknown key / empty globs). Pass 1 still merges **and formats**
+  every instance so `collect_scrape_jobs` sees them all expanded — the filter
+  gates only the `latest` resolution (the one network step) and the pass-2
+  `dispatch`. This is **manual scoping, not change detection**: filtering to a
+  new exporter won't refresh vmagent's scrape config until vmagent is also in
+  scope.
 - **`binsvc:globals` are scope, not settings.** Operator-defined placeholders
   (`{foo}`) shared by every instance live in the **expand scope**, never in the
   `defaults→preset→instance` merge — they are template variables, not per-instance
@@ -333,7 +346,19 @@ production path — these presets are not replacements or a migration invitation
   This Puppet-exported-resources-style non-locality is contained deliberately:
   producers use an explicit `scrape.vmagent` selector, jobs are literal
   operator-authored data, collection is host-local, and duplicate `job_name`
-  values fail the render instead of being renamed silently.
+  values fail the render instead of being renamed silently. A scrape job is
+  declared by the producer but rendered into the consumer's config, so it is
+  expanded **in the producer's scope, in pass 1** (before collection), not the
+  consumer's — by the *same* two-phase `expand` as every other config, with no
+  scrape-specific formatting step. That uniformity (no separate "kind" of
+  expansion to grow) is why the pipeline went to two passes (§4): the gather had
+  to move after formatting, which in turn freed scrape to be formatted normally.
+  The one wrinkle is the filter: since the `latest` resolution is gated to
+  selected instances, `version`/`tag` of a producer *not* in the selected subset
+  stay unresolved in its gathered jobs until a full apply — an accepted, narrow,
+  self-healing caveat; everything else (`name`/`grain_id`/`install_dir`/…)
+  resolves regardless. For values outside the placeholder set, use Salt jinja in
+  pillar.
 - **Program files root-owned; writable state via `svc.data_dirs`.** `fetch_archive`
   extracts as root (`--no-same-owner`), so program files are root-owned — a
   compromised service can't rewrite its own binary. Dirs the service must write
