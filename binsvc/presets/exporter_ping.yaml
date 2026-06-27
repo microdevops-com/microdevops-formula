@@ -1,0 +1,71 @@
+# Prometheus exporter for ICMP echo requests using https://github.com/digineo/go-ping
+# https://github.com/czerwonk/ping_exporter/
+
+type: exporter_ping
+
+user:
+  manage: false
+  home: "/opt/services/{type}"
+  name: root
+  group: root
+
+svc:
+  version_resolver: github
+  version: latest
+  source: "https://github.com/czerwonk/ping_exporter/releases/download/{tag}/ping_exporter_{tag_vstrip}_{kernel_lower}_{osarch}.tar.gz"
+  source_hash: "https://github.com/czerwonk/ping_exporter/releases/download/{tag}/ping_exporter_{tag_vstrip}_checksums.txt"
+  tar:
+    args: "--no-anchored"
+    unpack: ping_exporter
+  exec: "{install_dir}/ping_exporter"
+  version_check: "[[ $({binary} --version 2>&1) =~ {tag_vstrip} ]]"
+  args_prefix: "--"
+  args:
+    - web.listen-address: ":9200"
+    - config.path: "{install_dir}/config.yaml"
+
+config:
+  config.yaml:
+    format: yaml
+    name: "{install_dir}/{confname}"
+    contents:
+      targets:
+        - 8.8.8.8
+        - 9.9.9.9
+        - 1.1.1.1
+        - nbg1-speed.hetzner.com
+        - fsn1-speed.hetzner.com
+        - hel1-speed.hetzner.com
+        - rbx.proof.ovh.net
+        - gra.proof.ovh.net
+
+      dns:
+        refresh: 30m
+        nameserver: 1.1.1.1
+
+      ping:
+        interval: 2s
+        timeout: 3s
+        history-size: 15
+        payload-size: 100
+
+      options:
+        disableIPv6: true
+
+scrape:
+  vmagent: ["*"]
+  config:
+    - job_name: ping
+      static_configs:
+        - targets: ["127.0.0.1:9200"]
+          labels:
+            instance: "{grain_id}"
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false
