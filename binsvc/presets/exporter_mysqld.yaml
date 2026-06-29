@@ -1,0 +1,48 @@
+# Prometheus MySQLd Exporter - MySQL/MariaDB metrics exporter.
+# https://github.com/prometheus/mysqld_exporter
+#
+# Exporter presets use `exporter_<name>` identity.
+
+type: exporter_mysqld
+
+user:
+  manage: false
+  home: "/opt/services/{type}"
+  name: root
+  group: root
+
+svc:
+  version_resolver: github
+  version: latest
+  source: "https://github.com/prometheus/mysqld_exporter/releases/download/{tag}/mysqld_exporter-{tag_vstrip}.{kernel_lower}-{osarch}.tar.gz"
+  source_hash: "https://github.com/prometheus/mysqld_exporter/releases/download/{tag}/sha256sums.txt"
+  tar:
+    args: "--strip-components=1 --no-anchored"
+    unpack: mysqld_exporter
+  exec: "{install_dir}/mysqld_exporter"
+  # Opt-in idempotency guard (no default): mysqld_exporter reports versions
+  # without the leading "v", so match {tag_vstrip}.
+  version_check: "[[ $({binary} --version 2>&1) =~ {tag_vstrip} ]]"
+  args_prefix: "--"
+  args:
+    - web.listen-address: "127.0.0.1:9104"
+    - config.my-cnf: "/root/.my.cnf"
+
+scrape:
+  # Any local vmagent scrapes this by default; override or set [] to opt out.
+  vmagent: ["*"]
+  config:
+    - job_name: mysqld
+      static_configs:
+        - targets: ["127.0.0.1:9104"]
+          labels:
+            instance: "{grain_id}"
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false
