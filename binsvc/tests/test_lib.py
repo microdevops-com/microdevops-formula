@@ -867,6 +867,13 @@ def test_join_args_returns_raw_string_unchanged():
     )
 
 
+def test_join_args_renders_null_value_as_bare_flag():
+    # YAML `- foobar:` / `- baz:` parse to {"foobar": None} / {"baz": None}.
+    assert join_args([{"foobar": None}, {"baz": None}], "--") == "--foobar --baz"
+    # only an explicit null -> bare flag; "" and 0 keep their =value
+    assert join_args([{"a": None}, {"b": ""}, {"c": 0}]) == "-a -b= -c=0"
+
+
 def test_merge_args_overrides_one_flag_and_keeps_the_rest_in_order():
     preset = [{"httpListenAddr": "127.0.0.1:9428"}, {"storageDataPath": "/data"}, {"retentionPeriod": "1"}]
     instance = [{"httpListenAddr": "127.0.0.1:9429"}]
