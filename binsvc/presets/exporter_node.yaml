@@ -37,6 +37,7 @@ scrape:
         - targets: ["127.0.0.1:9100"]
           labels:
             instance: "{grain_id}"
+            node_name: "{grain_id}"
 
 systemd:
   Service:
