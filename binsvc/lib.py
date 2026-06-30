@@ -736,18 +736,24 @@ def join_args(args, prefix="-"):
     string tokens) into a command-line string.
 
     Top-level raw string args are returned unchanged. Mapping entries render as
-    `{prefix}{flag}={value}`; raw string entries render as-is. `prefix` defaults
+    `{prefix}{flag}={value}`, or as a bare `{prefix}{flag}` when the value is
+    null (YAML `- foobar:`); raw string entries render as-is. `prefix` defaults
     to the short flag form.
     """
+    def flag(key, value):
+        if value is None:
+            return "{}{}".format(prefix, key)
+        return "{}{}={}".format(prefix, key, value)
+
     if isinstance(args, str):
         return args
     if isinstance(args, dict):
-        items = [("{}{}={}".format(prefix, key, value)) for key, value in args.items()]
+        items = [flag(key, value) for key, value in args.items()]
     else:
         items = []
         for entry in args:
             if isinstance(entry, str):
                 items.append(entry)
             else:
-                items.extend("{}{}={}".format(prefix, key, value) for key, value in entry.items())
+                items.extend(flag(key, value) for key, value in entry.items())
     return " ".join(items)

@@ -116,14 +116,16 @@ user:
 #   # Args may be a top-level raw string, mapping, or ordered list mixing
 #   # single-key mappings with literal string tokens such as "--livereload".
 #   # Structured args render as "{args_prefix}key=value"; args_prefix defaults
-#   # to "-" and can be set to "--" for long-form CLIs. String list entries are
+#   # to "-" and can be set to "--" for long-form CLIs. A mapping key with a null
+#   # value renders as a bare flag (YAML `- foobar:` -> "{args_prefix}foobar"),
+#   # so value-less flags need not be quoted strings. String list entries are
 #   # used as-is. Preset and instance svc.args merge by flag name unless a layer
 #   # is a top-level string or repeats a flag, in which case the later layer
 #   # replaces wholesale.
 #   args_prefix: "-"
 #   args:
 #     - web.listen-address: "127.0.0.1:9000"
-#     - "--livereload"
+#     - livereload:                          # bare flag -> --livereload
 #     - storage.path: "{install_dir}/data"
 #
 #   # Writable dirs shipped or needed by the service. These become service-user
