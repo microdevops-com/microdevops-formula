@@ -26,6 +26,7 @@ svc:
   args_prefix: "--"
   args:
     - web.listen-address: "127.0.0.1:9104"
+    - collect.binlog_size:
 
 scrape:
   # Any local vmagent scrapes this by default; override or set [] to opt out.

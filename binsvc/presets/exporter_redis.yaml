@@ -1,0 +1,48 @@
+# Redis Exporter - Redis metrics exporter.
+# https://github.com/oliver006/redis_exporter
+#
+# Exporter presets use `exporter_<name>` identity.
+
+type: exporter_redis
+
+user:
+  manage: true
+  home: "/opt/services/{type}"
+  name: exporter_redis
+  group: exporter_redis
+
+svc:
+  version_resolver: github
+  version: latest
+  source: "https://github.com/oliver006/redis_exporter/releases/download/{tag}/redis_exporter-{tag}.{kernel_lower}-{osarch}.tar.gz"
+  source_hash: "https://github.com/oliver006/redis_exporter/releases/download/{tag}/sha256sums.txt"
+  tar:
+    args: "--strip-components=1 --no-anchored"
+    unpack: redis_exporter
+  exec: "{install_dir}/redis_exporter"
+  # Opt-in idempotency guard (no default): redis_exporter release archives keep
+  # the leading "v" in the asset name, so match {tag}.
+  version_check: "[[ $({binary} --version 2>&1) =~ {tag} ]]"
+  args_prefix: "--"
+  args:
+    - web.listen-address: "127.0.0.1:9121"
+
+scrape:
+  # Any local vmagent scrapes this by default; override or set [] to opt out.
+  vmagent: ["*"]
+  config:
+    - job_name: redis
+      static_configs:
+        - targets: ["127.0.0.1:9121"]
+          labels:
+            instance: "{grain_id}"
+            node_name: "{grain_id}"
+
+systemd:
+  Service:
+    ExecStart: "{exec} {args}"
+    User: "{user_name}"
+    Group: "{user_group}"
+
+nginx:
+  manage: false
