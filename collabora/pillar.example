@@ -1,3 +1,5 @@
+## Docker-based installation: one container per entry in 'domains:'.
+## Used when 'full: true' is NOT set.
 collabora:
   nginx_sites_enabled: true
   domains:
@@ -31,23 +33,89 @@ collabora:
         server_name: collabora.tst.example.com
         aliasgroup1: https://nextcloud.tst.example.com:443
 
-## FOR INSTALL FULL COLLABORA ONLINE FROM CUSTOMER DEB
+## NATIVE (DEB) INSTALLATION - selected by 'full: true'.
+##
+## Note: 'full' does NOT mean "enterprise". It selects the install METHOD:
+## with 'full: true' coolwsd is installed natively from DEB packages; without
+## it the formula runs the Docker-based path above ('domains:' list). Which
+## build is installed natively is chosen separately by 'edition' below:
+## enterprise (per-customer repo) or the free CODE build (public repo).
+##
+## coolwsd.xml is NOT templated here - the package always ships the config that
+## is correct for its own version. Most settings are layered on at runtime via
+## systemd --o: overrides (like the Docker image's extra_params); only the two
+## things that must live in the file are written into it: the admin password
+## (via `coolconfig`, hashed) and the WOPI host list (a small managed block).
+## On upgrade the formula adopts the new packaged default (dpkg's .dpkg-dist)
+## and re-applies these, so there is no per-version template to maintain.
 collabora:
   full: true
   nginx_sites_enabled: true
   name: collabora.example.com
+  # Which build to install. Optional, defaults to "enterprise":
+  #   enterprise -> per-customer repo, requires customer_hash, brand package
+  #                 defaults to nextcloud-office-brand
+  #   code       -> free Collabora Online Development Edition from the public
+  #                 CODE-deb repo, no customer_hash needed, brand package
+  #                 defaults to code-brand. The CODE repo only carries the
+  #                 current major line, so `version` pins must be within it.
+  # edition: enterprise
+  # Override the brand package name if your partner channel ships a different
+  # one (e.g. collabora-online-brand). Defaults depend on edition, see above.
+  # brand_package: nextcloud-office-brand
   customer_hash: EAXMPLE-1eba3132499b6d24b127484ccc932e63d1717b21
-  coolwsd_xml:
-    template: salt://collabora/coolwsd.xml.jinja
-    values:
-      user: admin
+  # Which Collabora release to run. For enterprise the apt repo URI always uses
+  # the major line (first two components). Optional, defaults to "24.04".
+  # Always quote it.
+  #   "24.04"       -> latest release in the 24.04 line   (pkg.latest)
+  #   "24.04.18.3"  -> pinned exactly to that release     (pkg.installed)
+  # Note: the customer repo keeps every point release only for the CURRENT major
+  # (25.04); older majors (24.04) are pruned to just the latest, so a pin to a
+  # pruned version will 404. Bump `version` and re-apply to upgrade.
+  version: "24.04.18.3"
+  # Optional exact pin for nextcloud-office-brand. It uses a DIFFERENT version
+  # scheme than coolwsd (brand "25.04.10-3" pairs with coolwsd "25.04.10.3",
+  # and in 24.04 the brand is just "24.04-37"), so it can't be auto-matched.
+  # Omit to track the latest brand (pkg.latest). Pin it for reproducible builds
+  # or to avoid a stray cross-major brand outsorting the right one in the repo.
+  # brand_version: "24.04-37"
+  coolwsd:
+    # Admin console credentials. Applied with `coolconfig set-admin-password`
+    # (PBKDF2-hashed in coolwsd.xml, not plaintext). Omit the whole `admin`
+    # block to leave the package default untouched. username defaults to admin.
+    admin:
+      username: admin
       password: very-strong-pass
-      ssl: false
-      ssl_termination: true
-      alias_groups:
-        mode: groups
-        groups:
+    # Any coolwsd.xml setting, as a flat "config.path: value" map. Each becomes
+    # a `--o:config.path=value` launch flag. Add whatever you need here.
+    overrides:
+      ssl.enable: false
+      ssl.termination: true
+    # Multiple WOPI hosts. `mode` is set via --o:, but the host list is written
+    # into coolwsd.xml (between Salt markers) because coolwsd builds the WOPI
+    # group list from the config-file DOM and won't take group[] from --o:.
+    alias_groups:
+      mode: groups
+      groups:
         - https://nextcloud.example.com:443
         - https://next1.example.com:443
         - https://next2.example.com:443
+
+## Same, but the free CODE edition from the public repo - no customer_hash:
+collabora:
+  full: true
+  nginx_sites_enabled: true
+  edition: code
+  name: collabora.example.com
+  version: "25.04.11.3"   # optional pin; CODE-deb retains the current line's point releases
+  coolwsd:
+    admin:
+      password: very-strong-pass
+    overrides:
+      ssl.enable: false
+      ssl.termination: true
+    alias_groups:
+      mode: groups
+      groups:
+        - https://nextcloud.example.com:443
 
