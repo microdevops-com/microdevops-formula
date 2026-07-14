@@ -1,4 +1,5 @@
-{% if pillar["vault"]["privileged_token"] is defined %}
+{% if pillar["vault"] is defined
+      and pillar["vault"]["privileged_token"] is defined %}
 
 vault_root_token_file:
   file.managed:
