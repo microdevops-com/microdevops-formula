@@ -160,6 +160,15 @@ salt_master_service:
   cmd.run:
     - name: service salt-master restart
 
+# Syncs any custom _sdb driver (e.g. vault_salt_sdb) from file_roots into extension_modules.
+# No-op for masters with no custom _sdb module. Needs the master running to reach its
+# runner interface, hence the require on the restart above rather than running unordered.
+salt_master_sync_sdb:
+  cmd.run:
+    - name: salt-run saltutil.sync_sdb
+    - require:
+      - cmd: salt_master_service
+
   {%- if pillar["salt"]["master"]["repo"] is defined %}
 salt_master_deploy_repo:
   cmd.run:
