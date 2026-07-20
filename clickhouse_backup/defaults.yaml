@@ -1,0 +1,28 @@
+salt_cache_dir: /var/cache/salt/clickhouse_backup
+
+# clickhouse-backup ships prebuilt .deb/.rpm/tar.gz on GitHub releases.
+# https://github.com/Altinity/clickhouse-backup
+#
+# Version is pinned (not "latest" like victorialogs) on purpose: this tool sits
+# on the backup path, so upgrading it should be an explicit, reviewed pillar
+# change (clickhouse_backup:version + matching clickhouse_backup:deb_sha256),
+# not something that silently changes behavior on the next highstate.
+github:
+  repo: Altinity/clickhouse-backup
+  version: v2.8.0
+  deb_sha256:
+    amd64: 96963795d29f7390fecd9004607441a6234ca054452fb673f7e28212a646ed78
+    arm64: ""  # not verified yet - no arm64 clickhouse host in use, set via pillar before using on one
+
+config_path: /etc/clickhouse-backup/config.yml
+script_dir: /opt/sysadmws/clickhouse_backup
+script_path: /opt/sysadmws/clickhouse_backup/run.sh
+
+dump_dir: /var/lib/clickhouse/backup
+local_keep_count: 1
+
+clickhouse:
+  host: 127.0.0.1
+  port: 9000
+  username: default
+  password: ""

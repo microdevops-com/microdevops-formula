@@ -1,0 +1,18 @@
+{#- Managed by Salt (clickhouse_backup formula). Local changes will be overwritten. #}
+general:
+  remote_storage: none
+  # We own retention ourselves via run.sh + rsnapshot_backup rotation on the backup server,
+  # so clickhouse-backup itself is not allowed to prune local backups.
+  backups_to_keep_local: 0
+
+clickhouse:
+  host: {{ ch_host }}
+  port: {{ ch_port }}
+  username: {{ ch_username }}
+  # Password is never stored here - it is passed per-invocation via the
+  # CLICKHOUSE_PASSWORD env var from run.sh, so it is not duplicated in this file.
+  password: ""
+  skip_tables:
+    - system.*
+    - INFORMATION_SCHEMA.*
+    - information_schema.*

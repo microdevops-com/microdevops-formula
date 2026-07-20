@@ -23,6 +23,8 @@
 
 # rsnapshot_backup => rsnapshot_backup/pillar.example
 
+# clickhouse_backup => clickhouse_backup/pillar.example
+
 # sentry => sentry/pillar.example
 
 # rancher => rancher/pillar.example
