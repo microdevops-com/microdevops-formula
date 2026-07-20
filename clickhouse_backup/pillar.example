@@ -1,0 +1,28 @@
+# vi: set ft=yaml:
+#
+# Installs clickhouse-backup (https://github.com/Altinity/clickhouse-backup) and a
+# wrapper script (/opt/sysadmws/clickhouse_backup/run.sh) that dumps the configured
+# table patterns, tars them, and prunes old local dumps. Meant to be called as
+# rsnapshot_backup's exec_before_rsync (see rsnapshot_backup/pillar.example RSYNC_SSH
+# exec_before_rsync), which then pulls the resulting *.tar.gz off this host.
+
+clickhouse_backup:
+  #version: v2.8.0 # optional, defaults to the pinned version in defaults.yaml
+  #deb_sha256: # optional, only needed if overriding version to one without a built-in sha256
+  #  amd64: xxx
+  #  arm64: xxx
+  #dump_dir: /var/lib/clickhouse/backup # optional, default. Passed to `clickhouse-backup create/delete` and `tar -C`.
+  #local_keep_count: 1 # optional, default. How many tar.gz to keep locally per pattern - history lives on the
+                       # backup server via rsnapshot_backup's retain_daily/weekly/monthly, not here.
+  clickhouse:
+    #host: 127.0.0.1 # optional, default
+    #port: 9000 # optional, default
+    #username: default # optional, default
+    password: xxx # mandatory, plain text (same convention as rsnapshot_backup's mysqlsh_connect_args).
+                   # Never written to /etc/clickhouse-backup/config.yml - passed only via
+                   # CLICKHOUSE_PASSWORD env var at each clickhouse-backup invocation.
+  patterns: # mandatory, at least one. One prefix per logical group of tables you back up separately.
+    - prefix: yy # short prefix used to name dumps (pr_20260720_030000) and to scope FILE_AGE checks
+      tables: "yy_database_name.*" # passed to `clickhouse-backup create --tables=`
+    #- prefix: xx
+    #  tables: "some_other_db.*"

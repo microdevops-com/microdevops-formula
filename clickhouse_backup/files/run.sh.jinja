@@ -1,0 +1,39 @@
+#!/bin/bash
+# Managed by Salt (clickhouse_backup formula). Local changes will be overwritten.
+#
+# Runs clickhouse-backup for each configured table pattern, tars the result,
+# drops the raw clickhouse-backup dir, and prunes old local tar.gz beyond
+# local_keep_count. Called via rsnapshot_backup's exec_before_rsync from the
+# backup server, over ssh, before it pulls {{ dump_dir }} - so it must not
+# print/require anything interactive.
+#
+# Called with no arguments - everything is baked in from pillar at deploy time.
+
+set -u
+
+DUMP_DIR="{{ dump_dir }}"
+LOCAL_KEEP_COUNT="{{ local_keep_count }}"
+export CLICKHOUSE_PASSWORD="{{ password }}"
+
+STATUS=0
+
+{% for p in patterns %}
+# Pattern "{{ p["prefix"] }}": {{ p["tables"] }}
+NAME="{{ p["prefix"] }}_$(date +%Y%m%d_%H%M%S)"
+if sudo -u clickhouse clickhouse-backup create --tables="{{ p["tables"] }}" "$NAME"; then
+    if sudo tar -C "$DUMP_DIR" -czf "$DUMP_DIR/$NAME.tar.gz" "$NAME"; then
+        sudo -u clickhouse clickhouse-backup delete local "$NAME" || true
+    else
+        echo "ERROR: tar failed for $NAME" >&2
+        STATUS=1
+    fi
+else
+    echo "ERROR: clickhouse-backup create failed for pattern {{ p["tables"] }} ($NAME)" >&2
+    STATUS=1
+fi
+
+# Prune local dumps for this pattern beyond LOCAL_KEEP_COUNT, newest first
+ls -1t "$DUMP_DIR"/{{ p["prefix"] }}_*.tar.gz 2>/dev/null | tail -n "+$((LOCAL_KEEP_COUNT + 1))" | xargs -r sudo rm -f
+{% endfor %}
+
+exit $STATUS
