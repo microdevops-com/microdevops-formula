@@ -187,6 +187,8 @@ gf_image_renderer_run_container_{{ loop.index }}_{{ i_loop.index }}:
     - image: 'grafana/grafana-image-renderer:{{ instance["image_renderer"]["version"] }}'
     - detach: True
     - restart_policy: unless-stopped
+    - security_opt:
+      - seccomp=unconfined
     - publish:
         - {{ instance["image_renderer"]["port"] }}:8081/tcp
         {%- if instance["image_renderer"].get("renderer_token") %}
