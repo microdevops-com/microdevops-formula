@@ -239,7 +239,7 @@ gitlab_config:
   {%- endif %}
         nginx['custom_nginx_config'] = "include /etc/gitlab/nginx/conf.d/*.conf;"
   {%- if "postgresql" in pillar["gitlab"] %}
-        postgresql['listen_address'] = '*'
+        postgresql['listen_address'] = '0.0.0.0'
         postgresql['port'] = 5432
         postgresql['md5_auth_cidr_addresses'] = %w({{ pillar["gitlab"]["postgresql"]["md5_auth_cidr_addresses"] }})
         postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24 ::1/128)
