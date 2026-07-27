@@ -1,0 +1,70 @@
+{%
+set openbao_db_password = 'XXXXXXXXXXXXXXXXXXXXXXXX'
+%}
+
+openbao:
+  version: '2.6.1'
+  privileged_token: 'hvs.XXXXXXXXXXXXXXXXXXXXXXXX'
+  recovery_keys:
+    - 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+  env_vars:
+    BAO_ADDR: "https://{{ grains['fqdn'] }}:8200"
+    BAO_CACERT: "/opt/openbao/tls/tls.crt"
+  init:
+    use_recovery_keys: true
+    recovery_shares: 1
+    recovery_threshold: 1
+    output_file: /root/openbao-init.json
+  postgresql:
+    install: true
+    setup: true
+    user: openbao
+    database: openbao
+    password: {{ openbao_db_password }}
+    password_file: /etc/openbao/postgres-password
+  tls:
+    self_signed:
+      enable: true
+      common_name: {{ grains['fqdn'] }}
+      subject_alt_name: "DNS:{{ grains['fqdn'] }},DNS:localhost,IP:127.0.0.1"
+      days: 3650
+  seal:
+    static:
+      enable: true
+      key_file: /etc/openbao/seal/static-unseal.key
+  snapshots:
+    enable_postgresql: true
+    retention: 7
+  audit:
+    enable: true
+    logfile: /var/log/openbao_audit.log
+  config: |
+    ui = true
+    api_addr = "https://{{ grains['fqdn'] }}:8200"
+    cluster_addr = "https://{{ grains['fqdn'] }}:8201"
+
+    storage "postgresql" {
+      connection_url = "postgres://openbao:{{ openbao_db_password }}@127.0.0.1:5432/openbao?sslmode=disable"
+      table = "openbao_kv_store"
+      ha_enabled = "true"
+      ha_table = "openbao_ha_locks"
+    }
+
+    listener "tcp" {
+      address = "0.0.0.0:8200"
+      tls_cert_file = "/opt/openbao/tls/tls.crt"
+      tls_key_file = "/opt/openbao/tls/tls.key"
+      telemetry {
+        unauthenticated_metrics_access = true
+      }
+    }
+
+    seal "static" {
+      current_key_id = "static-unseal-0"
+      current_key = "file:///etc/openbao/seal/static-unseal.key"
+    }
+
+    telemetry {
+      disable_hostname = true
+      prometheus_retention_time = "12h"
+    }
