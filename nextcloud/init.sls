@@ -1,7 +1,7 @@
 {% if pillar["nextcloud"] is defined and pillar["acme"] is defined %}
 
   {% from "acme/macros.jinja" import verify_and_issue %}
-  {%- if pillar["docker-ce"] is not defined %}
+  {%- if pillar["docker-ce"] is not defined and pillar["nextcloud"]["docker-ce_version"] is defined %}
     {%- set docker_ce = {"version": pillar["nextcloud"]["docker-ce_version"],
                          "daemon_json": '{ "iptables": false, "default-address-pools": [ {"base": "172.16.0.0/12", "size": 24} ] }'} %}
   {%- endif %}
@@ -34,11 +34,15 @@ create nginx.conf:
           server_names_hash_bucket_size 64;
           #include /etc/nginx/mime.types;
           default_type application/octet-stream;
-          ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+          ssl_protocols TLSv1.2 TLSv1.3;
           ssl_prefer_server_ciphers on;
           access_log /var/log/nginx/access.log;
           error_log /var/log/nginx/error.log;
           gzip on;
+          map $arg_v $asset_immutable {
+              "" "";
+              default "immutable";
+          }
           include /etc/nginx/conf.d/*.conf;
           include /etc/nginx/sites-enabled/*;
         }
@@ -47,16 +51,6 @@ create /etc/nginx/sites-available/{{ domain["name"] }}.conf:
   file.managed:
     - name: /etc/nginx/sites-available/{{ domain["name"] }}.conf
     - contents: |
-        map $http_upgrade $connection_upgrade {
-          default upgrade;
-          ''      close;
-        }
-        # Set the `immutable` cache control options only for assets with a cache busting `v` argument
-        map $arg_v $asset_immutable {
-            "" "";
-            default "immutable";
-        }
-
         {%- if pillar["nextcloud"]["external_port"] is not defined %}
         server {
             listen 80;
@@ -207,6 +201,9 @@ create /etc/nginx/sites-available/{{ domain["name"] }}.conf:
             # Rules borrowed from `.htaccess` to hide certain paths from clients
             location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)(?:$|/)  { return 404; }
             location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console)                { return 404; }
+            # Without this, composer.json matches no deny rule and no static-asset rule, so
+            # location / serves the real file and leaks exact dependency versions.
+            location ~ ^/(?:composer\.(?:json|lock)|package(?:-lock)?\.json|core/shipped\.json)$ { return 404; }
 
             # Ensure this block, which passes PHP files to the PHP process, is above the blocks
             # which handle static assets (as seen below). If this block is not declared first,
@@ -269,7 +266,7 @@ create symlink /etc/nginx/sites-enabled/{{ domain["name"] }}.conf:
     - name: /etc/nginx/sites-enabled/{{ domain["name"] }}.conf
     - target: /etc/nginx/sites-available/{{ domain["name"] }}.conf
     - force: True
-    {%- if domain.get('nginx_forwards') is defined %}
+    {%- if domain.get('nginx_forwards') %}
       {%- for fwd_domain in domain['nginx_forwards'] %}
 create /etc/nginx/sites-available/{{ fwd_domain }}.conf:
   file.managed:
@@ -314,10 +311,8 @@ nginx_files_1:
             default_type application/octet-stream;
             sendfile on;
             keepalive_timeout 65;
-            map $http_upgrade $connection_upgrade {
-              default upgrade;
-              ''      close;
-            }
+            ssl_protocols TLSv1.2 TLSv1.3;
+            ssl_prefer_server_ciphers on;
             # Set the `immutable` cache control options only for assets with a cache busting `v` argument
             map $arg_v $asset_immutable {
                 "" "";
@@ -471,6 +466,9 @@ nginx_files_1:
                 # Rules borrowed from `.htaccess` to hide certain paths from clients
                 location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)(?:$|/)  { return 404; }
                 location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console)                { return 404; }
+                # Without this, composer.json matches no deny rule and no static-asset rule,
+                # so location / serves the real file and leaks exact dependency versions.
+                location ~ ^/(?:composer\.(?:json|lock)|package(?:-lock)?\.json|core/shipped\.json)$ { return 404; }
 
                 # Ensure this block, which passes PHP files to the PHP process, is above the blocks
                 # which handle static assets (as seen below). If this block is not declared first,
@@ -528,7 +526,7 @@ nginx_files_1:
                     try_files $uri $uri/ /index.php$request_uri;
                 }
             }
-            {%- if domain.get('nginx_forwards') is defined %}
+            {%- if domain.get('nginx_forwards') %}
               {%- for fwd_domain in domain['nginx_forwards'] %}
             server {
                 listen 80;
@@ -552,7 +550,7 @@ nginx_files_2:
     - name: /etc/nginx/sites-enabled/default
 
   {%- for domain in pillar["nextcloud"]["domains"] %}
-    {%- if domain.get('acme_configs') is defined %}
+    {%- if domain.get('acme_configs') %}
       {%- for acme_cfg in domain['acme_configs'] %}
         {% for acme_domain in acme_cfg["domains"] %}
           {{ verify_and_issue(acme_cfg["name"], "nextcloud", acme_domain) }}
@@ -569,13 +567,62 @@ nextcloud_data_dir_{{ loop.index }}:
     - mode: 755
     - makedirs: True
 
+{#- A tag whose first character is not a digit floats across majors (fpm, latest,
+    production-fpm). "32-fpm" floats too, but only within the 32 line - which is what you
+    want for security patches and is what Nextcloud supports. Only cross-major drift is
+    dangerous, so warn here and fail on the actual jump below rather than refusing to
+    render, which would take nginx and the certificates down with it. #}
+    {%- set _ref = domain["image"].rsplit("/", 1)[-1] %}
+    {%- set _tag = _ref.rsplit(":", 1)[1] if ":" in _ref else "latest" %}
+    {%- if "@" not in _ref and not _tag[:1].isdigit() %}
+nextcloud_floating_image_tag_{{ loop.index }}:
+  test.show_notification:
+    - text: >-
+        WARNING: {{ domain["name"] }} uses the floating image tag "{{ domain["image"] }}".
+        Every apply pulls whatever that tag points at today, and Nextcloud refuses upgrades
+        that skip a major version, so a minion that has not applied in a while can be
+        re-created onto an image it cannot boot. Pin a major line in the pillar
+        (e.g. nextcloud:32-fpm) and step up one major at a time.
+    {%- endif %}
+
 nextcloud_image_{{ loop.index }}:
   cmd.run:
     - name: docker pull {{ domain["image"] }}
 
+{#- docker_container.running re-creates the container as soon as the image ID changes, so
+    without this a stale minion that pulls a much newer image gets an instance Nextcloud
+    refuses to upgrade ("Updates between multiple major versions and downgrades are
+    unsupported"). The installed major comes from version.php through the bind mount, so it
+    is readable even while the container is down; the image major comes from the image's own
+    NEXTCLOUD_VERSION env, so nothing has to run. Failing here leaves the old container
+    running and serving. Note test=true cannot see any of this: the pull is skipped, so this
+    check is skipped, and docker_container.running then compares against the stale local
+    image and reports no change. #}
+nextcloud_upgrade_path_check_{{ loop.index }}:
+  cmd.run:
+    - name: |
+        set -eu
+        ver_file=/opt/nextcloud/{{ domain["name"] }}/data/version.php
+        [ -f "$ver_file" ] || { echo "no version.php yet - first install, nothing to check"; exit 0; }
+        cur=$(sed -n 's/.*OC_VersionString[^0-9]*\([0-9][0-9]*\).*/\1/p' "$ver_file" | head -1)
+        new=$(docker image inspect {{ domain["image"] }} \
+              | jq -r '.[0].Config.Env[]' \
+              | sed -n 's/^NEXTCLOUD_VERSION=\([0-9][0-9]*\)\..*/\1/p' | head -1)
+        [ -n "$cur" ] && [ -n "$new" ] \
+          || { echo "could not read installed ($cur) / image ($new) major - refusing to guess"; exit 1; }
+        echo "installed major: $cur, image major: $new"
+        [ "$new" -ge "$cur" ] \
+          || { echo "REFUSING: image is NC $new but NC $cur is installed - downgrades are unsupported."; exit 1; }
+        [ "$new" -le "$((cur + 1))" ] \
+          || { echo "REFUSING: {{ domain["image"] }} would jump NC $cur -> $new. Pin nextcloud:$((cur + 1))-fpm, apply, then step up one major at a time."; exit 1; }
+    - require:
+      - cmd: nextcloud_image_{{ loop.index }}
+
 nextcloud_container_{{ loop.index }}:
   docker_container.running:
     - name: nextcloud-{{ domain["name"] }}
+    - require:
+      - cmd: nextcloud_upgrade_path_check_{{ loop.index }}
     - user: root
     - image: {{ domain["image"] }}
     - detach: True
@@ -589,38 +636,130 @@ nextcloud_container_{{ loop.index }}:
         - {{ var_key }}: {{ var_val }}
     {%- endfor %}
 
+{#- Readiness is read from occ, not from the public URL: nginx_reload runs last, so on a
+    first apply the vhost exists but is not loaded yet and an HTTP probe can never succeed.
+    occ also reports the things that actually define "ready" - a live HTTP 200 does not
+    tell you the instance is out of maintenance mode or has no pending DB upgrade. #}
+    {%- set ready_timeout = domain.get("ready_timeout", 600) %}
 nextcloud-available_{{ loop.index }}:
   cmd.run:
     - name: |
-        sleep 30
-        start_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-        docker restart nextcloud-{{ domain["name"] }}
-        while ! docker logs --since ${start_time} nextcloud-{{ domain["name"] }} 2>&1 | grep "ready to handle connections"; do sleep 1; done
-        echo "occ set serverinfo token"
-        docker exec --user www-data --env PHP_MEMORY_LIMIT=512M nextcloud-{{ domain["name"] }} php /var/www/html/occ config:app:set serverinfo token --value {{ domain["env_vars"]["NEXTCLOUD_ADMIN_PASSWORD"] }}
-        echo "Wait until statuscode != 200"
-        while [ $(curl -sL -H 'NC-Token: {{ domain["env_vars"]["NEXTCLOUD_ADMIN_PASSWORD"] }}' -X GET https://{{ domain["name"] }}/ocs/v2.php/apps/serverinfo/api/v1/info?format=json | jq -r ".ocs.meta.statuscode") != 200 ]; do echo 'Wait for NC'; sleep 1; done
-    - timeout: 120
+        set -u
+        c=nextcloud-{{ domain["name"] }}
+        deadline=$(( $(date +%s) + {{ ready_timeout }} ))
+        while :; do
+          st=$(docker exec --user www-data "$c" php occ status --output=json 2>/dev/null || true)
+          {#- No `// default` here: jq's // substitutes on ANY falsy value, false included,
+              so `.maintenance // true` would yield true exactly when maintenance is false -
+              the check could never pass. Bare .key is also what we want for a missing key:
+              jq -r prints "null", which matches neither "true" nor "false", so anything
+              unexpected reads as not-ready and we keep waiting instead of racing ahead.
+              jq's stderr is dropped because occ prints non-JSON while the container is
+              still starting up. #}
+          if [ -n "$st" ] \
+             && [ "$(printf '%s' "$st" | jq -r '.installed'      2>/dev/null)" = "true"  ] \
+             && [ "$(printf '%s' "$st" | jq -r '.maintenance'    2>/dev/null)" = "false" ] \
+             && [ "$(printf '%s' "$st" | jq -r '.needsDbUpgrade' 2>/dev/null)" = "false" ]; then
+            echo "$c ready: Nextcloud $(printf '%s' "$st" | jq -r '.versionstring' 2>/dev/null)"
+            exit 0
+          fi
+          [ "$(date +%s)" -lt "$deadline" ] \
+            || { echo "timed out after {{ ready_timeout }}s; last occ status: ${st:-<none>}"; exit 1; }
+          sleep 2
+        done
+    - timeout: {{ ready_timeout + 60 }}
+    - require:
+      - docker_container: nextcloud_container_{{ loop.index }}
 
+{#- The serverinfo token used to be the admin password, passed on the docker exec command
+    line and in a curl header - for cmd.run the state name IS the script, so it landed in
+    the job return and the master job cache. It is now opt-in and fed through a file.
+    Leaving it unset does not clear anything: config:app:set writes to the DB, so an
+    already-configured token keeps working. #}
+    {%- if domain.get("serverinfo_token") %}
+nextcloud_serverinfo_token_file_{{ loop.index }}:
+  file.managed:
+    - name: /opt/nextcloud/{{ domain["name"] }}/data/.salt_serverinfo_token
+    - contents_pillar: nextcloud:domains:{{ loop.index0 }}:serverinfo_token
+    {#- Read by `docker exec --user www-data` through the bind mount, so it must be owned
+        by www-data (uid 33, same on host and in the image) or 0600 would lock it out. #}
+    - user: www-data
+    - mode: '0600'
+    - show_changes: False
+
+nextcloud_serverinfo_token_{{ loop.index }}:
+  cmd.run:
+    - name: >-
+        docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c
+        'php occ --no-warnings config:app:set serverinfo token --value "$(cat /var/www/html/.salt_serverinfo_token)"'
+    - require:
+      - file: nextcloud_serverinfo_token_file_{{ loop.index }}
+      - cmd: nextcloud-available_{{ loop.index }}
+
+nextcloud_serverinfo_token_cleanup_{{ loop.index }}:
+  file.absent:
+    - name: /opt/nextcloud/{{ domain["name"] }}/data/.salt_serverinfo_token
+    - require:
+      - cmd: nextcloud_serverinfo_token_{{ loop.index }}
+    {%- endif %}
+
+{#- The three states below write into the container's writable layer, which is wiped
+    whenever the image changes and docker_container.running re-creates the container.
+    Their unless: probes therefore ask the container itself - a marker on the host (or in
+    the bind-mounted data dir) would survive a re-create that the package did not, and the
+    state would then be skipped forever. #}
     {% if "php_fpm" in domain and "pm.max_children" in domain["php_fpm"] %}
 nextcloud_php-fpm_set_pm.max_children_{{ loop.index }}:
   cmd.run:
     - name: docker exec nextcloud-{{ domain["name"] }} bash -c "sed -Ei  's/^ *pm\.max_children\ =.*$/pm.max_children = {{ domain["php_fpm"]["pm.max_children"] }}/g' /usr/local/etc/php-fpm.d/www.conf"
+    - unless: >-
+        docker exec nextcloud-{{ domain["name"] }}
+        grep -qxF 'pm.max_children = {{ domain["php_fpm"]["pm.max_children"] }}' /usr/local/etc/php-fpm.d/www.conf
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
     {% endif %}
 
-nextcloud_container_install_libmagickcore_{{ loop.index }}:
+{#- Re-applies the customizations that live in the container's writable layer and are wiped
+    every time the image changes. Deliberately unguarded: apt is idempotent and converges,
+    so running it always is self-healing and can never silently skip. Any unless: here would
+    have to probe proxies (is `ip` present? is bz2 loaded?) rather than the thing being
+    installed - and the day an image ships those itself, the probe passes on its own and the
+    rest silently never installs. Cost of running it always: one apt-get update (~10 MB) and
+    a bz2 rebuild per apply, plus the restart below firing every time. The old code did the
+    same and restarted twice per apply, so this is still strictly cheaper.
+      - The ImageMagick -extra package name is derived, not hardcoded. Images from NC 32 on
+        are trixie-based and already ship libmagickcore-7.q16-10-extra, so there it resolves
+        to a no-op - but bookworm images are still in use, and there the name is
+        libmagickcore-6.q16-6-extra. The old hardcoded bookworm literal made apt exit 100 on
+        trixie and install nothing at all, not even iproute2.
+      - iproute2 is kept for debugging (docker exec ... ip a).
+      - bz2 really is absent from the image's docker-php-ext-install list (bcmath exif ftp
+        gd gmp intl ldap pcntl pdo_mysql pdo_pgsql sysvsem zip); the image's "bzip2" is only
+        the CLI tool. libbz2-dev is needed just to build the extension - the built .so links
+        against libbz2-1.0, which bzip2 already pulls in. #}
+nextcloud_container_prepare_{{ loop.index }}:
   cmd.run:
-    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install libmagickcore-6.q16-6-extra iproute2 -y'
+    - name: |
+        docker exec -i -e DEBIAN_FRONTEND=noninteractive nextcloud-{{ domain["name"] }} bash -s <<'NCEOF'
+        set -eu
+        apt-get update
+        # bookworm -> libmagickcore-6.q16-6, trixie -> libmagickcore-7.q16-10
+        core=$(dpkg-query -W -f='${Package}\n' 'libmagickcore-*' 2>/dev/null \
+               | grep -E '^libmagickcore-[0-9]+\.q16(hdri)?-[0-9]+$' | head -n1)
+        apt-get install -y --no-install-recommends iproute2 libbz2-dev ${core:+${core}-extra}
+        docker-php-ext-install bz2
+        NCEOF
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
 
-nextcloud_container_install_php_bz2_{{ loop.index }}:
+nextcloud_container_restart_{{ loop.index }}:
   cmd.run:
-    - name: docker exec nextcloud-{{ domain["name"] }} bash -c 'apt update && apt install -y libbz2-dev && docker-php-ext-install bz2' && docker restart nextcloud-{{ domain["name"] }}
-    - require:
-      - cmd: nextcloud-available_{{ loop.index }}
+    - name: docker restart nextcloud-{{ domain["name"] }}
+    - onchanges:
+      - cmd: nextcloud_container_prepare_{{ loop.index }}
+    {%- if "php_fpm" in domain and "pm.max_children" in domain["php_fpm"] %}
+      - cmd: nextcloud_php-fpm_set_pm.max_children_{{ loop.index }}
+    {%- endif %}
 
 nextcloud_config_default_phone_region_{{ loop.index }}:
   cmd.run:
@@ -634,15 +773,22 @@ nextcloud_config_overwrite_cli_url_{{ loop.index }}:
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
 
-nextcloud_missing_indexes_{{ loop.index }}:
+{#- Post-upgrade work: state lives in the external DB, not in the container, so unlike the
+    container states above a marker on the host is the correct lifetime here. It sits in
+    /opt/nextcloud/<domain>/ - the PARENT of the bind mount - so it is not under nginx's
+    root and not reachable over HTTP. The `test -n "$v" &&` is load-bearing: without it a
+    failing occ yields "" = "" -> true -> the repair is silently skipped forever. #}
+nextcloud_db_repair_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ db:add-missing-indices'
-    - require:
-      - cmd: nextcloud-available_{{ loop.index }}
-
-nextcloud_mimetype_migrations_{{ loop.index }}:
-  cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ maintenance:repair --include-expensive'
+    - name: |
+        set -e
+        docker exec --user www-data nextcloud-{{ domain["name"] }} php occ db:add-missing-indices
+        docker exec --user www-data nextcloud-{{ domain["name"] }} php occ maintenance:repair --include-expensive
+        docker exec --user www-data nextcloud-{{ domain["name"] }} php occ status --output=json \
+          | jq -r .versionstring > /opt/nextcloud/{{ domain["name"] }}/.salt_repaired_version
+    - unless: >-
+        v=$(docker exec --user www-data nextcloud-{{ domain["name"] }} php occ status --output=json 2>/dev/null | jq -r '.versionstring // empty');
+        test -n "$v" && test "$v" = "$(cat /opt/nextcloud/{{ domain["name"] }}/.salt_repaired_version 2>/dev/null)"
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
 
@@ -653,11 +799,15 @@ nextcloud_cron_{{ loop.index }}:
     - user: root
     - minute: "*/5"
 
+{#- The old form ended in "; sleep 10", so the exit code was sleep's and every app:update
+    failure was reported as success. Dropping it means real failures now surface. #}
+    {%- if domain.get("update_apps", True) %}
 nextcloud_update_all_applications_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:update --all; sleep 10'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} php occ --no-warnings app:update --all
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
+    {%- endif %}
 
     {%- if "onlyoffice" in domain %}
 nextcloud_config_onlyoffice_0_{{ loop.index }}:
@@ -669,12 +819,18 @@ nextcloud_config_onlyoffice_0_{{ loop.index }}:
 nextcloud_config_onlyoffice_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install onlyoffice || true'
+    - unless: >-
+        docker exec --user www-data nextcloud-{{ domain["name"] }}
+        php occ --no-warnings app:list --output=json | jq -e '.enabled | has("onlyoffice")'
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_onlyoffice_2_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable onlyoffice --force || true'
+    - unless: >-
+        docker exec --user www-data nextcloud-{{ domain["name"] }}
+        php occ --no-warnings app:list --output=json | jq -e '.enabled | has("onlyoffice")'
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
 
@@ -707,12 +863,18 @@ nextcloud_config_collabora_0_{{ loop.index }}:
 nextcloud_config_collabora_1_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:install richdocuments || true'
+    - unless: >-
+        docker exec --user www-data nextcloud-{{ domain["name"] }}
+        php occ --no-warnings app:list --output=json | jq -e '.enabled | has("richdocuments")'
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_config_collabora_2_{{ loop.index }}:
   cmd.run:
     - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings app:enable --force richdocuments || true'
+    - unless: >-
+        docker exec --user www-data nextcloud-{{ domain["name"] }}
+        php occ --no-warnings app:list --output=json | jq -e '.enabled | has("richdocuments")'
     - require:
       - cmd: nextcloud-available_{{ loop.index }}
 
@@ -759,7 +921,10 @@ nextcloud_config_user_saml_2_{{ loop.index }}:
 
 nextcloud_config_user_saml_3_{{ loop.index }}:
   file.serialize:
-    - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
+    - name: /opt/nextcloud/{{ domain["name"] }}/data/.salt_user_saml_config.json
+    - user: www-data
+    - mode: '0600'
+    - show_changes: False
     - dataset:
         apps:
           user_saml: {{ domain["user_saml"] | json }}
@@ -767,13 +932,16 @@ nextcloud_config_user_saml_3_{{ loop.index }}:
 
 nextcloud_config_user_saml_4_{{ loop.index }}:
   cmd.run:
-    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:import < user_saml_config.json'
+    - name: docker exec --user www-data nextcloud-{{ domain["name"] }} bash -c 'php occ --no-warnings config:import < .salt_user_saml_config.json'
     - require:
+      - file: nextcloud_config_user_saml_3_{{ loop.index }}
       - cmd: nextcloud-available_{{ loop.index }}
 
 nextcloud_remove_config_user_saml_{{ loop.index }}:
   file.absent:
-    - name: /opt/nextcloud/{{ domain["name"] }}/data/user_saml_config.json
+    - name: /opt/nextcloud/{{ domain["name"] }}/data/.salt_user_saml_config.json
+    - require:
+      - cmd: nextcloud_config_user_saml_4_{{ loop.index }}
 
     {%- endif %}
   {%- endfor %}

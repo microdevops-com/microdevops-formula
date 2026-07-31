@@ -12,13 +12,25 @@ nextcloud:
             - nextcloud.example2.com
       nginx_forwards:
         - nextcloud.example2.com
-      internal_name: prd
       internal_port: 9000
-      image: nextcloud:fpm
+      # Pin a major line. Nextcloud only supports one major per upgrade step, so a floating
+      # tag (nextcloud:fpm) lets a lapsed minion jump several majors at once onto an image
+      # it cannot boot. "32-fpm" still tracks 32.0.x security patches, which is supported;
+      # an exact "32.0.12-fpm" is stricter still. Bump one major at a time.
+      # Supported as of 2026-07: 34 (EOL 2027-06-08), 33 (2027-02-17), 32 (2026-09-26).
+      # A tag not starting with a digit only warns; an actual major jump fails the apply
+      # and leaves the running container untouched.
+      image: nextcloud:32-fpm
       php_fpm:
         pm.max_children: 20
       default_phone_region: IL
       overwrite_cli_url: https://nextcloud.example.com
+      #ready_timeout: 600      # optional, seconds to wait for occ to report the instance ready
+      #update_apps: True       # optional, set False to stop running occ app:update --all every apply
+      #serverinfo_token: xxxx  # optional, token for the serverinfo API used by external monitoring.
+                               # Leave unset to keep whatever is already configured - occ writes it
+                               # to the DB, so not setting it here does not clear it. Never reuse
+                               # NEXTCLOUD_ADMIN_PASSWORD for this.
       onlyoffice: # optional. Use onlyoffice or collabora !!!
         DocumentServerUrl: https://onlyoffice.example.com/
         DocumentServerInternalUrl: https://onlyoffice.example.com/
