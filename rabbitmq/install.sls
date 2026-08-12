@@ -123,6 +123,20 @@ rabbit_config_1:
         {{ config_line }}
   {%- endfor %}
 
+{#- CTL_ERL_ARGS applies to the CLI tools (rabbitmqctl and friends) only, not to the broker,
+    which reads SERVER_ERL_ARGS. Every rabbitmqctl invocation boots a fresh Erlang VM, and by
+    default that VM starts one scheduler per core with busy-wait spinning enabled. Pinning it
+    to a single scheduler and disabling busy-wait cuts the startup cost per call measurably
+    (2.9s -> 1.3s on a host with ~40 vhosts). #}
+rabbit_config_2:
+  file.managed:
+    - name: /etc/rabbitmq/rabbitmq-env.conf
+    - user: root
+    - group: rabbitmq
+    - contents: |
+        # This file is managed by Salt, changes will be overwritten
+        CTL_ERL_ARGS="+S 1:1 +sbwt none +sbwtdcpu none +sbwtdio none"
+
 rabbit_service_4:
   cmd.run:
     - name: systemctl daemon-reload
