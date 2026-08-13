@@ -50,18 +50,42 @@ sentry_nginx_files_1:
             resolver_timeout {{ pillar["sentry"]["config"]["web"]["nginx_proxy_timeouts"] | default("5s") }};
             client_body_timeout {{ pillar["sentry"]["config"]["web"]["nginx_proxy_timeouts"] | default("5s") }};
             # buffer larger messages
-            client_max_body_size 5m;
-            client_body_buffer_size 100k;
+            client_max_body_size {{ pillar["sentry"]["config"]["web"]["nginx_client_max_body_size"] | default("5m") }};
+            client_body_buffer_size {{ pillar["sentry"]["config"]["web"]["nginx_client_body_buffer_size"] | default("100k") }};
             proxy_busy_buffers_size   512k;
             proxy_buffers   4 512k;
             proxy_buffer_size   256k;
+            # Set at server level so every location below inherits them. nginx drops inherited
+            # proxy_set_header/add_header only if a location defines its own, and none do.
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header Host $http_host;
+            add_header Strict-Transport-Security "max-age=31536000";
+            # Artifact uploads: sourcemaps, debug information files, release files.
+            #
+            # sentry-cli reads maxRequestSize and chunkSize from GET .../chunk-upload/ and offers
+            # no client-side override, so nginx must accept whatever Sentry advertises there —
+            # 32MB in current versions, against the 5m default above — or uploads fail with 413.
+            # A single sourcemap can exceed the default on its own, so this cannot be worked
+            # around by uploading in smaller batches.
+            #
+            # The timeouts matter just as much. proxy_request_buffering is on by default, so
+            # nginx buffers the whole body, forwards it, and only then starts the read timeout
+            # while Sentry assembles the bundle. Under the aggressive global timeouts above that
+            # turns a fixed 413 into an intermittent 504.
+            #
+            # proxy_pass carries no URI part: nginx rejects that in a regex location.
+            location ~ ^/api/0/(?:organizations/[^/]+/(?:chunk-upload|artifactbundle/assemble|releases/[^/]+/files)|projects/[^/]+/[^/]+/files)/ {
+                client_max_body_size {{ pillar["sentry"]["config"]["web"]["nginx_upload_max_body_size"] | default("64m") }};
+                client_body_timeout {{ pillar["sentry"]["config"]["web"]["nginx_upload_timeouts"] | default("300s") }};
+                proxy_read_timeout {{ pillar["sentry"]["config"]["web"]["nginx_upload_timeouts"] | default("300s") }};
+                proxy_send_timeout {{ pillar["sentry"]["config"]["web"]["nginx_upload_timeouts"] | default("300s") }};
+                send_timeout {{ pillar["sentry"]["config"]["web"]["nginx_upload_timeouts"] | default("300s") }};
+                proxy_pass http://localhost:9000;
+            }
             location / {
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header X-Forwarded-For $remote_addr;
-                proxy_set_header Host $http_host;
                 proxy_pass http://localhost:9000/;
-                add_header Strict-Transport-Security "max-age=31536000";
             }
         }
   {%- endif %}

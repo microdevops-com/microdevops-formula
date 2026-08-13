@@ -78,6 +78,14 @@ sentry:
       #     .......
       #   }
       # nginx_proxy_timeouts: 20s # optional, default is 5s
+      # nginx_client_max_body_size: 5m # optional, default is 5m — applies to everything except the upload endpoints below
+      # nginx_client_body_buffer_size: 100k # optional, default is 100k — bodies above this are spooled to a temp file
+      # Sourcemap / debug-file / release-file uploads get their own location with looser limits,
+      # because sentry-cli sends chunks as large as the maxRequestSize Sentry advertises (32MB in
+      # current versions) and cannot be told to send smaller ones. Raise these if uploads fail with
+      # 413 (body too large) or 504 (Sentry still assembling when the read timeout expires).
+      # nginx_upload_max_body_size: 64m # optional, default is 64m
+      # nginx_upload_timeouts: 300s # optional, default is 300s
     google_auth: # https://develop.sentry.dev/self-hosted/sso/
       client_id: 012345678999-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
       client_secret: ABCDEF-1q2w3e4r5t6y7u8i9o0pASDFGHJK
