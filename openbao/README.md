@@ -17,6 +17,7 @@ Supported workflow:
 - manage audit logging
 - write `/root/.bao-token` for root CLI usage
 - create PostgreSQL database snapshots
+- create and validate integrated Raft snapshots
 - destructive wipe/reinstall workflow
 
 ## Files
@@ -49,6 +50,17 @@ After storing the root token and recovery keys in a safe place, remove the tempo
 ```bash
 salt-ssh 'target' state.apply openbao.remove_init_file
 ```
+
+For a new production Shamir-sealed installation, keep these operator stages separate:
+
+1. Apply `openbao.init` and verify HTTPS health.
+2. Apply `openbao.initialization` once.
+3. Move the generated root token and unseal shares into approved secure storage.
+4. Apply `openbao.unseal` only after the unseal shares are available through the protected pillar process.
+5. Apply `openbao.audit` and verify the audit device.
+6. Provision the configured snapshot token file, run the Raft snapshot script manually, and inspect the resulting snapshot.
+7. Configure and verify remote rsnapshot transport.
+8. Apply `openbao.remove_init_file` only after recovery material has been verified in secure storage.
 
 ## Install
 
@@ -95,7 +107,7 @@ openbao:
       subject_alt_name: "DNS:openbao.example.com,DNS:localhost,IP:127.0.0.1"
 ```
 
-For production, prefer ACME/corporate CA and point `openbao.config` to the managed certificate/key paths.
+For production, prefer ACME/corporate CA and point `openbao.config` to the managed certificate/key paths. When `openbao.acme.enable` is true, `openbao.init` includes the `acme` state, requires successful certificate issuance and validation before starting OpenBao, and registers a SIGHUP reload hook for certificate renewal.
 
 ## Static Seal
 
@@ -190,3 +202,57 @@ Back up at least:
 - TLS certificate/key if they are not externally managed
 
 If `openbao.snapshots.enable_postgresql` is true, the formula creates `/opt/openbao/snapshot-postgresql.sh` and schedules it via cron.
+
+For integrated Raft storage, enable validated Raft snapshots independently of PostgreSQL:
+
+```yaml
+openbao:
+  env_vars:
+    BAO_ADDR: https://openbao.example.com
+    BAO_CACERT: /opt/acme/cert/openbao_openbao.example.com_fullchain.cer
+  snapshots:
+    enable_raft: true
+    dir: /opt/openbao/snapshots
+    retention: 7
+    cron_minute: 6
+    cron_hour: "*/4"
+    token_file: /root/.bao-token
+```
+
+The script is installed during `openbao.init`, but the cron entry is installed only when the configured token file is non-empty. After provisioning the token, reapply `openbao.init` to enable the cron idempotently.
+
+Use a renewable periodic orphan token, not the root token. The leader endpoint is unauthenticated, snapshot save needs `read` on `sys/storage/raft/snapshot`, and snapshot inspect reads the local file. The additional `renew-self` permission lets the scheduled job keep its periodic token alive:
+
+```bash
+cat >/root/openbao-raft-snapshot.hcl <<'EOF'
+path "sys/storage/raft/snapshot" {
+  capabilities = ["read"]
+}
+path "auth/token/renew-self" {
+  capabilities = ["update"]
+}
+EOF
+
+bao policy write openbao-raft-snapshot /root/openbao-raft-snapshot.hcl
+umask 077
+bao token create \
+  -policy=openbao-raft-snapshot \
+  -period=24h \
+  -orphan \
+  -no-default-policy \
+  -display-name=openbao-raft-snapshot \
+  -field=token > /root/.bao-token
+chmod 0600 /root/.bao-token
+rm /root/openbao-raft-snapshot.hcl
+```
+
+Run these commands while authenticated as an operator allowed to create policies and periodic orphan tokens. The Raft snapshot job renews the token, runs only on the active/leader node, writes to a temporary directory, validates the local snapshot with `bao operator raft snapshot inspect`, atomically moves the validated snapshot into place, and only then removes expired snapshots.
+
+Verify the first snapshot before enabling remote backup:
+
+```bash
+/opt/openbao/snapshot-raft.sh
+newest="$(find /opt/openbao/snapshots -maxdepth 1 -type f -name 'openbao_*.snap' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)"
+test -n "$newest"
+bao operator raft snapshot inspect "$newest"
+```
