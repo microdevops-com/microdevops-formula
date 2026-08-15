@@ -35,6 +35,12 @@ openbao:
   snapshots:
     enable_postgresql: true
     retention: 7
+    # Integrated Raft storage can enable its own snapshot job independently:
+    # enable_raft: true
+    # dir: /opt/openbao/snapshots
+    # cron_minute: 6
+    # cron_hour: "*/4"
+    # token_file: /root/.bao-token
   audit:
     enable: true
     logfile: /var/log/openbao_audit.log

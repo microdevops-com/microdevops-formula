@@ -1,0 +1,64 @@
+#!/bin/sh
+set -eu
+
+umask 077
+
+snapshots_dir={{ snapshots_dir | json }}
+retention={{ retention | json }}
+token_file={{ token_file | json }}
+export BAO_ADDR={{ bao_addr | json }}
+export BAO_CACERT={{ bao_cacert | json }}
+
+fail() {
+    echo "ERROR: OpenBao Raft snapshot: $*" >&2
+    exit 1
+}
+
+[ -d "$snapshots_dir" ] || fail "snapshot directory does not exist: $snapshots_dir"
+[ -s "$token_file" ] || fail "token file is missing or empty: $token_file"
+[ -n "$BAO_ADDR" ] || fail "BAO_ADDR is empty"
+[ -n "$BAO_CACERT" ] || fail "BAO_CACERT is empty"
+[ -s "$BAO_CACERT" ] || fail "CA certificate is missing or empty: $BAO_CACERT"
+
+IFS= read -r BAO_TOKEN < "$token_file" || fail "cannot read token file: $token_file"
+[ -n "$BAO_TOKEN" ] || fail "token file contains an empty token: $token_file"
+export BAO_TOKEN
+
+bao token renew -self >/dev/null \
+    || fail "cannot renew snapshot token"
+
+leader_json="$(curl --fail --silent --show-error --cacert "$BAO_CACERT" "$BAO_ADDR/v1/sys/leader")" \
+    || fail "cannot query leader endpoint"
+is_self="$(printf '%s' "$leader_json" | jq -er '.is_self')" \
+    || fail "leader endpoint did not return a valid is_self value"
+
+if [ "$is_self" != "true" ]; then
+    echo "OpenBao Raft snapshot skipped: this node is not active/leader"
+    exit 0
+fi
+
+timestamp="$(date -u +'%Y-%m-%dT%H-%M-%SZ')"
+tmp_dir="$(mktemp -d "$snapshots_dir/.openbao-snapshot.XXXXXX")" \
+    || fail "cannot create temporary snapshot directory"
+tmp_snapshot="$tmp_dir/openbao.snap"
+final_snapshot="$snapshots_dir/openbao_${timestamp}.snap"
+
+cleanup() {
+    rm -rf -- "$tmp_dir"
+}
+trap cleanup EXIT HUP INT TERM
+
+bao operator raft snapshot save "$tmp_snapshot" \
+    || fail "snapshot save failed"
+bao operator raft snapshot inspect "$tmp_snapshot" >/dev/null \
+    || fail "snapshot validation failed"
+
+chmod 0600 "$tmp_snapshot"
+mv -- "$tmp_snapshot" "$final_snapshot" \
+    || fail "cannot move validated snapshot into place"
+
+find "$snapshots_dir" -maxdepth 1 -type f -name 'openbao_*.snap' \
+    -mtime +"$retention" -delete \
+    || fail "snapshot created, but retention cleanup failed"
+
+echo "OpenBao Raft snapshot created: $final_snapshot"

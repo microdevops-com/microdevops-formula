@@ -16,6 +16,11 @@
   {% set postgresql_password = postgres_cfg.get("password") %}
   {% set postgresql_password_file = postgres_cfg.get("password_file", config_dir ~ "/postgres-password") %}
 
+{% if pillar["acme"] is defined and pillar["openbao"].get("acme", {}).get("enable", False) and pillar["openbao"]["acme"].get("domain") is defined %}
+include:
+  - acme
+{% endif %}
+
 openbao_install_prerequisites:
   pkg.installed:
     - refresh: True
@@ -168,19 +173,60 @@ openbao_self_signed_tls_permissions:
 
 {% if pillar["acme"] is defined and pillar["openbao"].get("acme", {}).get("enable", False) and pillar["openbao"]["acme"].get("domain") is defined %}
   {% set acme_account = pillar["acme"].keys() | first %}
+  {% set acme_domain = pillar["openbao"]["acme"]["domain"] %}
+  {% set acme_issue_state = "/opt/acme/home/" ~ acme_account ~ "/verify_and_issue.sh openbao " ~ (acme_domain | md5) %}
 
-    {{ verify_and_issue(acme_account, "openbao", pillar["openbao"]["acme"]["domain"]) }}
+    {{ verify_and_issue(acme_account, "openbao", acme_domain) }}
+
+openbao_acme_helper_ready:
+  test.nop:
+    - require:
+      - file: acme_local_1
+      - file: acme_verify_and_issue_1
+      - file: /opt/acme/home/{{ acme_account }}/verify_and_issue.sh
+    - require_in:
+      - cmd: {{ acme_issue_state }}
+
+openbao_acme_reload_hook:
+  cmd.run:
+    - name: >-
+        /opt/acme/{{ acme_account }}/home/acme_local.sh
+        --install-cert -d {{ acme_domain }}
+        --cert-file /opt/acme/cert/openbao_{{ acme_domain }}_cert.cer
+        --key-file /opt/acme/cert/openbao_{{ acme_domain }}_key.key
+        --ca-file /opt/acme/cert/openbao_{{ acme_domain }}_ca.cer
+        --fullchain-file /opt/acme/cert/openbao_{{ acme_domain }}_fullchain.cer
+        --reloadcmd 'chown openbao:openbao /opt/acme/cert/openbao_{{ acme_domain }}_* && chmod 0640 /opt/acme/cert/openbao_{{ acme_domain }}_key.key && if systemctl is-active --quiet openbao; then systemctl reload openbao; fi'
+    - require:
+      - cmd: {{ acme_issue_state }}
 
 openbao_cert_permissions:
   cmd.run:
-    - name: /usr/bin/chown openbao:openbao /opt/acme/cert/openbao_{{ pillar["openbao"]["acme"]["domain"] }}*
+    - name: >-
+        /usr/bin/chown openbao:openbao
+        /opt/acme/cert/openbao_{{ acme_domain }}_cert.cer
+        /opt/acme/cert/openbao_{{ acme_domain }}_key.key
+        /opt/acme/cert/openbao_{{ acme_domain }}_ca.cer
+        /opt/acme/cert/openbao_{{ acme_domain }}_fullchain.cer
+        && /usr/bin/chmod 0644
+        /opt/acme/cert/openbao_{{ acme_domain }}_cert.cer
+        /opt/acme/cert/openbao_{{ acme_domain }}_ca.cer
+        /opt/acme/cert/openbao_{{ acme_domain }}_fullchain.cer
+        && /usr/bin/chmod 0640
+        /opt/acme/cert/openbao_{{ acme_domain }}_key.key
+    - require:
+      - cmd: openbao_acme_reload_hook
+      - user: openbao_user
 
-openbao_cert_permissions_cron:
-  cron.present:
-    - name: /usr/bin/chown openbao:openbao /opt/acme/cert/openbao_{{ pillar["openbao"]["acme"]["domain"] }}*
-    - identifier: set permissions for openbao certificate
-    - user: root
-    - minute: 0
+openbao_cert_validate:
+  cmd.run:
+    - name: >-
+        test -s /opt/acme/cert/openbao_{{ acme_domain }}_fullchain.cer
+        && test -s /opt/acme/cert/openbao_{{ acme_domain }}_key.key
+        && openssl x509 -in /opt/acme/cert/openbao_{{ acme_domain }}_fullchain.cer -noout
+        && openssl pkey -in /opt/acme/cert/openbao_{{ acme_domain }}_key.key -noout
+    - require:
+      - cmd: openbao_cert_permissions
 {% endif %}
 
 {% if pillar["openbao"].get("seal", {}).get("static", {}).get("enable", False) %}
@@ -252,6 +298,7 @@ openbao_systemd_override:
         EnvironmentFile={{ config_dir }}/openbao.env
         ExecStart=
         ExecStart=/usr/bin/bao server -config={{ config_dir }}
+        ExecReload=/bin/kill --signal HUP $MAINPID
         CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK CAP_NET_BIND_SERVICE
         AmbientCapabilities=CAP_IPC_LOCK CAP_NET_BIND_SERVICE
         LimitCORE=0
@@ -299,6 +346,9 @@ openbao_service_enable_and_start:
 {% endif %}
 {% if pillar["openbao"].get("seal", {}).get("static", {}).get("enable", False) %}
       - cmd: openbao_static_seal_key
+{% endif %}
+{% if pillar["acme"] is defined and pillar["openbao"].get("acme", {}).get("enable", False) and pillar["openbao"]["acme"].get("domain") is defined %}
+      - cmd: openbao_cert_validate
 {% endif %}
 
 openbao_service_restart:
@@ -358,6 +408,68 @@ openbao_postgresql_snapshot_cron:
     - month: '{{ cron_month }}'
     - dayweek: '{{ cron_dayweek }}'
     - user: root
+{% endif %}
+
+{% if pillar["openbao"].get("snapshots", {}).get("enable_raft", False) %}
+  {% set raft_snapshots_dir = pillar["openbao"]["snapshots"].get("dir", "/opt/openbao/snapshots") %}
+  {% set raft_snapshot_token_file = pillar["openbao"]["snapshots"].get("token_file", "/root/.bao-token") %}
+  {% set raft_snapshot_retention = pillar["openbao"]["snapshots"].get("retention", 7) %}
+  {% set raft_cron_minute = pillar["openbao"]["snapshots"].get("cron_minute", range(6, 54) | random) %}
+  {% set raft_cron_hour = pillar["openbao"]["snapshots"].get("cron_hour", "*/4") %}
+  {% set raft_cron_daymonth = pillar["openbao"]["snapshots"].get("cron_daymonth", "*") %}
+  {% set raft_cron_month = pillar["openbao"]["snapshots"].get("cron_month", "*") %}
+  {% set raft_cron_dayweek = pillar["openbao"]["snapshots"].get("cron_dayweek", "*") %}
+  {% set raft_bao_addr = pillar["openbao"].get("env_vars", {}).get("BAO_ADDR", "https://127.0.0.1:8200") %}
+  {% set raft_bao_cacert = pillar["openbao"].get("env_vars", {}).get("BAO_CACERT", "") %}
+
+openbao_raft_snapshots_directory:
+  file.directory:
+    - name: {{ raft_snapshots_dir }}
+    - user: openbao
+    - group: openbao
+    - dir_mode: 750
+    - makedirs: True
+    - require:
+      - user: openbao_user
+
+openbao_raft_snapshot_script:
+  file.managed:
+    - name: /opt/openbao/snapshot-raft.sh
+    - source: salt://openbao/files/snapshot-raft.sh.jinja
+    - template: jinja
+    - user: root
+    - group: root
+    - mode: 0700
+    - context:
+        snapshots_dir: {{ raft_snapshots_dir | json }}
+        retention: {{ raft_snapshot_retention | json }}
+        token_file: {{ raft_snapshot_token_file | json }}
+        bao_addr: {{ raft_bao_addr | json }}
+        bao_cacert: {{ raft_bao_cacert | json }}
+    - require:
+      - cmd: openbao_package_install
+      - file: openbao_raft_snapshots_directory
+
+openbao_raft_snapshot_cron:
+  cron.present:
+    - name: /opt/openbao/snapshot-raft.sh
+    - identifier: openbao_raft_snapshot
+    - minute: '{{ raft_cron_minute }}'
+    - hour: '{{ raft_cron_hour }}'
+    - daymonth: '{{ raft_cron_daymonth }}'
+    - month: '{{ raft_cron_month }}'
+    - dayweek: '{{ raft_cron_dayweek }}'
+    - user: root
+    - require:
+      - file: openbao_raft_snapshot_script
+    - onlyif: test -s {{ raft_snapshot_token_file }}
+
+openbao_raft_snapshot_cron_without_token:
+  cron.absent:
+    - name: /opt/openbao/snapshot-raft.sh
+    - identifier: openbao_raft_snapshot
+    - user: root
+    - unless: test -s {{ raft_snapshot_token_file }}
 {% endif %}
 
 {% endif %}
