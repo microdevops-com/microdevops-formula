@@ -2,6 +2,11 @@
 
 Short documentation for this formula.
 
+For the complete production installation and operator sequence, see
+[`PRODUCTION_RUNBOOK.md`](PRODUCTION_RUNBOOK.md). The runbook covers a clean
+Debian host, Shamir initialization, administrator setup, Raft snapshots,
+remote backup verification, and removal of initialization material.
+
 ## Overview
 
 This formula installs and configures OpenBao as a regular systemd service. It is modeled after the existing `vault` formula, but uses OpenBao package releases and the `bao` CLI.
@@ -42,6 +47,11 @@ salt-ssh 'target' state.apply openbao.initialization
 ```
 
 `openbao.initialization` runs only when OpenBao is not initialized. It writes JSON to `/root/openbao-init.json` by default and prints a pillar-ready snippet containing `privileged_token` and `recovery_keys`.
+
+The printed snippet is retained for compatibility with existing deployments.
+Do not put production root tokens or Shamir shares in ordinary pillar. Follow
+`PRODUCTION_RUNBOOK.md` and move initialization material directly to approved
+secret storage instead.
 
 With static seal or another auto-unseal mechanism, keep `init.use_recovery_keys: true`. For non-auto-unseal deployments, set `init.use_recovery_keys: false`; the state will use `key_shares`/`key_threshold` and print `unseal_keys`.
 
@@ -143,6 +153,10 @@ salt-ssh 'target' state.apply openbao.audit
 OpenBao 2.6 manages audit devices declaratively from server config. This state writes `/etc/openbao/audit.hcl` and reloads/restarts OpenBao; it does not call the audit API.
 
 ## Root Token File
+
+This compatibility feature is not used by the production Shamir workflow in
+`PRODUCTION_RUNBOOK.md`. Its `/root/.bao-token` path conflicts with the
+restricted Raft snapshot token used by that workflow.
 
 After initialization, store the root token as `openbao.privileged_token` and apply:
 
