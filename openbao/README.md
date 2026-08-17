@@ -221,7 +221,7 @@ openbao:
 
 The script is installed during `openbao.init`, but the cron entry is installed only when the configured token file is non-empty. After provisioning the token, reapply `openbao.init` to enable the cron idempotently.
 
-Use a renewable periodic orphan token, not the root token. The leader endpoint is unauthenticated, snapshot save needs `read` on `sys/storage/raft/snapshot`, and snapshot inspect reads the local file. The additional `renew-self` permission lets the scheduled job keep its periodic token alive:
+Use a renewable periodic orphan token, not the root token. The leader endpoint is unauthenticated and snapshot save needs `read` on `sys/storage/raft/snapshot`. The additional `renew-self` permission lets the scheduled job keep its periodic token alive:
 
 ```bash
 cat >/root/openbao-raft-snapshot.hcl <<'EOF'
@@ -246,7 +246,7 @@ chmod 0600 /root/.bao-token
 rm /root/openbao-raft-snapshot.hcl
 ```
 
-Run these commands while authenticated as an operator allowed to create policies and periodic orphan tokens. The Raft snapshot job renews the token, runs only on the active/leader node, writes to a temporary directory, validates the local snapshot with `bao operator raft snapshot inspect`, atomically moves the validated snapshot into place, and only then removes expired snapshots.
+Run these commands while authenticated as an operator allowed to create policies and periodic orphan tokens. The Raft snapshot job renews the token, runs only on the active/leader node, writes to a temporary directory, verifies the OpenBao 2.6 archive layout and embedded SHA-256 manifest, atomically moves the validated snapshot into place, and only then removes expired snapshots. OpenBao 2.6 supports snapshot `save` and `restore`, but does not provide a local `snapshot inspect` subcommand.
 
 Verify the first snapshot before enabling remote backup:
 
@@ -254,5 +254,8 @@ Verify the first snapshot before enabling remote backup:
 /opt/openbao/snapshot-raft.sh
 newest="$(find /opt/openbao/snapshots -maxdepth 1 -type f -name 'openbao_*.snap' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)"
 test -n "$newest"
-bao operator raft snapshot inspect "$newest"
+validation_dir="$(mktemp -d)"
+tar -xzf "$newest" -C "$validation_dir" -- meta.json state.bin SHA256SUMS SHA256SUMS.sealed
+(cd "$validation_dir" && sha256sum -c SHA256SUMS)
+rm -rf "$validation_dir"
 ```

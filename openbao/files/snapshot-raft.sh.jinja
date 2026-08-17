@@ -50,8 +50,31 @@ trap cleanup EXIT HUP INT TERM
 
 bao operator raft snapshot save "$tmp_snapshot" \
     || fail "snapshot save failed"
-bao operator raft snapshot inspect "$tmp_snapshot" >/dev/null \
-    || fail "snapshot validation failed"
+
+expected_members='meta.json
+state.bin
+SHA256SUMS
+SHA256SUMS.sealed'
+archive_members="$(tar -tzf "$tmp_snapshot")" \
+    || fail "snapshot archive validation failed"
+[ "$archive_members" = "$expected_members" ] \
+    || fail "snapshot archive has an unexpected layout"
+
+validation_dir="$tmp_dir/validation"
+mkdir "$validation_dir" \
+    || fail "cannot create snapshot validation directory"
+tar -xzf "$tmp_snapshot" -C "$validation_dir" -- \
+    meta.json state.bin SHA256SUMS SHA256SUMS.sealed \
+    || fail "cannot extract snapshot for validation"
+[ -s "$validation_dir/meta.json" ] \
+    && [ -s "$validation_dir/state.bin" ] \
+    && [ -s "$validation_dir/SHA256SUMS" ] \
+    && [ -s "$validation_dir/SHA256SUMS.sealed" ] \
+    || fail "snapshot contains an empty required file"
+jq -e . "$validation_dir/meta.json" >/dev/null \
+    || fail "snapshot metadata is not valid JSON"
+(cd "$validation_dir" && sha256sum -c SHA256SUMS >/dev/null) \
+    || fail "snapshot checksum validation failed"
 
 chmod 0600 "$tmp_snapshot"
 mv -- "$tmp_snapshot" "$final_snapshot" \
