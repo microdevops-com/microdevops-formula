@@ -20,7 +20,7 @@ fail() {
 [ -n "$BAO_CACERT" ] || fail "BAO_CACERT is empty"
 [ -s "$BAO_CACERT" ] || fail "CA certificate is missing or empty: $BAO_CACERT"
 
-IFS= read -r BAO_TOKEN < "$token_file" || fail "cannot read token file: $token_file"
+BAO_TOKEN="$(cat "$token_file")" || fail "cannot read token file: $token_file"
 [ -n "$BAO_TOKEN" ] || fail "token file contains an empty token: $token_file"
 export BAO_TOKEN
 
