@@ -24,7 +24,7 @@ BAO_TOKEN="$(cat "$token_file")" || fail "cannot read token file: $token_file"
 [ -n "$BAO_TOKEN" ] || fail "token file contains an empty token: $token_file"
 export BAO_TOKEN
 
-bao token renew -self >/dev/null \
+bao token renew >/dev/null \
     || fail "cannot renew snapshot token"
 
 leader_json="$(curl --fail --silent --show-error --cacert "$BAO_CACERT" "$BAO_ADDR/v1/sys/leader")" \
