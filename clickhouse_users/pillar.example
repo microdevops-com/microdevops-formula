@@ -43,8 +43,8 @@ clickhouse_users:
         password: xxx # plain text - hashed automatically
         readonly: 2
         grants: # optional, raw GRANT statements as ClickHouse expects them
-          - 'GRANT SELECT ON i24slots.*'
-          - 'GRANT SELECT ON royalvincit.*'
+          - 'GRANT SELECT ON database_x.*'
+          - 'GRANT SELECT ON database_y.*'
       old_user:
         absent: true # removes /etc/clickhouse-server/users.d/provisioned_old_user.xml
     backup:
