@@ -13,6 +13,8 @@ install_2:
 {%-  else %}
     - name: pymongo
 {%   endif %}
+    - env_vars:
+        PIP_BREAK_SYSTEM_PACKAGES: "1"
     - reload_modules: True
 
 install_3:
