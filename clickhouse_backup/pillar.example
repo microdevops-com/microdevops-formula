@@ -17,10 +17,9 @@ clickhouse_backup:
   clickhouse:
     #host: 127.0.0.1 # optional, default
     #port: 9000 # optional, default
-    #username: default # optional, default
-    password: xxx # mandatory, plain text (same convention as rsnapshot_backup's mysqlsh_connect_args).
-                   # Never written to /etc/clickhouse-backup/config.yml - passed only via
-                   # CLICKHOUSE_PASSWORD env var at each clickhouse-backup invocation.
+    # No username/password here - this formula does not manage clickhouse credentials.
+    # Both fields in /etc/clickhouse-backup/config.yml should be kept in sync with the
+    # actual ClickHouse users management formula.
   patterns: # mandatory, at least one. One prefix per logical group of tables you back up separately.
     - prefix: yy # short prefix used to name dumps (pr_20260720_030000) and to scope FILE_AGE checks
       tables: "yy_database_name.*" # passed to `clickhouse-backup create --tables=`

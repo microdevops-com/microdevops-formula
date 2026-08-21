@@ -18,9 +18,6 @@
 {%- set local_keep_count = cfg.get("local_keep_count", defaults["local_keep_count"]) %}
 {%- set ch = defaults["clickhouse"].copy() %}
 {%- do ch.update(cfg.get("clickhouse", {})) %}
-{%- if not ch["password"] %}
-  {{ raise("\n>>> CRITICAL: clickhouse_backup:clickhouse:password is not set in pillar") }}
-{%- endif %}
 {%- set patterns = cfg.get("patterns", []) %}
 {%- if not patterns %}
   {{ raise("\n>>> CRITICAL: clickhouse_backup:patterns is empty - nothing to back up, set at least one {prefix, tables} entry") }}
@@ -60,7 +57,6 @@ clickhouse_backup_config:
     - context:
         ch_host: {{ ch["host"] }}
         ch_port: {{ ch["port"] }}
-        ch_username: {{ ch["username"] }}
     - require:
       - pkg: clickhouse_backup_pkg
 
@@ -83,7 +79,6 @@ clickhouse_backup_run_script:
     - context:
         dump_dir: {{ dump_dir }}
         local_keep_count: {{ local_keep_count }}
-        password: {{ ch["password"] }}
         patterns: {{ patterns }}
     - require:
       - pkg: clickhouse_backup_pkg

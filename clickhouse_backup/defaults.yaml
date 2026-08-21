@@ -24,5 +24,3 @@ local_keep_count: 1
 clickhouse:
   host: 127.0.0.1
   port: 9000
-  username: default
-  password: ""
