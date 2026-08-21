@@ -1,0 +1,52 @@
+# vi: set ft=yaml:
+#
+# Declaratively manages ClickHouse users via /etc/clickhouse-server/users.d/provisioned_<user>.xml -
+# one file per user. Removing a user's entry from pillar leaves its file unmanaged - set absent: true
+# to actually delete it.
+#
+# Each user needs either:
+#   password_hash - a pre-computed password_double_sha1_hex, same algorithm mysql_toolkit uses for
+#                    MySQL (SHA1(UNHEX(SHA1(plaintext))), hex-encoded) - written as-is.
+#   password       - plain text, hashed into password_double_sha1_hex for you at apply time.
+#
+# The "backup" section is special: at most one user, and it MUST use plain "password".
+# Its plaintext also gets pushed into clickhouse_backup's # /etc/clickhouse-backup/config.yml
+# See clickhouse_backup/pillar.example.
+#
+# Every user's "profile" value is validated against this section - referencing an undefined
+# profile raises, rather than silently breaking that user.
+#
+# "settings" in profile is a free-form dict - any ClickHouse setting name (max_memory_usage,
+# max_execution_time, max_threads, readonly, ...) is passed through as-is.
+
+clickhouse_users:
+  profiles:
+    app_memory_limited:
+      settings:
+        max_memory_usage: 10000000000
+        max_execution_time: 60
+        readonly: 2
+      constraints: # optional, bounds a user can't override via SET
+        max_memory_usage:
+          max: 15000000000
+    admin_full:
+      inherits: app_memory_limited # optional, pulls in the parent profile's settings first
+      settings:
+        readonly: 0
+  users:
+    regular:
+      test_user_x:
+        password_hash: 'be1bdec0aa74b4dcb079943e70528096cca985f8' # pre-computed double-sha1
+        profile: app_memory_limited # optional, must exist under clickhouse_users:profiles
+        readonly: 2 # optional
+      text_user_y:
+        password: xxx # plain text - hashed automatically
+        readonly: 2
+        grants: # optional, raw GRANT statements as ClickHouse expects them
+          - 'GRANT SELECT ON database_x.*'
+          - 'GRANT SELECT ON database_y.*'
+      old_user:
+        absent: true # removes /etc/clickhouse-server/users.d/provisioned_old_user.xml
+    backup:
+      backup_username: # at most one entry; key is the username. Must be plain "password".
+        password: xxx

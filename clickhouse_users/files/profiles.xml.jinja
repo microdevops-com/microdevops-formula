@@ -1,0 +1,32 @@
+{#- Managed by Salt (clickhouse_users formula). Local changes will be overwritten. #}
+<clickhouse>
+    <profiles>
+{%- for name, p in profiles.items() %}
+        <{{ name }}>
+{%- if p.get("inherits") %}
+            <profile>{{ p["inherits"] }}</profile>
+{%- endif %}
+{%- for key, value in p.get("settings", {}).items() %}
+            <{{ key }}>{{ value }}</{{ key }}>
+{%- endfor %}
+{%- if p.get("constraints") %}
+            <constraints>
+{%- for key, bounds in p["constraints"].items() %}
+                <{{ key }}>
+{%- if bounds.get("min") is not none %}
+                    <min>{{ bounds["min"] }}</min>
+{%- endif %}
+{%- if bounds.get("max") is not none %}
+                    <max>{{ bounds["max"] }}</max>
+{%- endif %}
+{%- if bounds.get("readonly") is not none %}
+                    <readonly>{{ bounds["readonly"] }}</readonly>
+{%- endif %}
+                </{{ key }}>
+{%- endfor %}
+            </constraints>
+{%- endif %}
+        </{{ name }}>
+{%- endfor %}
+    </profiles>
+</clickhouse>

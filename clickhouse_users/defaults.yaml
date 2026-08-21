@@ -1,0 +1,3 @@
+users_d_dir: /etc/clickhouse-server/users.d
+file_prefix: provisioned_
+profiles_file: provisioned_profiles.xml
