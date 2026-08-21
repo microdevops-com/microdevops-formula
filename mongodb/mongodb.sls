@@ -7,12 +7,19 @@ install_1:
         - python3-pip
 
 install_2:
+  # PIP_BREAK_SYSTEM_PACKAGES works around PEP 668 (externally-managed-environment)
+  # on Debian/Ubuntu, since pymongo must land in the system site-packages that
+  # Salt's own mongodb execution module imports from.
+  # Keep pymongo_version pinned < 4.0 in pillar (see pillar.example) - pymongo 4.x
+  # dropped Database.authenticate(), which the mongodb/mongodb_user modules still use.
   pip.installed:
 {%-  if 'pymongo_version' in pillar['mongodb'] %}
     - name: pymongo {{ pillar['mongodb']['pymongo_version'] }}
 {%-  else %}
     - name: pymongo
 {%   endif %}
+    - env_vars:
+        PIP_BREAK_SYSTEM_PACKAGES: "1"
     - reload_modules: True
 
 install_3:
