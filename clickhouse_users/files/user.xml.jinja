@@ -1,0 +1,21 @@
+{#- Managed by Salt (clickhouse_users formula). Local changes will be overwritten. #}
+<clickhouse>
+    <users>
+        <{{ username }}>
+            <password_double_sha1_hex>{{ password_double_sha1_hex }}</password_double_sha1_hex>
+{%- if profile %}
+            <profile>{{ profile }}</profile>
+{%- endif %}
+{%- if readonly is not none %}
+            <readonly>{{ readonly }}</readonly>
+{%- endif %}
+{%- if grants %}
+            <grants>
+{%- for query in grants %}
+                <query>{{ query }}</query>
+{%- endfor %}
+            </grants>
+{%- endif %}
+        </{{ username }}>
+    </users>
+</clickhouse>
