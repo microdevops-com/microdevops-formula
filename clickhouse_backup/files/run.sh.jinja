@@ -20,9 +20,9 @@ STATUS=0
 {% for p in patterns %}
 # Pattern "{{ p["prefix"] }}": {{ p["tables"] }}
 NAME="{{ p["prefix"] }}_$(date +%Y%m%d_%H%M%S)"
-if sudo -u clickhouse clickhouse-backup create --tables="{{ p["tables"] }}" "$NAME"; then
+if sudo --preserve-env=CLICKHOUSE_PASSWORD -u clickhouse clickhouse-backup create --tables="{{ p["tables"] }}" "$NAME"; then
     if sudo tar -C "$DUMP_DIR" -czf "$DUMP_DIR/$NAME.tar.gz" "$NAME"; then
-        sudo -u clickhouse clickhouse-backup delete local "$NAME" || true
+        sudo --preserve-env=CLICKHOUSE_PASSWORD -u clickhouse clickhouse-backup delete local "$NAME" || true
     else
         echo "ERROR: tar failed for $NAME" >&2
         STATUS=1
