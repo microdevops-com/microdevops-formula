@@ -1,6 +1,10 @@
 mongodb:
   enabled: True
   version: 5.0
+  # Must stay < 4.0: Salt's mongodb/mongodb_user modules still call the
+  # Database.authenticate() method, which pymongo removed in 4.0. Installing
+  # an unpinned/newer pymongo breaks mongodb_user.present with:
+  # "TypeError: 'Collection' object is not callable" (see saltstack/salt#68659).
   pymongo_version: == 3.12.3
   admin:
     authdb: admin
