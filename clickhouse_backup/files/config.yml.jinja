@@ -8,10 +8,8 @@ general:
 clickhouse:
   host: {{ ch_host }}
   port: {{ ch_port }}
-  username: {{ ch_username }}
-  # Password is never stored here - it is passed per-invocation via the
-  # CLICKHOUSE_PASSWORD env var from run.sh, so it is not duplicated in this file.
-  password: ""
+  username: "USERNAME_HERE"
+  password: "PASSWORD_HERE"
   skip_tables:
     - system.*
     - INFORMATION_SCHEMA.*
