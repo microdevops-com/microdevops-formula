@@ -1,0 +1,74 @@
+{#-
+  files/docker-compose.yml.jinja -> <base>/<id>/docker-compose.yml
+
+  Differs from the upstream compose file in three ways:
+    * name / container_name are unique - otherwise several stacks on the
+      same host fight over the same container names;
+    * the port is bound to 127.0.0.1 only, nginx does the exposing;
+    * the db service can be dropped (db_local: false) when PostgreSQL is
+      shared across instances.
+
+  ${...} below is Compose interpolation from the .env file in this same
+  directory, not Jinja. Salt leaves it untouched.
+-#}
+{%- set db_local = inst.get('db_local', True) %}
+# Managed by Salt (mailcow_logs_viewer). Manual edits will be overwritten.
+name: mlv-{{ id }}
+
+services:
+{%- if db_local %}
+  db:
+    image: {{ db_image }}
+    container_name: mlv-{{ id }}-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mlv
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+{%- endif %}
+
+  app:
+    image: {{ image }}
+    container_name: mlv-{{ id }}-app
+    restart: unless-stopped
+{%- if db_local %}
+    depends_on:
+      db:
+        condition: service_healthy
+{%- endif %}
+    ports:
+      - "127.0.0.1:{{ inst.port }}:8080"
+    volumes:
+      - mailcowlogs_data:/app/data
+    networks:
+      - mlv
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  mlv:
+    driver: bridge
+
+volumes:
+{%- if db_local %}
+  postgres_data:
+    driver: local
+{%- endif %}
+  mailcowlogs_data:
+    driver: local
+

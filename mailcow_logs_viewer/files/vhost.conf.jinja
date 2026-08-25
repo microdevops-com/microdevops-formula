@@ -1,0 +1,77 @@
+{#-
+  files/vhost.conf.jinja -> /etc/nginx/sites-enabled/<fqdn>.conf
+
+  have_cert is evaluated at state runtime, i.e. after issuance has run.
+  If issuance failed (DNS not propagated yet, provider API down) the site
+  comes up over plain HTTP instead of taking the whole nginx down on a
+  missing ssl_certificate.
+-#}
+{%- set have_cert = salt['file.file_exists'](tls.fullchain)
+                    and salt['file.file_exists'](tls.key) %}
+# Managed by Salt (mailcow_logs_viewer). Manual edits will be overwritten.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ fqdn }};
+
+{%- if have_cert %}
+
+    return 301 https://$host$request_uri;
+{%- else %}
+
+    # No certificate yet - serve over plain HTTP for now.
+    location / {
+        proxy_pass http://127.0.0.1:{{ port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+{%- endif %}
+}
+{%- if have_cert %}
+
+server {
+{%- if http2_on %}
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+{%- else %}
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+{%- endif %}
+    server_name {{ fqdn }};
+
+    ssl_certificate     {{ tls.fullchain }};
+    ssl_certificate_key {{ tls.key }};
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # manual DMARC report uploads
+    client_max_body_size 32m;
+
+    access_log /var/log/nginx/{{ fqdn }}.access.log;
+    error_log  /var/log/nginx/{{ fqdn }}.error.log;
+
+    location / {
+        proxy_pass http://127.0.0.1:{{ port }};
+        proxy_http_version 1.1;
+
+        # WebSocket for the Logs page
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+    }
+}
+{%- endif %}
+
