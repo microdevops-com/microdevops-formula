@@ -1,0 +1,123 @@
+{#-
+  mailcow_logs_viewer/map.jinja
+
+  The single place where derived values are computed. Imported by init.sls.
+  Nothing but {% set %} belongs here.
+-#}
+
+{%- set mlv = salt['pillar.get']('mailcow_logs_viewer', {}) %}
+
+{%- set base          = mlv.get('base_dir', '/opt/mailcow-logs-viewer') %}
+{%- set compose       = mlv.get('compose', '/usr/bin/docker compose') %}
+{%- set image         = mlv.get('image', 'ghcr.io/shlomiporush/mailcow-logs-viewer:latest') %}
+{%- set db_image      = mlv.get('db_image', 'postgres:15-alpine') %}
+{%- set instances     = mlv.get('instances', {}) %}
+{%- set env_defaults  = mlv.get('defaults', {}) %}
+
+{#- Extra --security-opt values for the containers. Normally empty.
+    Needed as a workaround for the runc masked-path regression: since
+    runc 1.4.3 (and 1.3.6) maskDir() mounts masked paths such as
+    /proc/acpi as tmpfs with nr_blocks=1,nr_inodes=1, which some kernels
+    reject with EINVAL, so no container can start at all. Setting
+    "systempaths=unconfined" leaves MaskedPaths empty and skips those
+    mounts. Fixed upstream in runc 1.4.4 - drop this once the host runs
+    that or newer. See opencontainers/runc#5348. -#}
+{%- set security_opt  = mlv.get('security_opt', []) %}
+{%- set manage_nginx  = mlv.get('manage_nginx', True) %}
+{%- set manage_ws_map = mlv.get('manage_ws_map', True) %}
+{%- set http2_on      = mlv.get('nginx_http2_on', False) %}
+
+{#- server_names_hash_bucket_size, written into conf.d.
+
+    nginx rejects a server_name when
+      sizeof(void*) + align(len + 2, sizeof(void*)) + sizeof(void*) > bucket_size
+    so at the common default of 64 any name longer than 46 characters fails
+    the whole config with "could not build server_names_hash". Viewer FQDNs
+    of the form <instance>.<viewer-domain> cross that line easily.
+
+    Skipped automatically when nginx.conf already declares the directive:
+    declaring it twice in the http context is a duplicate and breaks
+    nginx -t. Set to 0 to never manage it. -#}
+{%- set snhbs = mlv.get('server_names_hash_bucket_size', 128) %}
+{%- if snhbs and salt['file.search']('/etc/nginx/nginx.conf',
+                                     '^\\s*server_names_hash_bucket_size',
+                                     ignore_if_missing=True) %}
+{%-   set snhbs = 0 %}
+{%- endif %}
+
+{#- Two supported ways of getting nginx onto the host.
+
+    nginx_sls: depend on an external formula. For microdevops-formula the
+    value is 'nginx.nginx' and NOT 'nginx': nginx/init.sls only carries an
+    include and the actual states live in nginx/nginx.sls, while Salt
+    matches the sls requisite against __sls__ by exact string with no
+    globbing. Setting this also makes this formula include that SLS.
+
+    nginx_pkg: install the distro package from here and stay
+    self-contained. Used when nginx_sls is empty. -#}
+{%- set nginx_sls     = mlv.get('nginx_sls', '') %}
+{%- set nginx_pkg     = mlv.get('nginx_pkg', True) %}
+{%- set remove_default_site = mlv.get('remove_default_site', True) %}
+
+{#- Requisite entries that every state touching /etc/nginx must carry, as
+    (requisite_key, target) pairs. -#}
+{%- if nginx_sls %}
+{%-   set nginx_req = [('sls', nginx_sls)] %}
+{%- elif nginx_pkg %}
+{%-   set nginx_req = [('pkg', 'mlv-nginx-pkg')] %}
+{%- else %}
+{%-   set nginx_req = [] %}
+{%- endif %}
+
+{#- Optional snippet with shared TLS settings. microdevops-formula/nginx
+    writes /etc/nginx/snippets/ssl-params.conf (ciphers, dhparam, OCSP
+    stapling). When set, the vhost includes it and drops its own inline
+    ssl_protocols / ssl_session_* directives, which would otherwise be
+    duplicates in the same server context and break nginx -t. -#}
+{%- set ssl_params    = mlv.get('ssl_params_snippet', '') %}
+
+{#- --------------------------- ACME ---------------------------
+    Integration with microdevops-formula/acme. That formula does not
+    issue certificates by itself: it installs acme.sh per account and
+    drops the helper scripts. Issuance is done by the verify_and_issue
+    macro from acme/macros.jinja.
+-#}
+{%- set acme          = mlv.get('acme', {}) %}
+{%- set acme_account  = acme.get('account', '') %}
+{%- set acme_app      = acme.get('app', 'mlv') %}
+{%- set acme_domain   = acme.get('domain', '') %}
+{%- set acme_wildcard = acme.get('wildcard', True) %}
+{%- set acme_reload   = acme.get('reloadcmd',
+                                 '/usr/sbin/nginx -t && /usr/bin/systemctl reload nginx') %}
+
+{#- The bare domain MUST come first: verify_and_issue.sh takes $2 as part
+    of the certificate file name, so a wildcard in first position would put
+    a '*' into the file name. The wildcard itself is single-quoted so bash
+    does not glob-expand it while running the cmd.run state. -#}
+{%- if acme_wildcard %}
+{%-   set acme_domains = [acme_domain, "'*." ~ acme_domain ~ "'"] %}
+{%- else %}
+{%-   set acme_domains = [acme_domain] %}
+{%- endif %}
+
+{#- Exact replica of the state ID generated by acme/macros.jinja, so that
+    other states can point a require at it. -#}
+{%- set acme_state_id = '/opt/acme/home/' ~ acme_account ~ '/verify_and_issue.sh '
+                        ~ acme_app ~ ' ' ~ (acme_domains | join(' ') | md5) %}
+
+{#- Deployed certificate copies, the ones nginx reads.
+    Do NOT confuse with /opt/acme/<account>/cert, which is acme.sh's
+    internal --cert-home holding per-domain working dirs and their .conf. -#}
+{%- set cert_prefix = '/opt/acme/cert/' ~ acme_app ~ '_' ~ acme_domain %}
+{%- set tls = {
+      'cert':      cert_prefix ~ '_cert.cer',
+      'key':       cert_prefix ~ '_key.key',
+      'ca':        cert_prefix ~ '_ca.cer',
+      'fullchain': cert_prefix ~ '_fullchain.cer',
+    } %}
+
+{#- Glob over the domain conf. The '_ecc' suffix is covered because modern
+    acme.sh issues ECC certificates by default. -#}
+{%- set acme_conf_glob = '/opt/acme/' ~ acme_account ~ '/cert/'
+                         ~ acme_domain ~ '*/' ~ acme_domain ~ '.conf' %}
+

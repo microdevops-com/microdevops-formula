@@ -1,0 +1,19 @@
+# Managed by Salt (mailcow_logs_viewer). Manual edits will be overwritten.
+[Unit]
+Description=mailcow Logs Viewer (%i)
+Documentation=https://github.com/ShlomiPorush/mailcow-logs-viewer
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory={{ base }}/%i
+ExecStart={{ compose }} up -d --remove-orphans
+ExecStop={{ compose }} down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+

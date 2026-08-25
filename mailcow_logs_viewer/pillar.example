@@ -1,0 +1,97 @@
+#!jinja|yaml
+#
+# Pillar for mailcow_logs_viewer.
+#
+# The shebang is mandatory: sdb URIs are resolved on the ops host while
+# the pillar is compiled, so the Vault token never travels to the target.
+#
+# Secrets must be hex/alphanumeric only (openssl rand -hex 32).
+# The characters @ : / ? # $ break either the PostgreSQL connection
+# string or .env parsing in Compose.
+
+################################################################
+# mailcow-logs-viewer
+################################################################
+mailcow_logs_viewer:
+
+  # Pin the tag. With 'latest', docker compose up will not pull a newer
+  # image once anything is present locally.
+  image: ghcr.io/shlomiporush/mailcow-logs-viewer:2.7.0
+  db_image: postgres:15-alpine
+
+  base_dir: /opt/mailcow-logs-viewer
+  compose: /usr/local/bin/docker-compose
+
+  manage_nginx: true        # false if vhosts are managed by another formula
+  manage_ws_map: true       # false if map $connection_upgrade is declared elsewhere
+  nginx_http2_on: false     # true only for nginx >= 1.25.1 (the "http2 on" directive)
+
+  acme:
+    account: example.com   # must match the key in the acme: pillar block above
+    app: mlv                # first part of the certificate file name
+    domain: logs.example.com
+    wildcard: true          # issue logs.example.com + *.logs.example.com
+    reloadcmd: "/usr/sbin/nginx -t && /usr/bin/systemctl reload nginx"
+    # -> /opt/acme/cert/mlv_logs.example.com_fullchain.cer
+    # -> /opt/acme/cert/mlv_logs.example.com_key.key
+
+  # ENV shared by all instances. Full variable reference lives in
+  # documentation/ENV_Settings.md in the application repository.
+  defaults:
+    TZ: Europe/Kyiv
+    LOG_LEVEL: WARNING
+
+    # Polling. The application defaults (20s / 1000 entries / all 10
+    # services) amount to roughly 8.6 GB/day of API traffic per instance,
+    # which is far too much for a centralised deployment over the public
+    # internet. The values below land around 170 MB/day.
+    FETCH_INTERVAL: 60
+    FETCH_COUNT_POSTFIX: 2000
+    RETENTION_DAYS: 7
+    RAW_LOGS_ENABLED: true
+    RAW_LOGS_FETCH_INTERVAL: 60
+    RAW_LOGS_FETCH_COUNT: 200
+    RAW_LOGS_SERVICES: postfix,rspamd-history,netfilter
+    RAW_LOGS_RETENTION_DAYS: 2
+
+    # Leave RSPAMD_URL empty so the app reaches Rspamd through
+    # MAILCOW_URL/rspamd. That is correct even when the viewer runs on a
+    # different server than mailcow.
+    RSPAMD_URL: ''
+
+    MAILCOW_API_VERIFY_SSL: true
+    SETTINGS_EDIT_VIA_UI_ENABLED: false   # config from Salt only, no drift via the UI
+    SUPPRESSION_ENABLED: false            # enable deliberately: it writes to Rspamd maps
+    BASIC_AUTH_ENABLED: false
+
+    OAUTH2_ENABLED: true
+    OAUTH2_PROVIDER_NAME: Authentik
+    OAUTH2_USE_OIDC_DISCOVERY: true
+    OAUTH2_ISSUER_URL: https://auth.example.com/application/o/mailcow-logs/
+
+  instances:
+
+    mailcow:
+      fqdn: mailcow.logs.example.com
+      port: 18101
+      # db_local: false     # skip the local PostgreSQL when the DB is shared
+      env:
+        MAILCOW_URL: https://mailcow.example.com
+        MAILCOW_API_KEY: 7F3541-866454-453F98-A12315-C12436
+        RSPAMD_PASSWORD: 55922243b41318a2541828479fe3f07f32145bcaae9e23643a4abf24daee084a
+        POSTGRES_PASSWORD: 5d36db6a62d9746bd1953fbfe940d671fe57de31e561824ee55dffcbf5fe1f33
+        SESSION_SECRET_KEY: 673bc30b887a57877272c275599cd6c65d1f19654770b4757afca2071f52b091
+        OAUTH2_CLIENT_ID: mailcow-logs-mailcow
+        OAUTH2_CLIENT_SECRET: 7a3269b70c4bac2bf6f246e9e2844ff71d2c1bb7f613248d64506345e8841e47
+        OAUTH2_REDIRECT_URI: https://mailcow.logs.example.com/api/auth/callback
+        # MAILCOW_API_KEY_RW is deliberately unset: without it the editing
+        # operations are disabled and the viewer stays strictly read-only.
+
+    # The remaining servers follow the same shape, ports 18102, 18103, ...
+    #
+    # example2:
+    #   fqdn: example2.logs.example.com
+    #   port: 18102
+    #   env:
+    #     MAILCOW_URL: https://mail.example2.com
+    #     ...
