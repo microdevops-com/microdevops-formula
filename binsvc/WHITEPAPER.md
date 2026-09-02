@@ -164,7 +164,7 @@ nested-placeholder syntax (`{svc[exec]}`), `init.sls` runs `expand` **twice**:
   `svc.args_prefix`, default `-`), `user_name`, `user_group`. So
   `ExecStart: "{exec} {args}"` just works.
 
-A **third**, narrower expansion lives *inside* `fetch_archive.sls`:
+A **third**, narrower expansion lives *inside* `fetch.sls`:
 `tar`/`move` may reference `{file}` (the archive's local cache path, computed in
 the block by `archive_path`) — genuinely unknowable earlier. **If tempted to add
 a phase 4 or a new cross-referencing placeholder: first ask whether the value
@@ -176,19 +176,24 @@ expansions compose better than ever-earlier global phases.
 `dispatch(prefix, settings)` runs, per instance, in fixed order:
 
 ```
-user_and_ssh → config_files → fetch_archive → commands(pre)
+user_and_ssh → install_dir → config_files → fetch_source → venv → commands(pre)
   → systemd_unit(watch=changed) → commands(post) → nginx_vhost
 ```
 
-Order matters: `fetch_archive` needs the install-dir owner (from `user_and_ssh`)
-before it creates the dir; `systemd_unit` must know everything that triggers a
-restart before wiring `onchanges`; `commands(pre)` runs after binary/config are
-in place and before service start; `commands(post)` runs after the service is
-known running when systemd is managed.
+Order matters: `install_dir` runs ahead of `config_files` on purpose — a config
+entry with `makedirs: True` would otherwise create the install dir root-owned
+before the service user's ownership is applied; `venv` runs after `fetch_source`
+because `venv.requirements_files` can point at a `requirements.txt` that arrives
+inside the fetched archive, whose contents render time cannot know; `systemd_unit`
+must know everything that triggers a restart before wiring `onchanges`;
+`commands(pre)` runs after binary/config/venv are in place and before service
+start; `commands(post)` runs after the service is known running when systemd is
+managed. `install_dir` is **not** gated on `svc` — a venv-only instance with no
+`svc` block at all still needs its install dir owned.
 
-**The contract**: `config_files` and `fetch_archive` return a *list of
-pyobjects requisite references* (`[File(id)]`, `[Cmd(id)]`,
-...) meaning "if these change, the service should restart".
+**The contract**: `config_files`, `fetch_source`, and `venv` (`blocks/venv.sls`)
+each return a *list of pyobjects requisite references* (`[File(id)]`,
+`[Cmd(id)]`, ...) meaning "if these change, the service should restart".
 `dispatch` concatenates them and passes them as `systemd_unit`'s `watch=`, folded
 into its `onchanges` alongside the unit file. **No block hardcodes another
 block's state IDs** — adding a config mechanism never requires touching
@@ -202,10 +207,38 @@ still render, just without a service-running requisite. Commands deliberately
 do **not** feed the `changed` list; setup commands are not "new binary/config"
 events and should carry their own `unless`/`onlyif` if they need idempotency.
 
-binsvc is archive-only today. Package fetch support was deliberately removed
-when no planned users remained; if package support returns, it should come back
-as a real fetch registry with the same `changed` contract rather than by
-reusing `version_resolver` for fetch semantics.
+binsvc is no longer archive-only: `fetch_source` (`fetch.sls`) picks between two
+fetch **kinds** via `lib.py`'s `fetch_kind` — `archive` (the original download
+→ cache → optional `tar`-extract shape) and `file` (a bare script or binary
+fetched and compared in place by `File.managed`, no cache hop, no extract).
+Package-manager fetch support was deliberately removed when no planned users
+remained and is a separate, still-open question; if it returns, it should come
+back as a real fetch registry entry with the same `changed` contract rather than
+by reusing `version_resolver` for fetch semantics.
+
+binsvc also runs Python daemons via `venv` (`blocks/venv.sls`), driven by a
+top-level `venv:` key (not `svc.venv` — a PyPI-distributed daemon with no
+`svc` block at all is a valid instance). `{venv_dir}` is a phase-2 placeholder
+(never `{venv}`, which would render the config dict's repr) resolving
+`venv.dir` (default `{install_dir}/venv`). The one `Cmd.run` `unless` guard is
+deliberately a single shell command chained with `&&`, not a list — Salt's
+`unless` treats a list as all-must-pass, and this sidesteps having to reason
+about that semantics. It compares a sha256 digest of the interpreter version +
+`pip_args` + every requirements file's content, computed **on the minion at
+runtime** because a `requirements.txt` can arrive inside a fetched archive
+whose contents render time cannot know. The stamp lives *inside* `venv.dir`
+(so a `--clear` recreate invalidates it automatically) and is written *last*,
+only after a successful `pip install`, so a failed install retries on the next
+run; the *inline* requirements file (from `venv.requirements`) lives in
+`install_dir`, *outside* the venv, so a `--clear` recreate can't eat it
+mid-run. This diverges from `exporter/macro.jinja`'s venv macro in three ways:
+the digest catches version-constraint drift that `exporter`'s
+`pip freeze -r … =~ WARNING` guard (missing-package-only) does not; an
+interpreter-version comparison catches a distro `python3` upgrade silently
+breaking every venv on the host; and `venv.python` is always used explicitly
+(stock Debian has no bare `python`). The venv is root-owned, like fetched
+program files — the same "a compromised service can't rewrite its own binary"
+rule (§10); writable state still goes through `svc.data_dirs`.
 
 ## 7. Multi-instance
 
@@ -359,8 +392,8 @@ production path — these presets are not replacements or a migration invitation
   self-healing caveat; everything else (`name`/`grain_id`/`install_dir`/…)
   resolves regardless. For values outside the placeholder set, use Salt jinja in
   pillar.
-- **Program files root-owned; writable state via `svc.data_dirs`.** `fetch_archive`
-  extracts as root (`--no-same-owner`), so program files are root-owned — a
+- **Program files root-owned; writable state via `svc.data_dirs`.** `fetch_source`'s
+  archive path extracts as root (`--no-same-owner`), so program files are root-owned — a
   compromised service can't rewrite its own binary. Dirs the service must write
   into are declared in `svc.data_dirs` and made service-user-owned (recursively,
   to fix ownership of contents the archive shipped) after extraction. Don't
@@ -379,7 +412,13 @@ production path — these presets are not replacements or a migration invitation
   re-extracts every run, so the extract reports "changed" and the service
   restarts every apply. Every bundled preset declares one explicitly; binaries
   with no version flag can point it at a stamp file or any command (exit 0 = up
-  to date), or omit it to accept restart-on-every-apply.
+  to date), or omit it to accept restart-on-every-apply. `svc.version_stamp:
+  true` gets a stamp file for free instead of hand-rolling one: `fetch_source`
+  writes `{install_dir}/.binsvc_version` after a successful extract
+  (`onchanges`-gated, so a failed extract never marks a version as installed)
+  and, absent an explicit `version_check`, compares against it. Generic
+  replacement for `exporter`'s `.salt_version_info` — makes a source tarball
+  with no `binary --version` to interrogate idempotent too.
 - **Version resolution is cached on disk at render time, with a NAT caveat.**
   Resolution runs during rendering, so a many-minion highstate (or repeated
   salt-ssh runs) would otherwise hit a fresh API request each time and blow the

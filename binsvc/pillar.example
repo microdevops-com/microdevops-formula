@@ -21,8 +21,13 @@
 #      known. scrape stanzas are expanded by this same pass, in producer scope.
 #   3. if `scrape_collect` is set, the (now-expanded) jobs from matching
 #      instances' `scrape` stanzas are appended to the configured config path.
-#   4. building blocks run in order: user/ssh, config, svc (fetch), commands(pre),
-#      systemd, commands(post), nginx
+#   4. building blocks run in order: user/ssh, install_dir, config, svc (fetch),
+#      venv, commands(pre), systemd, commands(post), nginx. install_dir runs
+#      ahead of config on purpose (a config entry with makedirs would otherwise
+#      create the install dir root-owned before the service user's ownership
+#      lands), and even without a svc block at all - e.g. a venv-only instance.
+#      venv runs after fetch - its requirements_files may point at a
+#      requirements.txt that arrives inside the fetched archive.
 #
 # Available placeholders (anywhere in an instance's settings):
 #   {name}          instance key (the dict key under binsvc:instances)
@@ -39,6 +44,12 @@
 #   {args}          svc.args rendered with svc.args_prefix plus literal string tokens (2nd pass only)
 #   {user_name}     resolved user.name, default "root" (2nd pass only)
 #   {user_group}    resolved user.group, default {user_name} (2nd pass only)
+#   {svc_target}    resolved fetch destination when svc.source is set, else ""
+#                   (2nd pass only) - what makes ExecStart: "... {svc_target}"
+#                   work for a kind: file instance without repeating the path
+#   {venv_dir}      resolved venv.dir, e.g. "{install_dir}/venv" (2nd pass
+#                   only) - NOT {venv}, which would render the whole venv
+#                   config dict's repr
 #   {<global>}      any key under binsvc:globals (see below)
 
 
@@ -254,3 +265,52 @@ binsvc:
           ExecStart: "{exec} {args}"
           User: "{user_name}"
           Group: "{user_group}"
+
+    # --- a bare Python script, fetched as a plain file (kind: file) ---
+    # No tarball, no tar-extract: svc.source's basename (.py) isn't a
+    # recognized archive suffix, so fetch_kind infers "file" - a single
+    # File.managed that compares content hashes itself, no cache hop. Useful
+    # for a script served straight from salt:// or a raw URL. This instance
+    # runs under the system python3 for brevity; see the `redis_check`
+    # instance below for a managed venv (top-level `venv:` key, TODO.md item
+    # 17) so ExecStart doesn't have to rely on the system python3 and its
+    # already-installed packages.
+    plain_script:
+      type: plain_script
+      install_dir: "/opt/services/{type}/{name}"
+      user:
+        manage: true
+        name: plain_script
+        group: plain_script
+      svc:
+        source: "https://example.com/example_script.py"
+        # kind: file is inferred here; set it explicitly if a source's
+        # basename could be mistaken for something else.
+        # target defaults to "{install_dir}/example_script.py" (the
+        # source's basename) - pin a friendlier on-disk name instead:
+        target: "{install_dir}/example_script.py"
+      systemd:
+        Service:
+          Type: simple
+          # {svc_target} == svc.target above, resolved - avoids repeating the
+          # path here.
+          ExecStart: "/usr/bin/python3 {svc_target}"
+          User: "{user_name}"
+          Group: "{user_group}"
+          WorkingDirectory: "{install_dir}"
+          Restart: on-failure
+          RestartSec: 10
+
+    # --- redis_check: a Python daemon under a binsvc-managed venv ---
+    # This is the whole point of the venv block (TODO.md item 17): the preset
+    # (presets/redis_check.yaml) supplies kind: file fetch + venv.requirements
+    # + the systemd unit; the instance only sets svc.source and whatever
+    # redis_check.yaml.example keys it needs to override.
+    redis_check:
+      preset: redis_check
+      install_dir: "/opt/services/{type}/{name}"
+      config:
+        redis_check.yaml:
+          contents:
+            alert:
+              client: acme

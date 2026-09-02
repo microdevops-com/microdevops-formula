@@ -10,9 +10,11 @@
 import logging
 import yaml
 
-from salt://binsvc/lib.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances
+from salt://binsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances
 
-from salt://binsvc/blocks/fetch_archive.sls import fetch_archive
+from salt://binsvc/blocks/install_dir.sls import install_dir
+from salt://binsvc/blocks/fetch.sls import fetch_source
+from salt://binsvc/blocks/venv.sls import python_venv
 from salt://binsvc/blocks/user_ssh.sls import user_and_ssh
 from salt://binsvc/blocks/config_file.sls import config_files
 from salt://binsvc/blocks/commands.sls import run_commands
@@ -67,19 +69,25 @@ def resolve_latest_version(svc_settings):
 
 def dispatch(prefix, settings):
     """Run the building blocks an instance's merged settings call for, in a
-    fixed order: user/ssh and config first (the fetch step's install_dir owner
-    and systemd's restart-on-change both depend on them), then the fetch
-    archive fetch, pre-systemd commands, systemd, post-systemd commands, then
-    nginx. Fetch/config changes are wired via the `changed` requisite-list
-    contract so systemd restarts whenever the binary or config actually
+    fixed order: user/ssh, then install_dir (ahead of config - a config entry
+    with makedirs would otherwise create the install dir root-owned before the
+    service user's ownership is applied), then config, then the svc fetch, then
+    venv (after fetch - venv.requirements_files may point at a
+    requirements.txt that arrives inside the fetched archive), pre-systemd
+    commands, systemd, post-systemd commands, then nginx. Fetch/config/venv
+    changes are wired via the `changed` requisite-list contract so systemd
+    restarts whenever the binary, config, or requirement set actually
     changed."""
 
     user_and_ssh(prefix, settings)
+    install_dir(prefix, settings)
     changed = list(config_files(prefix, settings) or [])
 
     svc = settings.get("svc")
     if svc:
-        changed = list(fetch_archive(prefix, settings) or []) + changed
+        changed = list(fetch_source(prefix, settings) or []) + changed
+
+    changed = list(python_venv(prefix, settings) or []) + changed
 
     run_commands(prefix, settings, phase="pre", require=changed)
 
@@ -112,7 +120,7 @@ global_vars = pillar("binsvc:globals", {})
 # Placeholder names injected into the phase-2 scope (see below). Reserved here so
 # a global can't pass the phase-1 collision check and then be silently
 # overwritten in the second expand pass.
-PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group")
+PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir")
 
 # Optional `binsvc:filter` (operator-typed, usually on the CLI) scopes this apply
 # to a subset - e.g. pillar='{binsvc: {filter: "name: vm* *gra*"}}'. It gates the
@@ -176,7 +184,20 @@ for instance_name, instance in instances.items():
                        exec=svc.get("exec", ""),
                        args=join_args(svc.get("args", []), svc.get("args_prefix", "-") or "-"),
                        user_name=user.get("name", "root"),
-                       user_group=user.get("group", user.get("name", "root")))
+                       user_group=user.get("group", user.get("name", "root")),
+                       # Guarded on svc.source so a no-svc (or not-yet-resolved,
+                       # e.g. grafana's intentionally-empty source pre-resolve)
+                       # instance gets "" instead of fetch_target's ValueError.
+                       # {svc_target} is what makes a plaintext-script instance
+                       # near zero-config: ExecStart: "{venv_dir}/bin/python {svc_target}".
+                       svc_target=fetch_target(svc, settings.get("install_dir", "")) if svc.get("source") else "",
+                       # {venv_dir}, never {venv}: expand folds top-level settings
+                       # keys into scope, so {venv} would render the config dict's
+                       # repr - same reason svc exposes {exec} rather than {svc}.
+                       # Already resolved by phase 1 (venv.dir's default
+                       # "{install_dir}/venv" self-resolves the same way
+                       # install_dir/svc.source do - see WHITEPAPER.md §5).
+                       venv_dir=(settings.get("venv") or {}).get("dir", ""))
     settings = expand(settings, extra_scope)
 
     expanded[instance_name] = settings

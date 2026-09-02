@@ -1,0 +1,72 @@
+# redis_check - asyncio Redis/Valkey PING-latency checker daemon. Reports slow
+# responses, timeouts, and connection/auth failures through notify_devilry
+# (-> alerta). First real consumer of the venv block (see WHITEPAPER.md §6,
+# TODO.md item 17): a single plaintext script (kind: file, no tarball) run
+# under a managed venv rather than the system python3's already-installed
+# packages.
+#
+# svc.source is intentionally empty here: unlike the GitHub/Grafana-resolved
+# presets, there is no release to resolve - the operator hosts the script
+# wherever they like. Instances set svc.source (see pillar.example). Prefer
+# salt://... (git-versioned, fileserver-hashed, no egress) over a raw URL,
+# which is unverified (skip_verify) unless svc.source_hash is set too.
+
+type: redis_check
+
+svc:
+  source: "salt://binsvc/files/scripts/redis_check/redis_check.py"
+  target: "{install_dir}/redis_check.py"
+  mode: "755"
+  # Same convention as every other preset: declare the command line once here
+  # and let systemd.Service.ExecStart reference it as "{exec} {args}". The
+  # nested placeholders resolve fine - expand() re-folds its own output each
+  # round, so {exec} -> "{venv_dir}/bin/python {svc_target}" -> concrete paths.
+  exec: "{venv_dir}/bin/python {svc_target}"
+  # redis_check.py uses long options (--config, --print, --check-config), so
+  # structured args render as "--key=value" rather than the default "-key=value".
+  args_prefix: "--"
+  args: []
+
+venv:
+  manage: true
+  requirements:
+    - "redis>=4.2"
+    - "PyYAML>=5.0"
+
+config:
+  redis_check.yaml:
+    # redis_check.py defaults --config to "<script's own dir>/redis_check.yaml",
+    # which is exactly {install_dir}/redis_check.py's directory - so no
+    # --config flag is needed in ExecStart below.
+    name: "{install_dir}/{confname}"
+    format: yaml
+    mode: "640"
+    contents:
+      redis:
+        uri: "redis://127.0.0.1:6379/0"
+      ops:
+        notify_devilry_path: /opt/sysadmws/notify_devilry/notify_devilry.py
+
+systemd:
+  manage: true
+  Unit:
+    Description: "binsvc: redis_check ({name})"
+    After:
+      - network-online.target
+      - redis-server.service
+    Wants: network-online.target
+  Service:
+    Type: simple
+    ExecStart: "{exec} {args}"
+    Environment:
+      - PYTHONUNBUFFERED=1
+      # This preset runs as root (defaults.yaml's user.manage: false), matching
+      # how the daemon is deployed by hand today - it shells out to
+      # notify_devilry. Byte-compiling is off to keep __pycache__ out of the
+      # install dir, and because it would fail outright for an operator who
+      # layers user.manage: true on top: a non-root service user cannot write
+      # into the root-owned install dir.
+      - PYTHONDONTWRITEBYTECODE=1
+    Restart: on-failure
+    RestartSec: 10
+    WorkingDirectory: "{install_dir}"

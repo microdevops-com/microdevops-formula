@@ -62,8 +62,13 @@ For every entry under `binsvc:instances`:
      `systemd.Service.ExecStart: "{exec} {args}"` just works, without resorting
      to fragile nested-placeholder syntax like `{svc[exec]}`.
 4. **Dispatch** the building blocks that apply, in a fixed order:
-   `user_ssh` -> `config_file` -> `fetch_archive` -> `commands(pre)` ->
-   `systemd_unit` -> `commands(post)` -> `nginx_vhost`.
+   `user_ssh` -> `install_dir` -> `config_file` -> `fetch` -> `venv` ->
+   `commands(pre)` -> `systemd_unit` -> `commands(post)` -> `nginx_vhost`.
+   `install_dir` runs ahead of `config_file` on purpose: a config entry with
+   `makedirs: True` would otherwise create the install dir root-owned before
+   the service user's ownership is applied. `venv` runs after `fetch`: its
+   `venv.requirements_files` may point at a `requirements.txt` that arrives
+   inside the fetched archive.
    An optional `binsvc:filter` (usually typed on the CLI, e.g.
    `pillar='{binsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'`) scopes
    the apply to a subset: semicolon-separated `name`/`preset` glob clauses, union
@@ -72,11 +77,11 @@ For every entry under `binsvc:instances`:
    only the **resolution** (step 2) and **dispatch** (step 4). Manual scoping,
    not change detection: a new exporter's job reaches vmagent only when vmagent
    is also in scope.
-   `fetch_archive` and `config_file` each return the list of pyobjects requisite
-   references that mean "the binary/config changed"; `dispatch`
-   threads that list into `systemd_unit`'s `watch`, so the service restarts
-   exactly when it needs to - without any block hardcoding another block's
-   state IDs.
+   `fetch`, `config_file`, and `venv` each return the list of pyobjects
+   requisite references that mean "the binary/config/requirement set
+   changed"; `dispatch` threads that list into `systemd_unit`'s `watch`, so
+   the service restarts exactly when it needs to - without any block
+   hardcoding another block's state IDs.
 
 Resolution runs in two passes over `binsvc:instances`: **pass 1** merges and
 expands (steps 1-3) *every* instance into a fully formatted map; **pass 2**
@@ -105,7 +110,9 @@ only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 
 | block | settings key | does |
 |---|---|---|
-| `fetch_archive` | `svc` | download an archive or bare binary, optionally `tar`-extract and/or `move` it into `install_dir`, ensure it's executable; make any `svc.data_dirs` service-user-owned for writable state (program files stay root-owned). Re-extract is guarded by an optional `svc.version_check` `unless` command — **no default**, so without it the archive re-extracts (and the service restarts) every run |
+| `install_dir` | `install_dir` | create/own `install_dir` ahead of `config_file`/`fetch` - no-op when `install_dir` is unset; runs even without a `svc` block (e.g. a venv-only instance still needs somewhere to live) |
+| `fetch` | `svc` | fetch `svc.source` per its detected **kind**: `archive` (download, cache, optionally `tar`-extract and/or `move` it into `install_dir`, ensure it's executable) or `file` (a single script/bare binary compared as-is via `File.managed` - no cache hop, no extract). Kind is `svc.kind` if set, else inferred: `svc.tar` present or a recognized archive suffix (`.tar.gz`, `.tgz`, `.tar.bz2`, `.tbz2`, `.tar.xz`, `.txz`, `.tar.zst`, `.tar`) -> `archive`; an unsupported archive suffix (`.zip`, `.7z`, `.rar`, `.gz`, `.bz2`, `.xz`) raises rather than silently mis-fetching; otherwise -> `file`. Either kind: make any `svc.data_dirs` service-user-owned for writable state (program files stay root-owned). Archive re-extract is guarded by an optional `svc.version_check` `unless` command, or by `svc.version_stamp` (writes `.binsvc_version` into `install_dir` after a successful extract) as a generic fallback guard — **no default**, so with neither set the archive re-extracts (and the service restarts) every run. The `file` kind needs no guard at all: `File.managed` reports `changed` only when the fetched content actually differs |
+| `venv` | `venv` | create/maintain a Python venv (`venv.dir`, default `{install_dir}/venv`) matching `venv.requirements`/`venv.requirements_files` - no-op unless `venv.manage`; runs after `fetch` so a requirements file shipped inside a fetched archive is already on disk. A single `Cmd.run` `unless`-guarded by a sha256 digest (interpreter version + `pip_args` + requirements file contents) computed on the minion at runtime, stamped inside `venv.dir` only on a successful install so a failed run retries. `venv.recreate_on_change` (default true) rebuilds with `--clear` whenever the requirement set changes; false only forces a fresh venv on a missing/wrong-version interpreter and otherwise reuses it. Root-owned like fetched program files; writable state still goes through `svc.data_dirs` |
 | `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage` |
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
 | `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets |
@@ -140,7 +147,8 @@ that block's globals during the block import itself.
 ## Presets (`presets/*.yaml`)
 
 Bundled, ready-to-use type configs (`vlserver`, `vlagent`, `vmserver`,
-`vmagent`, `vmauth`, `exporter_node`, `exporter_mysqld`, `grafana`) loaded lazily and cached per Salt run, deep-merged with optional
+`vmagent`, `vmauth`, `exporter_node`, `exporter_mysqld`, `exporter_redis`,
+`grafana`, `redis_check`) loaded lazily and cached per Salt run, deep-merged with optional
 `binsvc:presets:<name>` pillar overrides - so instances only need to specify
 what differs from the bundled defaults (typically just `install_dir`, `user`,
 `svc.version`, and `nginx`).

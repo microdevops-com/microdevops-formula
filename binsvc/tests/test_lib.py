@@ -13,6 +13,9 @@ from lib import (
     deep_format, expand, merge_globals,
     merge,
     normalize_osarch, archive_path, tar_extract_command,
+    source_basename, fetch_kind, fetch_target,
+    venv_requirement_paths, venv_digest_command, venv_guard_command, venv_build_command,
+    VENV_INLINE_REQUIREMENTS_NAME, VENV_STAMP_NAME,
     repo_from_source, repo_url, latest_from_release, resolve_latest,
     GITHUB_RELEASES_URL, GITHUB_RELEASES_LIST_URL, GRAFANA_VERSIONS_URL, GRAFANA_PACKAGES_URL,
     cached_get_json, _cache_path,
@@ -68,7 +71,7 @@ def test_expand_does_not_mutate_input():
 
 
 def test_expand_resolves_data_dirs_list_through_install_dir():
-    # fetch_archive's svc.data_dirs lean on expand resolving a list of strings
+    # fetch's archive-path svc.data_dirs lean on expand resolving a list of strings
     # that reference {install_dir}, which itself references {name} - so it needs
     # the multi-round self-reference folding, not just a single pass.
     settings = {
@@ -334,6 +337,186 @@ def test_tar_extract_command_includes_optional_args_and_unpack():
     assert tar_extract_command("/cache/a.tar.gz", "/opt/app", args="--strip-components=1", unpack="binary") == (
         "tar --strip-components=1 --no-same-owner --directory /opt/app --extract --file /cache/a.tar.gz binary"
     )
+
+
+# ── fetch kind/target ────────────────────────────────────────────────────────
+
+def test_source_basename_strips_query_and_fragment():
+    assert source_basename("https://x/y/app.tar.gz?token=1") == "app.tar.gz"
+    assert source_basename("https://x/y/app.tar.gz#frag") == "app.tar.gz"
+    assert source_basename("salt://my-formula/files/script.py") == "script.py"
+
+
+def test_fetch_kind_recognizes_archive_suffixes():
+    for suffix in (".tar.gz", ".tgz", ".tar"):
+        assert fetch_kind({"source": "https://x/app" + suffix}) == "archive"
+
+
+def test_fetch_kind_defaults_to_file_for_scripts_and_extensionless_and_randomized_names():
+    assert fetch_kind({"source": "https://x/redis_check.py"}) == "file"
+    assert fetch_kind({"source": "https://x/my_binary"}) == "file"
+    assert fetch_kind({"source": "https://x/redis_check.kgqGOxiz.py"}) == "file"
+
+
+def test_fetch_kind_explicit_kind_wins_over_tar_and_suffix():
+    assert fetch_kind({"kind": "file", "tar": {}, "source": "https://x/app.tar.gz"}) == "file"
+    assert fetch_kind({"kind": "archive", "source": "https://x/script.py"}) == "archive"
+
+
+def test_fetch_kind_invalid_explicit_kind_raises():
+    with pytest.raises(ValueError, match="svc.kind"):
+        fetch_kind({"kind": "zip"})
+
+
+def test_fetch_kind_tar_present_wins_over_non_archive_suffix():
+    assert fetch_kind({"tar": {}, "source": "https://x/redis_check.py"}) == "archive"
+
+
+def test_fetch_kind_unsupported_suffix_raises_naming_it():
+    with pytest.raises(ValueError, match=r"\.zip"):
+        fetch_kind({"source": "https://x/app.zip"})
+
+
+def test_fetch_kind_bare_gz_raises_but_tar_gz_does_not():
+    with pytest.raises(ValueError, match=r"\.gz"):
+        fetch_kind({"source": "https://x/app.gz"})
+    assert fetch_kind({"source": "https://x/app.tar.gz"}) == "archive"
+
+
+def test_fetch_kind_query_string_stripped_before_suffix_check():
+    assert fetch_kind({"source": "https://x/y/app.tar.gz?token=1"}) == "archive"
+
+
+def test_fetch_target_defaults_to_install_dir_plus_basename():
+    svc = {"source": "https://x/y/redis_check.py?token=1"}
+    assert fetch_target(svc, "/opt/services/redis_check/main") == (
+        "/opt/services/redis_check/main/redis_check.py"
+    )
+
+
+def test_fetch_target_uses_explicit_target():
+    svc = {"source": "https://x/y/redis_check.py", "target": "/opt/app/bin/redis_check.py"}
+    assert fetch_target(svc, "/opt/app") == "/opt/app/bin/redis_check.py"
+
+
+def test_fetch_target_raises_on_empty_source():
+    with pytest.raises(ValueError, match="svc.source is empty"):
+        fetch_target({}, "/opt/app")
+
+
+# ── venv ──────────────────────────────────────────────────────────────────────
+
+def test_venv_requirement_paths_inline_only():
+    paths = venv_requirement_paths({"requirements": ["redis>=4.2"]}, "/opt/services/redis_check")
+    assert paths == ["/opt/services/redis_check/" + VENV_INLINE_REQUIREMENTS_NAME]
+
+
+def test_venv_requirement_paths_files_only():
+    paths = venv_requirement_paths({"requirements_files": ["/opt/app/requirements.txt"]}, "/opt/app")
+    assert paths == ["/opt/app/requirements.txt"]
+
+
+def test_venv_requirement_paths_inline_before_files():
+    paths = venv_requirement_paths(
+        {"requirements": ["redis>=4.2"], "requirements_files": ["/opt/app/requirements.txt"]},
+        "/opt/app")
+    assert paths == [
+        "/opt/app/" + VENV_INLINE_REQUIREMENTS_NAME,
+        "/opt/app/requirements.txt",
+    ]
+
+
+def test_venv_requirement_paths_raises_when_both_empty():
+    with pytest.raises(ValueError, match="nothing to install"):
+        venv_requirement_paths({}, "/opt/app")
+
+
+def test_venv_requirement_paths_strips_trailing_slash_on_install_dir():
+    paths = venv_requirement_paths({"requirements": ["redis>=4.2"]}, "/opt/app/")
+    assert paths == ["/opt/app/" + VENV_INLINE_REQUIREMENTS_NAME]
+
+
+def test_venv_digest_command_contains_all_paths_in_order():
+    command = venv_digest_command(["/opt/app/a.txt", "/opt/app/b.txt"], "python3", "")
+    assert "cat /opt/app/a.txt /opt/app/b.txt" in command
+    assert command.index("a.txt") < command.index("b.txt")
+    assert command.strip().endswith("sha256sum | cut -d' ' -f1")
+
+
+def test_venv_digest_command_includes_python_version_and_pip_args():
+    command = venv_digest_command(["/opt/app/a.txt"], "python3.11", "--no-cache-dir")
+    assert "python3.11 -V" in command
+    assert "'--no-cache-dir'" in command
+
+
+def test_venv_guard_command_is_a_single_shell_command():
+    # ONE command chained with && - not a list. Salt's `unless` treats a list
+    # as all-must-pass; a hand-rolled list here would silently change semantics.
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3"}
+    guard = venv_guard_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/" + VENV_STAMP_NAME)
+    assert isinstance(guard, str)
+    assert "\n" not in guard
+    assert guard.count("&&") == 2
+
+
+def test_venv_guard_command_checks_venv_interpreter_and_stamp():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3.11"}
+    guard = venv_guard_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/stamp")
+    assert "[ -x /opt/app/venv/bin/python ]" in guard
+    assert "/opt/app/venv/bin/python -V" in guard
+    assert "python3.11 -V" in guard
+    assert "cat /opt/app/venv/stamp" in guard
+
+
+def test_venv_build_command_recreate_on_change_true_always_clears():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3", "recreate_on_change": True}
+    build = venv_build_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/stamp")
+    lines = build.splitlines()
+    assert lines[0] == "set -eu"
+    assert lines[1] == "python3 -m venv --clear /opt/app/venv"
+
+
+def test_venv_build_command_recreate_on_change_false_guards_the_create_line():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3", "recreate_on_change": False}
+    build = venv_build_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/stamp")
+    create_line = build.splitlines()[1]
+    assert "--clear" not in create_line
+    assert "[ -x /opt/app/venv/bin/python ]" in create_line
+    assert create_line.endswith("|| python3 -m venv /opt/app/venv")
+
+
+def test_venv_build_command_upgrade_pip_adds_a_line():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3", "upgrade_pip": True}
+    build = venv_build_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/stamp")
+    assert "/opt/app/venv/bin/pip install --require-virtualenv -U pip" in build
+
+
+def test_venv_build_command_upgrade_pip_default_omits_the_line():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3"}
+    build = venv_build_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/stamp")
+    assert "-U pip" not in build
+
+
+def test_venv_build_command_installs_every_requirement_path():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3"}
+    build = venv_build_command(venv_conf, ["/opt/app/a.txt", "/opt/app/b.txt"], "/opt/app/venv/stamp")
+    assert "-r /opt/app/a.txt -r /opt/app/b.txt" in build
+
+
+def test_venv_build_command_pip_args_reach_the_install_line_and_the_digest():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3", "pip_args": "--no-cache-dir"}
+    build = venv_build_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/stamp")
+    assert "pip install --require-virtualenv --no-cache-dir -r /opt/app/reqs.txt" in build
+    assert "'--no-cache-dir'" in build  # the digest line
+
+
+def test_venv_build_command_stamps_last_and_only_after_a_successful_install():
+    venv_conf = {"dir": "/opt/app/venv", "python": "python3"}
+    build = venv_build_command(venv_conf, ["/opt/app/reqs.txt"], "/opt/app/venv/stamp")
+    lines = build.splitlines()
+    assert lines[-1].endswith("> /opt/app/venv/stamp")
+    install_idx = next(i for i, line in enumerate(lines) if "pip install --require-virtualenv" in line)
+    assert install_idx < len(lines) - 1
 
 
 # ── release ───────────────────────────────────────────────────────────────────

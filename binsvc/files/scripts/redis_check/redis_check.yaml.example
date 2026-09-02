@@ -1,0 +1,43 @@
+# redis_check.yaml — all keys optional; the shown values are the built-in defaults.
+# Copy to redis_check.yaml next to redis_check.py and override what you need.
+
+redis:
+  # Password-protected valkey/redis on the same host:
+  #   redis://:MYPASSWORD@127.0.0.1:6379/0
+  uri: "redis://127.0.0.1:6379/0"
+  connect_timeout: 1.0      # seconds, TCP connect timeout
+  socket_timeout: 2.0       # seconds, hard PING timeout -> counts as "timeout" reason
+
+probe:
+  ping_delay: 1.0           # seconds between the start of each PING
+  command: "PING"           # probe command (PING is the validated canary)
+  # Latency -> severity buckets. The key suffix is the alerta severity name, so
+  # use whatever names your alerta expects (warning/minor/major/critical/...).
+  # The highest bucket whose latency the rtt meets/exceeds wins.
+  # Set a bucket to null to disable it, e.g. `threshold_ms_warning: null`.
+  threshold_ms_warning: 250.0 # rtt >= 250ms -> severity "warning"
+  threshold_ms_critical: 500.0 # rtt >= 500ms -> severity "critical"
+  threshold_ms_fatal: 1000.0 # rtt >= 1000ms -> severity "fatal"
+  # Severities for non-latency failures:
+  timeout_severity: "critical"   # hard PING timeout (socket_timeout exceeded)
+  conn_error_severity: "critical"
+  auth_error_severity: "critical"
+
+reporting:
+  report_interval: 10.0     # seconds between reporter ticks (queue drain)
+  heartbeat_interval: 60.0  # re-send the active state at least this often
+  recovery_hold: 300.0      # seconds error-free before declaring ok (anti-flap)
+
+alert:
+  service: "database"
+  environment: "prod"
+  client: null              # optional, routes to per-client alerta/telegram
+  group: null               # default: this host's fqdn
+  resource: null            # default: "{fqdn}:redis:{port}"
+  ok_severity: "ok"         # severity for the healthy/recovered alert (ok/normal/cleared)
+  timeout: 900              # alerta auto-clear timeout; keep > heartbeat_interval
+
+ops:
+  notify_devilry_path: "/opt/sysadmws/notify_devilry/notify_devilry.py"
+  log_file: null            # null -> log to stderr (journald under systemd)
+  log_level: "INFO"
