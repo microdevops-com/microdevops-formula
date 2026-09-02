@@ -21,6 +21,10 @@
 #   {args}          svc.args rendered with svc.args_prefix, or raw string args
 #   {user_name}     resolved user.name, default root
 #   {user_group}    resolved user.group, default {user_name}
+#   {svc_target}    resolved fetch destination (kind: file's target, or the
+#                   would-be one) when svc.source is set, else ""
+#   {venv_dir}      resolved venv.dir, e.g. "{install_dir}/venv" - NOT {venv},
+#                   which would render the whole venv config dict's repr
 #   plus any key from binsvc:globals (top-level pillar), e.g. {foo} below
 
 type: generic
@@ -67,9 +71,18 @@ user:
 #     hosts:
 #       - "github.com:22:ssh-ed25519:AAAA..."
 
-# Archive/binary fetch. Declare this block when the instance should download
-# and install a binary. `version_resolver` controls only how version/source are
-# resolved; actual fetching is always archive/file based.
+# Fetch. Declare this block when the instance should download and install a
+# binary, archive, or bare script. `version_resolver` controls only how
+# version/source are resolved; fetching itself picks one of two KINDS.
+#
+# `svc.kind` (optional) picks the fetch strategy explicitly: "archive" or
+# "file". Left unset, it's inferred: `svc.tar` present, or the source's
+# basename ends in a recognized archive suffix (.tar.gz/.tgz/.tar.bz2/.tbz2/
+# .tar.xz/.txz/.tar.zst/.tar) -> archive; a *recognized-but-unsupported*
+# archive suffix (.zip/.7z/.rar/.gz/.bz2/.xz - binsvc extracts with `tar` only)
+# raises rather than silently mis-fetching; otherwise -> file. Set svc.kind
+# explicitly whenever the inference could be ambiguous (e.g. a URL with no
+# extension that is actually an archive).
 #
 # svc:
 #   # github: resolves `version: latest` via GitHub /releases/latest and needs
@@ -84,14 +97,17 @@ user:
 #   # branch instead of the highest current version.
 #   # version_resolver: github_versionsort
 #
-#   # Optional integrity check. Without it, fetch_archive sets skip_verify=True.
-#   # May be a sha256=... value or a checksum-file URL supported by Salt.
+#   # Optional integrity check. Without it, fetch sets skip_verify=True. May be
+#   # a sha256=... value or a checksum-file URL supported by Salt. Works for
+#   # both kinds.
 #   source_hash: "https://github.com/owner/repo/releases/download/{tag}/app-linux-{osarch}-{tag}_checksums.txt"
 #
 #   # grafana: resolves latest/concrete versions through grafana.com packages API
 #   # and fills source/source_hash itself. Keep source empty/omitted there.
 #   # version_resolver: grafana
 #   # version: latest
+#
+#   # --- kind: archive (this preset's default shape below) ---
 #
 #   # If omitted, the downloaded file itself is treated as the executable input.
 #   tar:
@@ -105,13 +121,28 @@ user:
 #     src: "{install_dir}/app"
 #     dst: "{install_dir}/bin/app"
 #
-#   # First token is used for executable chmod and as {binary} in version_check.
+#   # First token is used for executable chmod and as {binary} in version_check,
+#   # unless svc.executable overrides it (see below).
 #   exec: "{install_dir}/bin/app"
 #
 #   # Opt-in idempotency guard for extraction. Exit 0 means "already current".
-#   # With no version_check, extraction reports changed every run and systemd
-#   # restarts every run. {binary} and {file} are filled by fetch_archive.
+#   # With neither version_check nor version_stamp, extraction reports changed
+#   # every run and systemd restarts every run. {binary} and {file} are filled
+#   # by fetch; the rest ({tag}/{install_dir}/...) is already resolved.
 #   version_check: "[[ $({binary} -version 2>&1) =~ {tag} ]]"
+#
+#   # Generic idempotency fallback for binaries with no `--version` flag (e.g.
+#   # a source tarball with only scripts): when set and version_check is NOT,
+#   # fetch itself writes {install_dir}/.binsvc_version after a successful
+#   # extract and compares against it on the next run - no hand-rolled stamp
+#   # command needed. Ignored (and irrelevant) when version_check is set.
+#   # version_stamp: true
+#
+#   # Path to chmod 755 after fetching. Defaults to exec's first token; a
+#   # Python-from-tarball instance (exec starting with "{venv_dir}/bin/python")
+#   # needs this explicitly false/null, since that first token doesn't exist
+#   # yet at fetch time and would hard-fail the chmod.
+#   # executable: false
 #
 #   # Args may be a top-level raw string, mapping, or ordered list mixing
 #   # single-key mappings with literal string tokens such as "--livereload".
@@ -129,9 +160,69 @@ user:
 #     - storage.path: "{install_dir}/data"
 #
 #   # Writable dirs shipped or needed by the service. These become service-user
-#   # owned after extraction; program files stay root-owned.
+#   # owned after fetching (either kind); program files stay root-owned.
 #   data_dirs:
 #     - "{install_dir}/data"
+
+# --- kind: file - a single script or bare binary, no archive at all ---
+#
+# svc:
+#   source: "https://example.com/downloads/redis_check.py"   # or salt://...
+#   # Destination path. Defaults to "{install_dir}/<source's basename>" when
+#   # omitted - set it explicitly when the source's basename isn't the name you
+#   # want on disk.
+#   target: "{install_dir}/redis_check.py"
+#   mode: "755"          # default 755
+#   # No version_check/version_stamp needed for kind: file - File.managed
+#   # compares content hashes itself and reports "changed" only when the
+#   # fetched content actually differs. tar/move/version_check/version_stamp/
+#   # executable are archive-only and fetch raises if any is set here.
+
+# Managed Python venv, for a Python-based daemon. Top-level `venv:` key (not
+# svc.venv) - a PyPI-distributed daemon (requirements: [some-exporter], no
+# svc block at all) is a valid instance. Runs after fetch in dispatch, so
+# requirements_files can point at a requirements.txt shipped inside a fetched
+# archive. See presets/redis_check.yaml for a real consumer.
+#
+# venv:
+#   manage: true
+#   dir: "{install_dir}/venv"     # default; self-resolves through install_dir
+#   python: python3               # python3.11, a deadsnakes build, ... - never
+#                                  # bare "python", stock Debian has none
+#   pkgs: [python3-venv]          # add python3-dev/build-essential for C exts
+#   recreate_on_change: true      # rebuild with --clear when requirements change;
+#                                  # false only forces a fresh venv on a
+#                                  # missing/wrong-version interpreter and
+#                                  # otherwise reuses it (pip install in place)
+#   upgrade_pip: false
+#   pip_args: ""                  # --no-cache-dir, --index-url, ...
+#   requirements:                 # inline; written to {install_dir}/.binsvc-requirements.txt
+#     - "redis>=4.2"
+#     - "PyYAML>=5.0"
+#   requirements_files: []        # e.g. ["{install_dir}/requirements.txt"] shipped in an archive
+#
+# The command line then follows the same convention as every other preset -
+# declared once as svc.exec, referenced by ExecStart. Nested placeholders are
+# fine: expand() re-folds its own output each round, so {exec} resolves to
+# "{venv_dir}/bin/python {svc_target}" and then to concrete paths.
+#
+# svc:
+#   exec: "{venv_dir}/bin/python {svc_target}"
+# systemd:
+#   Service:
+#     ExecStart: "{exec} {args}"
+#
+# (Inlining "{venv_dir}/bin/python {svc_target}" straight into ExecStart also
+# works, but skips svc.args and breaks the one-place-for-the-command-line
+# convention - prefer svc.exec.)
+#
+# Idempotency: a single Cmd.run `unless`-guarded by a sha256 digest of the
+# interpreter version + pip_args + every requirements file's content, computed
+# on the MINION at runtime (not render time, since a requirements.txt can
+# arrive inside an archive). Stamped inside {venv_dir} only after a successful
+# install, so a failed pip install leaves no stamp and retries next run. The
+# venv is root-owned, like fetched program files; writable state still goes
+# through svc.data_dirs.
 
 # Config files. Each named entry renders one File.managed and contributes to the
 # systemd restart watch list. Use either `contents` or `source`. The entry key is

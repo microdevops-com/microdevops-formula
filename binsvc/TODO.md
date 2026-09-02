@@ -86,6 +86,85 @@ flips to binsvc-managed systemd (tarball has no postinst, so `systemd.manage`
 goes true + the preset gains a `systemd:` section); WHITEPAPER §4/§8/§10 + readme
 need updating *as part of the change* (don't pre-edit — keep doc/code in sync).
 
+### [x] 16. Split `fetch_archive` into `install_dir` + kind-aware `fetch`
+**Resolved 2026-08-20.**
+
+**Why:** binsvc assumed every install was "download a tarball and extract it."
+That assumption breaks for the first Python daemon (`redis_check.py`, a single
+plaintext script served from a URL or `salt://`) and for bare binaries with the
+same shape - neither has anything to `tar`-extract. It also breaks for a
+venv-only, PyPI-installed daemon with no `svc` block at all: nothing created
+its `install_dir`, because that used to happen inside `fetch_archive`, gated on
+`svc` being set.
+
+**What changed:** `blocks/fetch_archive.sls` split into `blocks/install_dir.sls`
+(the directory creation, now dispatched unconditionally - not gated on `svc`)
+and `blocks/fetch.sls` (renamed `fetch_source`), which picks a fetch **kind**
+via `lib.py`'s `fetch_kind` - `archive` (today's download/cache/tar-extract
+path, byte-identical for every bundled preset - all declare `svc.tar`) or
+`file` (a bare script/binary compared as-is via `File.managed`, no cache hop,
+no extract). `File.managed` already hashes and compares content, which is a
+strictly better idempotency primitive for this shape than a guarded extract
+`Cmd.run` with a hand-written `unless` - no `version_check`/`version_stamp`
+needed for `kind: file` at all. The archive path also gained `svc.version_stamp`
+(a generic idempotency-stamp fallback for binaries with no `--version` flag -
+the source-tarball equivalent of `exporter`'s `.salt_version_info`) and
+`svc.executable` (override the default "exec's first token" chmod target,
+needed once `exec` can start with a not-yet-existing venv interpreter path).
+
+Verified backward-compatible: all 10 active bundled presets declare `svc.tar`,
+so `fetch_kind` resolves them to `archive` via the same rule regardless of the
+new kind machinery; the no-preset `custom_exporter` pillar example (no `tar`
+key, `.tar.gz` source) resolves to `archive` via the suffix rule instead.
+`svc_target` (a new phase-2 placeholder, `""` when there's no `svc.source`) is
+what will let a venv-based `ExecStart` reference the fetched script without
+repeating its path - for a not-yet-implemented `venv` block, tracked
+separately once it lands.
+
+### [x] 17. `venv` block — managed Python venv for Python daemons
+**Resolved 2026-08-20.**
+
+**Why:** the first Python daemon (`redis_check.py`, see item 16) needs a
+Python interpreter with its own dependencies, not the system `python3` and
+whatever happens to already be installed there. Generic mechanism (extending-
+with-app-blocks.md litmus test #2), not app-specific: any PyPI-distributed
+daemon wants this, including one with no `svc` block at all.
+
+**What changed:** new top-level `venv:` key (not `svc.venv` - a
+PyPI-distributed daemon with `venv.requirements` and no `svc` block is a valid
+instance), `blocks/venv.sls` (`python_venv`), and `lib.py` command builders
+(`venv_requirement_paths`, `venv_digest_command`, `venv_guard_command`,
+`venv_build_command`). Dispatched after `fetch_source` (a `requirements.txt`
+can arrive inside a fetched archive) and before `commands(pre)`, its `Cmd.run`
+folded into the `changed`/`watch` contract. New phase-2 placeholder
+`{venv_dir}` (never `{venv}` - `expand` folds top-level settings keys into
+scope, so `{venv}` would render the config dict's repr).
+
+Diverges from `exporter/macro.jinja`'s venv macro on purpose: idempotency is a
+sha256 digest of interpreter version + `pip_args` + every requirements file's
+*content*, computed on the **minion at runtime** (not render time, and not by
+parsing `pip freeze -r ... =~ WARNING`, which only catches missing packages,
+not version-constraint drift). The stamp lives *inside* `venv.dir` (a
+`--clear` recreate invalidates it automatically) and is written *last*, only
+on a successful `pip install`, so a failed install retries next run; the
+*inline* requirements file lives in `install_dir`, *outside* the venv, so a
+recreate can't eat it mid-run. `venv.recreate_on_change` (default true)
+rebuilds with `--clear` on any requirement-set change; false only forces a
+fresh venv on a missing/wrong-interpreter-version guard failure and otherwise
+reuses the venv, letting `pip install` update packages in place.
+`venv.python` (configurable, default `python3`) is always used explicitly -
+stock Debian has no bare `python`. The `unless` guard is deliberately ONE
+shell command chained with `&&`, not a list, sidestepping Salt's
+all-vs-any `unless` list semantics. The venv is root-owned, like fetched
+program files (§10's "a compromised service can't rewrite its own binary"
+rule); writable state still goes through `svc.data_dirs`.
+
+First real consumer: `presets/redis_check.yaml` (asyncio Redis/Valkey
+PING-latency checker, `redis>=4.2`/`PyYAML>=5.0`) + a `redis_check` instance
+in `pillar.example`, exercising `kind: file` fetch (item 16) + `venv` +
+`{svc_target}`/`{venv_dir}` together end to end. Sits beside item 9
+(`config_dir`), still open, in the P4 generic-block vocabulary gap list.
+
 ### [x] 12. Grafana preset validated against a real tarball
 **Resolved 2026-06-18 — a real salt-ssh run installs and runs Grafana.**
 

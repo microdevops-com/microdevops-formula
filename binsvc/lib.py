@@ -249,6 +249,182 @@ def tar_extract_command(archive, install_dir, args="", unpack=""):
     return " ".join(parts)
 
 
+# `fetch.sls` (formerly `fetch_archive.sls`) covers two fetch strategies:
+# "archive" (download, cache, optionally tar-extract - the original shape, and
+# still the right one for release tarballs) and "file" (a single script or
+# binary compared as-is via File.managed - the shape a plaintext daemon like
+# redis_check.py, or a bare binary, actually has). fetch_kind picks between
+# them; fetch_target computes the "file" destination.
+
+ARCHIVE_SUFFIXES = (".tar.gz", ".tgz", ".tar.bz2", ".tbz2",
+                    ".tar.xz", ".txz", ".tar.zst", ".tar")
+
+# Recognized-but-unsupported: binsvc extracts with `tar` only. Failing loud
+# beats silently "downloading" a .zip and calling it an executable.
+UNSUPPORTED_ARCHIVE_SUFFIXES = (".zip", ".7z", ".rar", ".gz", ".bz2", ".xz")
+
+
+def source_basename(source):
+    """Last path segment of a URL or path, with ?query and #fragment stripped."""
+    return source.split("#", 1)[0].split("?", 1)[0].rsplit("/", 1)[-1]
+
+
+def fetch_kind(svc):
+    """Return "archive" or "file".
+
+    Precedence (explicit beats inferred):
+      1. svc["kind"] if set - must be "archive" or "file", else ValueError.
+      2. "tar" in svc            -> "archive"
+      3. basename ends with an ARCHIVE_SUFFIXES entry -> "archive"
+      4. basename ends with an UNSUPPORTED_ARCHIVE_SUFFIXES entry -> ValueError
+         naming the suffix and pointing at svc.kind as the override.
+      5. otherwise -> "file"
+
+    3 is checked before 4 so ".tar.gz" (which also ends in ".gz") resolves to
+    archive rather than tripping the unsupported-".gz" check.
+    """
+    kind = svc.get("kind")
+    if kind is not None:
+        if kind not in ("archive", "file"):
+            raise ValueError("svc.kind must be 'archive' or 'file', got {!r}".format(kind))
+        return kind
+
+    if "tar" in svc:
+        return "archive"
+
+    basename = source_basename(svc.get("source", ""))
+    if basename.endswith(ARCHIVE_SUFFIXES):
+        return "archive"
+    if basename.endswith(UNSUPPORTED_ARCHIVE_SUFFIXES):
+        raise ValueError(
+            "source {!r} looks like an archive binsvc can't extract (tar only); "
+            "set svc.kind explicitly to override".format(basename))
+    return "file"
+
+
+def fetch_target(svc, install_dir):
+    """Destination path for kind "file": svc["target"] if set, else
+    "{install_dir}/{source_basename(source)}". Raises ValueError when the
+    source is empty - an empty source is a real preset/pillar bug (grafana's
+    intentionally-empty source is filled by its resolver before this runs)."""
+    if svc.get("target"):
+        return svc["target"]
+    source = svc.get("source", "")
+    if not source:
+        raise ValueError("svc.source is empty; nothing to compute a fetch target from")
+    return "{}/{}".format(install_dir.rstrip("/"), source_basename(source))
+
+
+# ── venv ──────────────────────────────────────────────────────────────────────
+# Managed Python virtualenv for a Python-based daemon (used by blocks/venv.sls).
+# Diverges from exporter/macro.jinja's venv macro on purpose:
+#   - the digest covering "does the venv match the declared requirement set?"
+#     is computed on the MINION at runtime (interpreter version + pip_args +
+#     the actual content of every requirements file, sha256'd) - not by parsing
+#     `pip freeze`. exporter's `pip freeze -r ... =~ WARNING` guard only detects
+#     *missing* packages, not version-constraint drift; the digest catches both,
+#     and it's the only way to cover a requirements.txt that arrives inside a
+#     fetched archive, whose content render time cannot know.
+#   - the interpreter-version comparison catches a distro python3 upgrade
+#     (3.11 -> 3.12) silently breaking every venv on the host. exporter doesn't.
+#   - venv.python (configurable, default python3) is always used explicitly -
+#     stock Debian has no bare `python`.
+#   - --require-virtualenv is kept from exporter.
+
+VENV_INLINE_REQUIREMENTS_NAME = ".binsvc-requirements.txt"
+VENV_STAMP_NAME = ".binsvc-requirements.sha256"
+
+
+def venv_requirement_paths(venv_conf, install_dir):
+    """Ordered list of `-r` paths: the inline requirements file
+    ("{install_dir}/.binsvc-requirements.txt", only when venv["requirements"]
+    is non-empty) followed by venv["requirements_files"]. Raises ValueError
+    when both are empty - a managed venv with nothing to install is a
+    preset/pillar bug, not a silently-empty no-op."""
+    paths = []
+    if venv_conf.get("requirements"):
+        paths.append("{}/{}".format(install_dir.rstrip("/"), VENV_INLINE_REQUIREMENTS_NAME))
+    paths.extend(venv_conf.get("requirements_files") or [])
+    if not paths:
+        raise ValueError(
+            "venv.manage is true but venv.requirements and venv.requirements_files "
+            "are both empty - nothing to install")
+    return paths
+
+
+def venv_digest_command(paths, python, pip_args):
+    """Shell snippet printing a sha256 of the effective install input set:
+    interpreter identity, pip_args, and the content of every requirements file
+    in order. Computed on the minion at RUNTIME, not render time - a
+    requirements.txt can arrive inside a fetched archive whose contents render
+    time cannot know."""
+    return (
+        "{{ {python} -V; printf '%s\\n' '{pip_args}'; cat {paths}; }} "
+        "| sha256sum | cut -d' ' -f1"
+    ).format(python=python, pip_args=pip_args, paths=" ".join(paths))
+
+
+def venv_guard_command(venv_conf, paths, stamp_path):
+    """The Cmd.run `unless` guard: true (skip the build) when the venv exists,
+    was built with the currently-configured interpreter, and its stamp matches
+    the current digest. Deliberately ONE shell command chained with `&&` -
+    Salt's `unless` treats a list as all-must-pass but a string as a single
+    shell invocation, and a multi-command list here would silently change
+    semantics if a later maintainer reordered checks."""
+    venv_dir = venv_conf["dir"]
+    python = venv_conf.get("python", "python3")
+    pip_args = venv_conf.get("pip_args", "")
+    digest = venv_digest_command(paths, python, pip_args)
+    return (
+        "[ -x {venv_dir}/bin/python ] "
+        "&& [ \"$({venv_dir}/bin/python -V 2>&1)\" = \"$({python} -V 2>&1)\" ] "
+        "&& [ \"$(cat {stamp} 2>/dev/null)\" = \"$({digest})\" ]"
+    ).format(venv_dir=venv_dir, python=python, stamp=stamp_path, digest=digest)
+
+
+def venv_build_command(venv_conf, paths, stamp_path):
+    """The Cmd.run `name`: create (or recreate) the venv, install the declared
+    requirements, and stamp the digest LAST so a failed pip install leaves no
+    stamp and the next run retries.
+
+    recreate_on_change true (default) always rebuilds with `--clear` when the
+    guard fails for any reason (missing venv, wrong interpreter, or a
+    requirement-set change) - stale packages from a removed requirement can't
+    linger. recreate_on_change false only forces a fresh venv on the same
+    "missing or wrong interpreter version" test the guard itself uses, and
+    otherwise reuses the existing venv, letting pip install update packages
+    in place for a plain requirement-set change.
+    """
+    venv_dir = venv_conf["dir"]
+    python = venv_conf.get("python", "python3")
+    pip_args = venv_conf.get("pip_args", "")
+
+    if venv_conf.get("recreate_on_change", True):
+        create = "{python} -m venv --clear {venv_dir}".format(python=python, venv_dir=venv_dir)
+    else:
+        create = (
+            "[ -x {venv_dir}/bin/python ] "
+            "&& [ \"$({venv_dir}/bin/python -V 2>&1)\" = \"$({python} -V 2>&1)\" ] "
+            "|| {python} -m venv {venv_dir}"
+        ).format(venv_dir=venv_dir, python=python)
+
+    lines = ["set -eu", create]
+    if venv_conf.get("upgrade_pip", False):
+        lines.append("{venv_dir}/bin/pip install --require-virtualenv -U pip".format(venv_dir=venv_dir))
+
+    requirement_flags = " ".join("-r {}".format(path) for path in paths)
+    lines.append("{venv_dir}/bin/pip install --require-virtualenv{pip_args} {reqs}".format(
+        venv_dir=venv_dir,
+        pip_args=" " + pip_args if pip_args else "",
+        reqs=requirement_flags,
+    ))
+
+    digest = venv_digest_command(paths, python, pip_args)
+    lines.append("{} > {}".format(digest, stamp_path))
+
+    return "\n".join(lines)
+
+
 # ── release ───────────────────────────────────────────────────────────────────
 # Version/source resolution. GitHub's default resolver uses /releases/latest
 # (NOT /tags — that endpoint is unsorted and can return tags that were never

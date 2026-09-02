@@ -10,6 +10,21 @@ resolve_cache_ttl: 3600
 
 install_dir: "/opt/services/{type}/{name}"
 
+# Managed Python venv for a Python-based daemon. block runs only when
+# venv.manage is true (like user/nginx). Top-level, not svc.venv - a
+# PyPI-distributed daemon (requirements: [some-exporter]) is a valid instance
+# with no svc block at all. See blocks/venv.sls and WHITEPAPER.md §6.
+venv:
+  manage: false
+  dir: "{install_dir}/venv"
+  python: python3            # python3.11, a deadsnakes build, ...
+  pkgs: [python3-venv]       # add python3-dev/build-essential for C extensions
+  recreate_on_change: true   # rebuild with --clear when the requirement set changes
+  upgrade_pip: false
+  pip_args: ""               # --no-cache-dir, --index-url, ...
+  requirements: []           # inline, from preset/pillar
+  requirements_files: []     # e.g. ["{install_dir}/requirements.txt"] shipped in an archive
+
 user:
   manage: false
   name: root

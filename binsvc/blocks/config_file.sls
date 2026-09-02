@@ -36,8 +36,8 @@ def config_files(prefix, settings):
         if not isinstance(item, dict) or "name" not in item:
             continue
 
-        # {confname} = this entry's key; narrow late expansion (like
-        # fetch_archive's {file}), so the filename lives in one place. Other
+        # {confname} = this entry's key; narrow late expansion (like fetch's
+        # {file}), so the filename lives in one place. Other
         # placeholders are already resolved by init.sls and left untouched.
         item = deep_format(item, {"confname": key})
 
