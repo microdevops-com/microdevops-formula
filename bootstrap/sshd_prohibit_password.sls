@@ -11,30 +11,6 @@ bootstrap_sshd_prohibit_password:
     - unless: |
         sshd -T | grep -i permitrootlogin | grep -q -e without-password -e prohibit-password
 
-bootstrap_sshd_password_authentication:
-  file.keyvalue:
-    - name: /etc/ssh/sshd_config
-    - key: PasswordAuthentication
-    - value: "no"
-    - separator: " "
-    - uncomment: "#"
-    - key_ignore_case: True
-    - append_if_not_found: True
-    - unless: |
-        sshd -T | grep -i -q '^passwordauthentication no$'
-
-bootstrap_sshd_kbdinteractive_authentication:
-  file.keyvalue:
-    - name: /etc/ssh/sshd_config
-    - key: KbdInteractiveAuthentication
-    - value: "no"
-    - separator: " "
-    - uncomment: "#"
-    - key_ignore_case: True
-    - append_if_not_found: True
-    - unless: |
-        sshd -T | grep -i -q '^kbdinteractiveauthentication no$'
-
 bootstrap_sshd_prohibit_password_service:
   {%- if grains["oscodename"] in ["noble"] %}
   service.running:
@@ -43,8 +19,6 @@ bootstrap_sshd_prohibit_password_service:
     - reload: True
     - watch:
       - file: bootstrap_sshd_prohibit_password
-      - file: bootstrap_sshd_password_authentication
-      - file: bootstrap_sshd_kbdinteractive_authentication
 
   {%- else %}
   service.running:
@@ -53,8 +27,6 @@ bootstrap_sshd_prohibit_password_service:
     - reload: True
     - watch:
       - file: bootstrap_sshd_prohibit_password
-      - file: bootstrap_sshd_password_authentication
-      - file: bootstrap_sshd_kbdinteractive_authentication
 
   {%- endif %}
 {% endif %}
