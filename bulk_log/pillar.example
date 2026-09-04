@@ -1,0 +1,3 @@
+bulk_log:
+  enabled: True
+  #disabled: True # Optional, add cron commented
