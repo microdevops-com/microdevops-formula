@@ -13,7 +13,13 @@ app_{{ app_type }}_user_{{ loop_index }}:
         {%- endif %}
     - home: {{ consider_user_home }}
     - createhome: False
-        {% if app["pass"] == "!" %}
+        {% if "password" in app %}
+    - password: "{{ app["password"] }}"
+    - hash_password: True
+        {% elif "password_hash" in app %}
+    - password: "{{ app["password_hash"] }}"
+    - hash_password: False
+        {% elif app["pass"] == "!" %}
     - password: "{{ app["pass"] }}"
         {% else %}
     - password: "{{ app["pass"] }}"
