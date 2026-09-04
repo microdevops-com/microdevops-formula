@@ -1,0 +1,20 @@
+{
+  "api_base": {{ api_base | json }},
+  "zone_id": {{ zone_id | json }},
+  "token_file": {{ token_file | json }},
+  "state_file": {{ (state_dir ~ '/state.sqlite3') | json }},
+  "lock_file": {{ (state_dir ~ '/collector.lock') | json }},
+  "http_output": {{ (log_dir ~ '/http_requests.jsonl') | json }},
+  "firewall_output": {{ (log_dir ~ '/firewall_events.jsonl') | json }},
+  "poll_delay_seconds": {{ poll_delay_seconds }},
+  "initial_lookback_seconds": {{ initial_lookback_seconds }},
+  "overlap_seconds": {{ overlap_seconds }},
+  "slice_seconds": {{ slice_seconds }},
+  "firewall_events_slice_seconds": {{ firewall_events_slice_seconds }},
+  "min_slice_seconds": {{ min_slice_seconds }},
+  "page_size": {{ page_size }},
+  "max_pages_per_slice": {{ max_pages_per_slice }},
+  "request_timeout_seconds": {{ request_timeout_seconds }},
+  "request_retries": {{ request_retries }},
+  "dedup_retention_hours": {{ dedup_retention_hours }}
+}
