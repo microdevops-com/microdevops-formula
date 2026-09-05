@@ -1,0 +1,9 @@
+cloudflare_log_collector:
+  enabled: true
+  zone_id: 0123456789abcdef0123456789abcdef
+  token_file: /etc/cloudflare-log-collector/token
+  schedule: '*:0/5'
+  poll_delay_seconds: 120
+  initial_lookback_seconds: 300
+  overlap_seconds: 120
+  logrotate_retention: 14

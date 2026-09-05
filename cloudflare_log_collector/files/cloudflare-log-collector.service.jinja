@@ -1,0 +1,24 @@
+[Unit]
+Description=Collect Cloudflare Log Explorer events
+Documentation=https://developers.cloudflare.com/logs/log-explorer/api-usage/
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists={{ token_file }}
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0027
+ExecStart=/usr/bin/python3 /usr/local/lib/cloudflare-log-collector/collector.py --config {{ config_file }}
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6
+ReadWritePaths={{ state_dir }} {{ log_dir }}

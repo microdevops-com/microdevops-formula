@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Cloudflare Log Explorer collector
+
+[Timer]
+OnCalendar={{ schedule }}
+Persistent=true
+RandomizedDelaySec={{ randomized_delay }}
+Unit=cloudflare-log-collector.service
+
+[Install]
+WantedBy=timers.target

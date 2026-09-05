@@ -9,3 +9,4 @@ Session.vim
 *~
 # PyCharm
 .idea/
+__pycache__/

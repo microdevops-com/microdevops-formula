@@ -1,0 +1,9 @@
+{{ log_dir }}/*.jsonl {
+    daily
+    rotate {{ retention }}
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 root root
+}
