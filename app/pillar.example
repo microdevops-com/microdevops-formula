@@ -39,6 +39,8 @@ app:
         #groups: # optional
         # - docker
         pass: '!'
+        #password: plaintextpassword # optional, plain text password, hashed by salt, takes precedence over pass and password_hash
+        #password_hash: '$6$...' # optional, already hashed password (crypt format), used as is, takes precedence over pass
         #enforce_password: False # optional, do not change pass if it was changed by user
         user_home: /var/www/__APP_NAME__ # optional, but recommended to set each time explicitly, if not set app_root is used
                                          # this is actual linux user home
