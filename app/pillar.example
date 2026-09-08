@@ -285,6 +285,11 @@ app:
       proto:
         image: php:7.3-fpm
         privileged: False # optional, default False
+        #force_redeploy: True # optional, default False, forces container re-creation on every state.apply
+                              # (docker pull + container replace) even if image name/tag and
+                              # other docker_container.running params look unchanged to Salt,
+                              # useful for mutable tags (e.g. "latest") or when only env vars
+                              # fetched from remote pillar (e.g. via git pillar) changed
         docker_registry_login:
           username: salt
           password: xxxxxxxxxxxxxxxxxxxx
