@@ -51,6 +51,18 @@ sentry:
   # both, the override file wins (docker-compose merges it on top).
   #clickhouse_max_memory_usage_ratio: '0.2'  # sets MAX_MEMORY_USAGE_RATIO on the clickhouse service
   #kafka_heap_opts: '-Xmx512m -Xms512m'       # sets KAFKA_HEAP_OPTS on the kafka service
+  # Optional: which SeaweedFS buckets sentry.nodestore_ttl applies the TTL to via
+  # `weed shell fs.configure` (25.9.0+). Defaults to [nodestore]; the TTL value itself
+  # always comes from config:general:options:system:event_retention_days below.
+  #
+  # 'profiles' holds profiling data shared by vroom and filestore.profiles-backend.
+  # It only exists on 25.11.1+ with compose_profiles feature-complete and usually stays
+  # small, as only SDKs with profiling enabled write to it. Upstream sets its expiry
+  # with the same s3cmd setlifecycle call that hangs against SeaweedFS, and skips it
+  # altogether under --no-apply-automatic-config-updates (passed by init.sls for
+  # 25.10.0+), so without listing it here it never expires either.
+  #seaweedfs_ttl:
+  #  buckets: [nodestore, profiles]
   config:
     # compose_profiles: errors-only # optional for versions 24.8.0+
     single_organization: True
