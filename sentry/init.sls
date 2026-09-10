@@ -1,3 +1,6 @@
+include:
+  - sentry.nodestore_ttl
+
 {% if pillar["sentry"] is defined and "version" in pillar["sentry"]  %}
 
   {% from "acme/macros.jinja" import verify_and_issue %}
