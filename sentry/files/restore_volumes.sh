@@ -2,6 +2,16 @@
 [[ -f /opt/sentry/.env.custom ]] && docker-compose --file /opt/sentry/docker-compose.yml --env-file /opt/sentry/.env.custom stop || docker-compose --file /opt/sentry/docker-compose.yml stop
   docker run --rm --volumes-from sentry-self-hosted-clickhouse-1	-v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xf /backup/sentry-self-hosted-clickhouse-1.tar"
   docker run --rm --volumes-from sentry-self-hosted-web-1		-v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xf /backup/sentry-self-hosted-web-1.tar"
+  # kafka and symbolicator are intentionally left out.
+  #
+  # kafka: this script stops the whole stack before taring, so every extra gigabyte is extra
+  # downtime during which no event is accepted at all. And a rollback to a nightly snapshot
+  # already discards every event persisted since it was taken, so restoring kafka on top would
+  # only recover the few still unconsumed at snapshot time. Leaving it out of both scripts also
+  # rules out the one harmful restore: kafka rolled back without clickhouse makes the consumers
+  # re-read messages whose results are already stored, producing duplicates.
+  #
+  # symbolicator: /data is a re-downloadable cache, a non-external volume upstream.
 # docker run --rm --volumes-from sentry-self-hosted-kafka-1		-v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xf /backup/sentry-self-hosted-kafka-1.tar"
   docker run --rm --volumes-from sentry-self-hosted-nginx-1		-v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xf /backup/sentry-self-hosted-nginx-1.tar"
   docker run --rm --volumes-from sentry-self-hosted-postgres-1		-v /opt/sentry/backup/volumes/:/backup ubuntu bash -c "cd / && tar xf /backup/sentry-self-hosted-postgres-1.tar"
