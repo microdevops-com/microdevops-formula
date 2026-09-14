@@ -6,3 +6,21 @@ nginx:
   custom_set: 'extras' # Optional, let you install the custom nginx packages set | Allowed values: 'light', 'core', 'full', 'extras'
   files: # optional, see https://github.com/microdevops-com/microdevops-formula/tree/master/_include/file_manager
     ... # see above
+  tls: # optional; defaults retain TLS 1.2 + 1.3 and the formula cipher set
+    protocols: TLSv1.2
+    ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
+  reverse_proxies: # optional; each entry manages one TLS nginx vhost
+    example:
+      server_names: [example.com]
+      listen_port: 9443
+      backend: http://127.0.0.1:8080
+      tls:
+        acme_account: example_com
+      proxy_headers:
+        Host: $host
+        X-Real-IP: $remote_addr
+        X-Forwarded-For: $proxy_add_x_forwarded_for
+        X-Forwarded-Proto: $scheme
+      logs:
+        access: /var/log/nginx/example.access.log
+        error: /var/log/nginx/example.error.log
