@@ -1,5 +1,16 @@
 {% if pillar["nginx"] is defined %}
 
+  {%- set nginx = pillar["nginx"] %}
+  {%- set tls = nginx.get("tls", {}) %}
+  {%- set ssl_protocols = tls.get("protocols", "TLSv1.2 TLSv1.3") %}
+  {%- set ssl_ciphers = tls.get("ciphers", "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384") %}
+  {%- set reverse_proxies = nginx.get("reverse_proxies", {}) %}
+
+  {% if reverse_proxies.values() | selectattr("tls", "defined") | selectattr("tls.acme_account", "defined") | list %}
+include:
+  - acme
+  {% endif %}
+
   {% if pillar["nginx"].get("ondrej_ppa", False) %}
    {% if grains["os"] == "Ubuntu" %}
 
@@ -49,6 +60,7 @@ nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
     - source: salt://{{ pillar["nginx"]["configs"] }}/nginx.conf
+    - template: jinja
 
 nginx_files_2:
   file.absent:
@@ -61,9 +73,9 @@ nginx_files_3:
         # from https://cipherli.st/
         # and https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
         
-        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_protocols {{ ssl_protocols }};
         ssl_prefer_server_ciphers on;
-        ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+        ssl_ciphers {{ ssl_ciphers }};
         ssl_ecdh_curve secp384r1;
         ssl_session_cache shared:SSL:10m;
         ssl_session_tickets off;
@@ -88,5 +100,61 @@ nginx_dhparam:
   {%- endif %}
   {%- set file_manager_defaults = {"default_user": "root", "default_group": "root"} %}
   {%- include "_include/file_manager/init.sls" with context %}
+
+  {%- for vhost_name, vhost in reverse_proxies.items() %}
+    {%- set vhost_tls = vhost.get("tls", {}) %}
+    {%- set server_names = vhost.get("server_names", []) %}
+    {%- if server_names is string %}
+      {%- set server_names = [server_names] %}
+    {%- endif %}
+    {%- set acme_account = vhost_tls.get("acme_account") %}
+    {%- set certificate_name = vhost_tls.get("certificate_name", vhost_name) %}
+    {%- set certificate_domain = server_names[0] %}
+    {%- set cert_file = vhost_tls.get("cert_file", "/opt/acme/cert/" ~ certificate_name ~ "_" ~ certificate_domain ~ "_fullchain.cer") %}
+    {%- set key_file = vhost_tls.get("key_file", "/opt/acme/cert/" ~ certificate_name ~ "_" ~ certificate_domain ~ "_key.key") %}
+
+    {%- if acme_account %}
+nginx_reverse_proxy_{{ vhost_name }}_acme:
+  cmd.run:
+    - name: /opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ certificate_name }} {{ server_names | join(" ") }}
+    - shell: /bin/bash
+    - success_retcodes: [2]
+    {%- endif %}
+
+nginx_reverse_proxy_{{ vhost_name }}_config:
+  file.managed:
+    - name: /etc/nginx/sites-available/{{ vhost_name }}.conf
+    - source: salt://nginx/reverse_proxy_vhost.jinja
+    - template: jinja
+    - context:
+        vhost: {{ vhost | json }}
+        server_names: {{ server_names | json }}
+        cert_file: {{ cert_file }}
+        key_file: {{ key_file }}
+    {%- if acme_account %}
+    - require:
+      - cmd: nginx_reverse_proxy_{{ vhost_name }}_acme
+    {%- endif %}
+
+nginx_reverse_proxy_{{ vhost_name }}_enabled:
+  file.symlink:
+    - name: /etc/nginx/sites-enabled/{{ vhost_name }}.conf
+    - target: /etc/nginx/sites-available/{{ vhost_name }}.conf
+    - require:
+      - file: nginx_reverse_proxy_{{ vhost_name }}_config
+
+nginx_reverse_proxy_{{ vhost_name }}_reload:
+  cmd.run:
+    - name: /usr/sbin/nginx -t && /usr/sbin/nginx -s reload
+    - onchanges:
+      - file: nginx_files_1
+      - file: nginx_files_3
+      - file: nginx_reverse_proxy_{{ vhost_name }}_config
+      - file: nginx_reverse_proxy_{{ vhost_name }}_enabled
+    {%- if acme_account %}
+    - require:
+      - cmd: nginx_reverse_proxy_{{ vhost_name }}_acme
+    {%- endif %}
+  {%- endfor %}
 
 {% endif %}

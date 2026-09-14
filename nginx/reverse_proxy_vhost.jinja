@@ -1,0 +1,18 @@
+server {
+    listen {{ vhost["listen_port"] }} ssl;
+    server_name {{ server_names | join(" ") }};
+
+    include snippets/ssl-params.conf;
+    ssl_certificate {{ cert_file }};
+    ssl_certificate_key {{ key_file }};
+
+    access_log {{ vhost["logs"]["access"] }};
+    error_log {{ vhost["logs"]["error"] }};
+
+    location / {
+        proxy_pass {{ vhost["backend"] }};
+{%- for header, value in vhost.get("proxy_headers", {}).items() %}
+        proxy_set_header {{ header }} {{ value }};
+{%- endfor %}
+    }
+}
