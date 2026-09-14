@@ -60,7 +60,9 @@ nginx_files_1:
   file.managed:
     - name: /etc/nginx/nginx.conf
     - source: salt://{{ pillar["nginx"]["configs"] }}/nginx.conf
+  {% if pillar["nginx"]["configs"] == "nginx/app_hosting" %}
     - template: jinja
+  {% endif %}
 
 nginx_files_2:
   file.absent:
@@ -119,6 +121,8 @@ nginx_reverse_proxy_{{ vhost_name }}_acme:
     - name: /opt/acme/home/{{ acme_account }}/verify_and_issue.sh {{ certificate_name }} {{ server_names | join(" ") }}
     - shell: /bin/bash
     - success_retcodes: [2]
+    - require:
+      - sls: acme
     {%- endif %}
 
 nginx_reverse_proxy_{{ vhost_name }}_config:
@@ -147,8 +151,10 @@ nginx_reverse_proxy_{{ vhost_name }}_reload:
   cmd.run:
     - name: /usr/sbin/nginx -t && /usr/sbin/nginx -s reload
     - onchanges:
+    {%- if not nginx.get("configs_management_disabled", False) %}
       - file: nginx_files_1
       - file: nginx_files_3
+    {%- endif %}
       - file: nginx_reverse_proxy_{{ vhost_name }}_config
       - file: nginx_reverse_proxy_{{ vhost_name }}_enabled
     {%- if acme_account %}
