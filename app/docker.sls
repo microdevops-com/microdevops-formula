@@ -74,13 +74,46 @@ docker_app_dir_{{ loop.index }}:
       {%- if app["docker_registry_login"] is defined %}
 docker_app_docker_login_{{ loop.index }}:
   cmd.run:
-    - name: docker login -u "{{ app["docker_registry_login"]["username"] }}" -p "{{ app["docker_registry_login"]["password"] }}" "{{ app["docker_registry_login"]["registry"] }}"
+    # Credentials go in through the environment and stdin, not the command line: the command
+    # line is printed as the state's Name in every state run output.
+    - name: printf '%s' "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "{{ app["docker_registry_login"]["registry"] }}"
+    - env:
+      - DOCKER_REGISTRY_USERNAME: {{ app["docker_registry_login"]["username"] | string | yaml_encode }}
+      - DOCKER_REGISTRY_PASSWORD: {{ app["docker_registry_login"]["password"] | string | yaml_encode }}
       {%- endif %}
 
 docker_app_docker_pull_{{ loop.index }}:
   cmd.run:
     - name: docker pull {{ app["image"] }}
 
+      {%- if "pre_start" in app %}
+docker_app_pre_start_pull_{{ loop.index }}:
+  cmd.run:
+    - name: docker pull {{ app["pre_start"]["image"] }}
+
+# One-shot container run before the app container is created or updated (e.g. database
+# migrations), with the app's environment, networks, binds and user but no published ports.
+# It is removed after it exits; a non-zero exit fails this state, and the app container
+# below requires it, so the app is then left untouched.
+docker_app_pre_start_{{ loop.index }}:
+  docker_container.run:
+    - name: app-{{ app_name }}-pre-start
+    - image: {{ app["pre_start"]["image"] }}
+    - user: {{ app.get("user", "root") }}
+    - environment: {{ app["environment"] | default([]) }}
+    - binds: {{ app["binds"] | default([]) | replace("__APP_NAME__", app_name) }}
+        {%- if "networks" in app %}
+    - networks: {{ app["networks"] | replace("__APP_NAME__", app_name) }}
+        {%- endif %}
+        {%- if "command" in app["pre_start"] %}
+    - command: {{ app["pre_start"]["command"] }}
+        {%- endif %}
+    - auto_remove: True
+    - replace: True
+    - require:
+      - cmd: docker_app_pre_start_pull_{{ loop.index }}
+
+      {%- endif %}
 docker_app_container_{{ loop.index }}:
   docker_container.running:
     - name: app-{{ app_name }}
@@ -95,6 +128,10 @@ docker_app_container_{{ loop.index }}:
     - networks: {{ app["networks"] | replace("__APP_NAME__", app_name) }}
       {%- endif %}
     - privileged: {{ app["privileged"] | default(False) }}
+      {%- if "pre_start" in app %}
+    - require:
+      - docker_container: docker_app_pre_start_{{ loop.index }}
+      {%- endif %}
       {%- if app["retries_docker_running"] is defined %}
     - retry:
         attempts: {{ app["retries_docker_running"] }}
