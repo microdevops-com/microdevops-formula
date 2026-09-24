@@ -321,6 +321,11 @@ app:
             dayweek: ... # optional 
             special: ... # optional 
         #command: bash # optional, override cmd
+        #pre_start: # optional, one-shot container run before this app's container is created or updated, e.g. database migrations
+        #  image: gitlab.example.com:5001/proto/app:migrate-1.2.3 # required
+        #  command: ... # optional, override the image's cmd
+        #  # Runs with this app's environment, networks, binds and user (not publish), and is removed after it exits.
+        #  # A non-zero exit fails the state and the app container is left untouched. Runs on every apply, so keep it idempotent.
       proto-redis:
         image: redis:latest
         home: /var/www/proto-redis
