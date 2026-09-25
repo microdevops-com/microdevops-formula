@@ -3,6 +3,8 @@
 # https://stackoverflow.com/a/56962423
 
 docker-ce:
+  # latest: upgrade on every apply (restarts the daemon when it upgrades). Or pin an exact release,
+  # including Docker's apt epoch, e.g. '5:29.1.4' (the formula appends *) - see pillar/docker-ce/.
   version: latest
   daemon_json: |
     {
