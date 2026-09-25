@@ -24,3 +24,11 @@ nginx:
       logs:
         access: /var/log/nginx/example.access.log
         error: /var/log/nginx/example.error.log
+      http_redirect: True # optional; adds a port-80 server that 301-redirects to this vhost over https
+      extra_config: | # optional; raw directives placed inside this vhost's server block, e.g. for
+                      # large uploads and large response headers (SvelteKit/Next.js preload headers
+                      # overflow nginx's default proxy buffer and fail with 502 "upstream sent too big header")
+        client_max_body_size 24m;
+        proxy_buffer_size 32k;
+        proxy_buffers 8 32k;
+        proxy_busy_buffers_size 64k;

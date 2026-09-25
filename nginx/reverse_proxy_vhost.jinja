@@ -8,6 +8,10 @@ server {
 
     access_log {{ vhost["logs"]["access"] }};
     error_log {{ vhost["logs"]["error"] }};
+{%- if vhost.get("extra_config") %}
+
+{{ vhost["extra_config"] | trim | indent(4, True) }}
+{%- endif %}
 
     location / {
         proxy_pass {{ vhost["backend"] }};
@@ -16,3 +20,11 @@ server {
 {%- endfor %}
     }
 }
+{%- if vhost.get("http_redirect", False) %}
+
+server {
+    listen 80;
+    server_name {{ server_names | join(" ") }};
+    return 301 https://$host{{ "" if vhost["listen_port"] | int == 443 else ":" ~ vhost["listen_port"] }}$request_uri;
+}
+{%- endif %}
