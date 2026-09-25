@@ -100,7 +100,8 @@ docker_app_pre_start_{{ loop.index }}:
     - name: app-{{ app_name }}-pre-start
     - image: {{ app["pre_start"]["image"] }}
     - user: {{ app.get("user", "root") }}
-    - environment: {{ app["environment"] | default([]) }}
+    # json, not the Python repr: YAML misreads Python quoting (a backslash comes out doubled)
+    - environment: {{ app["environment"] | default([]) | json }}
     - binds: {{ app["binds"] | default([]) | replace("__APP_NAME__", app_name) }}
         {%- if "networks" in app %}
     - networks: {{ app["networks"] | replace("__APP_NAME__", app_name) }}
@@ -122,7 +123,8 @@ docker_app_container_{{ loop.index }}:
     - detach: True
     - restart_policy: unless-stopped
     - publish: {{ app["publish"] | default([]) }}
-    - environment: {{ app["environment"] | default([]) }}
+    # json, not the Python repr: YAML misreads Python quoting (a backslash comes out doubled)
+    - environment: {{ app["environment"] | default([]) | json }}
     - binds: {{ app["binds"] | default([]) | replace("__APP_NAME__", app_name) }}
       {%- if "networks" in app %}
     - networks: {{ app["networks"] | replace("__APP_NAME__", app_name) }}
