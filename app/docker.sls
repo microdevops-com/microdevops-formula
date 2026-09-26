@@ -26,16 +26,20 @@ docker_pillar_render_errors:
     {%- include "docker-ce/docker-ce.sls" with context %}
   {%- endif %}
 
+  # Docker networks are created once and never replaced. docker_network.present (Salt 3006)
+  # compares Docker 29's live Status counters as if they were config, so it "replaced" the
+  # network - cutting every container off it - on each apply. An existing network whose
+  # subnet/gateway differ from pillar now fails here ("already exists") instead of being
+  # silently replaced; recreating a live network is a decision, not a side effect.
   {%- if "networks" in pillar["app"]["docker"] %}
     {%- if pillar["app"]["docker"]["networks"] is mapping %}
 
       {%- for net_name, net_params in pillar["app"]["docker"]["networks"].items() %}
         {%- if not "deploy_only" in pillar["app"]["docker"] or net_name == pillar["app"]["docker"]["deploy_only"] %}
 docker_network_{{ loop.index }}:
-  docker_network.present:
-    - name: {{ net_name }}
-    - subnet: {{ net_params["subnet"] }}
-    - gateway: {{ net_params["gateway"] }}
+  cmd.run:
+    - name: docker network create --subnet {{ net_params["subnet"] }} --gateway {{ net_params["gateway"] }} {{ net_name }}
+    - unless: test "$(docker network inspect {{ net_name }} --format '{% raw %}{{range .IPAM.Config}}{{.Subnet}} {{.Gateway}}{{end}}{% endraw %}' 2>/dev/null)" = "{{ net_params["subnet"] }} {{ net_params["gateway"] }}"
 
         {%- endif %}
       {%- endfor %}
@@ -44,10 +48,9 @@ docker_network_{{ loop.index }}:
 
       {%- for net in pillar["app"]["docker"]["networks"] %}
 docker_network_{{ loop.index }}:
-  docker_network.present:
-    - name: {{ net["name"] }}
-    - subnet: {{ net["subnet"] }}
-    - gateway: {{ net["gateway"] }}
+  cmd.run:
+    - name: docker network create --subnet {{ net["subnet"] }} --gateway {{ net["gateway"] }} {{ net["name"] }}
+    - unless: test "$(docker network inspect {{ net["name"] }} --format '{% raw %}{{range .IPAM.Config}}{{.Subnet}} {{.Gateway}}{{end}}{% endraw %}' 2>/dev/null)" = "{{ net["subnet"] }} {{ net["gateway"] }}"
 
       {%- endfor %}
 
