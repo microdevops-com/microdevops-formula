@@ -94,10 +94,24 @@ cmd_check_alert:
           cmd: :; ! dmesg -T | grep -v "veth" | grep -i "segfault" -m 10 | grep -v -i -e "ebpf" -e "netdata"
           service: os
           resource: __hostname__:segfault
-        pinggoogle:
-          cmd: ping -c4 google.com
+        ping-ipv4:
+          cmd: for t in 1.1.1.1 8.8.8.8 9.9.9.9; do ping -4 -c2 -i0.5 -W2 $t && exit 0; done; exit 1
           service: os
-          resource: __hostname__:pinggoogle
+          resource: __hostname__:ping-ipv4
+{%- set global_ipv6 = [] %}
+{%- for a in grains.get("ipv6", []) %}
+  {%- if a != "::1" and not (a|lower).startswith(("fe8", "fe9", "fea", "feb", "fc", "fd")) %}
+    {%- do global_ipv6.append(a) %}
+  {%- endif %}
+{%- endfor %}
+        ping-ipv6:
+{%- if not global_ipv6 %}
+          # Only hosts with a global IPv6 address (not loopback, link-local or ULA) are expected to reach IPv6 targets
+          disabled: True
+{%- endif %}
+          cmd: ip -6 route show default; for t in 2606:4700:4700::1111 2001:4860:4860::8888 2620:fe::fe; do ping -6 -c2 -i0.5 -W2 $t && exit 0; done; exit 1
+          service: os
+          resource: __hostname__:ping-ipv6
 {%- if grains.get("oscodename","") not in ["precise"] %}
         clock-synchronized:
           cmd: timedatectl status | grep -i "synchronized" | grep -i "yes"
