@@ -112,6 +112,10 @@ cmd_check_alert:
           cmd: ip -6 route show default; for t in 2606:4700:4700::1111 2001:4860:4860::8888 2620:fe::fe; do ping -6 -c2 -i0.5 -W2 $t && exit 0; done; exit 1
           service: os
           resource: __hostname__:ping-ipv6
+        dns-resolve:
+          cmd: grep -h nameserver /etc/resolv.conf; timeout 2 resolvectl dns 2>/dev/null | grep -v ':$'; for n in google.com cloudflare.com quad9.net; do timeout 3 getent hosts $n && exit 0; done; exit 1
+          service: os
+          resource: __hostname__:dns-resolve
 {%- if grains.get("oscodename","") not in ["precise"] %}
         clock-synchronized:
           cmd: timedatectl status | grep -i "synchronized" | grep -i "yes"
