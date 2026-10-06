@@ -95,7 +95,7 @@ cmd_check_alert:
           service: os
           resource: __hostname__:segfault
         ping-ipv4:
-          cmd: for t in 1.1.1.1 8.8.8.8 9.9.9.9; do ping -4 -c2 -i0.5 -W2 $t && exit 0; done; exit 1
+          cmd: for t in 1.1.1.1 8.8.8.8 9.9.9.9; do ping -c2 -i0.5 -W2 $t && exit 0; done; exit 1
           service: os
           resource: __hostname__:ping-ipv4
 {%- set global_ipv6 = [] %}
@@ -109,7 +109,8 @@ cmd_check_alert:
           # Only hosts with a global IPv6 address (not loopback, link-local or ULA) are expected to reach IPv6 targets
           disabled: True
 {%- endif %}
-          cmd: ip -6 route show default; for t in 2606:4700:4700::1111 2001:4860:4860::8888 2620:fe::fe; do ping -6 -c2 -i0.5 -W2 $t && exit 0; done; exit 1
+          # Old iputils (Ubuntu 16.04 and earlier) has no -4/-6 flags and a separate ping6; on newer ones ping6 is a symlink to ping
+          cmd: ip -6 route show default; P=$(command -v ping6 || echo ping); for t in 2606:4700:4700::1111 2001:4860:4860::8888 2620:fe::fe; do $P -c2 -i0.5 -W2 $t && exit 0; done; exit 1
           service: os
           resource: __hostname__:ping-ipv6
         dns-resolve:
