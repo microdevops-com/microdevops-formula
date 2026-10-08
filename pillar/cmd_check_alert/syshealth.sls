@@ -114,9 +114,12 @@ cmd_check_alert:
           service: os
           resource: __hostname__:ping-ipv6
         dns-resolve:
-          cmd: grep -h nameserver /etc/resolv.conf; timeout 2 resolvectl dns 2>/dev/null | grep -v ':$'; for n in google.com cloudflare.com quad9.net; do timeout 3 getent hosts $n && exit 0; done; exit 1
+          # glibc waits 5s per nameserver by default, longer than the per-lookup cap, so RES_OPTIONS lets it reach the second nameserver in time
+          cmd: grep -h nameserver /etc/resolv.conf; timeout 2 resolvectl dns 2>/dev/null | grep -v ':$'; for n in google.com cloudflare.com quad9.net; do RES_OPTIONS="timeout:1 attempts:2" timeout 4 getent hosts $n && exit 0; done; exit 1
           service: os
           resource: __hostname__:dns-resolve
+          attempts: 2
+          timeout: 30
 {%- if grains.get("oscodename","") not in ["precise"] %}
         clock-synchronized:
           cmd: timedatectl status | grep -i "synchronized" | grep -i "yes"
