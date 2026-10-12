@@ -16,6 +16,7 @@
 # - 26.6.0
 # - 26.7.2
 # - 26.8.0
+# - 26.9.0
 # Each supported version should have config folder in files here.
 
 sentry:
