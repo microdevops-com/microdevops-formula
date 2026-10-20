@@ -2,6 +2,7 @@
 haproxy:
   version: '2.6'  # '2.6' or '3.2'
   ppa: 'vbernat/haproxy-2.6'
+  #configs_management_disabled: True # optional, disable config management at all, just install haproxy (config below is not required then)
   ssl:
     acme_configs:
       - name: {{ domain }}                     #### acme config name. Example: pillar['acme'].keys() | first

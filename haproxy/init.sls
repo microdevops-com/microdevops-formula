@@ -47,6 +47,7 @@ haproxy_install:
         - haproxy
   {% endif %}
 
+  {% if not pillar['haproxy'].get('configs_management_disabled', False) %}
 haproxy_config:
   file.managed:
     - name: /etc/haproxy/haproxy.cfg
@@ -54,6 +55,7 @@ haproxy_config:
     - group: 0
     - mode: 644
     - contents: {{ pillar['haproxy']['config'] | yaml_encode }}
+  {% endif %}
 
 {% if pillar["haproxy"]["ssl"] is defined %}
   {% if pillar["acme"] is defined %}
@@ -121,9 +123,11 @@ haproxy_run:
     - name: haproxy
     - enable: True
 
+  {% if not pillar['haproxy'].get('configs_management_disabled', False) %}
 haproxy_restart:
   cmd.run:
     - name: systemctl restart haproxy
     - onchanges:
         - file: /etc/haproxy/haproxy.cfg
+  {% endif %}
 {% endif %}
