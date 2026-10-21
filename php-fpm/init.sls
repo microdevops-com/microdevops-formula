@@ -37,6 +37,7 @@ php-fpm_installed_{{ loop.index }}:
       - php{{ version }}-fpm
 
     {%- set sections = params.get("ini",{}) %}
+    {%- do sections.setdefault("Session",{}).setdefault("session.upload_progress.enabled", "Off") %}
     {%- if "tz" in params %}
       {%- do sections.update({"Date":{"date.timezone": params["tz"]} })%}
     {%- endif %}
