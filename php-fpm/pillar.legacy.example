@@ -6,11 +6,13 @@ php-fpm:
   version_7_1: True
   version_7_2: True
   version_7_3: True
-  version_7_3: True
+  version_7_4: True
   version_8_0: True
   version_8_1: True
   version_8_2: True
   version_8_3: True
+  version_8_4: True
+  version_8_5: True
   tz:
     php5_5: 'Etc/UTC'
   modules:

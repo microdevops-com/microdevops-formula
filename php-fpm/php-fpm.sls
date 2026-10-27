@@ -476,30 +476,6 @@ php-fpm_8_1_modules_ioncube_3:
       {%- endif %}
     {%- endif %}
 
-    {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
-      {%- for k, v in pillar['php-fpm']['tz'].items() %}
-        {%- set phpversion = k.replace('_','.').split('php')[1] %}
-        {%- set timezone = v %}
-
-        {%- for type in ['cli','fpm'] %}
-php-fpm_{{ k }}_timezone_{{ type }}:
-  ini.options_present:
-          {%- if phpversion == '5.5' %}
-    - name: '/etc/php5/{{ type }}/php.ini'
-          {%- else %}
-    - name: '/etc/php/{{ phpversion }}/{{ type }}/php.ini'
-          {%- endif %}
-    - separator: '='
-    - sections:
-        Date:
-          date.timezone: {{ timezone }}
-        {%- endfor %}
-
-      {%- endfor %}
-    {%- endif %}
-
-
-
 #php 8.2
     {%- if (pillar['php-fpm']['version_8_2'] is defined) and (pillar['php-fpm']['version_8_2'] is not none) and (pillar['php-fpm']['version_8_2']) %}
 php-fpm_repo_deb_8_2:
@@ -558,30 +534,6 @@ php-fpm_8_2_modules_ioncube_3:
       {%- endif %}
     {%- endif %}
 
-    {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
-      {%- for k, v in pillar['php-fpm']['tz'].items() %}
-        {%- set phpversion = k.replace('_','.').split('php')[1] %}
-        {%- set timezone = v %}
-
-        {%- for type in ['cli','fpm'] %}
-php-fpm_{{ k }}_timezone_{{ type }}:
-  ini.options_present:
-          {%- if phpversion == '5.5' %}
-    - name: '/etc/php5/{{ type }}/php.ini'
-          {%- else %}
-    - name: '/etc/php/{{ phpversion }}/{{ type }}/php.ini'
-          {%- endif %}
-    - separator: '='
-    - sections:
-        Date:
-          date.timezone: {{ timezone }}
-        {%- endfor %}
-
-      {%- endfor %}
-    {%- endif %}
-
-  {%- endif %}
-
 #php 8.3
     {%- if (pillar['php-fpm']['version_8_3'] is defined) and (pillar['php-fpm']['version_8_3'] is not none) and (pillar['php-fpm']['version_8_3']) %}
 php-fpm_repo_deb_8_3:
@@ -638,28 +590,6 @@ php-fpm_8_3_modules_ioncube_3:
 
         {%- endif %}
       {%- endif %}
-    {%- endif %}
-
-    {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
-      {%- for k, v in pillar['php-fpm']['tz'].items() %}
-        {%- set phpversion = k.replace('_','.').split('php')[1] %}
-        {%- set timezone = v %}
-
-        {%- for type in ['cli','fpm'] %}
-php-fpm_{{ k }}_timezone_{{ type }}:
-  ini.options_present:
-          {%- if phpversion == '5.5' %}
-    - name: '/etc/php5/{{ type }}/php.ini'
-          {%- else %}
-    - name: '/etc/php/{{ phpversion }}/{{ type }}/php.ini'
-          {%- endif %}
-    - separator: '='
-    - sections:
-        Date:
-          date.timezone: {{ timezone }}
-        {%- endfor %}
-
-      {%- endfor %}
     {%- endif %}
 
 #php 8.4
@@ -720,6 +650,38 @@ php-fpm_8_4_modules_ioncube_3:
       {%- endif %}
     {%- endif %}
 
+#php 8.5
+    {%- if (pillar['php-fpm']['version_8_5'] is defined) and (pillar['php-fpm']['version_8_5'] is not none) and (pillar['php-fpm']['version_8_5']) %}
+php-fpm_repo_deb_8_5:
+  pkgrepo.managed:
+    - name: deb http://ppa.launchpad.net/ondrej/php/ubuntu {{ grains['oscodename'] }} main
+    - dist: {{ grains['oscodename'] }}
+    - file: /etc/apt/sources.list.d/ondrej-ubuntu-php-{{ grains['oscodename'] }}.list
+    - keyserver: keyserver.ubuntu.com
+    - keyid: E5267A6C
+    - refresh: True
+
+php-fpm_8_5_installed:
+  pkg.installed:
+    - pkgs:
+      - php8.5-cli
+      - php8.5-fpm
+
+      {%- if (pillar['php-fpm']['modules'] is defined) and (pillar['php-fpm']['modules'] is not none) %}
+        {%- if (pillar['php-fpm']['modules']['php8_5'] is defined) and (pillar['php-fpm']['modules']['php8_5'] is not none) %}
+php-fpm_8_5_modules_installed:
+  pkg.installed:
+    - pkgs:
+          {%- for pkg_name in pillar['php-fpm']['modules']['php8_5'] %}
+            {%- if (pkg_name != 'php8.5-ioncube') %} # TODO: now (2026-10-27 00:00) there is no ionCube for php8.5
+      - {{ pkg_name }}
+            {%- endif %}
+          {%- endfor %}
+
+        {%- endif %}
+      {%- endif %}
+    {%- endif %}
+
     {%- if (pillar['php-fpm']['tz'] is defined  and pillar['php-fpm']['tz'] is not none) %}
       {%- for k, v in pillar['php-fpm']['tz'].items() %}
         {%- set phpversion = k.replace('_','.').split('php')[1] %}
@@ -742,4 +704,5 @@ php-fpm_{{ k }}_timezone_{{ type }}:
       {%- endfor %}
     {%- endif %}
 
+  {%- endif %}
 {% endif %}
