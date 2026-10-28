@@ -19,11 +19,21 @@ microdevops-utils_repo_sysadmws_listfile:
     - contents: |
         deb [arch=amd64 signed-by=/etc/apt/keyrings/sysadmws.gpg] https://repo.sysadm.ws/sysadmws-apt/ any main
 
+# Refresh only the sysadmws index, so broken third-party repos on the host cannot fail this state
+microdevops-utils_repo_sysadmws_refresh:
+  cmd.run:
+    - name: apt-get update -o Dir::Etc::sourcelist="sources.list.d/sysadmws.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+    - require:
+      - file: microdevops-utils_repo_sysadmws_listfile
+      - file: microdevops-utils_repo_sysadmws_keyringfile
+
 microdevops-utils_pkg_latest_utils:
   pkg.latest:
-    - refresh: True
+    - refresh: False
     - pkgs:
         - sysadmws-utils-v1
+    - require:
+      - cmd: microdevops-utils_repo_sysadmws_refresh
 
   {%- else %}
 microdevops-utils_sysadmws_dir:
