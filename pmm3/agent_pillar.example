@@ -1,0 +1,24 @@
+# PMM 3 client on the host. State: pmm3.agent
+pmm3_agent:
+  pmm_host: pmm.example.com
+  #pmm_port: 443                              # optional
+  #pmm_user: admin                            # optional
+  pmm_password: XXXXXXXXXXXXXXXX
+  #version: 3.10.0*                           # optional, pmm-client package version
+  #node_name: db1.example.com                 # optional, default - hostname; alert dashboards match it (node_name)
+  #node_address: 10.0.0.1                     # optional, with node_name, default - first fqdn_ip4
+  services:
+    mysql:
+      enabled: True
+      #user: pmm                              # optional
+      password: YYYYYYYYYYYYYYYYY
+      #socket: /var/run/mysqld/mysqld.sock    # optional, default - @@socket
+      #query_source: perfschema               # optional
+    haproxy:
+      enabled: False
+      port: 8404
+    mongodb:
+      enabled: False
+      #user: mongoadmin                       # optional
+      password: XXXXXXXXX
+      #cluster: clustername                   # optional
