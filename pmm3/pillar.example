@@ -1,0 +1,84 @@
+# PMM 3 server in Docker + alerting (Grafana Unified Alerting -> Telegram relay).
+# States: pmm3 (= pmm3.server + pmm3.alerting), pmm3.server, pmm3.alerting. See README.md.
+pmm3:
+  name: pmm.example.com                         # FQDN: GF_SERVER_DOMAIN (links in alerts), acme certificate, /opt/pmm3/<name>
+  acme_account: example.com                     # optional; without it PMM keeps its self-signed certificate
+  image: percona/pmm-server:3.10.0              # optional
+  admin_password: XXXXXXXXXXXXXXXX              # Grafana/PMM admin; agents register with it
+  #path: /opt/pmm3/pmm.example.com              # optional, srv_path/provisioning_path are derived from it
+  #srv_user: 1000                              # optional, owner of srv/ (PMM runs as uid 1000 gid 0)
+  #srv_group: 0
+  #publish:                                     # optional, PMM 3 listens on 8443 inside the container
+  #  - 0.0.0.0:443:8443/tcp
+  #network: pmm3                                # optional, docker network of pmm3-server, pmm3-renderer, pmm3-telegram-relay
+  #api_url: https://127.0.0.1:443/graph         # optional, Grafana API as seen from the host (provisioning reload)
+  #renderer:
+  #  image: grafana/grafana-image-renderer:v5.12.10
+  #replaces:                                    # optional, containers removed before pmm3-server starts (e.g. holding port 443)
+  #  - old-pmm-server
+  env_vars:                                     # optional, extra container env: PMM_* and GF_* (Grafana ini as env)
+    GF_AUTH_GITLAB_ENABLED: true
+    GF_AUTH_GITLAB_ALLOW_SIGN_UP: true
+    GF_AUTH_GITLAB_CLIENT_ID: 7a08f6925bece27edabd5b9611ad6cdc639e1806ac1686001501098aa7770052
+    GF_AUTH_GITLAB_CLIENT_SECRET: XXXXXXXXXXXXXXXX
+    GF_AUTH_GITLAB_SCOPES: read_api
+    GF_AUTH_GITLAB_AUTH_URL: https://gitlab.example.com/oauth/authorize
+    GF_AUTH_GITLAB_TOKEN_URL: https://gitlab.example.com/oauth/token
+    GF_AUTH_GITLAB_API_URL: https://gitlab.example.com/api/v4
+    GF_AUTH_GITLAB_ALLOWED_GROUPS: pmm
+  alerting:                                     # optional; without it pmm3.alerting does nothing
+    #datasource_uid: PA58DA793C7250F1B          # optional, the "Metrics" datasource of PMM 3 (same uid on every install)
+    telegram:
+      bottoken: '1234567890:XXXXXXXXX-YYYYYYYYYYYYYYYY-ZZZZZZZZ'
+      chatid: '-123456789'
+      #message_thread_id: 123                   # optional, forum topic
+      #api_url: https://api.telegram.org        # optional, Bot API server (e.g. a local test stub)
+    telegram_relay:                             # Grafana -> webhook -> relay -> Telegram: panel image + text in one post
+      auth_token: XXXXXXXXXXXXXXXX              # webhook Bearer secret, any random string
+      #grafana_token: glsa_XXXX                 # optional, service account (Viewer) for rendering; default - admin
+      #render_range: 1h                         # optional, time range of the image
+      #render_tz: UTC                           # optional
+      #resolved_images: true                    # optional, image on resolved notifications too
+      #link_text: Open graph                    # optional, text of the panel link
+      #image: python:3.12-slim                  # optional
+    #policy:                                    # optional, notification policy
+    #  group_by: ['grafana_folder', 'alertname', 'rulename']
+    #  group_wait: 10s
+    #  group_interval: 1m
+    #  repeat_interval: 24h
+  dashboards:
+    #folder: pmm_alerts_dashboards              # optional, Grafana folder of definitions without folder/path
+    dashboard_definitions_defaults:             # optional, default context for all definitions
+      panel_cpu_usage_alert_pending_for: 1m
+      panel_cpu_iowait_alert_pending_for: 3m
+    dashboard_definitions:
+      # template - dashboard kind from catalog.jinja; one dashboard + its alert rules per definition.
+      # folder - optional; or the directory of path (/srv/grafana/dashboards/<folder>/<file>.json); or dashboards:folder.
+      # context - subject and overrides: panel_<alert>_alert_conditions_evaluator_params (threshold),
+      #   _evaluator_type (gt|lt), _reducer_type, _query_params ('"A","5m","now"'), _frequency, _pending_for, panel_<alert>_title.
+      #
+      # disk_memory_cpu_mysql-replica alerts: disk_space_usage, free_memory, swap_usage, undo_log_size, cpu_usage, cpu_iowait,
+      #   mysql_replication_status, mysql_replication_lag (with panel_mysql_replication_enable: true),
+      #   server_uptime_threshold (with is_mysql_server: true, default).
+      - template: disk_memory_cpu_mysql-replica
+        context:
+          node_name: db1.example.com            # PMM node name
+          panel_cpu_usage_alert_conditions_evaluator_params: 60
+      - template: disk_memory_cpu_mysql-replica
+        path: /srv/grafana/dashboards/pmm_alerts_dashboards/db2.example.com.json
+        context:
+          node_name: db2.example.com
+          panel_mysql_replication_enable: true
+          panel_mysql_replication_lag_alert_pending_for: 10m
+      - template: disk_memory_cpu_mysql-replica
+        folder: other_folder                    # optional, per definition
+        context:
+          node_name: web1.example.com
+          is_mysql_server: false
+      # pxc_size alerts: pxc_size, pxc_flow_control
+      - template: pxc_size
+        context:
+          wsrep_cluster_name: example-cluster
+          board_name: Example Percona XtraDB Cluster
+          panel_pxc_size_title: Example PXCluster size
+          panel_pxc_size_alert_conditions_evaluator_params: 3

@@ -1,0 +1,44 @@
+{#- pmm3 pillar merged with defaults; paths are derived from pmm3:name unless set explicitly.
+    srv_user/srv_group - owner of srv/: PMM runs as uid 1000 gid 0 #}
+{%- set pillar_pmm3 = salt['pillar.get']('pmm3', {}) %}
+{%- set base_path = pillar_pmm3.get('path', '/opt/pmm3/' ~ pillar_pmm3.get('name', 'pmm')) %}
+{%- set defaults = {
+  'image': 'percona/pmm-server:3.10.0',
+  'path': base_path,
+  'srv_path': base_path ~ '/srv',
+  'provisioning_path': base_path ~ '/provisioning',
+  'srv_user': 1000,
+  'srv_group': 0,
+  'publish': ['0.0.0.0:443:8443/tcp'],
+  'network': 'pmm3',
+  'api_url': 'https://127.0.0.1:443/graph',
+  'env_vars': {},
+  'renderer': {
+    'image': 'grafana/grafana-image-renderer:v5.12.10',
+  },
+  'alerting': {
+    'datasource_uid': 'PA58DA793C7250F1B',
+    'telegram_relay': {
+      'image': 'python:3.12-slim',
+      'path': base_path ~ '/telegram-relay',
+      'url': 'http://telegram-relay:8080/alert',
+      'grafana_url': 'https://pmm-server:8443/graph',
+      'render_range': '1h',
+      'render_tz': 'UTC',
+      'resolved_images': True,
+      'link_text': 'Open graph',
+    },
+    'policy': {
+      'group_by': ['grafana_folder', 'alertname', 'rulename'],
+      'group_wait': '10s',
+      'group_interval': '1m',
+      'repeat_interval': '24h',
+    },
+  },
+  'dashboards': {
+    'folder': 'pmm_alerts_dashboards',
+    'dashboard_definitions_defaults': {},
+    'dashboard_definitions': [],
+  },
+} %}
+{%- set pmm3 = salt['slsutil.merge'](defaults, pillar_pmm3, strategy='recurse') %}
