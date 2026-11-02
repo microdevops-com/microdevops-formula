@@ -30,3 +30,5 @@
 # rancher => rancher/pillar.example
 
 # rabbitmq => rabbitmq/pillar.example
+
+# pycve-agent => pycve-agent/pillar.example
