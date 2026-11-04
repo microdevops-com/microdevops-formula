@@ -44,6 +44,7 @@ pmm3:
       #resolved_images: true                    # optional, image on resolved notifications too
       #link_text: Open graph                    # optional, text of the panel link
       #image: python:3.12-slim                  # optional
+      #security_opt: []                         # optional, docker --security-opt of pmm3-telegram-relay
     #policy:                                    # optional, notification policy
     #  group_by: ['grafana_folder', 'alertname', 'rulename']
     #  group_wait: 10s

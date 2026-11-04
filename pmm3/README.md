@@ -36,7 +36,8 @@ and every notification arrives twice.
 - The container runs as uid 1000, gid 0. Everything under `srv/` must stay owned by uid 1000.
 - Docker older than 20.10.10: its default seccomp profile breaks process spawning in the PMM 3 image (Oracle Linux 9
   glibc). The first start fails in initdb with `could not execute command "postgres" -V: Cannot allocate memory`.
-  Upgrade Docker, or set `pmm3:security_opt: [seccomp=unconfined]`.
+  Upgrade Docker, or set `pmm3:security_opt: [seccomp=unconfined]`. The relay image (Debian glibc) fails the same way
+  (`RuntimeError: can't start new thread`): `pmm3:alerting:telegram_relay:security_opt: [seccomp=unconfined]`.
 - `GF_SERVER_DOMAIN` is always set to `pmm3:name`. PMM itself does not set the domain, so without it
   every link in an alert would point to `https://localhost/graph`.
 - The certificate goes to `srv/nginx/certificate.{crt,key}`. PMM does not regenerate existing files.

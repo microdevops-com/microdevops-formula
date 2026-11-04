@@ -81,6 +81,9 @@ pmm3_telegram_relay_container:
     - image: {{ relay['image'] }}
     - detach: True
     - restart_policy: unless-stopped
+    {%- if relay['security_opt'] %}
+    - security_opt: {{ relay['security_opt'] | json }}
+    {%- endif %}
     - command: python -u /app/relay.py
     - environment:
       - RELAY_ENV_FILE: /app/relay.env
