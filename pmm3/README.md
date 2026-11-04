@@ -38,6 +38,8 @@ and every notification arrives twice.
   glibc). The first start fails in initdb with `could not execute command "postgres" -V: Cannot allocate memory`.
   Upgrade Docker, or set `pmm3:security_opt: [seccomp=unconfined]`. The relay image (Debian glibc) fails the same way
   (`RuntimeError: can't start new thread`): `pmm3:alerting:telegram_relay:security_opt: [seccomp=unconfined]`.
+  The renderer too: chromium fails with `posix_spawn ... chrome_crashpad_handler: Operation not permitted`, alert images
+  are missing (render 500): `pmm3:renderer:security_opt: [seccomp=unconfined]`.
 - `GF_SERVER_DOMAIN` is always set to `pmm3:name`. PMM itself does not set the domain, so without it
   every link in an alert would point to `https://localhost/graph`.
 - The certificate goes to `srv/nginx/certificate.{crt,key}`. PMM does not regenerate existing files.
