@@ -10,11 +10,13 @@
   'srv_user': 1000,
   'srv_group': 0,
   'publish': ['0.0.0.0:443:8443/tcp'],
+  'security_opt': [],
   'network': 'pmm3',
   'api_url': 'https://127.0.0.1:443/graph',
   'env_vars': {},
   'renderer': {
     'image': 'grafana/grafana-image-renderer:v5.12.10',
+    'security_opt': [],
   },
   'alerting': {
     'datasource_uid': 'PA58DA793C7250F1B',

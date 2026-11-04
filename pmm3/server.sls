@@ -89,6 +89,9 @@ pmm3_renderer_container:
       - {{ pmm3['network'] }}:
         - aliases:
           - renderer
+    {%- if pmm3['renderer']['security_opt'] %}
+    - security_opt: {{ pmm3['renderer']['security_opt'] | json }}
+    {%- endif %}
     - require:
       - cmd: pmm3_renderer_container
       - docker_network: pmm3_network
@@ -110,6 +113,9 @@ pmm3_server_container:
       - {{ pmm3['network'] }}:
         - aliases:
           - pmm-server
+    {%- if pmm3['security_opt'] %}
+    - security_opt: {{ pmm3['security_opt'] | json }}
+    {%- endif %}
     - environment:
       {%- for key, value in environment | dictsort %}
       - {{ key }}: {{ ('true' if value is sameas true else 'false' if value is sameas false else value | string) | json }}

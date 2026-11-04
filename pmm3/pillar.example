@@ -10,10 +10,13 @@ pmm3:
   #srv_group: 0
   #publish:                                     # optional, PMM 3 listens on 8443 inside the container
   #  - 0.0.0.0:443:8443/tcp
+  #security_opt:                                # optional, docker --security-opt of pmm3-server
+  #  - seccomp=unconfined                       # docker < 20.10.10: its seccomp profile breaks the image's glibc (initdb fails)
   #network: pmm3                                # optional, docker network of pmm3-server, pmm3-renderer, pmm3-telegram-relay
   #api_url: https://127.0.0.1:443/graph         # optional, Grafana API as seen from the host (provisioning reload)
   #renderer:
   #  image: grafana/grafana-image-renderer:v5.12.10
+  #  security_opt: []                           # optional, docker --security-opt of pmm3-renderer
   #replaces:                                    # optional, containers removed before pmm3-server starts (e.g. holding port 443)
   #  - old-pmm-server
   env_vars:                                     # optional, extra container env: PMM_* and GF_* (Grafana ini as env)

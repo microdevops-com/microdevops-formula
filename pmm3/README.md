@@ -34,6 +34,9 @@ and every notification arrives twice.
 
 - PMM 3 listens on 8443 inside the container and is published as `443:8443`. Agents connect to `<name>:443`.
 - The container runs as uid 1000, gid 0. Everything under `srv/` must stay owned by uid 1000.
+- Docker older than 20.10.10: its default seccomp profile breaks process spawning in the PMM 3 image (Oracle Linux 9
+  glibc). The first start fails in initdb with `could not execute command "postgres" -V: Cannot allocate memory`.
+  Upgrade Docker, or set `pmm3:security_opt: [seccomp=unconfined]`.
 - `GF_SERVER_DOMAIN` is always set to `pmm3:name`. PMM itself does not set the domain, so without it
   every link in an alert would point to `https://localhost/graph`.
 - The certificate goes to `srv/nginx/certificate.{crt,key}`. PMM does not regenerate existing files.
