@@ -8,6 +8,10 @@ install_proftpd:
   {%- if grains['os_family'] == "RedHat" %}
       - proftpd
       - proftpd-utils
+  {%- elif grains['oscodename'] == "noble" %}
+      - proftpd-core
+      - proftpd-mod-crypto
+      - proftpd-mod-wrap
   {%- else %}
       - proftpd-basic
   {%- endif %}
