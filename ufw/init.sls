@@ -407,6 +407,18 @@ ufw_conf_managed:
     - defaults:
         LOGLEVEL: {{ pillar["ufw"].get("loglevel", "'off'") }}
 
+  # /etc/ufw/before.init runs around every ufw start/stop/reload; managed only when the key is present
+  {%- if "cve_2026_98432_mitigation" in pillar["ufw"] %}
+ufw_before_init_managed:
+  file.managed:
+    - name: /etc/ufw/before.init
+    - source: salt://ufw/files/etc_ufw_before.init
+    - mode: 0750
+    - template: jinja
+    - defaults:
+        cve_2026_98432_mitigation: {{ pillar["ufw"]["cve_2026_98432_mitigation"] | to_bool }}
+  {%- endif %}
+
   # Reload ufw on any file change
 ufw_reload:
   cmd.run:
@@ -417,6 +429,9 @@ ufw_reload:
       - file: /etc/default/ufw
       - file: /etc/ufw/before.rules
       - file: /etc/ufw/before6.rules
+  {%- if "cve_2026_98432_mitigation" in pillar["ufw"] %}
+      - file: /etc/ufw/before.init
+  {%- endif %}
   {%- if grains["os"] in ["CentOS"] %}
       - file: /var/lib/ufw/user.rules
       - file: /var/lib/ufw/user6.rules
@@ -435,6 +450,9 @@ exec_after:
       - file: /etc/default/ufw
       - file: /etc/ufw/before.rules
       - file: /etc/ufw/before6.rules
+    {%- if "cve_2026_98432_mitigation" in pillar["ufw"] %}
+      - file: /etc/ufw/before.init
+    {%- endif %}
     {%- if grains["os"] in ["CentOS"] %}
       - file: /var/lib/ufw/user.rules
       - file: /var/lib/ufw/user6.rules

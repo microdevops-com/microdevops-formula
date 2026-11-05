@@ -7,6 +7,7 @@ ufw:
   import_ufw_simple: False # import deprecated ufw_simple state pillar
   #forwarding: True # optional, just enable forwarding like with nat, enabling nat does it as well
   #iptables-legacy: True # optional, `update-alternatives --set iptables /usr/sbin/iptables-legacy` iptables-nft is not compatible with large iptables lists
+  #cve_2026_98432_mitigation: True # optional, raw PREROUTING drop of inbound TCP with IP options via /etc/ufw/before.init, interim until a fixed kernel runs; False removes the chain on the next reload, absent leaves before.init untouched; see pillar/ufw/cve_2026_98432_mitigation.sls
   allow: # allow/deny/reject/limit
     rule_1: # from list to list with to port
       proto: tcp

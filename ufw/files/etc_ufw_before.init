@@ -1,0 +1,56 @@
+#!/bin/sh
+#
+# /etc/ufw/before.init - ufw runs this script with "stop" and "start" around every
+# enable, reload and boot, before its own rules are loaded.
+#
+# THIS FILE IS MANAGED BY SALT, CHANGES WILL BE OVERWRITTEN
+#
+# ufw aborts a reload when this script fails, after it has already flushed the
+# firewall, leaving the host open. Nothing in here may exit non-zero.
+
+CVE_2026_98432_CHAIN="ufw-raw-cve-2026-98432"
+
+# CVE-2026-98432 (IPv4 TCP ireq_opt use-after-free, remote): drop inbound TCP that
+# carries IP options (IHL > 5) in the raw table, before conntrack and DNAT, so host
+# ports and NATed container ports are both covered. Interim until a fixed kernel runs.
+cve_2026_98432_start() {
+    if ! iptables -t raw -N "$CVE_2026_98432_CHAIN" 2>/dev/null; then
+        iptables -t raw -F "$CVE_2026_98432_CHAIN" || true
+    fi
+    if ! iptables -t raw -A "$CVE_2026_98432_CHAIN" -p tcp -m u32 --u32 "0>>24&0x0f=6:15" -j DROP; then
+        echo "before.init: CVE-2026-98432 mitigation NOT applied, u32 match unavailable (xt_u32 not loadable in this kernel)" >&2
+        return 0
+    fi
+    iptables -t raw -C PREROUTING -j "$CVE_2026_98432_CHAIN" 2>/dev/null \
+        || iptables -t raw -I PREROUTING 1 -j "$CVE_2026_98432_CHAIN" \
+        || echo "before.init: CVE-2026-98432 mitigation NOT applied, cannot insert into raw PREROUTING" >&2
+}
+
+cve_2026_98432_stop() {
+    while iptables -t raw -C PREROUTING -j "$CVE_2026_98432_CHAIN" 2>/dev/null; do
+        iptables -t raw -D PREROUTING -j "$CVE_2026_98432_CHAIN" || break
+    done
+    iptables -t raw -F "$CVE_2026_98432_CHAIN" 2>/dev/null || true
+    iptables -t raw -X "$CVE_2026_98432_CHAIN" 2>/dev/null || true
+}
+
+case "$1" in
+start)
+{%- if cve_2026_98432_mitigation %}
+    cve_2026_98432_start
+{%- else %}
+    cve_2026_98432_stop
+{%- endif %}
+    ;;
+stop|flush-all)
+    cve_2026_98432_stop
+    ;;
+status)
+    iptables -t raw -S "$CVE_2026_98432_CHAIN" 2>/dev/null || true
+    ;;
+*)
+    echo "'$1' not supported"
+    echo "Usage: before.init {start|stop|flush-all|status}"
+    ;;
+esac
+exit 0
