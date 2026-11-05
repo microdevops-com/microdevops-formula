@@ -1,0 +1,58 @@
+# Managed by Salt. Narrow security rules: file changes and commands run by people, no service noise.
+
+# Keep loading when a watched path does not exist on this host
+-i
+-b 8192
+-f 1
+
+# Users and groups
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+
+# Sudo
+-w /etc/sudoers -p wa -k sudoers
+-w /etc/sudoers.d/ -p wa -k sudoers
+
+# SSH server and keys. Homes come from the host at apply time: reapply the state after adding a user.
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+-w /etc/ssh/sshd_config.d/ -p wa -k sshd_config
+{%- set homes = [] %}
+{%- for u in salt["user.getent"]() %}
+  {%- if (u["uid"] == 0 or (u["uid"] >= 1000 and u["uid"] < 65000)) and u["home"] not in ["", "/", "/nonexistent"] and u["home"] not in homes %}
+    {%- do homes.append(u["home"]) %}
+  {%- endif %}
+{%- endfor %}
+{%- for home in homes | sort %}
+-w {{ home }}/.ssh/ -p wa -k ssh_keys
+{%- endfor %}
+
+# Firewall
+-w /etc/ufw/ -p wa -k firewall
+-w /etc/iptables/ -p wa -k firewall
+
+# Cron
+-w /etc/crontab -p wa -k cron
+-w /etc/cron.d/ -p wa -k cron
+-w /var/spool/cron/ -p wa -k cron
+
+# Audit configuration itself
+-w /etc/audit/ -p wa -k audit_config
+-w /etc/laurel/ -p wa -k audit_config
+
+# Commands in login sessions, direct root logins and sudo included. Services have no login uid, cron gets none
+# because the state disables pam_loginuid for it. Salt and CI log in as root over SSH, so they are logged too.
+-a always,exit -F arch=b64 -S execve -F auid!=unset -k user_commands
+-a always,exit -F arch=b32 -S execve -F auid!=unset -k user_commands
+
+# Kernel modules
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k kernel_modules
+
+# Clock changes by people, chrony and timesyncd have no login uid
+-a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -F auid!=unset -k time_change
+{%- if pillar["auditd"].get("extra_rules") %}
+
+# Extra rules from pillar
+{{ pillar["auditd"]["extra_rules"] }}
+{%- endif %}

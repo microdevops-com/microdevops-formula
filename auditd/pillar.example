@@ -1,0 +1,15 @@
+# vi: set ft=yaml:
+# Installs auditd with a narrow set of rules and laurel (one JSON line per event, /var/log/laurel/audit.log).
+# Debian and Ubuntu on amd64 only, containers are skipped. An empty dict is enough: all keys are optional.
+# Commands of all login sessions are logged, direct root logins and Salt over SSH included.
+# Cron jobs stay out: the state disables pam_loginuid in /etc/pam.d/cron.
+
+auditd:
+  #immutable: True # optional, default True: lock rules with -e 2. After that new rules need a reboot, the state warns
+  #extra_rules: | # optional, added before the lock
+  #  -w /opt/app/config.yaml -p wa -k app_config
+  #laurel: # optional
+  #  version: 0.8.2 # set source_hash too when changing the version
+  #  source_hash: sha256=c9b495acf67e9941760b24308145b513b2ee2a0a5bfe0a5bd70d5133c27c6e6c
+  #  log_size: 50000000 # bytes per file
+  #  log_generations: 5 # rotated files to keep
