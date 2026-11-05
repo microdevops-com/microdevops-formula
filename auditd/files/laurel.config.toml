@@ -1,0 +1,21 @@
+# Managed by Salt
+directory = "/var/log/laurel"
+user = "_laurel"
+input = "stdin"
+
+[auditlog]
+file = "audit.log"
+size = {{ log_size }}
+generations = {{ log_generations }}
+
+[transform]
+execve-argv = [ "array" ]
+
+[translate]
+user-db = true
+
+[enrich]
+execve-env = [ "LD_PRELOAD", "LD_LIBRARY_PATH" ]
+container = true
+pid = true
+script = true
