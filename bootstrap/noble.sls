@@ -35,6 +35,7 @@ pkg_latest:
       - bash-completion
       - bc
       - locales
+      - tzdata-legacy
       # apt
       - apt-transport-https
       - apt-listchanges
