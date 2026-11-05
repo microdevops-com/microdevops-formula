@@ -30,8 +30,16 @@ sensu-plugins_legacy_repo_absent:
   file.absent:
     - name: /etc/apt/sources.list.d/sensu_community.list
 
+# Purge leaves files not owned by the package (e.g. gems added by sensu-install), remove the legacy tree
+sensu-plugins_legacy_dir_absent:
+  file.absent:
+    - name: /opt/sensu-plugins-ruby
+    - onlyif: test -d /opt/sensu-plugins-ruby/embedded/bin -a ! -L /opt/sensu-plugins-ruby/embedded/bin
+    - require:
+        - pkg: sensu-plugins_legacy_pkg_purged
+
 # Symlink /opt/sensu-plugins-ruby/embedded/bin -> /usr/local/bin for backwards compatibility
-# force: legacy omnibus leaves embedded/bin as a real directory (files not owned by the package survive purge)
+# force: replace an existing symlink pointing elsewhere (it does not remove directories)
 sensu-plugins_ruby_dependencies_2:
   file.symlink:
     - name: /opt/sensu-plugins-ruby/embedded/bin
@@ -39,7 +47,7 @@ sensu-plugins_ruby_dependencies_2:
     - makedirs: True
     - force: True
     - require:
-        - pkg: sensu-plugins_legacy_pkg_purged
+        - file: sensu-plugins_legacy_dir_absent
 
     {%- for plugin in sensu_plugins_needed %}
 sensu-plugins_install_{{ loop.index }}:
