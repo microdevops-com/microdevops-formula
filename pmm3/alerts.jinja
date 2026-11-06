@@ -1,0 +1,137 @@
+{#-
+  Generator: pmm3:dashboards:dashboard_definitions + catalog.jinja ->
+    dashboards  - [{'path': <file>, 'data': <dashboard JSON>}]
+    rule_groups - Grafana alerting provisioning rule groups (one group per subject and interval)
+  One rule per (alert x subject); the rule refers to the panel of its dashboard (__dashboardUid__/__panelId__),
+  the relay renders the notification image by that reference.
+-#}
+{%- from 'pmm3/map.jinja' import pmm3 with context %}
+{%- from 'pmm3/catalog.jinja' import catalog, reducers with context %}
+{%- set ds_uid = pmm3['alerting']['datasource_uid'] %}
+{%- set datasource = {'type': 'prometheus', 'uid': ds_uid} %}
+{%- set definitions_defaults = pmm3['dashboards']['dashboard_definitions_defaults'] %}
+{%- set dashboards = [] %}
+{%- set rule_groups = [] %}
+
+{%- macro seconds(d) %}{{ d[:-1] | int * {'s': 1, 'm': 60, 'h': 3600}[d[-1]] }}{% endmacro %}
+
+{%- for d in pmm3['dashboards']['dashboard_definitions'] %}
+  {#- template: catalog kind; a path is reduced to its basename without .json #}
+  {%- set kind = d['template'].split('/')[-1] | replace('.json', '') %}
+  {%- set c = catalog[kind] %}
+  {%- set ctx = {} %}
+  {%- do ctx.update(definitions_defaults) %}
+  {%- do ctx.update(d.get('context', {})) %}
+  {%- set target = ctx[c['subject']] %}
+  {#- folder: explicit, or the directory of path (/srv/grafana/dashboards/<folder>/<file>.json), or the default #}
+  {%- set folder = d.get('folder') or (d['path'].split('/')[-2] if d.get('path') else pmm3['dashboards']['folder']) %}
+  {%- set dash_uid = (kind ~ ':' ~ target) | md5 %}
+  {%- set panels = [] %}
+  {%- set groups = {} %}
+  {%- set pos = namespace(y=0) %}
+
+  {%- for section in c['sections'] %}
+    {%- if not section.get('when') or ctx.get(section['when'][0], section['when'][1]) %}
+      {%- if section['title'] %}
+        {%- do panels.append({'id': section['row_id'], 'type': 'row', 'title': section['title'], 'collapsed': false,
+                              'gridPos': {'h': 1, 'w': 24, 'x': 0, 'y': pos.y}}) %}
+        {%- set pos.y = pos.y + 1 %}
+      {%- endif %}
+      {%- set col = namespace(i=0) %}
+      {%- for key in section['alerts'] %}
+        {%- set a = c['alerts'][key] %}
+        {%- if not a.get('when') or ctx.get(a['when'][0], a['when'][1]) %}
+          {%- set p = 'panel_' ~ key ~ '_alert_' %}
+          {%- set thr = ctx.get(p ~ 'conditions_evaluator_params', a['threshold']) %}
+          {%- set op = ctx.get(p ~ 'conditions_evaluator_type', a['op']) %}
+          {%- set reducer = ctx.get(p ~ 'conditions_reducer_type', a['reducer']) %}
+          {%- set qp = ctx.get(p ~ 'conditions_query_params') %}
+          {%- set range = qp.split(',')[1].strip().strip('"') if qp else a['range'] %}
+          {%- set every = ctx.get(p ~ 'frequency', a['frequency']) %}
+          {%- set pending = ctx.get(p ~ 'pending_for', a['for']) %}
+          {%- set expr = a['expr'] | replace('__T__', target) %}
+          {%- set name = a['name'] | replace('__T__', target) | replace('{op}', op) | replace('{thr}', thr | string)
+                                   | replace('{thr_pct}', (thr * 100) | round(2) | string) %}
+          {%- set panel_title = ctx.get('panel_' ~ key ~ '_title', a['panel_title'] | replace('__T__', target)) %}
+
+          {#- panel: style from the catalog. Threshold:
+              red line + filled critical area; axis soft min/max stretch the scale to the threshold - it is always in the picture #}
+          {%- set st = a.get('style', {}) %}
+          {%- set grid = c['grid'] %}
+          {%- set steps = [{'color': 'transparent', 'value': none}, {'color': 'red', 'value': thr}] if op == 'gt'
+                     else [{'color': 'red', 'value': none}, {'color': 'transparent', 'value': thr}] %}
+          {%- set legend = {'showLegend': not st.get('legend_hidden', false), 'displayMode': 'list', 'placement': 'bottom',
+                            'calcs': st.get('legend_calcs', [])} %}
+          {%- set tooltip = {'mode': 'multi', 'sort': 'none'} %}
+          {%- if st.get('raw') %}
+            {#- ready panel settings from the catalog, taken as is #}
+            {%- set field_defaults = {'unit': a['unit'], 'color': st['raw']['color'], 'decimals': st['raw']['decimals'],
+                                      'custom': st['raw']['custom'],
+                                      'thresholds': {'mode': 'absolute', 'steps': [{'color': 'red', 'value': none}, {'color': 'green', 'value': thr}]}} %}
+            {%- set legend = st['raw']['legend'] %}
+            {%- set tooltip = st['raw']['tooltip'] %}
+          {%- else %}
+            {%- set field_defaults = {'unit': a['unit'], 'thresholds': {'mode': 'absolute', 'steps': steps},
+                                      'color': {'mode': 'fixed', 'fixedColor': st['color']} if st.get('color') else {'mode': 'palette-classic'},
+                                      'custom': {'drawStyle': 'bars' if st.get('bars') else 'line', 'lineWidth': st.get('width', 1),
+                                                 'fillOpacity': st.get('fill', 1) * 10, 'gradientMode': 'opacity' if st.get('gradient') else 'none',
+                                                 'showPoints': 'never', 'spanNulls': true, 'axisSoftMin': thr, 'axisSoftMax': thr,
+                                                 'thresholdsStyle': {'mode': 'line+area'}}} %}
+            {%- if st.get('decimals') is not none %}{% do field_defaults.update({'decimals': st['decimals']}) %}{% endif %}
+          {%- endif %}
+          {%- if a.get('min') is not none %}{% do field_defaults.update({'min': a['min']}) %}{% endif %}
+          {%- if a.get('max') is not none %}{% do field_defaults.update({'max': a['max']}) %}{% endif %}
+          {%- do panels.append({
+                'id': a['panel_id'], 'type': 'timeseries', 'title': panel_title, 'datasource': datasource,
+                'gridPos': {'h': grid['h'], 'w': grid['w'], 'x': (col.i % grid['cols']) * grid['w'],
+                            'y': pos.y + (col.i // grid['cols']) * grid['h']},
+                'targets': [{'refId': 'A', 'datasource': datasource, 'expr': expr, 'legendFormat': a['legend'], 'range': true}],
+                'fieldConfig': {'defaults': field_defaults, 'overrides': []},
+                'options': {'legend': legend, 'tooltip': tooltip},
+              }) %}
+          {%- set col.i = col.i + 1 %}
+
+          {#- rule: A (PromQL over the window) -> B (reduce) -> C (threshold).
+              summary is wrapped in if: on NoData/Error there are no values and the template fails otherwise #}
+          {%- set rule = {
+                'uid': (dash_uid ~ ':' ~ key) | md5,
+                'title': name,
+                'condition': 'C',
+                'data': [
+                  {'refId': 'A', 'datasourceUid': ds_uid,
+                   'relativeTimeRange': {'from': seconds(range) | int, 'to': 0},
+                   'model': {'refId': 'A', 'expr': expr, 'range': true, 'instant': false,
+                             'intervalMs': 1000, 'maxDataPoints': 43200, 'legendFormat': a['legend']}},
+                  {'refId': 'B', 'datasourceUid': '__expr__',
+                   'model': {'refId': 'B', 'type': 'reduce', 'expression': 'A', 'reducer': reducers[reducer]}},
+                  {'refId': 'C', 'datasourceUid': '__expr__',
+                   'model': {'refId': 'C', 'type': 'threshold', 'expression': 'B',
+                             'conditions': [{'evaluator': {'type': op, 'params': [thr]}}]}},
+                ],
+                'noDataState': 'NoData',
+                'execErrState': 'Alerting',
+                'for': pending,
+                'annotations': {'summary': ('[[ if $values.B ]]' ~ a['summary'] ~ '[[ else ]]no data[[ end ]]')
+                                           | replace('[[', '{{') | replace(']]', '}}'),
+                                '__dashboardUid__': dash_uid, '__panelId__': a['panel_id'] | string},
+                'labels': {c['subject']: target, 'alert_key': key, 'managed_by': 'salt'},
+                'isPaused': false,
+              } %}
+          {%- if every not in groups %}{% do groups.update({every: []}) %}{% endif %}
+          {%- do groups[every].append(rule) %}
+        {%- endif %}
+      {%- endfor %}
+      {%- set pos.y = pos.y + ((col.i + c['grid']['cols'] - 1) // c['grid']['cols']) * c['grid']['h'] %}
+    {%- endif %}
+  {%- endfor %}
+
+  {%- do dashboards.append({
+        'path': pmm3['srv_path'] ~ '/grafana/dashboards/' ~ folder ~ '/' ~ target ~ '.json',
+        'data': {'uid': dash_uid, 'title': ctx.get('board_name', target), 'editable': true, 'schemaVersion': 39,
+                 'tags': ['salt', kind], 'time': {'from': 'now-1h', 'to': 'now'}, 'refresh': '1m', 'panels': panels},
+      }) %}
+  {%- for every, rules in groups | dictsort %}
+    {%- do rule_groups.append({'orgId': 1, 'name': target ~ ' [' ~ every ~ ']', 'folder': folder,
+                               'interval': every, 'rules': rules}) %}
+  {%- endfor %}
+{%- endfor %}
