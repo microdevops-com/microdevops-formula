@@ -310,6 +310,19 @@ app:
         #volumes: # optional
         #  - ...
         #volumes_from: ... # optional
+        # Optional hardening and logging for the app container (not pre_start), passed to
+        # docker_container.running as is:
+        #read_only: True # read-only root filesystem
+        #tmpfs: # writable scratch space when read_only
+        #  - /tmp: size=16m
+        #cap_drop:
+        #  - ALL
+        #security_opt:
+        #  - no-new-privileges:true
+        #log_driver: json-file
+        #log_opt:
+        #  max-size: 10m
+        #  max-file: "5"
         #networks: # optional, attach to custom networks, use [] to start without any network
         #  - proto
         cron: # optional, docker exec ... cmd by cron from docker host

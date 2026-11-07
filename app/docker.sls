@@ -155,6 +155,13 @@ docker_app_container_{{ loop.index }}:
       {%- if "volumes_from" in app %}
     - volumes_from: {{ app["volumes_from"] }}
       {%- endif %}
+      {#- Optional hardening and logging, passed through to docker_container.running as is
+          (app container only, not pre_start: one-shot migrations may need a writable root). #}
+      {%- for opt in ["read_only", "tmpfs", "cap_drop", "security_opt", "log_driver", "log_opt"] %}
+        {%- if opt in app %}
+    - {{ opt }}: {{ app[opt] | json }}
+        {%- endif %}
+      {%- endfor %}
       
       {%- if app["exec_after_deploy"] is defined %}
 docker_app_container_exec_{{ loop.index }}:
