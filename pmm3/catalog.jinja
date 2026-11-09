@@ -1,0 +1,143 @@
+{#-
+  PMM alert catalog: single source for the alert dashboards and the Grafana Unified Alerting rules.
+
+  Top-level key - dashboard kind (`pmm3:dashboards:dashboard_definitions[].template`).
+  Alert key is the prefix of its overrides in the definition context:
+    panel_<key>_alert_conditions_evaluator_params  - threshold
+    panel_<key>_alert_conditions_evaluator_type    - gt | lt
+    panel_<key>_alert_conditions_reducer_type      - max | min | avg | last
+    panel_<key>_alert_conditions_query_params      - '"A","5m","now"' (only the 5m window is used)
+    panel_<key>_alert_frequency                    - evaluation interval (rule group interval)
+    panel_<key>_alert_pending_for                  - pending period (for)
+    panel_<key>_title                              - panel title
+
+  __T__ in expressions is replaced with the dashboard subject (node_name or wsrep_cluster_name).
+  [[ ]] in summary is replaced with {{ }} (Grafana go-template), to avoid clashing with Jinja.
+
+  style - panel look (timeseries):
+    color (fixed), fill (0..10 -> fillOpacity x10), gradient (opacity gradient),
+    bars, width (line width), decimals, legend_calcs, legend_hidden.
+    raw - ready fieldConfig.custom/options of the panel.
+  grid - layout: panel width/height, panels per row.
+-#}
+{%- set fs = 'fstype!~"rootfs|selinuxfs|autofs|rpc_pipefs|tmpfs|udev|none|fuse.snapfuse"' %}
+{%- set n = 'node_name=~"__T__"' %}
+{%- set s = 'service_name=~"__T__-mysql"' %}
+{%- set catalog = {
+  'disk_memory_cpu_mysql-replica': {
+    'subject': 'node_name',
+    'grid': {'w': 7, 'h': 6, 'cols': 2},
+    'sections': [
+      {'row_id': 1,  'title': 'Disk Space and Memory', 'alerts': ['disk_space_usage', 'free_memory', 'swap_usage', 'undo_log_size']},
+      {'row_id': 17, 'title': 'CPU',                   'alerts': ['cpu_usage', 'cpu_iowait']},
+      {'row_id': 6,  'title': 'Replication',           'alerts': ['mysql_replication_status', 'mysql_replication_lag'], 'when': ['panel_mysql_replication_enable', false]},
+      {'row_id': 13, 'title': 'General',               'alerts': ['server_uptime_threshold'], 'when': ['is_mysql_server', true]},
+    ],
+    'alerts': {
+      'disk_space_usage': {
+        'style': {'color': '#7EB26D', 'fill': 10},
+        'panel_id': 2, 'panel_title': '[__T__] Disk Space Usage', 'unit': 'percentunit', 'legend': 'Disk Space Usage',
+        'name': '[__T__] Disk Space Usage {op} {thr_pct}%',
+        'expr': 'max by (node_name) (1 - max_over_time(node_filesystem_avail_bytes{' ~ n ~ ', ' ~ fs ~ '}[5m]) / max_over_time(node_filesystem_size_bytes{' ~ n ~ ', ' ~ fs ~ '}[5m]))',
+        'op': 'gt', 'threshold': 0.8, 'reducer': 'max', 'range': '5m', 'frequency': '1m', 'for': '0m',
+        'summary': 'Disk usage [[ humanizePercentage $values.B.Value ]]',
+      },
+      'free_memory': {
+        'style': {'color': '#37872D', 'fill': 4, 'gradient': true, 'bars': true},
+        'panel_id': 3, 'panel_title': '[__T__] Free Memory', 'unit': 'percent', 'legend': 'Memory available',
+        'name': '[__T__] Free Memory {op} {thr}%',
+        'expr': '100 - (clamp_min(avg by (node_name) (avg_over_time(node_memory_MemTotal_bytes{' ~ n ~ '}[10s]) - (avg_over_time(node_memory_MemFree_bytes{' ~ n ~ '}[10s]) + avg_over_time(node_memory_Buffers_bytes{' ~ n ~ '}[10s]) + avg_over_time(node_memory_Cached_bytes{' ~ n ~ '}[10s]))), 0) / avg by (node_name) (avg_over_time(node_memory_MemTotal_bytes{' ~ n ~ '}[10s])) * 100)',
+        'op': 'lt', 'threshold': 10, 'reducer': 'min', 'range': '1m', 'frequency': '1m', 'for': '0m',
+        'summary': 'Memory available [[ printf "%.1f" $values.B.Value ]]%',
+      },
+      'swap_usage': {
+        'style': {'color': '#E02F44', 'fill': 4, 'gradient': true, 'bars': true},
+        'panel_id': 16, 'panel_title': '[__T__] Swap Usage', 'unit': 'bytes', 'legend': 'Swap Usage',
+        'name': '[__T__] Swap Usage!',
+        'expr': 'avg by (node_name) (max_over_time(node_memory_SwapTotal_bytes{' ~ n ~ '}[10s]) - max_over_time(node_memory_SwapFree_bytes{' ~ n ~ '}[10s]))',
+        'op': 'gt', 'threshold': 0, 'reducer': 'min', 'range': '1m', 'frequency': '1m', 'for': '1m',
+        'summary': 'Swap used [[ humanize1024 $values.B.Value ]]B',
+      },
+      'undo_log_size': {
+        'style': {'color': '#E02F44', 'fill': 4, 'gradient': true, 'bars': true},
+        'panel_id': 18, 'panel_title': '[__T__] Undo Log', 'unit': 'bytes', 'legend': 'Undo log size', 'when': ['is_mysql_server', true],
+        'name': '[__T__] Undo log is HUGE',
+        'expr': 'avg by (node_name) ((max_over_time(mysql_info_schema_innodb_metrics_transaction_trx_rseg_current_size{' ~ n ~ '}[1m]) or max_over_time(mysql_info_schema_innodb_metrics_transaction_trx_rseg_current_size{' ~ n ~ '}[5m])) * (max_over_time(mysql_global_status_innodb_page_size{' ~ n ~ '}[1m]) or max_over_time(mysql_global_status_innodb_page_size{' ~ n ~ '}[5m])))',
+        'op': 'gt', 'threshold': 21474836480, 'reducer': 'max', 'range': '5m', 'frequency': '1m', 'for': '5m',
+        'summary': 'Undo log size [[ humanize1024 $values.B.Value ]]B',
+      },
+      'cpu_usage': {
+        'style': {'color': '#1F60C4', 'fill': 7},
+        'panel_id': 4, 'panel_title': '[__T__] CPU Usage', 'unit': 'percent', 'legend': 'user',
+        'name': '[__T__] CPU Usage {op} {thr}%',
+        'expr': 'avg by (node_name,mode) (clamp_max(((avg by (mode) ((clamp_max(rate(node_cpu_seconds_total{' ~ n ~ ',mode="user"}[1m]),1)) or (clamp_max(irate(node_cpu_seconds_total{' ~ n ~ ',mode="user"}[5m]),1))))*100 or (avg_over_time(node_cpu_average{' ~ n ~ ', mode!="total", mode="user"}[1m]) or avg_over_time(node_cpu_average{' ~ n ~ ', mode!="total", mode="user"}[5m]))),100))',
+        'op': 'gt', 'threshold': 30, 'reducer': 'last', 'range': '1m', 'frequency': '30s', 'for': '0m',
+        'summary': 'CPU user [[ printf "%.1f" $values.B.Value ]]%',
+      },
+      'cpu_iowait': {
+        'style': {'color': '#C4162A', 'fill': 7},
+        'panel_id': 5, 'panel_title': '[__T__] CPU IOWait', 'unit': 'percentunit', 'legend': 'CPU iowait',
+        'name': '[__T__] CPU IOWait {op} {thr_pct}%',
+        'expr': 'clamp_max(max by () (sum by (cpu) ((clamp_max(rate(node_cpu_seconds_total{' ~ n ~ ',mode="iowait"}[1m]),1)) or (clamp_max(irate(node_cpu_seconds_total{' ~ n ~ ',mode="iowait"}[5m]),1)))),1)',
+        'op': 'gt', 'threshold': 0.2, 'reducer': 'avg', 'range': '5m', 'frequency': '1m', 'for': '0m',
+        'summary': 'IOWait [[ humanizePercentage $values.B.Value ]]',
+      },
+      'mysql_replication_status': {
+        'style': {'color': '#8F3BB8', 'fill': 10},
+        'panel_id': 7, 'panel_title': '[__T__] MYSQL Replica Status', 'unit': 'short', 'legend': 'Replication is running', 'min': 0, 'max': 1,
+        'name': '[__T__] MYSQL Replica IS NOT RUNNING',
+        'expr': 'min((min_over_time(mysql_slave_status_slave_io_running{' ~ s ~ '}[1m])), (min_over_time(mysql_slave_status_slave_sql_running{' ~ s ~ '}[1m])))',
+        'op': 'lt', 'threshold': 0.5, 'reducer': 'last', 'range': '10s', 'frequency': '10s', 'for': '0m',
+        'summary': 'IO and SQL threads running: [[ $values.B.Value ]] (1 = yes)',
+      },
+      'mysql_replication_lag': {
+        'style': {'color': '#B877D9', 'fill': 10, 'decimals': 2, 'legend_calcs': ['lastNotNull']},
+        'panel_id': 8, 'panel_title': '[__T__] MYSQL Replica Lag', 'unit': 's', 'legend': 'Replica lag', 'min': 0,
+        'name': '[__T__] MYSQL Replica Lag {op} {thr}s',
+        'expr': 'clamp_min(avg by (service_name) (max_over_time(mysql_slave_status_seconds_behind_master{' ~ s ~ '}[30s]) - max_over_time(mysql_slave_status_sql_delay{' ~ s ~ '}[30s])),0)',
+        'op': 'gt', 'threshold': 60, 'reducer': 'max', 'range': '1m', 'frequency': '1m', 'for': '0m',
+        'summary': 'Replica lag [[ humanizeDuration $values.B.Value ]]',
+      },
+      'server_uptime_threshold': {
+        'style': {'raw': {
+          'color': {'mode': 'palette-classic'}, 'decimals': 0,
+          'custom': {'drawStyle': 'line', 'fillOpacity': 100, 'gradientMode': 'hue', 'lineWidth': 0, 'showPoints': 'never',
+                     'spanNulls': true, 'thresholdsStyle': {'mode': 'off'}},
+          'legend': {'showLegend': false, 'displayMode': 'hidden', 'placement': 'bottom', 'calcs': []},
+          'tooltip': {'mode': 'single', 'sort': 'none'}}},
+        'panel_id': 11, 'panel_title': '[__T__] Server Uptime', 'unit': 's', 'legend': 'Server uptime',
+        'name': '[__T__] MySQL server restarted',
+        'expr': 'avg by (service_name) (mysql_global_status_uptime{' ~ s ~ '})',
+        'op': 'lt', 'threshold': 300, 'reducer': 'last', 'range': '1m', 'frequency': '10s', 'for': '0m',
+        'summary': 'MySQL uptime [[ humanizeDuration $values.B.Value ]]',
+      },
+    },
+  },
+  'pxc_size': {
+    'subject': 'wsrep_cluster_name',
+    'grid': {'w': 8, 'h': 8, 'cols': 2},
+    'sections': [
+      {'title': none, 'alerts': ['pxc_size', 'pxc_flow_control']},
+    ],
+    'alerts': {
+      'pxc_size': {
+        'style': {'color': '#FFF899', 'fill': 0, 'width': 3, 'legend_hidden': true},
+        'panel_id': 1, 'panel_title': 'Percona XtraDB Cluster size', 'unit': 'short', 'legend': '{{service_name}}',
+        'name': '[__T__] Percona XtraDB Cluster size abnormal',
+        'expr': 'min_over_time(mysql_global_status_wsrep_cluster_size[5s]) * on (service_name) group_left avg by (service_name) (mysql_galera_variables_info{wsrep_cluster_name="__T__"})',
+        'op': 'lt', 'threshold': 3, 'reducer': 'min', 'range': '10s', 'frequency': '10s', 'for': '0m',
+        'summary': 'Cluster size [[ $values.B.Value ]] on [[ $labels.service_name ]]',
+      },
+      'pxc_flow_control': {
+        'style': {'fill': 2, 'width': 2, 'decimals': 2, 'legend_hidden': true},
+        'panel_id': 2, 'panel_title': 'Cluster Paused Time', 'unit': 'percentunit', 'legend': '{{service_name}}', 'min': 0, 'max': 1,
+        'name': '[__T__] Cluster stale risk!',
+        'expr': 'clamp_max(avg by (service_name) ((rate(mysql_global_status_wsrep_flow_control_paused_ns[5s]) or irate(mysql_global_status_wsrep_flow_control_paused_ns[5m])))/1000000000 * on (service_name) group_left avg by (service_name) (mysql_galera_variables_info{wsrep_cluster_name="__T__"}),1)',
+        'op': 'gt', 'threshold': 0.7, 'reducer': 'max', 'range': '10s', 'frequency': '10s', 'for': '0m',
+        'summary': 'Flow control paused [[ humanizePercentage $values.B.Value ]] on [[ $labels.service_name ]]',
+      },
+    },
+  },
+} %}
+{#- reducer -> Grafana reduce expression #}
+{%- set reducers = {'avg': 'mean', 'min': 'min', 'max': 'max', 'last': 'last', 'sum': 'sum', 'count': 'count'} %}
