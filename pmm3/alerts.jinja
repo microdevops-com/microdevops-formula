@@ -12,6 +12,7 @@
 {%- set definitions_defaults = pmm3['dashboards']['dashboard_definitions_defaults'] %}
 {%- set dashboards = [] %}
 {%- set rule_groups = [] %}
+{%- set seen = {'subjects': [], 'paths': []} %}
 
 {%- macro seconds(d) %}{{ d[:-1] | int * {'s': 1, 'm': 60, 'h': 3600}[d[-1]] }}{% endmacro %}
 
@@ -26,6 +27,17 @@
   {#- folder: explicit, or the directory of path (/srv/grafana/dashboards/<folder>/<file>.json), or the default #}
   {%- set folder = d.get('folder') or (d['path'].split('/')[-2] if d.get('path') else pmm3['dashboards']['folder']) %}
   {%- set dash_uid = (kind ~ ':' ~ target) | md5 %}
+  {%- set dash_path = pmm3['srv_path'] ~ '/grafana/dashboards/' ~ folder ~ '/' ~ target ~ '.json' %}
+  {#- uids come from kind+target, the file from folder+target: a repeat would give duplicate rule uids
+      (Grafana rejects the whole rules file) or a duplicate state ID #}
+  {%- if (kind ~ ':' ~ target) in seen['subjects'] %}
+    {{ raise('pmm3: dashboard_definitions: ' ~ kind ~ ' for ' ~ target ~ ' is defined more than once') }}
+  {%- endif %}
+  {%- if dash_path in seen['paths'] %}
+    {{ raise('pmm3: dashboard_definitions: two dashboards for ' ~ target ~ ' in folder ' ~ folder ~ ' (' ~ dash_path ~ ')') }}
+  {%- endif %}
+  {%- do seen['subjects'].append(kind ~ ':' ~ target) %}
+  {%- do seen['paths'].append(dash_path) %}
   {%- set panels = [] %}
   {%- set groups = {} %}
   {%- set pos = namespace(y=0) %}
@@ -45,6 +57,20 @@
           {%- set thr = ctx.get(p ~ 'conditions_evaluator_params', a['threshold']) %}
           {%- set op = ctx.get(p ~ 'conditions_evaluator_type', a['op']) %}
           {%- set reducer = ctx.get(p ~ 'conditions_reducer_type', a['reducer']) %}
+          {#- pillar overrides may be quoted ('0.8'); a string threshold breaks {thr_pct} and the threshold expression #}
+          {%- if thr is string %}
+            {%- set thr_num = thr | float(none) %}
+            {%- if thr_num is none %}
+              {{ raise('pmm3: ' ~ target ~ ': ' ~ p ~ 'conditions_evaluator_params is not a number: ' ~ thr) }}
+            {%- endif %}
+            {%- set thr = thr_num | int if thr_num == thr_num | int else thr_num %}
+          {%- endif %}
+          {%- if op not in ['gt', 'lt'] %}
+            {{ raise('pmm3: ' ~ target ~ ': ' ~ p ~ 'conditions_evaluator_type must be gt or lt, got ' ~ op) }}
+          {%- endif %}
+          {%- if reducer not in reducers %}
+            {{ raise('pmm3: ' ~ target ~ ': ' ~ p ~ 'conditions_reducer_type must be one of ' ~ (reducers | list | sort | join(', ')) ~ ', got ' ~ reducer) }}
+          {%- endif %}
           {%- set qp = ctx.get(p ~ 'conditions_query_params') %}
           {%- set range = qp.split(',')[1].strip().strip('"') if qp else a['range'] %}
           {%- set every = ctx.get(p ~ 'frequency', a['frequency']) %}
@@ -126,7 +152,7 @@
   {%- endfor %}
 
   {%- do dashboards.append({
-        'path': pmm3['srv_path'] ~ '/grafana/dashboards/' ~ folder ~ '/' ~ target ~ '.json',
+        'path': dash_path,
         'data': {'uid': dash_uid, 'title': ctx.get('board_name', target), 'editable': true, 'schemaVersion': 39,
                  'tags': ['salt', kind], 'time': {'from': 'now-1h', 'to': 'now'}, 'refresh': '1m', 'panels': panels},
       }) %}

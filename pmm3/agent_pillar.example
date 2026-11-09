@@ -5,7 +5,8 @@ pmm3_agent:
   #pmm_user: admin                            # optional
   pmm_password: XXXXXXXXXXXXXXXX
   #version: 3.10.0*                           # optional, pmm-client package version
-  #node_name: db1.example.com                 # optional, default - hostname; alert dashboards match it (node_name)
+  #node_name: db1.example.com                 # optional, default - hostname; alert dashboards match it (node_name),
+                                              # the MySQL service is named <node_name>-mysql
   #node_address: 10.0.0.1                     # optional, with node_name, default - first fqdn_ip4
   services:
     mysql:

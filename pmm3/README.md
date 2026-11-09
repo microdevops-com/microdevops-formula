@@ -45,4 +45,8 @@ and every notification arrives twice.
 - The certificate goes to `srv/nginx/certificate.{crt,key}`. PMM does not regenerate existing files.
   `cert-sync.sh` copies the renewed acme certificate there every day and reloads nginx.
 - Do not run `pmm-admin config --force` / `pmm-agent setup --force` again on a registered agent: it re-creates
-  the node, and PMM drops its services. `pmm3.agent` registers only an agent that is not yet connected.
+  the node, and PMM drops its services. `pmm3.agent` registers only an agent that is not yet registered to
+  `pmm_host:pmm_port` (checked in `/usr/local/percona/pmm/config/pmm-agent.yaml`, not by `Connected`).
+- A changed `pmm3_agent:services:mysql:password` re-creates the PMM MySQL service (`pmm-admin remove` + `add`) with
+  the same name. The MongoDB password is not managed: after changing it, run `pmm-admin remove mongodb <name>` and apply
+  `pmm3.agent` again.

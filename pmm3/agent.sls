@@ -1,7 +1,7 @@
 {#-
   PMM 3 client (pmm-client package, pmm-agent systemd service) on the host.
   The agent is registered once: `pmm-admin config --force` re-creates the node and PMM drops its services,
-  so it runs only when the agent is not connected to pmm3_agent:pmm_host. Same for `pmm-admin add`.
+  so it runs only when the agent is not registered to pmm3_agent:pmm_host. `pmm-admin add` - only when the service is missing.
 -#}
 {%- if pillar['pmm3_agent'] is defined %}
 {%- set agent = pillar['pmm3_agent'] %}
@@ -9,6 +9,9 @@
 {%- set pmm_port = agent.get('pmm_port', 443) %}
 {%- set pmm_user = agent.get('pmm_user', 'admin') %}
 {%- set services = agent.get('services', {}) %}
+{%- set agent_config = '/usr/local/percona/pmm/config/pmm-agent.yaml' %}
+{#- pmm-admin names services <os hostname>-<type>; the name is set explicitly, alert rules match <node_name>-mysql #}
+{%- set service_prefix = agent.get('node_name') or grains['nodename'] %}
 
 pmm3_agent_percona_release:
   pkg.installed:
@@ -52,15 +55,18 @@ pmm3_agent_setup:
         {%- if agent.get('node_name') %} {{ agent.get('node_address', grains['fqdn_ip4'][0]) }} generic {{ agent['node_name'] }}{%- endif %}
     - env:
       - PMM_SERVER_URL: {{ ('https://' ~ pmm_user | urlencode ~ ':' ~ agent['pmm_password'] | urlencode ~ '@' ~ pmm_host ~ ':' ~ pmm_port) | json }}
+    {#- registered = the config has an agent id and this server address. Not "Connected": a restart or a network
+        blip would re-register the node and PMM would drop its services #}
     - unless: >-
-        pmm-admin status 2>/dev/null | grep -qE 'URL +: https://{{ pmm_host | regex_escape }}:{{ pmm_port }}/' &&
-        pmm-admin status | grep -qE 'Connected +: true'
+        grep -qE '^id: *"?[^" ]+' {{ agent_config }} &&
+        awk '$1 == "address:" { gsub(/"/, "", $2); if ($2 == "{{ pmm_host }}:{{ pmm_port }}") f = 1 } END { exit !f }' {{ agent_config }}
     - require:
       - service: pmm3_agent_service
 {%- if services.get('mysql', {}).get('enabled') %}
 {%- set mysql = services['mysql'] %}
 {%- set mysql_user = mysql.get('user', 'pmm') %}
 {%- set mysql_socket = mysql.get('socket', '$(mysql -sNe "select @@socket")') %}
+{%- set mysql_service = service_prefix ~ '-mysql' %}
 
 pmm3_agent_mysql_user:
   cmd.run:
@@ -73,17 +79,29 @@ pmm3_agent_mysql_user:
       - MYSQL_PWD: {{ mysql['password'] | json }}
     - unless: mysql -u {{ mysql_user }} -e 'SELECT 1' > /dev/null 2>&1
 
+{#- the user state changes only when the pillar password no longer works: the registered service still has the old one,
+    remove it here and pmm3_agent_mysql_service adds it again with the new password #}
+pmm3_agent_mysql_service_password:
+  cmd.run:
+    - name: pmm-admin remove mysql {{ mysql_service }}
+    - onlyif: pmm-admin list | awk '$1 == "MySQL" && $2 == "{{ mysql_service }}" { f = 1 } END { exit !f }'
+    - onchanges:
+      - cmd: pmm3_agent_mysql_user
+    - require:
+      - cmd: pmm3_agent_setup
+
 pmm3_agent_mysql_service:
   cmd.run:
     - name: >-
-        pmm-admin add mysql --socket={{ mysql_socket }} --username={{ mysql_user }} --password="$MYSQL_PMM_PASSWORD"
-        --query-source={{ mysql.get('query_source', 'perfschema') }}
+        pmm-admin add mysql --service-name={{ mysql_service }} --socket={{ mysql_socket }} --username={{ mysql_user }}
+        --password="$MYSQL_PMM_PASSWORD" --query-source={{ mysql.get('query_source', 'perfschema') }}
     - env:
       - MYSQL_PMM_PASSWORD: {{ mysql['password'] | json }}
     - unless: pmm-admin list | grep -qE '^MySQL '
     - require:
       - cmd: pmm3_agent_setup
       - cmd: pmm3_agent_mysql_user
+      - cmd: pmm3_agent_mysql_service_password
 {%- endif %}
 {%- if services.get('haproxy', {}).get('enabled') %}
 
