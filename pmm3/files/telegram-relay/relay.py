@@ -14,6 +14,7 @@ stdlib only. Settings - environment variables (see CONFIG), optionally from the 
 """
 import base64
 import html
+import http.client
 import json
 import logging
 import os
@@ -91,7 +92,7 @@ def grafana_render(panel_url: str) -> bytes | None:
             if resp.headers.get_content_type() == "image/png":
                 return resp.read()
             log.warning("render %s: unexpected content type %s", panel_url, resp.headers.get_content_type())
-    except (urllib.error.URLError, TimeoutError) as e:
+    except (OSError, http.client.HTTPException) as e:  # URLError, timeouts, resets, IncompleteRead, BadStatusLine
         log.warning("render %s failed: %s", panel_url, e)
     return None
 
@@ -127,6 +128,10 @@ def fit(text: str, limit: int) -> str:
     return out.rstrip("\n") + "\n…"
 
 
+class TelegramRejected(RuntimeError):
+    """4xx from the Bot API: the request itself is wrong, a retry does not help."""
+
+
 def telegram(method: str, fields: dict, photo: bytes | None = None) -> None:
     fields = {"chat_id": CONFIG["tg_chat_id"], "parse_mode": "HTML", **fields}
     if CONFIG["tg_thread_id"]:
@@ -146,14 +151,22 @@ def telegram(method: str, fields: dict, photo: bytes | None = None) -> None:
             with urllib.request.urlopen(req, timeout=30):
                 return
         except urllib.error.HTTPError as e:
-            info = json.loads(e.read() or b"{}")
-            retry = info.get("parameters", {}).get("retry_after")
+            try:
+                info = json.loads(e.read() or b"{}")
+            except (ValueError, OSError, http.client.HTTPException):
+                info = {}  # 5xx from a proxy in front of the API: HTML or an empty body
+            retry = info.get("parameters", {}).get("retry_after") if isinstance(info, dict) else None
             if e.code == 429 and retry:
                 log.warning("telegram 429, retry after %ss", retry)
                 time.sleep(retry + 1)
                 continue
-            raise RuntimeError(f"telegram {method}: {e.code} {info.get('description')}") from None
-        except urllib.error.URLError as e:
+            if e.code >= 500:
+                log.warning("telegram %s: %s (attempt %d)", method, e.code, attempt + 1)
+                time.sleep(2 ** attempt)
+                continue
+            description = info.get("description") if isinstance(info, dict) else None
+            raise TelegramRejected(f"telegram {method}: {e.code} {description}") from None
+        except (OSError, http.client.HTTPException) as e:  # URLError, timeouts, connection resets
             log.warning("telegram %s: %s (attempt %d)", method, e, attempt + 1)
             time.sleep(2 ** attempt)
     raise RuntimeError(f"telegram {method}: giving up")
@@ -165,8 +178,12 @@ def deliver(alert: dict) -> None:
     if alert.get("status") == "firing" or CONFIG["resolved_images"]:
         image = grafana_render(alert.get("panelURL", ""))
     if image:
-        telegram("sendPhoto", {"caption": fit(text, CAPTION_LIMIT)}, image)
-    else:
+        try:
+            telegram("sendPhoto", {"caption": fit(text, CAPTION_LIMIT)}, image)
+        except TelegramRejected as e:  # e.g. PHOTO_INVALID_DIMENSIONS - the text must still get through
+            log.warning("%s, falling back to sendMessage", e)
+            image = None
+    if not image:
         telegram("sendMessage", {"text": fit(text, MESSAGE_LIMIT), "disable_web_page_preview": "true"})
     log.info("sent %s %s (image=%s, link=%s)", alert.get("status"),
              alert.get("labels", {}).get("rulename") or alert.get("labels", {}).get("alertname"), bool(image),
