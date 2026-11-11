@@ -352,20 +352,58 @@ ufw_user_rules_py_managed:
   {%- endif %}
     - mode: 0700
 
+  # Killswitch: user rules reach the live files and ufw is reloaded only if both generated files pass validation.
+  # Otherwise the running firewall and /etc/ufw/user*.rules stay untouched and the run is red.
+  # Background: a CRLF user.rules.py failed (env: 'python3\r'), `>` still created empty tmp files, the v6 failure was
+  # hidden by the sed pipeline (no pipefail in /bin/sh), the empty files were installed, and ufw reloaded without
+  # user rules - INPUT DROP with no ssh allow.
+  # Strict: any generator error (incl. a single bad pillar rule) aborts - a skipped rule may be the ssh allow.
+
   # Generate tmp user rules
 ufw_user_rules_gen_tmp:
   cmd.run:
+    - shell: /bin/bash
     - name: |
+        set -o pipefail
+        rm -f /etc/ufw/user.rules.tmp
         /etc/ufw/user.rules.py v4 > /etc/ufw/user.rules.tmp
+    - require:
+      - file: ufw_user_rules_src_managed
+      - file: ufw_user_rules_py_managed
 
 ufw_user6_rules_gen_tmp:
   cmd.run:
+    - shell: /bin/bash
     - name: |
+        set -o pipefail
+        rm -f /etc/ufw/user6.rules.tmp
         # ufw adds those rules on each reload and file changes each time, add them not to change the file
         /etc/ufw/user.rules.py v6 \
           | sed -e 's/### RULES ###/:ufw6-user-limit - [0:0]\n:ufw6-user-limit-accept - [0:0]\n### RULES ###/' \
           | sed -e 's/COMMIT/\n### RATE LIMITING ###\n-A ufw6-user-limit -j REJECT\n-A ufw6-user-limit-accept -j ACCEPT\n### END RATE LIMITING ###\nCOMMIT/' \
           > /etc/ufw/user6.rules.tmp
+    - require:
+      - file: ufw_user_rules_src_managed
+      - file: ufw_user_rules_py_managed
+
+  # Validate generated files: the shape ufw writes (*filter ... ### RULES ### ... COMMIT), no CR characters
+ufw_user_rules_validate:
+  cmd.run:
+    - shell: /bin/bash
+    - name: |
+        rc=0
+        for f in /etc/ufw/user.rules.tmp /etc/ufw/user6.rules.tmp; do
+          if [ ! -s "$f" ]; then echo "ERROR: $f is missing or empty"; rc=1; continue; fi
+          head -n 1 "$f" | grep -qx '\*filter' || { echo "ERROR: $f does not start with *filter"; rc=1; }
+          grep -qx '### RULES ###' "$f" || { echo "ERROR: $f has no ### RULES ### line"; rc=1; }
+          tail -n 1 "$f" | grep -qx 'COMMIT' || { echo "ERROR: $f does not end with COMMIT"; rc=1; }
+          if grep -q $'\r' "$f"; then echo "ERROR: $f contains CR characters (CRLF)"; rc=1; fi
+        done
+        [ "$rc" = 0 ] && echo "OK: generated user rules look valid"
+        exit $rc
+    - require:
+      - cmd: ufw_user_rules_gen_tmp
+      - cmd: ufw_user6_rules_gen_tmp
 
   # Manage /etc/ufw/user.rules
 ufw_user_rules_managed:
@@ -378,9 +416,8 @@ ufw_user_rules_managed:
     - source: /etc/ufw/user.rules.tmp
     - mode: 0640
     - keep_source: False
-    - onlyif:
-      - fun: file.file_exists
-        path: /etc/ufw/user.rules.tmp
+    - require:
+      - cmd: ufw_user_rules_validate
 
   # Manage /etc/ufw/user6.rules
 ufw_user6_rules_managed:
@@ -393,9 +430,8 @@ ufw_user6_rules_managed:
     - source: /etc/ufw/user6.rules.tmp
     - mode: 0640
     - keep_source: False
-    - onlyif:
-      - fun: file.file_exists
-        path: /etc/ufw/user6.rules.tmp
+    - require:
+      - cmd: ufw_user_rules_validate
 
   # Manage /etc/ufw/ufw.conf
 ufw_conf_managed:
@@ -419,10 +455,12 @@ ufw_before_init_managed:
         cve_2026_98432_mitigation: {{ pillar["ufw"]["cve_2026_98432_mitigation"] | to_bool }}
   {%- endif %}
 
-  # Reload ufw on any file change
+  # Reload ufw on any file change, never with failed user rules generation (killswitch above)
 ufw_reload:
   cmd.run:
     - name: "ufw --force reload"
+    - require:
+      - cmd: ufw_user_rules_validate
     - onchanges:
       - file: /etc/ufw/ufw.conf
       - file: /etc/ufw/sysctl.conf
@@ -444,6 +482,8 @@ ufw_reload:
 exec_after:
   cmd.run:
     - name: {{ pillar["ufw"]["exec_after_apply"] }}
+    - require:
+      - cmd: ufw_user_rules_validate
     - onchanges:
       - file: /etc/ufw/ufw.conf
       - file: /etc/ufw/sysctl.conf
