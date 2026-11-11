@@ -418,6 +418,8 @@ ufw_user_rules_managed:
     - keep_source: False
     - require:
       - cmd: ufw_user_rules_validate
+    # test=True does not run cmd states, so there is no tmp file to compare with: skip instead of failing
+    - onlyif: test -s /etc/ufw/user.rules.tmp
 
   # Manage /etc/ufw/user6.rules
 ufw_user6_rules_managed:
@@ -432,6 +434,8 @@ ufw_user6_rules_managed:
     - keep_source: False
     - require:
       - cmd: ufw_user_rules_validate
+    # test=True does not run cmd states, so there is no tmp file to compare with: skip instead of failing
+    - onlyif: test -s /etc/ufw/user6.rules.tmp
 
   # Manage /etc/ufw/ufw.conf
 ufw_conf_managed:
