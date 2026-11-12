@@ -14,6 +14,8 @@ auditd_container_unsupported:
     {%- set laurel_hash = laurel.get("source_hash", "sha256=c9b495acf67e9941760b24308145b513b2ee2a0a5bfe0a5bd70d5133c27c6e6c") %}
     {%- set laurel_name = "laurel-" ~ laurel_version ~ "-x86_64-glibc" %}
     {%- set laurel_source = laurel.get("source", "https://github.com/threathunters-io/laurel/releases/download/v" ~ laurel_version ~ "/" ~ laurel_name ~ ".tar.gz") %}
+    {#- the release archive keeps a top folder named like the file: <laurel_name>/bin/laurel #}
+    {%- set laurel_bin = "/opt/laurel/" ~ laurel_version ~ "/" ~ laurel_name ~ "/bin/laurel" %}
     {#- auditd 2 (focal, bullseye and older) keeps plugins in audisp, auditd 3 in audit #}
     {%- if grains["oscodename"] in ["bionic", "focal", "buster", "bullseye"] %}
       {%- set plugins_dir = "/etc/audisp/plugins.d" %}
@@ -49,14 +51,13 @@ auditd_laurel_archive:
     - name: /opt/laurel/{{ laurel_version }}
     - source: {{ laurel_source }}
     - source_hash: {{ laurel_hash }}
-    - options: --strip-components=1
     - enforce_toplevel: False
-    - if_missing: /opt/laurel/{{ laurel_version }}/bin/laurel
+    - if_missing: {{ laurel_bin }}
 
 auditd_laurel_binary:
   cmd.run:
-    - name: install -m 755 -o root -g root /opt/laurel/{{ laurel_version }}/bin/laurel /usr/local/sbin/laurel
-    - unless: cmp -s /opt/laurel/{{ laurel_version }}/bin/laurel /usr/local/sbin/laurel
+    - name: install -m 755 -o root -g root {{ laurel_bin }} /usr/local/sbin/laurel
+    - unless: cmp -s {{ laurel_bin }} /usr/local/sbin/laurel
     - require:
       - archive: auditd_laurel_archive
 
