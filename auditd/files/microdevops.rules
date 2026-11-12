@@ -41,8 +41,8 @@
 -w /etc/audit/ -p wa -k audit_config
 -w /etc/laurel/ -p wa -k audit_config
 
-# Commands in login sessions, direct root logins and sudo included. Services have no login uid, cron gets none
-# because the state disables pam_loginuid for it. Salt and CI log in as root over SSH, so they are logged too.
+# Commands with a login uid: login sessions, direct root logins, sudo, cron jobs (pam_loginuid), Salt and CI over SSH.
+# Services started by systemd have no login uid and stay out.
 -a always,exit -F arch=b64 -S execve -F auid!=unset -k user_commands
 -a always,exit -F arch=b32 -S execve -F auid!=unset -k user_commands
 

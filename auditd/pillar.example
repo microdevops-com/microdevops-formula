@@ -2,7 +2,7 @@
 # Installs auditd with a narrow set of rules and laurel (one JSON line per event, /var/log/laurel/audit.log).
 # Debian and Ubuntu on amd64 only, containers are skipped. An empty dict is enough: all keys are optional.
 # Commands of all login sessions are logged, direct root logins and Salt over SSH included.
-# Cron jobs stay out: the state disables pam_loginuid in /etc/pam.d/cron.
+# Cron jobs are logged too (pam_loginuid in /etc/pam.d/cron is left as is): cron can do harm as well.
 
 auditd:
   #immutable: True # optional, default True: lock rules with -e 2. After that new rules need a reboot, the state warns

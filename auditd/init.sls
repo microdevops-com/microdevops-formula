@@ -27,16 +27,6 @@ auditd_pkg:
       - auditd
       - acl
 
-# pam_loginuid gives cron jobs a login uid, then every job looks like a person in user_commands.
-# Crontab changes are still logged by the file watches.
-auditd_cron_no_loginuid:
-  file.replace:
-    - name: /etc/pam.d/cron
-    - pattern: '^session\s+required\s+pam_loginuid\.so'
-    - repl: '#session required pam_loginuid.so # disabled by Salt auditd state'
-    - ignore_if_missing: True
-    - backup: False
-
 auditd_laurel_user:
   user.present:
     - name: _laurel
