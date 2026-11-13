@@ -11,6 +11,16 @@ SALT_TIMEOUT=$1
 TARGET=$2
 RSNAPSHOT_BACKUP_TYPE=$3
 OUT_FILE="/srv/scripts/ci_sudo/$(basename $0)_${TARGET}.out"
+CHECK_MAX_AGE_ARG=""
+
+if [[ -n "${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}" ]]; then
+	if [[ "${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}" =~ ^[1-9][0-9]*$ ]]; then
+		CHECK_MAX_AGE_ARG="--check-max-age-seconds ${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}"
+	else
+		echo ERROR: RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS must be a positive integer
+		exit 1
+	fi
+fi
 
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
 	if [[ "_$6" == "_" ]]; then
@@ -38,10 +48,10 @@ set -x
 set -o pipefail
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
 	ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check ${CHECK_MAX_AGE_ARG}'" | ccze -A || GRAND_EXIT=1
 elif [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SALT" ]]; then
 	salt --force-color -t ${SALT_TIMEOUT} ${TARGET} cmd.run \
-		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check ${CHECK_MAX_AGE_ARG}'" | ccze -A || GRAND_EXIT=1
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
