@@ -10,6 +10,16 @@ GRAND_EXIT=0
 TARGET=$1
 RSNAPSHOT_BACKUP_TYPE=$2
 OUT_FILE="$(mktemp -p /dev/shm/)"
+CHECK_COMMAND="/opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check"
+
+if [[ -n "${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}" ]]; then
+	if [[ "${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}" =~ ^[1-9][0-9]*$ ]]; then
+		CHECK_COMMAND="if /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --help 2>&1 | grep -q -- --check-max-age-seconds; then /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check --check-max-age-seconds ${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}; else /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check; fi"
+	else
+		echo ERROR: RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS must be a positive integer
+		exit 1
+	fi
+fi
 
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
 	if [[ "_$5" == "_" ]]; then
@@ -43,10 +53,10 @@ set -x
 set -o pipefail
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
 	ssh -o BatchMode=yes -o StrictHostKeyChecking=no ${SSH_JUMP} -p ${SSH_PORT} ${SSH_HOST} \
-		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec 2>&1; ${CHECK_COMMAND}'" | ccze -A || GRAND_EXIT=1
 elif [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SALT" ]]; then
 	salt-ssh --wipe --force-color ${SALT_SSH_EXTRA_OPTS} ${TARGET} cmd.run \
-		"bash -c 'exec 2>&1; /opt/sysadmws/rsnapshot_backup/rsnapshot_backup.py --check'" | ccze -A || GRAND_EXIT=1
+		"bash -c 'exec 2>&1; ${CHECK_COMMAND}'" | ccze -A || GRAND_EXIT=1
 else
 	echo ERROR: unknown RSNAPSHOT_BACKUP_TYPE
 	exit 1
