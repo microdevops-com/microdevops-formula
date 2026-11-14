@@ -43,20 +43,29 @@ app_{{ app_type }}_nginx_link_sites_enabled_{{ loop_index }}_{{ loop2_index }}:
 # in the case of acme and webroot
 {%- else %}
 
+    {%- set nginx_reload = pillar.get("nginx_reload", false) or app["nginx"].get("reload",false) %}
+
+    {#- Pass 1 (snakeoil vhost + reload) only makes sense when nginx is reloaded:
+        it lets nginx serve the webroot challenge before a real cert exists.
+        Without reload it would only flip the file to snakeoil and back on every run. #}
+    {%- if nginx_reload %}
     {%- set id = 1 %}
     {%- set ssl = {"cert":"/etc/ssl/certs/ssl-cert-snakeoil.pem","key":"/etc/ssl/private/ssl-cert-snakeoil.key"} %}
     {%- include "app/_nginx/_vhost.sls" with context %}
-    {%- if pillar.get("nginx_reload", false) or app["nginx"].get("reload",false) %}
 app_{{ app_type }}_nginx_reload_{{ loop_index }}_{{ loop2_index }}_{{ id }}:
   cmd.run:
     - shell: /bin/bash
     - name: "/usr/sbin/nginx -t && /usr/sbin/nginx -s reload"
+    {%- endif %}
 
+    {#- Pass 2 always: issue/verify the cert and render the vhost with it,
+        so reload: False never leaves snakeoil in the vhost. #}
     {{ verify_and_issue(acme_account, app_name, domain)}}
 
     {%- set id = 2 %}
     {%- set ssl = {"cert":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_fullchain.cer","key":"/opt/acme/cert/" ~ app_name ~ "_" ~ domain.split()[0] ~ "_key.key"} %}
     {%- include "app/_nginx/_vhost.sls" with context %}
+    {%- if nginx_reload %}
 app_{{ app_type }}_nginx_reload_{{ loop_index }}_{{ loop2_index }}_{{ id }}:
   cmd.run:
     - shell: /bin/bash
