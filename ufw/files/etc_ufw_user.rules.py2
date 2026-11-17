@@ -45,10 +45,15 @@ with open("/etc/ufw/user.rules.src") as rules_file:
             if parser.data["iptype"] == "v4":
                 backend.rules.append(parser.data["rule"])
             if parser.data["iptype"] == "v6":
+                parser.data["rule"].set_v6(True)
                 backend.rules6.append(parser.data["rule"])
             if parser.data["iptype"] == "both":
                 backend.rules.append(parser.data["rule"])
-                backend.rules6.append(parser.data["rule"])
+                # v6 copy like ufw itself does: set_v6() turns "any" 0.0.0.0/0 into ::/0, otherwise the
+                # ### tuple ### comments differ from what ufw writes on reload and the file flaps every run
+                rule6 = parser.data["rule"].dup_rule()
+                rule6.set_v6(True)
+                backend.rules6.append(rule6)
         # Print to stderr bad rules
         except:
             errors = True
