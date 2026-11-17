@@ -368,6 +368,8 @@ ufw_user_rules_gen_tmp:
         set -o pipefail
         rm -f /etc/ufw/user.rules.tmp
         /etc/ufw/user.rules.py v4 > /etc/ufw/user.rules.tmp
+        # an empty file must fail here: the file states skip it via onlyif (for test=True), so check_cmd never sees it
+        test -s /etc/ufw/user.rules.tmp
     - require:
       - file: ufw_user_rules_src_managed
       - file: ufw_user_rules_py_managed
@@ -383,6 +385,7 @@ ufw_user6_rules_gen_tmp:
           | sed -e 's/### RULES ###/:ufw6-user-limit - [0:0]\n:ufw6-user-limit-accept - [0:0]\n### RULES ###/' \
           | sed -e 's/COMMIT/\n### RATE LIMITING ###\n-A ufw6-user-limit -j REJECT\n-A ufw6-user-limit-accept -j ACCEPT\n### END RATE LIMITING ###\nCOMMIT/' \
           > /etc/ufw/user6.rules.tmp
+        test -s /etc/ufw/user6.rules.tmp
     - require:
       - file: ufw_user_rules_src_managed
       - file: ufw_user_rules_py_managed
