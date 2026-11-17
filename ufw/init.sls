@@ -388,7 +388,7 @@ ufw_user6_rules_gen_tmp:
       - file: ufw_user_rules_py_managed
 
   # Validation script used as check_cmd below: Salt installs a rules file only if the script accepts it.
-  # It prints only on failure, so a clean run has no error words in the output (salt_cmd.sh greps for them).
+  # It prints "ERROR: ..." only on failure, so a clean run has no ERROR in the output (salt_cmd.sh greps for it).
 ufw_user_rules_validate_script:
   file.managed:
     - name: /etc/ufw/validate_user_rules.sh
