@@ -352,7 +352,8 @@ ufw_user_rules_py_managed:
   {%- endif %}
     - mode: 0700
 
-  # Killswitch: user rules reach the live files and ufw is reloaded only if both generated files pass validation.
+  # Killswitch: user rules reach the live files and ufw is reloaded only if both generated files pass validation
+  # (check_cmd on the user rules file states below).
   # Otherwise the running firewall and /etc/ufw/user*.rules stay untouched and the run is red.
   # Background: a CRLF user.rules.py failed (env: 'python3\r'), `>` still created empty tmp files, the v6 failure was
   # hidden by the sed pipeline (no pipefail in /bin/sh), the empty files were installed, and ufw reloaded without
@@ -386,24 +387,13 @@ ufw_user6_rules_gen_tmp:
       - file: ufw_user_rules_src_managed
       - file: ufw_user_rules_py_managed
 
-  # Validate generated files: the shape ufw writes (*filter ... ### RULES ### ... COMMIT), no CR characters
-ufw_user_rules_validate:
-  cmd.run:
-    - shell: /bin/bash
-    - name: |
-        rc=0
-        for f in /etc/ufw/user.rules.tmp /etc/ufw/user6.rules.tmp; do
-          if [ ! -s "$f" ]; then echo "ERROR: $f is missing or empty"; rc=1; continue; fi
-          head -n 1 "$f" | grep -qx '\*filter' || { echo "ERROR: $f does not start with *filter"; rc=1; }
-          grep -qx '### RULES ###' "$f" || { echo "ERROR: $f has no ### RULES ### line"; rc=1; }
-          tail -n 1 "$f" | grep -qx 'COMMIT' || { echo "ERROR: $f does not end with COMMIT"; rc=1; }
-          if grep -q $'\r' "$f"; then echo "ERROR: $f contains CR characters (CRLF)"; rc=1; fi
-        done
-        [ "$rc" = 0 ] && echo "OK: generated user rules look valid"
-        exit $rc
-    - require:
-      - cmd: ufw_user_rules_gen_tmp
-      - cmd: ufw_user6_rules_gen_tmp
+  # Validation script used as check_cmd below: Salt installs a rules file only if the script accepts it.
+  # It prints only on failure, so a clean run has no error words in the output (salt_cmd.sh greps for them).
+ufw_user_rules_validate_script:
+  file.managed:
+    - name: /etc/ufw/validate_user_rules.sh
+    - source: salt://ufw/files/validate_user_rules.sh
+    - mode: 0750
 
   # Manage /etc/ufw/user.rules
 ufw_user_rules_managed:
@@ -416,8 +406,12 @@ ufw_user_rules_managed:
     - source: /etc/ufw/user.rules.tmp
     - mode: 0640
     - keep_source: False
+    # checks the new v4 contents (appended by Salt) and the generated v6 file: both valid or nothing is installed
+    - check_cmd: /etc/ufw/validate_user_rules.sh /etc/ufw/user6.rules.tmp
     - require:
-      - cmd: ufw_user_rules_validate
+      - cmd: ufw_user_rules_gen_tmp
+      - cmd: ufw_user6_rules_gen_tmp
+      - file: ufw_user_rules_validate_script
     # test=True does not run cmd states, so there is no tmp file to compare with: skip instead of failing
     - onlyif: test -s /etc/ufw/user.rules.tmp
 
@@ -432,8 +426,9 @@ ufw_user6_rules_managed:
     - source: /etc/ufw/user6.rules.tmp
     - mode: 0640
     - keep_source: False
+    - check_cmd: /etc/ufw/validate_user_rules.sh
     - require:
-      - cmd: ufw_user_rules_validate
+      - file: ufw_user_rules_managed
     # test=True does not run cmd states, so there is no tmp file to compare with: skip instead of failing
     - onlyif: test -s /etc/ufw/user6.rules.tmp
 
@@ -464,7 +459,8 @@ ufw_reload:
   cmd.run:
     - name: "ufw --force reload"
     - require:
-      - cmd: ufw_user_rules_validate
+      - file: ufw_user_rules_managed
+      - file: ufw_user6_rules_managed
     - onchanges:
       - file: /etc/ufw/ufw.conf
       - file: /etc/ufw/sysctl.conf
@@ -487,7 +483,8 @@ exec_after:
   cmd.run:
     - name: {{ pillar["ufw"]["exec_after_apply"] }}
     - require:
-      - cmd: ufw_user_rules_validate
+      - file: ufw_user_rules_managed
+      - file: ufw_user6_rules_managed
     - onchanges:
       - file: /etc/ufw/ufw.conf
       - file: /etc/ufw/sysctl.conf
