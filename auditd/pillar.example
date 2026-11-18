@@ -3,6 +3,7 @@
 # Debian and Ubuntu on amd64 only, containers are skipped. An empty dict is enough: all keys are optional.
 # Commands of all login sessions are logged, direct root logins and Salt over SSH included.
 # Cron jobs are logged too (pam_loginuid in /etc/pam.d/cron is left as is): cron can do harm as well.
+# Except our own monitoring agent: laurel drops its cron jobs and their children (see laurel.drop_cron_argv).
 
 auditd:
   #immutable: True # optional, default True: lock rules with -e 2. After that new rules need a reboot, the state warns
@@ -13,3 +14,7 @@ auditd:
   #  source_hash: sha256=c9b495acf67e9941760b24308145b513b2ee2a0a5bfe0a5bd70d5133c27c6e6c
   #  log_size: 50000000 # bytes per file
   #  log_generations: 5 # rotated files to keep
+  #  # Drop our monitoring agent cron jobs (/opt/sysadmws, every minute) and their children from laurel output.
+  #  # Default: the regex below. Matched against the whole command line, keep it anchored. [] turns it off.
+  #  drop_cron_argv:
+  #    - '^/bin/sh -c /opt/sysadmws/[A-Za-z0-9_./-]+( --yaml [A-Za-z0-9_./-]+| [0-9]+)?( >> /opt/sysadmws/[A-Za-z0-9_./-]+( 2>&1)?)?$'
