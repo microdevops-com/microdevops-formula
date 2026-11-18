@@ -16,6 +16,10 @@ auditd_container_unsupported:
     {%- set laurel_source = laurel.get("source", "https://github.com/threathunters-io/laurel/releases/download/v" ~ laurel_version ~ "/" ~ laurel_name ~ ".tar.gz") %}
     {#- the release archive keeps a top folder named like the file: <laurel_name>/bin/laurel #}
     {%- set laurel_bin = "/opt/laurel/" ~ laurel_version ~ "/" ~ laurel_name ~ "/bin/laurel" %}
+    {#- Our monitoring agent runs from cron every minute and floods execve logging (most events on a quiet host).
+        laurel drops a cron line that runs an agent script plus all its children. Anchored to the exact cron form,
+        so a command that only mentions the path in its arguments is not hidden. Empty list turns it off. #}
+    {%- set laurel_drop_cron = laurel.get("drop_cron_argv", ["^/bin/sh -c /opt/sysadmws/[A-Za-z0-9_./-]+( --yaml [A-Za-z0-9_./-]+| [0-9]+)?( >> /opt/sysadmws/[A-Za-z0-9_./-]+( 2>&1)?)?$"]) %}
     {#- auditd 2 (focal, bullseye and older) keeps plugins in audisp, auditd 3 in audit #}
     {%- if grains["oscodename"] in ["bionic", "focal", "buster", "bullseye"] %}
       {%- set plugins_dir = "/etc/audisp/plugins.d" %}
@@ -73,6 +77,7 @@ auditd_laurel_config:
     - defaults:
         log_size: {{ laurel.get("log_size", 50000000) }}
         log_generations: {{ laurel.get("log_generations", 5) }}
+        drop_cron_argv: {{ laurel_drop_cron | json }}
 
 auditd_laurel_plugin:
   file.managed:
@@ -90,6 +95,8 @@ auditd_rules:
     - name: /etc/audit/rules.d/50-microdevops.rules
     - source: salt://auditd/files/microdevops.rules
     - template: jinja
+    - defaults:
+        watch_agent: {{ laurel_drop_cron | length > 0 }}
     - mode: 640
     - user: root
     - group: root

@@ -19,3 +19,19 @@ execve-env = [ "LD_PRELOAD", "LD_LIBRARY_PATH" ]
 container = true
 pid = true
 script = true
+{%- if drop_cron_argv %}
+
+# Drop our monitoring agent: a cron line that runs an /opt/sysadmws script, and all its children.
+# The start of every cron job stays in syslog and journald (CRON ... CMD). Writes into /opt/sysadmws are watched (agent_change).
+# keep-first-per-process = false is required: short-lived commands have one event only, it is kept by default.
+[label-process]
+  {%- for argv in drop_cron_argv %}
+label-argv.'{{ argv }}' = 'agent'
+  {%- endfor %}
+propagate-labels = [ 'agent' ]
+
+[filter]
+filter-labels = [ 'agent' ]
+filter-action = 'drop'
+keep-first-per-process = false
+{%- endif %}

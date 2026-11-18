@@ -40,6 +40,11 @@
 # Audit configuration itself
 -w /etc/audit/ -p wa -k audit_config
 -w /etc/laurel/ -p wa -k audit_config
+{%- if watch_agent %}
+
+# Monitoring agent: its cron jobs are dropped by laurel, so changes to its scripts must stay visible
+-w /opt/sysadmws/ -p wa -k agent_change
+{%- endif %}
 
 # Commands with a login uid: login sessions, direct root logins, sudo, cron jobs (pam_loginuid), Salt and CI over SSH.
 # Services started by systemd have no login uid and stay out.
