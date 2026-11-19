@@ -32,6 +32,8 @@ propagate-labels = [ 'agent' ]
 
 [filter]
 filter-labels = [ 'agent' ]
+# fork/clone events only feed the process tree (see 50-microdevops.rules), not the log
+filter-keys = [ 'fork' ]
 filter-action = 'drop'
 keep-first-per-process = false
 {%- endif %}

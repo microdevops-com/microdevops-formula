@@ -16,5 +16,6 @@ auditd:
   #  log_generations: 5 # rotated files to keep
   #  # Drop our monitoring agent cron jobs (/opt/sysadmws, every minute) and their children from laurel output.
   #  # Default: the regex below. Matched against the whole command line, keep it anchored. [] turns it off.
+  #  # Also turns on fork/clone tracking (key fork, dropped by laurel) so children of shell subshells keep the label.
   #  drop_cron_argv:
   #    - '^/bin/sh -c /opt/sysadmws/[A-Za-z0-9_./-]+( --yaml [A-Za-z0-9_./-]+| [0-9]+)?( >> /opt/sysadmws/[A-Za-z0-9_./-]+( 2>&1)?)?$'
