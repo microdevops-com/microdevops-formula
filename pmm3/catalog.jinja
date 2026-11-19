@@ -12,6 +12,8 @@
     panel_<key>_title                              - panel title
 
   __T__ in expressions is replaced with the dashboard subject (node_name or wsrep_cluster_name).
+  Replication: MySQL 8.4 has only SHOW REPLICA STATUS, the exporter names its metrics after the new columns
+  (mysql_slave_status_replica_io_running, ..._seconds_behind_source) - the expressions take both names.
   [[ ]] in summary is replaced with {{ }} (Grafana go-template), to avoid clashing with Jinja.
 
   style - panel look (timeseries):
@@ -86,7 +88,7 @@
         'style': {'color': '#8F3BB8', 'fill': 10},
         'panel_id': 7, 'panel_title': '[__T__] MYSQL Replica Status', 'unit': 'short', 'legend': 'Replication is running', 'min': 0, 'max': 1,
         'name': '[__T__] MYSQL Replica IS NOT RUNNING',
-        'expr': 'min((min_over_time(mysql_slave_status_slave_io_running{' ~ s ~ '}[1m])), (min_over_time(mysql_slave_status_slave_sql_running{' ~ s ~ '}[1m])))',
+        'expr': 'min((min_over_time(mysql_slave_status_slave_io_running{' ~ s ~ '}[1m]) or min_over_time(mysql_slave_status_replica_io_running{' ~ s ~ '}[1m])), (min_over_time(mysql_slave_status_slave_sql_running{' ~ s ~ '}[1m]) or min_over_time(mysql_slave_status_replica_sql_running{' ~ s ~ '}[1m])))',
         'op': 'lt', 'threshold': 0.5, 'reducer': 'last', 'range': '10s', 'frequency': '10s', 'for': '0m',
         'summary': 'IO and SQL threads running: [[ $values.B.Value ]] (1 = yes)',
       },
@@ -94,7 +96,7 @@
         'style': {'color': '#B877D9', 'fill': 10, 'decimals': 2, 'legend_calcs': ['lastNotNull']},
         'panel_id': 8, 'panel_title': '[__T__] MYSQL Replica Lag', 'unit': 's', 'legend': 'Replica lag', 'min': 0,
         'name': '[__T__] MYSQL Replica Lag {op} {thr}s',
-        'expr': 'clamp_min(avg by (service_name) (max_over_time(mysql_slave_status_seconds_behind_master{' ~ s ~ '}[30s]) - max_over_time(mysql_slave_status_sql_delay{' ~ s ~ '}[30s])),0)',
+        'expr': 'clamp_min(avg by (service_name) ((max_over_time(mysql_slave_status_seconds_behind_master{' ~ s ~ '}[30s]) or max_over_time(mysql_slave_status_seconds_behind_source{' ~ s ~ '}[30s])) - max_over_time(mysql_slave_status_sql_delay{' ~ s ~ '}[30s])),0)',
         'op': 'gt', 'threshold': 60, 'reducer': 'max', 'range': '1m', 'frequency': '1m', 'for': '0m',
         'summary': 'Replica lag [[ humanizeDuration $values.B.Value ]]',
       },
