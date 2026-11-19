@@ -97,6 +97,7 @@ auditd_rules:
     - template: jinja
     - defaults:
         watch_agent: {{ laurel_drop_cron | length > 0 }}
+        track_forks: {{ laurel_drop_cron | length > 0 }}
     - mode: 640
     - user: root
     - group: root

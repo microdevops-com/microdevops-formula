@@ -50,6 +50,18 @@
 # Services started by systemd have no login uid and stay out.
 -a always,exit -F arch=b64 -S execve -F auid!=unset -k user_commands
 -a always,exit -F arch=b32 -S execve -F auid!=unset -k user_commands
+{%- if track_forks %}
+
+# Process tree for laurel. Shell subshells ($(...), pipes) fork without execve, so laurel does not know them
+# and their children lose the agent label. laurel reads these events only to follow the tree and drops them
+# (filter-keys fork), they do not reach its log; the raw audit.log keeps them.
+# Threads (clone with CLONE_VM) are skipped. clone3 is left out on purpose: newer glibc creates threads with it,
+# its flags cannot be filtered, and fork() and posix_spawn children are followed without it.
+-a never,exit -F arch=b64 -S clone -F a0&0x100
+-a never,exit -F arch=b32 -S clone -F a0&0x100
+-a always,exit -F arch=b64 -S fork,vfork,clone -F auid!=unset -k fork
+-a always,exit -F arch=b32 -S fork,vfork,clone -F auid!=unset -k fork
+{%- endif %}
 
 # Kernel modules
 -a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k kernel_modules
