@@ -95,7 +95,7 @@ percona_remove_limits:
     - mode: 644
     - contents: |
         [Service]
-        LimitNOFILE=infinity
+        LimitNOFILE=1048576
         LimitMEMLOCK=infinity
         OOMScoreAdjust=-500
     - require_in:

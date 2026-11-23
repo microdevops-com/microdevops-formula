@@ -99,7 +99,7 @@ pxc_mysql_systemd_override:
     - mode: 644
     - contents: |
         [Service]
-        LimitNOFILE=infinity
+        LimitNOFILE=1048576
         LimitMEMLOCK=infinity
         OOMScoreAdjust=-500
   module.run:

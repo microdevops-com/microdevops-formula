@@ -92,7 +92,7 @@ percona_remove_limits:
     - mode: 644
     - contents: |
         [Service]
-        LimitNOFILE=infinity
+        LimitNOFILE=1048576
         LimitMEMLOCK=infinity
         OOMScoreAdjust=-500
         ExecStartPre=/usr/bin/install -g mysql -o mysql -d /var/run/mysqld
