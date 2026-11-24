@@ -33,6 +33,19 @@ user:
 nginx:
   manage: false
 
+# One /etc/logrotate.d/appsvc-<instance> composed from the declared php pool
+# error_logs and nginx vhost logs (blocks/logrotate.sls). Inert until one of
+# those exists outside `skip`.
+logrotate:
+  manage: true
+  rotate: 31
+  frequency: daily
+  mode: "640"
+  # The distro's /etc/logrotate.d/nginx already rotates these; logrotate
+  # aborts on a log listed by two configs.
+  skip:
+    - /var/log/nginx/*.log
+
 systemd:
   manage: true
   unit: "appsvc_{name}"
@@ -54,3 +67,17 @@ systemd:
     WorkingDirectory: "{install_dir}"
   Install:
     WantedBy: multi-user.target
+
+# nvm / pyenv: defaults only supply rev/repo (and pyenv's build packages). The
+# blocks do nothing until an instance sets `versions` (a list of QUOTED strings,
+# first = default), so these stay inert. See blocks/nvm.sls, blocks/pyenv.sls.
+nvm:
+  rev: v0.40.1
+  repo: https://github.com/nvm-sh/nvm.git
+
+pyenv:
+  rev: v2.4.0
+  repo: https://github.com/pyenv/pyenv.git
+  build_pkgs: [build-essential, libssl-dev, zlib1g-dev, libbz2-dev, libreadline-dev,
+               libsqlite3-dev, libncursesw5-dev, xz-utils, tk-dev, libxml2-dev,
+               libxmlsec1-dev, libffi-dev, liblzma-dev]

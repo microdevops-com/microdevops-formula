@@ -10,6 +10,10 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from lib import (
+    logrotate_plan,
+    render_logrotate,
+    php_reopen_command,
+    parse_known_host,
     deep_format, expand, merge_globals,
     merge,
     normalize_osarch, archive_path, tar_extract_command,
@@ -23,7 +27,14 @@ from lib import (
     collect_scrape_jobs, append_at_path,
     parse_filter, select_instances,
     render_config, render_unit, merge_args, join_args,
-    acme_cert_paths, resolve_nginx_servers,
+    acme_cert_paths, normalize_nginx_vhosts, nginx_template_context,
+    sources_containing, check_dirs_outside_sources,
+    normalize_php_pools, render_php_pool, php_reload_command,
+    user_home, check_map_key, git_source_state, parse_onchanges, resolve_onchanges,
+    normalize_dirs, cron_identifier, cron_schedule_kwargs, normalize_cron,
+    check_systemd_exec,
+    runtime_layout, runtime_paths, nvm_plan, pyenv_plan, normalize_tools, render_env_sh,
+    runtime_plans, runtime_state_suffix,
 )
 
 
@@ -904,98 +915,210 @@ def test_acme_cert_paths_match_acme_verify_and_issue_naming():
     )
 
 
-def test_resolve_nginx_servers_derives_acme_tls_paths():
-    result = resolve_nginx_servers({
-        "servers": [{"names": ["logs.example.com", "logs-alt.example.com"], "acme_account": "example_com"}],
-    }, "vlogs")
-    assert result == [{
-        "names": ["logs.example.com", "logs-alt.example.com"],
-        "tls": True,
-        "acme_account": "example_com",
-        "ssl_cert": "/opt/acme/cert/vlogs_logs.example.com_fullchain.cer",
-        "ssl_key": "/opt/acme/cert/vlogs_logs.example.com_key.key",
-    }]
+def _vh(**kw):
+    base = {"names": ["a.example.com"], "upstream": "127.0.0.1:9000"}
+    base.update(kw)
+    return base
 
 
-def test_resolve_nginx_servers_keeps_operator_supplied_tls_paths():
-    result = resolve_nginx_servers({
-        "servers": [{
-            "names": ["internal.example.com"],
-            "ssl_cert": "/etc/ssl/certs/internal.fullchain.pem",
-            "ssl_key": "/etc/ssl/private/internal.key",
-        }],
-    }, "app")
-    assert result == [{
-        "names": ["internal.example.com"],
-        "tls": True,
-        "acme_account": None,
-        "ssl_cert": "/etc/ssl/certs/internal.fullchain.pem",
-        "ssl_key": "/etc/ssl/private/internal.key",
-    }]
+def _norm(vhosts, instance="app", sockets=None):
+    return normalize_nginx_vhosts({"manage": True, "vhosts": vhosts}, instance, sockets)
 
 
-def test_resolve_nginx_servers_supports_http_only_server():
-    result = resolve_nginx_servers({"servers": [{"names": ["plain.example.com"]}]}, "app")
-    assert result == [{
-        "names": ["plain.example.com"],
-        "tls": False,
-        "acme_account": None,
-        "ssl_cert": None,
-        "ssl_key": None,
-    }]
+def test_nginx_vhosts_derive_acme_tls_paths_and_defaults():
+    [v] = _norm({"web": _vh(names=["logs.example.com", "logs-alt.example.com"],
+                            acme_account="example_com")}, "vlogs")
+    assert v["key"] == "web"
+    assert v["name"] == "vlogs_web"
+    assert v["domain"] == "logs.example.com logs-alt.example.com"
+    assert v["tls"] is True
+    assert v["acme_account"] == "example_com"
+    assert v["ssl_cert"] == "/opt/acme/cert/vlogs_web_logs.example.com_fullchain.cer"
+    assert v["ssl_key"] == "/opt/acme/cert/vlogs_web_logs.example.com_key.key"
+    assert v["upstream"] == "127.0.0.1:9000" and v["template"] is None
+    assert v["access_log"] == "/var/log/nginx/vlogs_web.access.log"
+    assert v["error_log"] == "/var/log/nginx/vlogs_web.error.log"
+    assert v["auth_basic"] == [] and v["htpasswd_file"] is None
 
 
-def test_resolve_nginx_servers_preserves_mixed_server_order():
-    result = resolve_nginx_servers({
-        "servers": [
-            {"names": ["acme.example.com"], "acme_account": "example_com"},
-            {
-                "names": ["static.example.com"],
-                "ssl_cert": "/cert.pem",
-                "ssl_key": "/key.pem",
-            },
-            {"names": ["plain.example.com"]},
-        ],
-    }, "app")
-    assert [entry["names"][0] for entry in result] == [
-        "acme.example.com",
-        "static.example.com",
-        "plain.example.com",
-    ]
-    assert [entry["tls"] for entry in result] == [True, True, False]
-    assert result[0]["acme_account"] == "example_com"
+def test_nginx_vhost_name_override_keeps_old_cert_name():
+    [v] = _norm({"x": _vh(name="vmserver", acme_account="a", names=["vm.example.com"])})
+    assert v["ssl_cert"] == "/opt/acme/cert/vmserver_vm.example.com_fullchain.cer"
+
+
+def test_nginx_vhosts_keep_operator_tls_plain_and_order():
+    result = _norm({
+        "acme": _vh(acme_account="example_com"),
+        "static": _vh(ssl_cert="/cert.pem", ssl_key="/key.pem"),
+        "plain": _vh(),
+    })
+    assert [v["key"] for v in result] == ["acme", "static", "plain"]
+    assert [v["tls"] for v in result] == [True, True, False]
     assert result[1]["ssl_cert"] == "/cert.pem"
-    assert result[2]["ssl_cert"] is None
+    assert result[2]["ssl_cert"] is None and result[2]["acme_account"] is None
 
 
-def test_resolve_nginx_servers_rejects_ambiguous_acme_and_static_cert():
-    with pytest.raises(ValueError, match="sets both acme_account and ssl_cert/ssl_key"):
-        resolve_nginx_servers({
-            "servers": [{
-                "names": ["bad.example.com"],
-                "acme_account": "example_com",
-                "ssl_cert": "/cert.pem",
-                "ssl_key": "/key.pem",
-            }],
-        }, "app")
+def test_nginx_vhost_auth_basic_sets_htpasswd_file():
+    [v] = _norm({"web": _vh(name="svc", auth_basic=[{"username": "admin", "password": "x"}])})
+    assert v["htpasswd_file"] == "/etc/nginx/htpasswd/svc"
 
 
-def test_resolve_nginx_servers_rejects_partial_static_tls():
+def test_nginx_vhosts_reject_ambiguous_and_partial_tls():
+    with pytest.raises(ValueError, match="both acme_account and ssl_cert/ssl_key"):
+        _norm({"w": _vh(acme_account="a", ssl_cert="/c", ssl_key="/k")})
     with pytest.raises(ValueError, match="must set both ssl_cert and ssl_key"):
-        resolve_nginx_servers({"servers": [{"names": ["bad.example.com"], "ssl_cert": "/cert.pem"}]}, "app")
+        _norm({"w": _vh(ssl_cert="/c")})
     with pytest.raises(ValueError, match="must set both ssl_cert and ssl_key"):
-        resolve_nginx_servers({"servers": [{"names": ["bad.example.com"], "ssl_key": "/key.pem"}]}, "app")
+        _norm({"w": _vh(ssl_key="/k")})
 
 
-def test_resolve_nginx_servers_rejects_missing_or_empty_names():
-    with pytest.raises(ValueError, match="needs a non-empty 'names' list"):
-        resolve_nginx_servers({"servers": [{}]}, "app")
-    with pytest.raises(ValueError, match="needs a non-empty 'names' list"):
-        resolve_nginx_servers({"servers": [{"names": []}]}, "app")
+def test_nginx_vhosts_reject_bad_names():
+    with pytest.raises(ValueError, match="`names` must be a non-empty list"):
+        _norm({"w": {"upstream": "x:1"}})
+    with pytest.raises(ValueError, match="`names` must be a non-empty list"):
+        _norm({"w": _vh(names=[])})
 
 
-def test_resolve_nginx_servers_defaults_to_no_servers():
-    assert resolve_nginx_servers({}, "app") == []
+def test_nginx_vhosts_upstream_xor_template_and_vars_need_template():
+    with pytest.raises(ValueError, match="exactly one of"):
+        _norm({"w": {"names": ["a.example.com"]}})
+    with pytest.raises(ValueError, match="exactly one of"):
+        _norm({"w": _vh(template="salt://x.conf")})
+    with pytest.raises(ValueError, match="`vars` is only used with a custom"):
+        _norm({"w": _vh(vars={"a": 1})})
+
+
+def test_nginx_vhosts_reject_bad_key_name_unknown_key_and_empty():
+    with pytest.raises(ValueError, match="invalid key"):
+        _norm({"bad key": _vh()})
+    with pytest.raises(ValueError, match="invalid `name`"):
+        _norm({"w": _vh(name="a/b")})
+    with pytest.raises(ValueError, match="unknown key"):
+        _norm({"w": _vh(bogus=1)})
+    with pytest.raises(ValueError, match="vhosts is empty"):
+        normalize_nginx_vhosts({"manage": True}, "app")
+
+
+@pytest.mark.parametrize("old", ["upstream", "servers", "vhost_name", "auth_basic"])
+def test_nginx_old_single_vhost_shape_fails_loud(old):
+    with pytest.raises(ValueError, match="nginx.vhosts"):
+        normalize_nginx_vhosts({"manage": True, old: "x", "vhosts": {"w": _vh()}}, "app")
+
+
+def test_nginx_template_context_has_reserved_names_and_vars_on_top():
+    [v] = _norm({"w": _vh(name="svc", upstream=None, template="salt://t.conf",
+                          acme_account="a", vars={"port": 1})}, "app")
+    ctx = nginx_template_context(v, {"w": "/run/php/x.sock"})
+    assert ctx == {
+        "vhost_name": "svc", "domain": "a.example.com", "names": ["a.example.com"],
+        "ssl_cert": "/opt/acme/cert/svc_a.example.com_fullchain.cer",
+        "ssl_key": "/opt/acme/cert/svc_a.example.com_key.key",
+        "access_log": "/var/log/nginx/svc.access.log",
+        "error_log": "/var/log/nginx/svc.error.log",
+        "htpasswd_file": "", "php_fpm_sockets": {"w": "/run/php/x.sock"}, "port": 1,
+    }
+
+
+def test_nginx_template_context_empty_strings_without_tls_and_reserved_clash():
+    [v] = _norm({"w": _vh(upstream=None, template="salt://t.conf")})
+    ctx = nginx_template_context(v)
+    assert ctx["ssl_cert"] == "" and ctx["ssl_key"] == "" and ctx["php_fpm_sockets"] == {}
+    [bad] = _norm({"w": _vh(upstream=None, template="salt://t.conf", vars={"domain": "x"})})
+    with pytest.raises(ValueError, match="collide with reserved"):
+        nginx_template_context(bad)
+
+
+# ── php-fpm ───────────────────────────────────────────────────────────────────
+
+def _pools(pools, instance="inst"):
+    return normalize_php_pools(pools, instance, "web", "webgrp")
+
+
+def test_php_pools_defaults_resolved():
+    [p] = _pools({"back": {"version": "8.3"}})
+    assert p == {
+        "key": "back", "name": "inst_back", "version": "8.3", "user": "web", "group": "webgrp",
+        "listen": "/run/php/php8.3-fpm-inst_back.sock",
+        "listen_owner": "www-data", "listen_group": "www-data", "listen_mode": "0660",
+        "error_log": None, "reload": True, "config": "",
+        "path": "/etc/php/8.3/fpm/pool.d/inst_back.conf",
+    }
+
+
+def test_php_pools_empty_and_order_and_overrides():
+    assert _pools(None) == [] and _pools({}) == []
+    result = _pools({"b": {"version": "8.1", "name": "x", "user": "u", "reload": False,
+                           "listen": "/run/{pool_name}-{version}.sock"},
+                     "a": {"version": "8.10"}})
+    assert [p["key"] for p in result] == ["b", "a"]
+    assert result[0]["listen"] == "/run/x-8.1.sock"
+    assert result[0]["user"] == "u" and result[0]["reload"] is False
+    assert result[1]["path"] == "/etc/php/8.10/fpm/pool.d/inst_a.conf"
+
+
+def test_php_pools_validation():
+    with pytest.raises(ValueError, match="quote it"):
+        _pools({"a": {"version": 8.3}})
+    with pytest.raises(ValueError, match="quote it"):
+        _pools({"a": {}})
+    with pytest.raises(ValueError, match="must look like"):
+        _pools({"a": {"version": "8"}})
+    with pytest.raises(ValueError, match="invalid key"):
+        _pools({"a b": {"version": "8.3"}})
+    with pytest.raises(ValueError, match="unknown key"):
+        _pools({"a": {"version": "8.3", "bogus": 1}})
+    with pytest.raises(ValueError, match="invalid `name`"):
+        _pools({"a": {"version": "8.3", "name": "a b"}})
+    with pytest.raises(ValueError, match="listen_mode"):
+        _pools({"a": {"version": "8.3", "listen_mode": 660}})
+
+
+def test_render_php_pool_with_and_without_error_log():
+    [p] = _pools({"a": {"version": "8.3", "error_log": "/l/e.log",
+                        "config": "pm = dynamic\npm.max_children = 20\n"}})
+    assert render_php_pool(p) == (
+        "[inst_a]\nuser = web\ngroup = webgrp\n\n"
+        "listen = /run/php/php8.3-fpm-inst_a.sock\nlisten.owner = www-data\n"
+        "listen.group = www-data\nlisten.mode = 0660\n\n"
+        "php_admin_value[error_log] = /l/e.log\nphp_admin_flag[log_errors] = on\n\n"
+        "pm = dynamic\npm.max_children = 20\n")
+    [q] = _pools({"a": {"version": "8.3", "config": "pm = static"}})
+    out = render_php_pool(q)
+    assert "error_log" not in out and out.endswith("listen.mode = 0660\n\npm = static\n")
+
+
+def test_php_reload_command():
+    assert php_reload_command("8.3") == "php-fpm8.3 -t && systemctl reload php8.3-fpm"
+
+
+# ── sources/config/dirs interplay ─────────────────────────────────────────────
+
+SRC = {"back": {"git": "g", "target": "/var/www/app/back"},
+       "front": {"git": "g", "target": "/var/www/app/front/"}}
+
+
+def test_sources_containing_boundaries_and_equal_path():
+    assert sources_containing("/var/www/app/back/.env", SRC) == ["back"]
+    assert sources_containing("/var/www/app/back", SRC) == ["back"]
+    assert sources_containing("/var/www/app/backend/.env", SRC) == []
+    assert sources_containing("/var/www/app/front/x/y", SRC) == ["front"]
+    assert sources_containing("/var/www/app", SRC) == []
+
+
+def test_sources_containing_trailing_slash_sorted_and_empty():
+    assert sources_containing("/var/www/app/front/", SRC) == ["front"]
+    nested = {"z": {"target": "/a"}, "b": {"target": "/a/b"}}
+    assert sources_containing("/a/b/c", nested) == ["b", "z"]
+    assert sources_containing("/a/b", None) == [] and sources_containing("/a/b", {}) == []
+
+
+def test_check_dirs_outside_sources_raises_naming_both_keys():
+    entries = normalize_dirs({"logs": "/var/www/app/back/var/log"}, "u", "g")
+    with pytest.raises(ValueError, match=r"dirs:logs.*sources:back.*onchanges: \[sources:back\]"):
+        check_dirs_outside_sources(entries, SRC)
+    ok = normalize_dirs({"logs": "/var/www/app/log", "sib": "/var/www/app/backend"}, "u", "g")
+    check_dirs_outside_sources(ok, SRC)
+    check_dirs_outside_sources(ok, None)
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────
@@ -1127,3 +1250,505 @@ def test_merge_args_falls_back_to_wholesale_replace_for_raw_string_layer():
 def test_merge_args_returns_empty_list_for_no_layers():
     assert merge_args() == []
     assert merge_args(None, None) == []
+
+
+# ── home ─────────────────────────────────────────────────────────────────────
+
+def test_user_home_root_default_and_empty_user():
+    assert user_home({"name": "root"}) == "/root"
+    assert user_home({}) == "/root"
+    assert user_home(None) == "/root"
+
+
+def test_user_home_named_user_default():
+    assert user_home({"name": "releaser"}) == "/home/releaser"
+
+
+def test_user_home_explicit_home_wins():
+    assert user_home({"name": "releaser", "home": "/var/www/.releaser"}) == "/var/www/.releaser"
+    assert user_home({"name": "root", "home": "/srv/root"}) == "/srv/root"
+
+
+def test_expand_resolves_home_in_install_dir_and_dependent_values():
+    # Mirrors init.sls: phase 1 leaves {home} untouched (not in scope yet),
+    # phase 2 adds home + install_dir and resolves both chains.
+    settings = {"install_dir": "{home}/app", "config": {"p": "{install_dir}/x"},
+                "sources": {"b": {"target": "{home}/backend"}}}
+    phase1 = expand(settings, {"name": "crm"})
+    assert phase1["install_dir"] == "{home}/app"
+    scope = {"name": "crm", "install_dir": phase1["install_dir"],
+             "home": user_home({"name": "releaser", "home": "/var/www/.releaser"})}
+    phase2 = expand(phase1, scope)
+    assert phase2["install_dir"] == "/var/www/.releaser/app"
+    assert phase2["config"]["p"] == "/var/www/.releaser/app/x"
+    assert phase2["sources"]["b"]["target"] == "/var/www/.releaser/backend"
+
+
+# ── sources ──────────────────────────────────────────────────────────────────
+
+def test_check_map_key_accepts_and_rejects():
+    assert check_map_key("x", "back-end_1.v2") == "back-end_1.v2"
+    for bad in ("", "a b", "a/b", "a:b", None, 5):
+        with pytest.raises(ValueError, match="invalid key"):
+            check_map_key("x", bad)
+
+
+def test_git_source_state_latest_minimal_as_root_omits_user():
+    fn, kw = git_source_state("b", {"git": "g@h:r.git", "target": "/srv/b"}, "root")
+    assert fn == "latest"
+    assert kw == {"name": "g@h:r.git", "target": "/srv/b"}   # force_reset NOT defaulted
+
+
+def test_git_source_state_latest_passes_only_present_optionals_and_user():
+    fn, kw = git_source_state("b", {
+        "git": "u", "target": "/srv/b", "branch": "main", "rev": "v1", "identity": "/k",
+        "depth": 1, "submodules": True, "force_reset": True, "force_checkout": False,
+        "force_clone": True, "force_fetch": False}, "releaser")
+    assert fn == "latest"
+    assert kw == {"name": "u", "target": "/srv/b", "user": "releaser", "branch": "main",
+                  "rev": "v1", "identity": "/k", "depth": 1, "submodules": True,
+                  "force_reset": True, "force_checkout": False, "force_clone": True,
+                  "force_fetch": False}
+
+
+def test_git_source_state_once_uses_cloned_with_branch_identity_only():
+    fn, kw = git_source_state("b", {"git": "u", "target": "/srv/b", "once": True,
+                                    "branch": "m", "identity": "/k"}, "releaser")
+    assert fn == "cloned"
+    assert kw == {"name": "u", "target": "/srv/b", "user": "releaser", "branch": "m", "identity": "/k"}
+    assert "once" not in kw
+
+
+def test_git_source_state_once_false_is_latest():
+    assert git_source_state("b", {"git": "u", "target": "/srv/t", "once": False}, "root")[0] == "latest"
+
+
+@pytest.mark.parametrize("source,match", [
+    ({"target": "/srv/b"}, "git"),
+    ({"git": "", "target": "/srv/b"}, "git"),
+    ({"git": "u"}, "target"),
+    ({"git": "u", "target": "~/b"}, "target"),
+    ({"git": "u", "target": "{home}/b"}, "target"),
+    ({"git": "u", "target": "rel/b"}, "target"),
+    ({"git": "u", "target": "/srv/b", "bogus": 1}, "bogus"),
+    ({"git": "u", "target": "/srv/b", "once": True, "rev": "x"}, "rev"),
+    ({"git": "u", "target": "/srv/b", "once": True, "force_reset": False}, "force_reset"),
+    ({"git": "u", "target": "/srv/b", "once": True, "depth": 1}, "depth"),
+    ("not-a-dict", "mapping"),
+])
+def test_git_source_state_raises_naming_the_problem(source, match):
+    with pytest.raises(ValueError, match=match):
+        git_source_state("b", source, "root")
+
+
+def test_git_source_state_error_names_source_key_and_rejects_bad_key():
+    with pytest.raises(ValueError, match="sources:backend"):
+        git_source_state("backend", {"git": "u"}, "root")
+    with pytest.raises(ValueError, match="invalid key"):
+        git_source_state("bad key", {"git": "u", "target": "/x"}, "root")
+
+
+# ── commands: onchanges ──────────────────────────────────────────────────────
+
+def test_parse_onchanges_key_and_whole_block():
+    assert parse_onchanges(["sources:backend", "sources"]) == [("sources", "backend"), ("sources", None)]
+
+
+@pytest.mark.parametrize("spec,match", [
+    ("sources:backend", "must be a list"),
+    (None, "must be a list"),
+    ([], "empty"),
+    (["dirs:x"], "unknown block.*sources"),
+    (["nonsense"], "unknown block"),
+    (["sources:"], "empty key"),
+    ([5], "string"),
+])
+def test_parse_onchanges_raises(spec, match):
+    with pytest.raises(ValueError, match=match):
+        parse_onchanges(spec)
+
+
+def test_resolve_onchanges_per_key_and_all():
+    refs = {"sources": {"a": "REF_A", "b": "REF_B"}}
+    assert resolve_onchanges("c", ["sources:b"], refs) == ["REF_B"]
+    assert resolve_onchanges("c", ["sources"], refs) == ["REF_A", "REF_B"]
+    assert resolve_onchanges("c", ["sources:a", "sources"], refs) == ["REF_A", "REF_B"]
+
+
+def test_resolve_onchanges_unknown_key_and_empty_resolution_raise():
+    with pytest.raises(ValueError, match="sources:nope"):
+        resolve_onchanges("c", ["sources:nope"], {"sources": {"a": "R"}})
+    with pytest.raises(ValueError, match="never run"):
+        resolve_onchanges("c", ["sources"], {"sources": {}})
+    with pytest.raises(ValueError, match="never run"):
+        resolve_onchanges("c", ["sources"], None)
+
+
+def test_select_commands_keeps_onchanges_entries_in_order():
+    commands = OrderedDict([
+        ("a", {"cmd": "a", "phase": "pre", "onchanges": ["sources:x"]}),
+        ("b", {"cmd": "b", "phase": "pre"}),
+        ("c", {"cmd": "c", "phase": "pre", "onchanges": ["sources"]}),
+    ])
+    assert [n for n, _ in select_commands(commands, "pre", {})] == ["a", "b", "c"]
+    assert select_commands(commands, "pre", {})[0][1]["onchanges"] == ["sources:x"]
+
+
+# ── dirs ─────────────────────────────────────────────────────────────────────
+
+def test_normalize_dirs_string_shorthand_and_defaults():
+    assert normalize_dirs({"s": "/var/lib/s"}, "u", "g") == [
+        ("s", {"name": "/var/lib/s", "user": "u", "group": "g", "mode": "755", "makedirs": True})]
+
+
+def test_normalize_dirs_full_entry_and_recurse_and_order():
+    result = normalize_dirs(OrderedDict([
+        ("z", "/z"),
+        ("logs", {"name": "/l", "user": "x", "group": "y", "mode": "750",
+                  "makedirs": False, "recurse": True}),
+    ]), "u", "g")
+    assert [k for k, _ in result] == ["z", "logs"]
+    assert result[1][1] == {"name": "/l", "user": "x", "group": "y", "mode": "750",
+                            "makedirs": False, "recurse": ["user", "group"]}
+
+
+def test_normalize_dirs_empty_is_empty_list():
+    assert normalize_dirs(None, "u", "g") == []
+    assert normalize_dirs({}, "u", "g") == []
+
+
+@pytest.mark.parametrize("dirs,match", [
+    ({"bad key": "/x"}, "invalid key"),
+    ({"a": "rel/x"}, "absolute"),
+    ({"a": "~/x"}, "absolute"),
+    ({"a": {"mode": "750"}}, "absolute"),
+    ({"a": {"name": "/x", "owner": "u"}}, "owner"),
+    ({"a": {"name": "/x", "mode": 750}}, "mode"),
+    ({"a": 5}, "path string or a mapping"),
+    (["/x"], "keyed map"),
+])
+def test_normalize_dirs_raises(dirs, match):
+    with pytest.raises(ValueError, match=match):
+        normalize_dirs(dirs, "u", "g")
+
+
+# ── cron ─────────────────────────────────────────────────────────────────────
+
+def test_cron_identifier():
+    assert cron_identifier("crm", "session_clean") == "appsvc_crm_session_clean"
+
+
+def test_cron_schedule_kwargs_five_fields_and_special():
+    assert cron_schedule_kwargs("0 * * * *") == {
+        "minute": "0", "hour": "*", "daymonth": "*", "month": "*", "dayweek": "*"}
+    assert cron_schedule_kwargs("*/5  1-3 * * 1,2") == {
+        "minute": "*/5", "hour": "1-3", "daymonth": "*", "month": "*", "dayweek": "1,2"}
+    assert cron_schedule_kwargs("@daily") == {"special": "@daily"}
+    assert cron_schedule_kwargs("@reboot") == {"special": "@reboot"}
+
+
+@pytest.mark.parametrize("schedule", ["daily", "* * * *", "* * * * * *", "", "@bogus", "@daily x", None])
+def test_cron_schedule_kwargs_raises(schedule):
+    with pytest.raises(ValueError, match="cron schedule"):
+        cron_schedule_kwargs(schedule)
+
+
+def test_normalize_cron_present_defaults_and_options():
+    result = normalize_cron(OrderedDict([
+        ("clean", {"schedule": "0 * * * *", "cmd": "find x", "user": "root"}),
+        ("job", {"schedule": "@daily", "cmd": "run", "comment": "hi", "disabled": True}),
+    ]), "crm", "releaser")
+    assert [(k, f) for k, f, _ in result] == [("clean", "present"), ("job", "present")]
+    assert result[0][2] == {"name": "find x", "user": "root", "identifier": "appsvc_crm_clean",
+                            "minute": "0", "hour": "*", "daymonth": "*", "month": "*", "dayweek": "*"}
+    assert result[1][2] == {"name": "run", "user": "releaser", "identifier": "appsvc_crm_job",
+                            "special": "@daily", "comment": "hi", "commented": True}
+
+
+def test_normalize_cron_absent_needs_no_cmd_or_schedule():
+    result = normalize_cron({"old": {"absent": True}, "old2": {"absent": True, "cmd": "x"}}, "crm", "u")
+    assert result == [
+        ("old", "absent", {"user": "u", "identifier": "appsvc_crm_old"}),
+        ("old2", "absent", {"user": "u", "identifier": "appsvc_crm_old2", "name": "x"})]
+
+
+@pytest.mark.parametrize("cron,match", [
+    ({"a": {"schedule": "@daily"}}, "cmd"),
+    ({"a": {"cmd": "x"}}, "schedule"),
+    ({"a": {"cmd": "x", "schedule": "@daily", "when": 1}}, "when"),
+    ({"a": {"cmd": "x", "schedule": "nope"}}, "cron schedule"),
+    ({"bad key": {"cmd": "x", "schedule": "@daily"}}, "invalid key"),
+    ({"a": "x"}, "mapping"),
+    (["x"], "keyed map"),
+])
+def test_normalize_cron_raises(cron, match):
+    with pytest.raises(ValueError, match=match):
+        normalize_cron(cron, "crm", "u")
+
+
+def test_normalize_cron_empty():
+    assert normalize_cron(None, "crm", "u") == []
+
+
+# ── systemd guard ────────────────────────────────────────────────────────────
+
+def test_check_systemd_exec_raises_when_managed_without_execstart():
+    for systemd in ({}, {"manage": True}, {"Service": {}}, {"Service": {"ExecStart": ""}},
+                    {"Service": {"ExecStart": "  "}}, {"Service": {"ExecStart": []}}):
+        with pytest.raises(ValueError, match="systemd.manage: false"):
+            check_systemd_exec(systemd, "crm")
+
+
+def test_check_systemd_exec_passes_when_unmanaged_or_set():
+    check_systemd_exec({"manage": False}, "crm")
+    check_systemd_exec({"Service": {"ExecStart": "/bin/x"}}, "crm")
+    check_systemd_exec({"Service": {"ExecStart": ["/bin/x"]}}, "crm")
+
+
+# --- parse_known_host ---------------------------------------------------------
+
+def test_parse_known_host_port_is_int():
+    # A string "22" made Salt write "[host]:22", which OpenSSH never matches.
+    assert parse_known_host("gitlab.example.com:22") == ("gitlab.example.com", 22, "ssh-ed25519", None)
+
+
+def test_parse_known_host_defaults_and_full_form():
+    assert parse_known_host("example.com") == ("example.com", 22, "ssh-ed25519", None)
+    assert parse_known_host("example.com:2222:ssh-rsa") == ("example.com", 2222, "ssh-rsa", None)
+    assert parse_known_host("example.com:22:ssh-ed25519:AAAA") == ("example.com", 22, "ssh-ed25519", "AAAA")
+
+
+@pytest.mark.parametrize("entry", ["", ":22", "h:x", "h:22:e:k:extra"])
+def test_parse_known_host_rejects_bad_entries(entry):
+    with pytest.raises(ValueError):
+        parse_known_host(entry)
+
+
+# ── runtimes: layout, nvm, pyenv, tools, env_sh ───────────────────────────────
+
+NVM_BASE = {"rev": "v0.40.1", "repo": "https://github.com/nvm-sh/nvm.git"}
+PYENV_BASE = {"rev": "v2.4.0", "repo": "https://github.com/pyenv/pyenv.git", "build_pkgs": ["libssl-dev"]}
+
+
+def test_runtime_layout_non_root_and_root():
+    u = runtime_layout("helium", "/home/helium", "crm")
+    assert u == {"nvm_dir": "/home/helium/.nvm", "pyenv_root": "/home/helium/.pyenv",
+                 "tools_dir": "/home/helium/.local/bin", "env_sh": "/home/helium/.appsvc/crm.sh",
+                 "profile": "/home/helium/.bashrc"}
+    r = runtime_layout("root", "/root", "crm")
+    assert r == {"nvm_dir": "/usr/local/nvm", "pyenv_root": "/usr/local/pyenv",
+                 "tools_dir": "/usr/local/bin", "env_sh": "/etc/profile.d/appsvc-crm.sh",
+                 "profile": None}
+
+
+def test_runtime_paths_explicit_wins_and_profile_false():
+    p = runtime_paths("helium", "/home/helium", "crm", {"dir": "{home}/node"},
+                      {"root": "/opt/py"}, {"path": "/srv/e.sh", "profile": "{home}/.profile"},
+                      scope={"home": "/home/helium"})
+    assert (p["nvm_dir"], p["pyenv_root"], p["env_sh"], p["profile"]) == \
+        ("/home/helium/node", "/opt/py", "/srv/e.sh", "/home/helium/.profile")
+    assert runtime_paths("helium", "/home/helium", "crm", env_sh={"profile": False})["profile"] is None
+
+
+def test_runtime_paths_errors_name_instance():
+    with pytest.raises(ValueError, match="instance crm.*unknown key"):
+        runtime_paths("root", "/root", "crm", env_sh={"bogus": 1})
+    with pytest.raises(ValueError, match="instance crm.*profile"):
+        runtime_paths("root", "/root", "crm", env_sh={"profile": 5})
+
+
+def test_runtime_placeholders_resolve_in_phase2_root_and_non_root():
+    for user, nvm_dir, env_sh in (({"name": "helium"}, "/home/helium/.nvm", "/home/helium/.appsvc/crm.sh"),
+                                  ({}, "/usr/local/nvm", "/etc/profile.d/appsvc-crm.sh")):
+        p = runtime_paths(user.get("name", "root"), user_home(user), "crm")
+        scope = {"nvm_dir": p["nvm_dir"], "pyenv_root": p["pyenv_root"],
+                 "tools_dir": p["tools_dir"], "env_sh": p["env_sh"]}
+        out = expand({"c": ". {env_sh} && composer install", "py": "{pyenv_root}/versions/x"}, scope)
+        assert out["c"] == ". {} && composer install".format(env_sh)
+        assert out["py"] == p["pyenv_root"] + "/versions/x"
+        assert p["nvm_dir"] == nvm_dir
+
+
+def test_nvm_plan_inert_without_versions():
+    layout = runtime_layout("root", "/root", "crm")
+    assert nvm_plan(None, layout, "root") is None
+    assert nvm_plan(dict(NVM_BASE), layout, "root") is None
+    assert nvm_plan(dict(NVM_BASE, versions=[]), layout, "root") is None
+
+
+def test_nvm_plan_commands_non_root():
+    layout = runtime_layout("helium", "/home/helium", "crm")
+    plan = nvm_plan(dict(NVM_BASE, versions=["20", "18"]), layout, "helium")
+    assert plan["dir"] == "/home/helium/.nvm" and plan["user"] == "helium"
+    assert plan["default"] == "20" and plan["env"] == {"NVM_DIR": "/home/helium/.nvm"}
+    assert plan["installs"][0] == {
+        "version": "20", "suffix": "20",
+        "name": '. "/home/helium/.nvm/nvm.sh" && nvm install 20',
+        "unless": '. "/home/helium/.nvm/nvm.sh" && [ "$(nvm version 20)" != "N/A" ]'}
+    assert plan["default_cmd"] == {
+        "name": '. "/home/helium/.nvm/nvm.sh" && nvm alias default 20',
+        "unless": '[ "$(cat /home/helium/.nvm/alias/default 2>/dev/null)" = "20" ]'}
+    assert nvm_plan(dict(NVM_BASE, versions=["20"]), runtime_layout("root", "/root", "c"), "root")["user"] is None
+
+
+def test_nvm_plan_validation():
+    layout = runtime_layout("root", "/root", "crm")
+    for bad in ([20], [3.1], "20", [""], ["a b"], ["$(x)"], ["20", "20"]):
+        with pytest.raises(ValueError, match="nvm"):
+            nvm_plan(dict(NVM_BASE, versions=bad), layout, "root")
+    with pytest.raises(ValueError, match="quote it"):
+        nvm_plan(dict(NVM_BASE, versions=[20]), layout, "root")
+    with pytest.raises(ValueError, match="unknown key"):
+        nvm_plan(dict(NVM_BASE, versions=["20"], bogus=1), layout, "root")
+    with pytest.raises(ValueError, match="absolute path"):
+        nvm_plan(dict(NVM_BASE, versions=["20"], dir='/a"b'), layout, "root")
+
+
+def test_pyenv_plan_commands_and_validation():
+    layout = runtime_layout("helium", "/home/helium", "crm")
+    plan = pyenv_plan(dict(PYENV_BASE, versions=["3.8.13", "3.10"]), layout, "helium")
+    assert plan["installs"][0] == {
+        "version": "3.8.13", "suffix": "3_8_13",
+        "name": "PYENV_ROOT=/home/helium/.pyenv /home/helium/.pyenv/bin/pyenv install -s 3.8.13",
+        "unless": "test -x /home/helium/.pyenv/versions/3.8.13/bin/python"}
+    assert plan["default_cmd"]["name"] == "PYENV_ROOT=/home/helium/.pyenv /home/helium/.pyenv/bin/pyenv global 3.8.13"
+    assert plan["default_cmd"]["unless"] == '[ "$(cat /home/helium/.pyenv/version 2>/dev/null)" = "3.8.13" ]'
+    assert plan["build_pkgs"] == ["libssl-dev"]
+    assert pyenv_plan(dict(PYENV_BASE), layout, "helium") is None
+    with pytest.raises(ValueError, match="quote it"):
+        pyenv_plan(dict(PYENV_BASE, versions=[3.10]), layout, "helium")
+    with pytest.raises(ValueError, match="build_pkgs"):
+        pyenv_plan(dict(PYENV_BASE, versions=["3.8"], build_pkgs="gcc"), layout, "helium")
+    assert pyenv_plan(dict(PYENV_BASE, versions=["3.8"], root="/opt/py"), layout, "root")["root"] == "/opt/py"
+
+
+def test_runtime_state_suffix():
+    assert runtime_state_suffix("3.8.13") == "3_8_13"
+    assert runtime_state_suffix("lts/iron") == "lts_iron"
+
+
+def test_normalize_tools_defaults_and_validation():
+    layout = runtime_layout("helium", "/home/helium", "crm")
+    out = normalize_tools({"composer": {"source": "https://x/c.phar", "source_hash": "https://x/c.sha256"},
+                           "b": {"source": "https://x/b", "mode": "700", "target": "/opt/b"}},
+                          layout, "helium", "helium")
+    assert out[0] == ("composer", {"name": "/home/helium/.local/bin/composer", "source": "https://x/c.phar",
+                                   "source_hash": "https://x/c.sha256", "user": "helium", "group": "helium",
+                                   "mode": "755", "makedirs": True})
+    assert out[1][1]["name"] == "/opt/b" and out[1][1]["skip_verify"] is True and "source_hash" not in out[1][1]
+    assert normalize_tools(None, layout, "u", "g") == []
+    for bad in ({"a/b": {"source": "x"}}, {"..": {"source": "x"}}, {"a": {}}, {"a": {"source": "x", "z": 1}},
+                {"a": {"source": "x", "target": "rel"}}, {"a": {"source": "x", "mode": 755}}, {"a": "x"}):
+        with pytest.raises(ValueError):
+            normalize_tools(bad, layout, "u", "g")
+
+
+def test_render_env_sh_sections_and_dedup():
+    body = render_env_sh({"name": "crm", "nvm_dir": "/n", "pyenv_root": "/p",
+                          "tool_dirs": ["/a", "/b", "/a"]})
+    assert body == (
+        "# Managed by salt (appsvc instance crm) - do not edit.\n"
+        'export NVM_DIR="/n"\n'
+        '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"\n'
+        'export PYENV_ROOT="/p"\n'
+        'export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"\n'
+        'export PATH="/a:/b:$PATH"\n')
+    only_tools = render_env_sh({"name": "c", "tool_dirs": ["/t"]})
+    assert "NVM_DIR" not in only_tools and "PYENV_ROOT" not in only_tools and "/t:$PATH" in only_tools
+
+
+def _settings(**kw):
+    s = {"name": "crm", "nvm": dict(NVM_BASE), "pyenv": dict(PYENV_BASE),
+         "user": {"name": "helium", "group": "helium"}}
+    s.update(kw)
+    return s
+
+
+def test_runtime_plans_inert_by_default():
+    plans = runtime_plans(_settings())
+    assert plans["nvm"] is None and plans["pyenv"] is None
+    assert plans["tools"] == [] and plans["env_sh"] is None
+
+
+def test_runtime_plans_env_sh_non_root_and_root():
+    s = _settings(nvm=dict(NVM_BASE, versions=["20"]),
+                  tools={"composer": {"source": "https://x/c.phar"}})
+    e = runtime_plans(s)["env_sh"]
+    assert (e["path"], e["owner"], e["group"], e["profile"]) == \
+        ("/home/helium/.appsvc/crm.sh", "helium", "helium", "/home/helium/.bashrc")
+    assert e["profile_line"] == '[ -f "/home/helium/.appsvc/crm.sh" ] && . "/home/helium/.appsvc/crm.sh"  # appsvc crm'
+    assert 'export PATH="/home/helium/.local/bin:$PATH"' in e["body"]
+    s["user"] = {"name": "root"}
+    e = runtime_plans(s)["env_sh"]
+    assert (e["path"], e["owner"], e["profile"]) == ("/etc/profile.d/appsvc-crm.sh", "root", None)
+    s["shell_env"] = {"profile": False}
+    s["user"] = {"name": "helium", "group": "helium"}
+    assert runtime_plans(s)["env_sh"]["profile"] is None
+
+
+def test_runtime_plans_errors_name_instance():
+    with pytest.raises(ValueError, match="instance crm: nvm"):
+        runtime_plans(_settings(nvm=dict(NVM_BASE, versions=[20])))
+
+
+def test_env_sh_placeholder_not_shadowed_by_shell_env_settings():
+    # The override key is `shell_env`, so an instance that sets it still gets the
+    # resolved path for "{env_sh}" (a same-named settings key would be folded into
+    # expand's scope and render the dict's repr).
+    settings = {"shell_env": {"profile": False}, "cmd": ". {env_sh} && composer install"}
+    out = expand(settings, {"env_sh": "/home/helium/.appsvc/crm.sh"})
+    assert out["cmd"] == ". /home/helium/.appsvc/crm.sh && composer install"
+
+
+
+# --- logrotate ----------------------------------------------------------------
+
+def _pool(key, version, error_log):
+    return {"key": key, "version": version, "error_log": error_log}
+
+
+def _vhost(key, access_log, error_log):
+    return {"key": key, "access_log": access_log, "error_log": error_log}
+
+
+def test_logrotate_groups_nginx_and_php_per_version():
+    plan = logrotate_plan(
+        {}, [_pool("a", "8.3", "/srv/log/php/a.log"), _pool("b", "8.1", "/srv/log/php/b.log"),
+             _pool("c", "8.3", "/srv/log/php/c.log")],
+        [_vhost("w", "/srv/log/nginx/w.access.log", "/srv/log/nginx/w.error.log")],
+        "helium", "helium")
+    assert [s["paths"] for s in plan["stanzas"]] == [
+        ["/srv/log/nginx/w.access.log", "/srv/log/nginx/w.error.log"],
+        ["/srv/log/php/a.log", "/srv/log/php/c.log"],
+        ["/srv/log/php/b.log"]]
+    assert plan["stanzas"][0]["postrotate"] == "/usr/sbin/nginx -s reopen"
+    assert plan["stanzas"][1]["postrotate"] == php_reopen_command("8.3")
+    body = render_logrotate(plan, "crm")
+    assert "/srv/log/nginx/w.access.log\n/srv/log/nginx/w.error.log {" in body
+    assert "    create 640 helium helium" in body and "    rotate 31" in body
+    assert body.count("postrotate") == 3
+
+
+def test_logrotate_skips_distro_nginx_logs_and_pools_without_error_log():
+    plan = logrotate_plan({}, [_pool("a", "8.3", None)],
+                          [_vhost("w", "/var/log/nginx/w.access.log", "/var/log/nginx/w.error.log")],
+                          "root", "root")
+    assert plan["stanzas"] == []
+
+
+def test_logrotate_duplicate_path_raises():
+    with pytest.raises(ValueError, match="declared by both"):
+        logrotate_plan({}, [_pool("a", "8.3", "/srv/x.log")], [_vhost("w", "/srv/x.log", "/srv/y.log")],
+                       "u", "u")
+
+
+@pytest.mark.parametrize("conf", [{"rotate": "31"}, {"frequency": "often"}, {"mode": 640},
+                                  {"skip": "/var/log/*"}, {"bogus": 1}])
+def test_logrotate_rejects_bad_options(conf):
+    with pytest.raises(ValueError):
+        logrotate_plan(conf, [], [], "u", "u")
+
+
+def test_logrotate_relative_path_raises():
+    with pytest.raises(ValueError, match="absolute"):
+        logrotate_plan({}, [_pool("a", "8.3", "log/a.log")], [], "u", "u")

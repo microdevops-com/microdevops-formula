@@ -6,7 +6,7 @@ files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
 Directly importable by pytest for unit tests.
 
-Sections: substitute · merge · scrape · fetch · release · commands · config · nginx · systemd
+Sections: substitute · merge · scrape · fetch · release · commands · home · sources · dirs · runtimes (nvm/pyenv/tools/env_sh) · cron · systemd guard · config · php-fpm · nginx · systemd
 """
 
 import configparser
@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import tempfile
 import time
 
@@ -739,6 +740,642 @@ def select_commands(commands, phase, settings):
     return selected
 
 
+# ── home ──────────────────────────────────────────────────────────────────────
+# The {home} placeholder: apps live in the service user's home directory.
+
+
+def parse_known_host(entry):
+    """Parse an `ssh.known_hosts.hosts` entry "host[:port[:enc[:key]]]" into
+    (host, port, enc, key). port is an int (default 22), enc defaults to
+    ssh-ed25519, key to None (ssh-keyscan fetches it).
+
+    The int matters: Salt's ssh_known_hosts writes "[host]:port" whenever
+    port != 22, so a string "22" produced an entry OpenSSH never matches for
+    the default port ("Host key verification failed")."""
+    parts = str(entry).split(":")
+    if len(parts) > 4 or not parts[0]:
+        raise ValueError("ssh.known_hosts entry {!r} is not host[:port[:enc[:key]]]".format(entry))
+    host = parts[0]
+    try:
+        port = int(parts[1]) if len(parts) > 1 and parts[1] else 22
+    except ValueError:
+        raise ValueError("ssh.known_hosts entry {!r}: port {!r} is not a number".format(entry, parts[1]))
+    enc = parts[2] if len(parts) > 2 and parts[2] else "ssh-ed25519"
+    key = parts[3] if len(parts) > 3 and parts[3] else None
+    return host, port, enc, key
+
+
+def user_home(user):
+    """Home directory of the instance user: `user.home` if set, else /root for
+    root (or an empty `user`), else /home/<name>."""
+    user = user or {}
+    if user.get("home"):
+        return user["home"]
+    name = user.get("name") or "root"
+    return "/root" if name == "root" else "/home/{}".format(name)
+
+
+# ── keyed-map keys ────────────────────────────────────────────────────────────
+# The key of sources/dirs/cron entries becomes part of a Salt state ID (and, for
+# cron, of the crontab identifier), so restrict its charset.
+
+_KEY_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+def check_map_key(what, key):
+    """Raise ValueError unless `key` is a non-empty [A-Za-z0-9_.-]+ string."""
+    if not isinstance(key, str) or not _KEY_RE.match(key):
+        raise ValueError("{}: invalid key {!r} - keys become part of a state ID, "
+                         "allowed characters are [A-Za-z0-9_.-]".format(what, key))
+    return key
+
+
+def _check_unknown_keys(what, key, item, allowed):
+    unknown = sorted(str(k) for k in item if k not in allowed)
+    if unknown:
+        raise ValueError("{}:{}: unknown key(s) {} - allowed: {}".format(
+            what, key, ", ".join(unknown), ", ".join(sorted(allowed))))
+
+
+# ── sources ───────────────────────────────────────────────────────────────────
+# Git checkouts (the `sources` block). Pure derivation of git.latest / git.cloned
+# kwargs; the block only emits the state.
+
+SOURCE_COMMON_KEYS = ("git", "target", "once", "branch", "identity")
+SOURCE_LATEST_ONLY_KEYS = ("rev", "depth", "submodules", "force_reset",
+                           "force_checkout", "force_clone", "force_fetch")
+SOURCE_KEYS = SOURCE_COMMON_KEYS + SOURCE_LATEST_ONLY_KEYS
+
+
+def git_source_state(key, source, user_name):
+    """Derive `(function_name, kwargs)` for one `sources` entry: function_name is
+    "latest" or "cloned" (`once: true`), kwargs are ready for Git.<function_name>.
+
+    `force_reset` is deliberately NOT defaulted (app.* defaults it to true,
+    which silently discards local changes on the server): unset, git.latest
+    fails loud on a dirty tree. Raises ValueError (naming the key) on a bad
+    map key, missing/empty `git`, missing or non-absolute `target`, unknown
+    keys, or `once: true` combined with a git.latest-only key."""
+    check_map_key("sources", key)
+    if not isinstance(source, dict):
+        raise ValueError("sources:{}: must be a mapping, got {!r}".format(key, source))
+    _check_unknown_keys("sources", key, source, SOURCE_KEYS)
+
+    if not source.get("git"):
+        raise ValueError("sources:{}: `git` (repository URL) is required".format(key))
+    target = source.get("target")
+    if not target or not isinstance(target, str) or not target.startswith("/"):
+        raise ValueError("sources:{}: `target` must be an absolute path after expansion "
+                         "(use {{home}}, not ~), got {!r}".format(key, target))
+
+    once = bool(source.get("once", False))
+    if once:
+        clash = [k for k in SOURCE_LATEST_ONLY_KEYS if k in source]
+        if clash:
+            raise ValueError("sources:{}: `once: true` uses git.cloned, which does not "
+                             "support {} (git.latest-only)".format(key, ", ".join(clash)))
+
+    kwargs = {"name": source["git"], "target": target}
+    if user_name and user_name != "root":
+        kwargs["user"] = user_name
+    for opt in ("branch", "identity") + SOURCE_LATEST_ONLY_KEYS:
+        if opt in source:
+            kwargs[opt] = source[opt]
+    return ("cloned" if once else "latest"), kwargs
+
+
+def _norm_path(path):
+    """Strip trailing slashes (keeps a bare "/" as "/")."""
+    return path.rstrip("/") or "/"
+
+
+def sources_containing(path, sources):
+    """Sorted keys of the `sources` entries whose `target` contains `path`:
+    equal to it, or under it with a `/` boundary (/a/b is not inside /a/bc).
+    Trailing slashes are ignored. `sources` is the expanded settings["sources"]
+    map (may be empty/None); entries without a string `target` are skipped
+    (git_source_state fails loud on those)."""
+    if not sources or not isinstance(path, str):
+        return []
+    path = _norm_path(path)
+    found = []
+    for key, source in sources.items():
+        target = source.get("target") if isinstance(source, dict) else None
+        if not isinstance(target, str) or not target:
+            continue
+        target = _norm_path(target)
+        if path == target or path.startswith(target.rstrip("/") + "/"):
+            found.append(key)
+    return sorted(found)
+
+
+# ── commands: onchanges ───────────────────────────────────────────────────────
+
+ONCHANGES_BLOCKS = ("sources",)
+
+
+def parse_onchanges(spec):
+    """Validate a command's `onchanges` list and return [(block, key_or_None)].
+    Entries are "<block>" (any entry of that block changed) or "<block>:<key>".
+    Only `sources` is a valid block in this step. Raises ValueError on a
+    non-list, an empty list (the gate could never fire), a non-string entry,
+    an unknown block, or an empty key."""
+    if not isinstance(spec, list):
+        raise ValueError("commands onchanges must be a list like [sources:backend], "
+                         "got {!r}".format(spec))
+    if not spec:
+        raise ValueError("commands onchanges is empty - the command would never run")
+    parsed = []
+    for entry in spec:
+        if not isinstance(entry, str):
+            raise ValueError("commands onchanges entry {!r} must be a string".format(entry))
+        block, sep, key = entry.partition(":")
+        if block not in ONCHANGES_BLOCKS:
+            raise ValueError("commands onchanges {!r}: unknown block {!r}, valid: {}".format(
+                entry, block, ", ".join(ONCHANGES_BLOCKS)))
+        if sep and not key:
+            raise ValueError("commands onchanges {!r}: empty key after ':'".format(entry))
+        parsed.append((block, key if sep else None))
+    return parsed
+
+
+def resolve_onchanges(cmd_name, spec, refs):
+    """Resolve a command's `onchanges` spec against `refs` ({block: {key: ref}})
+    to a flat, de-duplicated list of refs. Raises ValueError for an unknown
+    key or when nothing resolves (the command could never run)."""
+    refs = refs or {}
+    resolved = []
+    for block, key in parse_onchanges(spec):
+        available = refs.get(block) or {}
+        if key is None:
+            picked = list(available.values())
+        elif key in available:
+            picked = [available[key]]
+        else:
+            raise ValueError("commands:{}: onchanges {}:{} - no such {} entry (declared: {})".format(
+                cmd_name, block, key, block, ", ".join(sorted(available)) or "none"))
+        for ref in picked:
+            if ref not in resolved:
+                resolved.append(ref)
+    if not resolved:
+        raise ValueError("commands:{}: onchanges {!r} resolved to nothing (no {} declared) - "
+                         "the command could never run".format(cmd_name, spec, "/".join(ONCHANGES_BLOCKS)))
+    return resolved
+
+
+# ── dirs ──────────────────────────────────────────────────────────────────────
+
+DIR_KEYS = ("name", "user", "group", "mode", "makedirs", "recurse")
+
+
+def normalize_dirs(dirs, user_name, user_group):
+    """Turn the `dirs` keyed map into an ordered list of `(key, kwargs)` for
+    File.directory. A string value is shorthand for `{name: <string>}`.
+    Defaults: user/group = the instance user/group, mode "755", makedirs true;
+    `recurse: true` -> recurse=["user", "group"] (never mode). `mode` must be a
+    string (an unquoted YAML 750 / 0750 is an int and would be silently wrong).
+    Raises ValueError on bad keys, unknown keys, or a missing/relative name."""
+    if not dirs:
+        return []
+    if not isinstance(dirs, dict):
+        raise ValueError("dirs must be a keyed map, got {!r}".format(dirs))
+    result = []
+    for key, item in dirs.items():
+        check_map_key("dirs", key)
+        if isinstance(item, str):
+            item = {"name": item}
+        if not isinstance(item, dict):
+            raise ValueError("dirs:{}: must be a path string or a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("dirs", key, item, DIR_KEYS)
+        name = item.get("name")
+        if not isinstance(name, str) or not name.startswith("/"):
+            raise ValueError("dirs:{}: `name` must be an absolute path after expansion "
+                             "(use {{home}}, not ~), got {!r}".format(key, name))
+        mode = item.get("mode", "755")
+        if not isinstance(mode, str):
+            raise ValueError("dirs:{}: `mode` must be a quoted string like \"750\", "
+                             "got {!r}".format(key, mode))
+        kwargs = {
+            "name": name,
+            "user": item.get("user", user_name),
+            "group": item.get("group", user_group),
+            "mode": mode,
+            "makedirs": bool(item.get("makedirs", True)),
+        }
+        if item.get("recurse", False):
+            kwargs["recurse"] = ["user", "group"]
+        result.append((key, kwargs))
+    return result
+
+
+def check_dirs_outside_sources(dirs_normalized, sources):
+    """Raise ValueError when a normalized `dirs` entry (the `(key, kwargs)` list
+    from normalize_dirs) lies inside a `sources` target. dirs run before
+    sources, so the directory would make the checkout's target non-empty and
+    non-repo and every git.cloned/git.latest would refuse it."""
+    for key, kwargs in dirs_normalized:
+        inside = sources_containing(kwargs["name"], sources)
+        if inside:
+            raise ValueError(
+                "dirs:{}: {!r} is inside the checkout of sources:{} - dirs run before "
+                "sources, so it would make the clone target non-empty and block the "
+                "clone. Use a `commands` entry with `onchanges: [sources:{}]` to create "
+                "it after the checkout, or put the directory outside the checkout"
+                .format(key, kwargs["name"], inside[0], inside[0]))
+
+
+# ── runtimes: nvm, pyenv, tools, env_sh ───────────────────────────────────────
+# Per-user when the instance user is not root, global when it is. Pure
+# derivation of paths, validated plans and shell strings; blocks/{nvm,pyenv,
+# tools,env_sh}.sls only emit states from them.
+
+RUNTIME_PLACEHOLDERS = ("nvm_dir", "pyenv_root", "tools_dir", "env_sh")
+NVM_KEYS = ("versions", "rev", "dir", "repo")
+PYENV_KEYS = ("versions", "rev", "root", "repo", "build_pkgs")
+ENV_SH_KEYS = ("path", "profile")
+TOOL_KEYS = ("source", "source_hash", "target", "mode")
+_RUNTIME_PATH_RE = re.compile(r"^/[A-Za-z0-9_./-]+$")
+_NVM_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
+_PYENV_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def runtime_layout(settings_user, home, instance_name):
+    """Default runtime paths for an instance. `settings_user` is the instance
+    user NAME (user.name, "root" when unset). Non-root -> everything under the
+    user's `home`; root -> global (/usr/local, /etc/profile.d). `profile` is the
+    rc file that gets an env_sh source line: {home}/.bashrc for a non-root
+    user, None for root (profile.d is already sourced by login shells)."""
+    if (settings_user or "root") == "root":
+        return {
+            "nvm_dir": "/usr/local/nvm",
+            "pyenv_root": "/usr/local/pyenv",
+            "tools_dir": "/usr/local/bin",
+            "env_sh": "/etc/profile.d/appsvc-{}.sh".format(instance_name),
+            "profile": None,
+        }
+    home = home.rstrip("/")
+    return {
+        "nvm_dir": home + "/.nvm",
+        "pyenv_root": home + "/.pyenv",
+        "tools_dir": home + "/.local/bin",
+        "env_sh": "{}/.appsvc/{}.sh".format(home, instance_name),
+        "profile": home + "/.bashrc",
+    }
+
+
+def _conf_dict(what, conf, allowed):
+    """None/{} -> {}; anything but a mapping raises; unknown keys raise."""
+    if conf is None:
+        return {}
+    if not isinstance(conf, dict):
+        raise ValueError("{} must be a mapping, got {!r}".format(what, conf))
+    _check_unknown_keys(what, "", conf, allowed)
+    return conf
+
+
+def runtime_paths(user_name, home, instance_name, nvm=None, pyenv=None, env_sh=None, scope=None):
+    """Public wrapper of _runtime_paths: errors name the instance."""
+    try:
+        return _runtime_paths(user_name, home, instance_name, nvm, pyenv, env_sh, scope)
+    except ValueError as exc:
+        raise ValueError("instance {}: {}".format(instance_name, exc)) from None
+
+
+def _runtime_paths(user_name, home, instance_name, nvm=None, pyenv=None, env_sh=None, scope=None):
+    """runtime_layout merged with the explicit `nvm.dir` / `pyenv.root` /
+    `shell_env.path` / `shell_env.profile` (explicit wins). The settings key is
+    `shell_env`, not `env_sh`: `{env_sh}` is a placeholder, and expand folds
+    top-level settings keys into its scope, so a same-named key would shadow it. Returns the layout dict
+    (nvm_dir, pyenv_root, tools_dir, env_sh, profile). `scope` ({home, ...}) is
+    used to expand placeholders in the explicit values - init.sls calls this
+    before phase 2 has expanded them. `profile: false` disables the profile line
+    (-> None). Raises ValueError on a bad `env_sh` shape."""
+    layout = runtime_layout(user_name, home, instance_name)
+    fmt = (lambda v: _format(v, _SafeScope(scope or {})) if isinstance(v, str) else v)
+    nvm = _conf_dict("nvm", nvm, NVM_KEYS)
+    pyenv = _conf_dict("pyenv", pyenv, PYENV_KEYS)
+    env_sh = _conf_dict("shell_env", env_sh, ENV_SH_KEYS)
+    if nvm.get("dir"):
+        layout["nvm_dir"] = fmt(nvm["dir"])
+    if pyenv.get("root"):
+        layout["pyenv_root"] = fmt(pyenv["root"])
+    if env_sh.get("path"):
+        layout["env_sh"] = fmt(env_sh["path"])
+    if "profile" in env_sh:
+        profile = env_sh["profile"]
+        if profile is False:
+            layout["profile"] = None
+        elif isinstance(profile, str) and profile:
+            layout["profile"] = fmt(profile)
+        else:
+            raise ValueError("env_sh:profile must be a path string or false, got {!r}".format(profile))
+    return layout
+
+
+def _runtime_path(what, key, path):
+    """Absolute, shell-safe path (it is interpolated into double quotes)."""
+    if not isinstance(path, str) or not _RUNTIME_PATH_RE.match(path):
+        raise ValueError("{}: `{}` must be an absolute path of [A-Za-z0-9_./-] "
+                         "characters, got {!r}".format(what, key, path))
+    return path.rstrip("/") or "/"
+
+
+def _runtime_versions(what, versions, version_re):
+    if not isinstance(versions, list):
+        raise ValueError("{}:versions must be a list of quoted strings like [\"20\"], "
+                         "got {!r}".format(what, versions))
+    for v in versions:
+        if not isinstance(v, str):
+            raise ValueError("{}:versions entry {!r} is not a string - quote it "
+                             "(YAML 3.10 is the float 3.1, 20 is an int)".format(what, v))
+        if not version_re.match(v):
+            raise ValueError("{}:versions entry {!r} has characters outside {}".format(
+                what, v, version_re.pattern))
+    if len(set(versions)) != len(versions):
+        raise ValueError("{}:versions has duplicates: {!r}".format(what, versions))
+    return list(versions)
+
+
+def runtime_state_suffix(version):
+    """Version -> state-ID-safe suffix ("3.8.13" -> "3_8_13")."""
+    return re.sub(r"[^A-Za-z0-9_]", "_", version)
+
+
+def _runtime_common(what, conf, allowed, layout_key, conf_key, layout, user_name):
+    if not conf or not conf.get("versions"):
+        _conf_dict(what, conf, allowed)
+        return None
+    _conf_dict(what, conf, allowed)
+    base = _runtime_path(what, conf_key, conf.get(conf_key) or layout[layout_key])
+    for key in ("rev", "repo"):
+        if not isinstance(conf.get(key), str) or not conf[key]:
+            raise ValueError("{}:{} must be a non-empty string, got {!r}".format(what, key, conf.get(key)))
+    return base
+
+
+def nvm_plan(nvm, layout, user_name):
+    """Validated nvm plan, or None when `nvm` is absent or has no `versions`
+    (defaults.yaml supplies rev/repo only, so defaults stay inert). Keys: dir,
+    repo, rev, versions, default (= versions[0]), user (None for root), env,
+    installs [{version, suffix, name, unless}], default_cmd {name, unless}."""
+    base = _runtime_common("nvm", nvm, NVM_KEYS, "nvm_dir", "dir", layout, user_name)
+    if base is None:
+        return None
+    versions = _runtime_versions("nvm", nvm["versions"], _NVM_VERSION_RE)
+    default = versions[0]
+    source = '. "{}/nvm.sh"'.format(base)
+    installs = []
+    for v in versions:
+        qv = shlex.quote(v)
+        installs.append({
+            "version": v,
+            "suffix": runtime_state_suffix(v),
+            "name": "{} && nvm install {}".format(source, qv),
+            "unless": '{} && [ "$(nvm version {})" != "N/A" ]'.format(source, qv),
+        })
+    return {
+        "dir": base,
+        "repo": nvm["repo"],
+        "rev": nvm["rev"],
+        "versions": versions,
+        "default": default,
+        "user": None if (user_name or "root") == "root" else user_name,
+        "env": {"NVM_DIR": base},
+        "installs": installs,
+        "default_cmd": {
+            "name": "{} && nvm alias default {}".format(source, shlex.quote(default)),
+            "unless": '[ "$(cat {}/alias/default 2>/dev/null)" = "{}" ]'.format(base, default),
+        },
+    }
+
+
+def pyenv_plan(pyenv, layout, user_name):
+    """Validated pyenv plan, or None when `pyenv` is absent or has no
+    `versions`. Keys: root, repo, rev, versions, default (= versions[0]), user
+    (None for root), build_pkgs, env, installs [{version, suffix, name,
+    unless}], default_cmd {name, unless}."""
+    base = _runtime_common("pyenv", pyenv, PYENV_KEYS, "pyenv_root", "root", layout, user_name)
+    if base is None:
+        return None
+    versions = _runtime_versions("pyenv", pyenv["versions"], _PYENV_VERSION_RE)
+    default = versions[0]
+    pkgs = pyenv.get("build_pkgs") or []
+    if not isinstance(pkgs, list) or not all(isinstance(p, str) and p for p in pkgs):
+        raise ValueError("pyenv:build_pkgs must be a list of package names, got {!r}".format(pkgs))
+    installs = []
+    for v in versions:
+        installs.append({
+            "version": v,
+            "suffix": runtime_state_suffix(v),
+            "name": "PYENV_ROOT={r} {r}/bin/pyenv install -s {v}".format(r=base, v=shlex.quote(v)),
+            "unless": "test -x {}/versions/{}/bin/python".format(base, v),
+        })
+    return {
+        "root": base,
+        "repo": pyenv["repo"],
+        "rev": pyenv["rev"],
+        "versions": versions,
+        "default": default,
+        "user": None if (user_name or "root") == "root" else user_name,
+        "build_pkgs": list(pkgs),
+        "env": {"PYENV_ROOT": base},
+        "installs": installs,
+        "default_cmd": {
+            "name": "PYENV_ROOT={r} {r}/bin/pyenv global {v}".format(r=base, v=shlex.quote(default)),
+            "unless": '[ "$(cat {}/version 2>/dev/null)" = "{}" ]'.format(base, default),
+        },
+    }
+
+
+def normalize_tools(tools, layout, user_name, user_group):
+    """`tools` keyed map -> ordered [(key, File.managed kwargs)]. Defaults:
+    target {tools_dir}/<key>, mode "755" (must be a string), user/group = the
+    instance user/group, makedirs true; `source_hash` -> verified download,
+    otherwise skip_verify (same choice as fetch's file kind). Raises
+    ValueError on a bad key, unknown keys, missing `source`, a non-absolute
+    target or a non-string mode."""
+    if not tools:
+        return []
+    if not isinstance(tools, dict):
+        raise ValueError("tools must be a keyed map, got {!r}".format(tools))
+    result = []
+    for key, item in tools.items():
+        check_map_key("tools", key)
+        if key in (".", ".."):
+            raise ValueError("tools: invalid key {!r}".format(key))
+        if not isinstance(item, dict):
+            raise ValueError("tools:{}: must be a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("tools", key, item, TOOL_KEYS)
+        source = item.get("source")
+        if not isinstance(source, str) or not source:
+            raise ValueError("tools:{}: `source` (download URL) is required, got {!r}".format(key, source))
+        target = item.get("target") or "{}/{}".format(layout["tools_dir"].rstrip("/"), key)
+        if not isinstance(target, str) or not target.startswith("/"):
+            raise ValueError("tools:{}: `target` must be an absolute path, got {!r}".format(key, target))
+        mode = item.get("mode", "755")
+        if not isinstance(mode, str):
+            raise ValueError("tools:{}: `mode` must be a quoted string like \"755\", "
+                             "got {!r}".format(key, mode))
+        kwargs = {"name": target, "source": source, "user": user_name, "group": user_group,
+                  "mode": mode, "makedirs": True}
+        if item.get("source_hash"):
+            kwargs["source_hash"] = item["source_hash"]
+        else:
+            kwargs["skip_verify"] = True
+        result.append((key, kwargs))
+    return result
+
+
+def render_env_sh(plan):
+    """Body of the generated env file. `plan`: {name, nvm_dir|None,
+    pyenv_root|None, tool_dirs: [dirs]}. Only the sections that apply are
+    emitted; tool dirs are de-duplicated in declaration order. Ends with a
+    newline."""
+    lines = ["# Managed by salt (appsvc instance {}) - do not edit.".format(plan["name"])]
+    if plan.get("nvm_dir"):
+        lines += ['export NVM_DIR="{}"'.format(plan["nvm_dir"]),
+                  '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"']
+    if plan.get("pyenv_root"):
+        lines += ['export PYENV_ROOT="{}"'.format(plan["pyenv_root"]),
+                  'export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"']
+    dirs = []
+    for d in plan.get("tool_dirs") or []:
+        if d not in dirs:
+            dirs.append(d)
+    if dirs:
+        lines.append('export PATH="{}:$PATH"'.format(":".join(dirs)))
+    return "\n".join(lines) + "\n"
+
+
+def runtime_plans(settings):
+    """Public wrapper of _runtime_plans: errors name the instance."""
+    try:
+        return _runtime_plans(settings)
+    except ValueError as exc:
+        raise ValueError("instance {}: {}".format(settings.get("name"), exc)) from None
+
+
+def _runtime_plans(settings):
+    """Everything the nvm/pyenv/tools/env_sh blocks need, derived from one
+    instance's expanded settings: {paths, nvm, pyenv, tools, env_sh}. `nvm` /
+    `pyenv` are plans or None, `tools` is the normalize_tools list, `env_sh`
+    is None when nothing is active, else {path, body, owner, group, profile,
+    profile_line}. Pure; raises ValueError (naming the key) on bad input."""
+    user = settings.get("user") or {}
+    user_name = user.get("name", "root")
+    user_group = user.get("group", user_name)
+    name = settings["name"]
+    paths = _runtime_paths(user_name, user_home(user), name, settings.get("nvm"),
+                           settings.get("pyenv"), settings.get("shell_env"))
+    nvm = nvm_plan(settings.get("nvm"), paths, user_name)
+    pyenv = pyenv_plan(settings.get("pyenv"), paths, user_name)
+    tools = normalize_tools(settings.get("tools"), paths, user_name, user_group)
+
+    env_sh = None
+    if nvm or pyenv or tools:
+        tool_dirs = [os.path.dirname(kw["name"]) for _, kw in tools]
+        path = _runtime_path("shell_env", "path", paths["env_sh"])
+        per_user = user_name != "root" and not path.startswith("/etc/")
+        profile = paths["profile"]
+        env_sh = {
+            "path": path,
+            "body": render_env_sh({"name": name,
+                                   "nvm_dir": nvm["dir"] if nvm else None,
+                                   "pyenv_root": pyenv["root"] if pyenv else None,
+                                   "tool_dirs": tool_dirs}),
+            "owner": user_name if per_user else "root",
+            "group": user_group if per_user else "root",
+            "profile": _runtime_path("shell_env", "profile", profile) if profile else None,
+            "profile_line": '[ -f "{}" ] && . "{}"  # appsvc {}'.format(path, path, name),
+        }
+    return {"paths": paths, "nvm": nvm, "pyenv": pyenv, "tools": tools, "env_sh": env_sh}
+
+
+# ── cron ──────────────────────────────────────────────────────────────────────
+
+CRON_KEYS = ("schedule", "cmd", "user", "comment", "disabled", "absent")
+CRON_SPECIALS = ("@reboot", "@yearly", "@annually", "@monthly", "@weekly",
+                 "@daily", "@midnight", "@hourly")
+CRON_FIELDS = ("minute", "hour", "daymonth", "month", "dayweek")
+
+
+def cron_identifier(instance_name, key):
+    """Salt cron `identifier`, unique across instances sharing a crontab."""
+    return "appsvc_{}_{}".format(instance_name, key)
+
+
+def cron_schedule_kwargs(schedule):
+    """`{"special": "@daily"}` for one @-token, or minute/hour/daymonth/month/
+    dayweek for five whitespace-separated fields. Raises ValueError otherwise
+    (including a single non-@ token or an unknown @special)."""
+    parts = schedule.split() if isinstance(schedule, str) else []
+    if len(parts) == 1 and parts[0].startswith("@"):
+        if parts[0] not in CRON_SPECIALS:
+            raise ValueError("cron schedule {!r}: unknown special, valid: {}".format(
+                schedule, ", ".join(CRON_SPECIALS)))
+        return {"special": parts[0]}
+    if len(parts) == 5:
+        return dict(zip(CRON_FIELDS, parts))
+    raise ValueError("cron schedule {!r}: expected five fields or one @special "
+                     "({})".format(schedule, ", ".join(CRON_SPECIALS)))
+
+
+def normalize_cron(cron, instance_name, default_user):
+    """Turn the `cron` keyed map into an ordered list of
+    `(key, function_name, kwargs)` for Cron.present / Cron.absent.
+
+    `cmd` and `schedule` are required unless `absent: true`, which only needs
+    the user + identifier (Salt matches on identifier; `name` is passed only if
+    `cmd` was given). `disabled: true` -> commented=True. Raises ValueError on a
+    bad key, unknown keys, or missing cmd/schedule."""
+    if not cron:
+        return []
+    if not isinstance(cron, dict):
+        raise ValueError("cron must be a keyed map, got {!r}".format(cron))
+    result = []
+    for key, item in cron.items():
+        check_map_key("cron", key)
+        if not isinstance(item, dict):
+            raise ValueError("cron:{}: must be a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("cron", key, item, CRON_KEYS)
+        kwargs = {"user": item.get("user", default_user),
+                  "identifier": cron_identifier(instance_name, key)}
+        if item.get("cmd"):
+            kwargs["name"] = item["cmd"]
+        if item.get("absent", False):
+            result.append((key, "absent", kwargs))
+            continue
+        for required in ("cmd", "schedule"):
+            if not item.get(required):
+                raise ValueError("cron:{}: `{}` is required (unless `absent: true`)".format(key, required))
+        kwargs.update(cron_schedule_kwargs(item["schedule"]))
+        if item.get("comment"):
+            kwargs["comment"] = item["comment"]
+        if item.get("disabled", False):
+            kwargs["commented"] = True
+        result.append((key, "present", kwargs))
+    return result
+
+
+# ── systemd guard ─────────────────────────────────────────────────────────────
+
+
+def check_systemd_exec(systemd, instance_name):
+    """Raise ValueError when systemd is managed (the default) but
+    `systemd.Service.ExecStart` is missing/empty - an app instance with no
+    daemon would otherwise get a unit that cannot start."""
+    systemd = systemd or {}
+    if not systemd.get("manage", True):
+        return
+    exec_start = (systemd.get("Service") or {}).get("ExecStart")
+    if isinstance(exec_start, (list, tuple)):
+        exec_start = " ".join(str(e) for e in exec_start)
+    if not exec_start or not str(exec_start).strip():
+        raise ValueError("instance {}: systemd.manage is true but systemd.Service.ExecStart "
+                         "is missing/empty - set systemd.manage: false (no daemon) "
+                         "or an ExecStart".format(instance_name))
+
+
 # ── config ────────────────────────────────────────────────────────────────────
 # Render a config-file body from structured `contents` in a chosen format.
 # Kept in lib.py so format behavior is unit-tested without a minion.
@@ -787,11 +1424,124 @@ def _render_ini(contents):
     return buf.getvalue()
 
 
+# ── php-fpm ───────────────────────────────────────────────────────────────────
+# Pool files only (never PHP installation). Used by blocks/php_fpm.sls.
+
+PHP_POOL_KEYS = ("version", "name", "user", "group", "listen", "listen_owner",
+                 "listen_group", "listen_mode", "error_log", "reload", "config")
+PHP_DEFAULT_LISTEN = "/run/php/php{version}-fpm-{pool_name}.sock"
+_PHP_VERSION_RE = re.compile(r"^\d+\.\d+$")
+
+
+def normalize_php_pools(pools, instance_name, user_name, user_group):
+    """Turn the `php_fpm.pools` keyed map into an ordered list of fully resolved
+    dicts (key, name, version, user, group, listen, listen_owner, listen_group,
+    listen_mode, error_log|None, reload, config, path). `listen` may use
+    {version} and {pool_name}. Raises ValueError on a bad key, unknown keys, a
+    `version` that is not a "N.N" string (a YAML float like 8.10 loses its
+    zero), a bad `name` charset or a non-string `listen_mode`."""
+    if not pools:
+        return []
+    if not isinstance(pools, dict):
+        raise ValueError("php_fpm.pools must be a keyed map, got {!r}".format(pools))
+    result = []
+    for key, item in pools.items():
+        check_map_key("php_fpm.pools", key)
+        if not isinstance(item, dict):
+            raise ValueError("php_fpm.pools:{}: must be a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("php_fpm.pools", key, item, PHP_POOL_KEYS)
+
+        version = item.get("version")
+        if not isinstance(version, str):
+            raise ValueError("php_fpm.pools:{}: `version` is required and must be a quoted "
+                             "string like \"8.3\" (quote it: YAML 8.10 would become 8.1), "
+                             "got {!r}".format(key, version))
+        if not _PHP_VERSION_RE.match(version):
+            raise ValueError("php_fpm.pools:{}: `version` must look like \"8.3\", "
+                             "got {!r}".format(key, version))
+
+        name = item.get("name", "{}_{}".format(instance_name, key))
+        if not isinstance(name, str) or not _KEY_RE.match(name):
+            raise ValueError("php_fpm.pools:{}: invalid `name` {!r} - it becomes the pool "
+                             "section and file name, allowed characters are [A-Za-z0-9_.-]"
+                             .format(key, name))
+
+        listen_mode = item.get("listen_mode", "0660")
+        if not isinstance(listen_mode, str):
+            raise ValueError("php_fpm.pools:{}: `listen_mode` must be a quoted string like "
+                             "\"0660\", got {!r}".format(key, listen_mode))
+
+        listen = item.get("listen", PHP_DEFAULT_LISTEN)
+        if not isinstance(listen, str) or not listen.startswith("/"):
+            raise ValueError("php_fpm.pools:{}: `listen` must be an absolute socket path, "
+                             "got {!r}".format(key, listen))
+        listen = listen.replace("{version}", version).replace("{pool_name}", name)
+
+        error_log = item.get("error_log") or None
+        config = item.get("config") or ""
+        if not isinstance(config, str):
+            raise ValueError("php_fpm.pools:{}: `config` must be a string of raw pool "
+                             "lines, got {!r}".format(key, config))
+
+        result.append({
+            "key": key,
+            "name": name,
+            "version": version,
+            "user": item.get("user", user_name),
+            "group": item.get("group", user_group),
+            "listen": listen,
+            "listen_owner": item.get("listen_owner", "www-data"),
+            "listen_group": item.get("listen_group", "www-data"),
+            "listen_mode": listen_mode,
+            "error_log": error_log,
+            "reload": bool(item.get("reload", True)),
+            "config": config,
+            "path": "/etc/php/{}/fpm/pool.d/{}.conf".format(version, name),
+        })
+    return result
+
+
+def render_php_pool(pool):
+    """Render one normalized pool to a pool.d file body (same shape as
+    app/files/php-generic/pool.conf). error_log lines only when it is set;
+    `config` is appended verbatim after a blank line; ends with a newline."""
+    lines = [
+        "[{}]".format(pool["name"]),
+        "user = {}".format(pool["user"]),
+        "group = {}".format(pool["group"]),
+        "",
+        "listen = {}".format(pool["listen"]),
+        "listen.owner = {}".format(pool["listen_owner"]),
+        "listen.group = {}".format(pool["listen_group"]),
+        "listen.mode = {}".format(pool["listen_mode"]),
+    ]
+    if pool["error_log"]:
+        lines += ["",
+                  "php_admin_value[error_log] = {}".format(pool["error_log"]),
+                  "php_admin_flag[log_errors] = on"]
+    body = "\n".join(lines) + "\n"
+    if pool["config"]:
+        body += "\n" + pool["config"]
+        if not body.endswith("\n"):
+            body += "\n"
+    return body
+
+
+def php_reload_command(version):
+    """Validate the config, then reload the versioned php-fpm unit."""
+    return "php-fpm{v} -t && systemctl reload php{v}-fpm".format(v=version)
+
+
 # ── nginx ─────────────────────────────────────────────────────────────────────
 # Pure nginx-vhost normalization used by blocks/nginx_vhost.sls.
 
 
 ACME_CERT_DIR = "/opt/acme/cert"
+NGINX_VHOST_KEYS = ("name", "names", "acme_account", "ssl_cert", "ssl_key", "upstream",
+                    "template", "vars", "access_log", "error_log", "auth_basic")
+NGINX_OLD_SHAPE_KEYS = ("upstream", "servers", "vhost_name", "auth_basic")
+NGINX_RESERVED_CONTEXT = ("vhost_name", "domain", "names", "ssl_cert", "ssl_key",
+                          "access_log", "error_log", "htpasswd_file", "php_fpm_sockets")
 
 
 def acme_cert_paths(vhost_name, first_domain, cert_dir=ACME_CERT_DIR):
@@ -800,47 +1550,136 @@ def acme_cert_paths(vhost_name, first_domain, cert_dir=ACME_CERT_DIR):
     return base + "_fullchain.cer", base + "_key.key"
 
 
-def resolve_nginx_servers(nginx, vhost_name):
-    """Validate and normalize nginx['servers'] into render-ready dicts.
+def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
+    """Validate `nginx.vhosts` (keyed map) into an ordered list of render-ready
+    dicts: key, name, names, domain, tls, acme_account, ssl_cert, ssl_key,
+    upstream|None, template|None, vars, access_log, error_log, auth_basic (list),
+    htpasswd_file|None. ACME cert paths derive from `name` + the first domain.
 
-    Each server has names plus one TLS source: acme_account, ssl_cert+ssl_key,
-    or neither. ACME cert paths are derived from vhost_name and first domain.
-    """
-    out = []
-    for idx, server in enumerate(nginx.get("servers", [])):
-        names = server.get("names")
-        if not names or not isinstance(names, list):
-            raise ValueError(
-                "nginx server #{} for vhost {!r} needs a non-empty 'names' list"
-                .format(idx, vhost_name))
+    Raises ValueError on the pre-vhosts shape (top-level upstream/servers/
+    vhost_name/auth_basic), unknown keys, missing/empty `names`, not exactly one
+    of upstream/template, `vars` without template, ambiguous or partial TLS,
+    or a bad key/name charset. `php_sockets` is accepted for signature symmetry
+    with the template context and is not used here."""
+    nginx = nginx or {}
+    old = [k for k in NGINX_OLD_SHAPE_KEYS if k in nginx]
+    if old:
+        raise ValueError(
+            "nginx: {} at the top level is the removed single-vhost shape. Use "
+            "nginx.vhosts.<key> instead, e.g. nginx: {{manage: true, vhosts: {{<key>: "
+            "{{name: <old vhost_name, keeps the file and ACME cert name>, upstream: "
+            "\"127.0.0.1:9000\", names: [app.example.com], acme_account: example_com, "
+            "auth_basic: [{{username: admin, password: x}}]}}}}}}".format(", ".join(old)))
 
-        acme = server.get("acme_account")
-        cert = server.get("ssl_cert")
-        key = server.get("ssl_key")
+    vhosts = nginx.get("vhosts")
+    if not vhosts:
+        raise ValueError("instance {!r}: nginx.manage is true but nginx.vhosts is empty"
+                         .format(instance_name))
+    if not isinstance(vhosts, dict):
+        raise ValueError("nginx.vhosts must be a keyed map, got {!r}".format(vhosts))
 
-        if acme and (cert or key):
-            raise ValueError(
-                "nginx server {!r} sets both acme_account and ssl_cert/ssl_key "
-                "- pick one TLS source".format(names[0]))
-        if bool(cert) != bool(key):
-            raise ValueError(
-                "nginx server {!r} must set both ssl_cert and ssl_key, got only one"
-                .format(names[0]))
+    result = []
+    for key, item in vhosts.items():
+        check_map_key("nginx.vhosts", key)
+        if not isinstance(item, dict):
+            raise ValueError("nginx.vhosts:{}: must be a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("nginx.vhosts", key, item, NGINX_VHOST_KEYS)
+
+        name = item.get("name", "{}_{}".format(instance_name, key))
+        if not isinstance(name, str) or not _KEY_RE.match(name):
+            raise ValueError("nginx.vhosts:{}: invalid `name` {!r} - it becomes the file, "
+                             "upstream, ACME and log name, allowed characters are "
+                             "[A-Za-z0-9_.-]".format(key, name))
+
+        names = item.get("names")
+        if (not names or not isinstance(names, list)
+                or not all(isinstance(n, str) and n for n in names)):
+            raise ValueError("nginx.vhosts:{}: `names` must be a non-empty list of "
+                             "server names, got {!r}".format(key, names))
+
+        acme = item.get("acme_account")
+        cert = item.get("ssl_cert")
+        ssl_key = item.get("ssl_key")
+        if acme and (cert or ssl_key):
+            raise ValueError("nginx.vhosts:{}: sets both acme_account and ssl_cert/ssl_key "
+                             "- pick one TLS source".format(key))
+        if bool(cert) != bool(ssl_key):
+            raise ValueError("nginx.vhosts:{}: must set both ssl_cert and ssl_key, "
+                             "got only one".format(key))
+
+        upstream = item.get("upstream") or None
+        template = item.get("template") or None
+        if bool(upstream) == bool(template):
+            raise ValueError("nginx.vhosts:{}: set exactly one of `upstream` (built-in "
+                             "reverse proxy) or `template` (custom jinja), got {}"
+                             .format(key, "both" if upstream else "neither"))
+        vhost_vars = item.get("vars") or {}
+        if not isinstance(vhost_vars, dict):
+            raise ValueError("nginx.vhosts:{}: `vars` must be a mapping, got {!r}"
+                             .format(key, vhost_vars))
+        if vhost_vars and not template:
+            raise ValueError("nginx.vhosts:{}: `vars` is only used with a custom `template`"
+                             .format(key))
+
+        auth_basic = item.get("auth_basic") or []
+        if not isinstance(auth_basic, list):
+            raise ValueError("nginx.vhosts:{}: `auth_basic` must be a list of "
+                             "{{username, password}}".format(key))
+        for auth in auth_basic:
+            if (not isinstance(auth, dict) or not auth.get("username")
+                    or "password" not in auth):
+                raise ValueError("nginx.vhosts:{}: each auth_basic entry needs `username` "
+                                 "and `password`, got {!r}".format(key, auth))
 
         entry = {
+            "key": key,
+            "name": name,
             "names": names,
+            "domain": " ".join(names),
             "tls": False,
             "acme_account": None,
             "ssl_cert": None,
             "ssl_key": None,
+            "upstream": upstream,
+            "template": template,
+            "vars": vhost_vars,
+            "access_log": item.get("access_log", "/var/log/nginx/{}.access.log".format(name)),
+            "error_log": item.get("error_log", "/var/log/nginx/{}.error.log".format(name)),
+            "auth_basic": auth_basic,
+            "htpasswd_file": "/etc/nginx/htpasswd/{}".format(name) if auth_basic else None,
         }
         if acme:
-            cert, key = acme_cert_paths(vhost_name, names[0])
-            entry.update(tls=True, acme_account=acme, ssl_cert=cert, ssl_key=key)
+            cert, ssl_key = acme_cert_paths(name, names[0])
+            entry.update(tls=True, acme_account=acme, ssl_cert=cert, ssl_key=ssl_key)
         elif cert:
-            entry.update(tls=True, ssl_cert=cert, ssl_key=key)
-        out.append(entry)
-    return out
+            entry.update(tls=True, ssl_cert=cert, ssl_key=ssl_key)
+        result.append(entry)
+    return result
+
+
+def nginx_template_context(vhost, php_sockets=None):
+    """The jinja `context` for a vhost's custom template: vhost_name, domain,
+    names, ssl_cert, ssl_key (empty strings without TLS), access_log, error_log,
+    htpasswd_file ("" without auth_basic), php_fpm_sockets ({pool_key: socket}),
+    with `vars` merged on top. A `vars` key shadowing a reserved name raises."""
+    clash = sorted(k for k in vhost["vars"] if k in NGINX_RESERVED_CONTEXT)
+    if clash:
+        raise ValueError("nginx.vhosts:{}: `vars` key(s) {} collide with reserved template "
+                         "variables ({})".format(vhost["key"], ", ".join(clash),
+                                                 ", ".join(NGINX_RESERVED_CONTEXT)))
+    context = {
+        "vhost_name": vhost["name"],
+        "domain": vhost["domain"],
+        "names": vhost["names"],
+        "ssl_cert": vhost["ssl_cert"] or "",
+        "ssl_key": vhost["ssl_key"] or "",
+        "access_log": vhost["access_log"],
+        "error_log": vhost["error_log"],
+        "htpasswd_file": vhost["htpasswd_file"] or "",
+        "php_fpm_sockets": dict(php_sockets or {}),
+    }
+    context.update(vhost["vars"])
+    return context
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────
@@ -933,3 +1772,114 @@ def join_args(args, prefix="-"):
             else:
                 items.extend(flag(key, value) for key, value in entry.items())
     return " ".join(items)
+
+
+# ── logrotate ─────────────────────────────────────────────────────────────────
+# One /etc/logrotate.d/appsvc-<instance> composed from the logs the pillar
+# already declares (php pool error_log, nginx vhost access/error logs) - no
+# separate list to keep in sync.
+
+LOGROTATE_KEYS = ("manage", "rotate", "frequency", "mode", "skip")
+LOGROTATE_FREQUENCIES = ("hourly", "daily", "weekly", "monthly", "yearly")
+NGINX_REOPEN = "/usr/sbin/nginx -s reopen"
+
+
+def php_reopen_command(version):
+    """php-fpm's packaged helper (Debian/Ubuntu/ondrej) that USR1s the master."""
+    helper = "/usr/lib/php/php{}-fpm-reopenlogs".format(version)
+    return "if [ -x {0} ]; then {0}; fi".format(helper)
+
+
+def logrotate_plan(conf, php_pools, nginx_vhosts, user_name, user_group):
+    """Group the instance's declared logs into logrotate stanzas.
+
+    `php_pools` / `nginx_vhosts` are the normalized lists from
+    normalize_php_pools / normalize_nginx_vhosts (pass [] for an inactive
+    block). Returns {"options": {...}, "stanzas": [{"paths", "postrotate"}]}
+    with empty stanzas when there is nothing to rotate (the block then
+    removes the file). Paths matching `skip` globs (default: the distro's own
+    /var/log/nginx/*.log, which its logrotate config already covers) are left
+    out: logrotate aborts on a log listed by two configs. A path declared twice
+    within the instance raises for the same reason."""
+    conf = conf or {}
+    if not isinstance(conf, dict):
+        raise ValueError("logrotate must be a mapping, got {!r}".format(conf))
+    _check_unknown_keys("logrotate", "(block)", conf, LOGROTATE_KEYS)
+
+    rotate = conf.get("rotate", 31)
+    if not isinstance(rotate, int) or isinstance(rotate, bool) or rotate < 0:
+        raise ValueError("logrotate.rotate must be a non-negative int, got {!r}".format(rotate))
+    frequency = conf.get("frequency", "daily")
+    if frequency not in LOGROTATE_FREQUENCIES:
+        raise ValueError("logrotate.frequency {!r} not one of {}".format(
+            frequency, ", ".join(LOGROTATE_FREQUENCIES)))
+    mode = conf.get("mode", "640")
+    if not isinstance(mode, str) or not re.match(r"^0?[0-7]{3}$", mode):
+        raise ValueError("logrotate.mode must be a quoted octal string like \"640\", got {!r}".format(mode))
+    skip = conf.get("skip", ["/var/log/nginx/*.log"])
+    if not isinstance(skip, list):
+        raise ValueError("logrotate.skip must be a list of globs, got {!r}".format(skip))
+
+    seen = {}
+
+    def take(paths, owner):
+        kept = []
+        for path in paths:
+            if not path:
+                continue
+            if not path.startswith("/") or any(c.isspace() for c in path):
+                raise ValueError("log path {!r} ({}) must be absolute without whitespace".format(path, owner))
+            if any(fnmatch.fnmatch(path, glob) for glob in skip):
+                continue
+            if path in seen:
+                raise ValueError("log {} is declared by both {} and {} - logrotate would "
+                                 "abort on the duplicate".format(path, seen[path], owner))
+            seen[path] = owner
+            kept.append(path)
+        return kept
+
+    stanzas = []
+    nginx_paths = []
+    for vhost in nginx_vhosts or []:
+        nginx_paths += take([vhost["access_log"], vhost["error_log"]], "nginx vhost " + vhost["key"])
+    if nginx_paths:
+        stanzas.append({"paths": nginx_paths, "postrotate": NGINX_REOPEN})
+
+    by_version = {}
+    for pool in php_pools or []:
+        kept = take([pool["error_log"]], "php pool " + pool["key"])
+        if kept:
+            by_version.setdefault(pool["version"], []).extend(kept)
+    for version, paths in by_version.items():
+        stanzas.append({"paths": paths, "postrotate": php_reopen_command(version)})
+
+    return {
+        "options": {"rotate": rotate, "frequency": frequency, "mode": mode,
+                    "user": user_name, "group": user_group},
+        "stanzas": stanzas,
+    }
+
+
+def render_logrotate(plan, instance_name):
+    """logrotate.d body for logrotate_plan's output."""
+    opts = plan["options"]
+    lines = ["# Managed by salt (appsvc instance {}) - do not edit.".format(instance_name)]
+    for stanza in plan["stanzas"]:
+        lines.append("")
+        lines.extend(stanza["paths"][:-1])
+        lines.append(stanza["paths"][-1] + " {")
+        lines += [
+            "    " + opts["frequency"],
+            "    rotate {}".format(opts["rotate"]),
+            "    missingok",
+            "    notifempty",
+            "    compress",
+            "    delaycompress",
+            "    create {} {} {}".format(opts["mode"], opts["user"], opts["group"]),
+            "    sharedscripts",
+            "    postrotate",
+            "        " + stanza["postrotate"],
+            "    endscript",
+            "}",
+        ]
+    return "\n".join(lines) + "\n"

@@ -7,9 +7,7 @@ Loki, Prometheus, exporters, ...) and Python daemons in a managed venv under
 systemd. In progress: multi-runtime web apps (php-fpm pools, node/python
 runtimes, git sources, docker) - see TODO.md item 18.
 
-Formerly `binsvc`. A legacy `binsvc:` pillar root and leftover
-`binsvc_<name>.service` units are still handled transparently (TODO.md
-item 19), so a client can bump the formula before renaming its pillar.
+Formerly `binsvc`.
 
 This is a fresh, opinionated state, not a refactor of the existing
 `exporter`/`victoriametrics`/`app` formulas - those remain in production use
@@ -62,15 +60,23 @@ For every entry under `appsvc:instances`:
    - *Phase 2* adds `install_dir`, `exec`, `args` (top-level raw string, or args
      list joined from `{args_prefix}key=value` mappings and literal string
      tokens; default prefix `-`), `user_name`,
-     `user_group` - keys only knowable once phase 1 has run - so e.g.
+     `user_group`, `home` (`user.home`, else `/root` for root, else
+     `/home/<user.name>`), `svc_target`, `venv_dir`, and the runtime paths `nvm_dir`, `pyenv_root`, `tools_dir`, `env_sh` (per-user under `{home}` for a non-root `user.name`, global under `/usr/local` + `/etc/profile.d` for root; an explicit `nvm.dir` / `pyenv.root` / `shell_env.path` wins) - keys only knowable once phase 1 has run - so e.g.
      `systemd.Service.ExecStart: "{exec} {args}"` just works, without resorting
      to fragile nested-placeholder syntax like `{svc[exec]}`.
 4. **Dispatch** the building blocks that apply, in a fixed order:
-   `user_ssh` -> `install_dir` -> `config_file` -> `fetch` -> `venv` ->
-   `commands(pre)` -> `systemd_unit` -> `commands(post)` -> `nginx_vhost`.
+   `user_ssh` -> `install_dir` -> `dirs` -> `pyenv` -> `nvm` -> `tools` -> `env_sh` ->
+   `sources` -> `config_file` -> `fetch` -> `venv` -> `php_fpm` -> `commands(pre)` -> `systemd_unit` ->
+   `commands(post)` -> `cron` -> `nginx_vhost` (which receives `php_fpm`'s
+   `{pool_key: socket}` map) -> `logrotate`.
    `install_dir` runs ahead of `config_file` on purpose: a config entry with
    `makedirs: True` would otherwise create the install dir root-owned before
-   the service user's ownership is applied. `venv` runs after `fetch`: its
+   the service user's ownership is applied. `dirs` runs before `sources` so a
+   checkout's parent exists; `sources` runs before `config_file` so a config
+   entry can write into a checkout (e.g. a `.env.local`); such an entry (its `name`
+   inside a source `target`) also `require`s that source, so a failed clone skips it
+   instead of leaving a makedirs-created target behind, and a `dirs` entry inside a
+   source target fails loud at render. `venv` runs after `fetch`: its
    `venv.requirements_files` may point at a `requirements.txt` that arrives
    inside the fetched archive.
    An optional `appsvc:filter` (usually typed on the CLI, e.g.
@@ -81,7 +87,7 @@ For every entry under `appsvc:instances`:
    only the **resolution** (step 2) and **dispatch** (step 4). Manual scoping,
    not change detection: a new exporter's job reaches vmagent only when vmagent
    is also in scope.
-   `fetch`, `config_file`, and `venv` each return the list of pyobjects
+   `sources`, `fetch`, `config_file`, and `venv` each return the list of pyobjects
    requisite references that mean "the binary/config/requirement set
    changed"; `dispatch` threads that list into `systemd_unit`'s `watch`, so
    the service restarts exactly when it needs to - without any block
@@ -119,17 +125,39 @@ only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 | `venv` | `venv` | create/maintain a Python venv (`venv.dir`, default `{install_dir}/venv`) matching `venv.requirements`/`venv.requirements_files` - no-op unless `venv.manage`; runs after `fetch` so a requirements file shipped inside a fetched archive is already on disk. A single `Cmd.run` `unless`-guarded by a sha256 digest (interpreter version + `pip_args` + requirements file contents) computed on the minion at runtime, stamped inside `venv.dir` only on a successful install so a failed run retries. `venv.recreate_on_change` (default true) rebuilds with `--clear` whenever the requirement set changes; false only forces a fresh venv on a missing/wrong-version interpreter and otherwise reuses it. Root-owned like fetched program files; writable state still goes through `svc.data_dirs` |
 | `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage` |
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
-| `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets |
+| `dirs` | `dirs` | create writable/working directories from a keyed map (string shorthand = path; `user`/`group` default to the instance user, `mode` default `"755"`, `makedirs` default true, `recurse: true` -> ownership only). Does not replace `svc.data_dirs` |
+| `pyenv` | `pyenv` | pyenv from git at `rev` + each `versions` entry built (`pyenv install -s`) and the first set as `pyenv global`; build packages from `pyenv.build_pkgs` (defaults.yaml). Per-user under `{home}/.pyenv` for a non-root user, `/usr/local/pyenv` for root (`pyenv.root` overrides). `versions` is a list of **quoted** strings (`3.10` unquoted is the float 3.1). No-op without `versions`. Refs join `changed` |
+| `nvm` | `nvm` | nvm from git at `rev` + each `versions` entry installed and the first set as the `default` alias. `{home}/.nvm` for a non-root user, `/usr/local/nvm` for root (`nvm.dir` overrides). `versions` is a list of quoted strings. No-op without `versions`. Refs join `changed` |
+| `tools` | `tools` | single-file downloads (composer & co.) from a keyed map: `source`, optional `source_hash` (else no verification), `target` (default `{tools_dir}/<key>`), `mode` (quoted string, default `"755"`). Owned by the instance user. Refs join `changed` |
+| `env_sh` | `shell_env` (optional overrides) | one generated file putting active nvm / pyenv / tools on PATH (`{env_sh}`: `{home}/.appsvc/<instance>.sh`, or `/etc/profile.d/appsvc-<instance>.sh` for root). For a non-root user a source line is **prepended** to `{home}/.bashrc` (`shell_env.profile` overrides, `false` disables) - prepended because Ubuntu's `.bashrc` returns early for non-interactive shells, which is how CI deploys over ssh run. Written only when nvm/pyenv/tools is active; not in `changed` |
+| `sources` | `sources` | git checkouts from a keyed map: `git.latest` by default, `git.cloned` (clone if missing, never update) with `once: true`. `target` must be absolute after expansion (use `{home}`, not `~`). `force_reset` is **not** defaulted: a dirty tree fails loud instead of being discarded. Returns per-key refs; a change restarts the service (`changed` contract) and gates `commands.onchanges` |
+| `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets, `onchanges: [sources:<key>]` (or `[sources]`) runs the command only when that source changed (see the trap in `presets/generic.yaml`) |
+| `cron` | `cron` | crontab entries from a keyed map (`schedule` = five fields or one `@special`, `cmd`, `user` default the instance user, `comment`, `disabled`, `absent`), tagged with identifier `appsvc_<instance>_<key>`. Removing an entry from pillar does NOT remove it from the crontab - set `absent: true` |
+| `php_fpm` | `php_fpm` | php-fpm **pools only** (never installs PHP) from the keyed map `php_fpm.pools`: one `/etc/php/<ver>/fpm/pool.d/<name>.conf` per pool (`version` is required and must be a quoted string; `name`, `user`/`group`, `listen`, `listen_*`, `error_log`, raw `config` lines), plus one `php-fpm<ver> -t && systemctl reload php<ver>-fpm` per version, only on a pool-file change (`reload: false` opts out). Removing a pool from pillar does NOT delete its file. Returns `{pool_key: socket}` for `nginx_vhost`; does not restart the service. No-op without pools |
 | `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
-| `nginx_vhost` | `nginx` | reverse-proxy vhost (one upstream, `servers[]` blocks, optional per-server TLS + shared basic auth) - no-op unless `nginx.manage` |
+| `logrotate` | `logrotate` (optional tunables) | one `/etc/logrotate.d/appsvc-<instance>` composed from the logs the pillar already declares: every php pool `error_log` (one stanza per PHP version, `postrotate` php-fpm's `reopenlogs` helper) and every vhost `access_log`/`error_log` (`postrotate nginx -s reopen`). Paths matching `logrotate.skip` (default `/var/log/nginx/*.log`, which the distro's nginx config already rotates) are left out, because logrotate aborts on a log listed by two configs; a path declared twice in one instance fails the render. Validated with `logrotate -d` before install; removed when no log remains. Defaults: daily, rotate 31, compress + delaycompress, `create 640 <user> <group>`. `logrotate.manage: false` disables |
+| `nginx_vhost` | `nginx` | one vhost per key of `nginx.vhosts` (keyed map): built-in reverse proxy (`upstream`) or a custom jinja `template` (+ `vars`, and `php_fpm_sockets` in its context), optional per-vhost TLS and basic auth; ACME issuance per vhost, one `nginx -t && nginx -s reload` per instance - no-op unless `nginx.manage` |
 
-`svc`/`systemd`/`nginx`/`config`/`commands`/`user`/`ssh` are all optional; an instance
-that doesn't set a block's key simply skips it.
+`svc`/`systemd`/`nginx`/`php_fpm`/`config`/`commands`/`user`/`ssh`/`dirs`/`sources`/`cron`/`nvm`/`pyenv`/`tools`/`shell_env` are all
+optional; an instance that doesn't set a block's key simply skips it. An instance
+with no daemon (a pure app checkout) must set `systemd.manage: false`:
+`systemd.manage` defaults to true, and with no `systemd.Service.ExecStart` the
+render fails loud.
 
-`nginx.servers[]` entries declare `names` and exactly one TLS source:
-`acme_account`, `ssl_cert`+`ssl_key`, or neither. `acme_account` issues DNS ACME
-certs through the separately managed `acme` state/pillar; appsvc derives the
-`/opt/acme/cert/<vhost>_<first-name>_*` paths and does not manage accounts.
+`nginx.vhosts.<key>` entries declare `names` (required list), exactly one of
+`upstream` / `template`, and at most one TLS source: `acme_account`,
+`ssl_cert`+`ssl_key`, or neither. `name` defaults to `<instance>_<key>` and names
+the sites-available file, upstream, ACME cert and logs. `acme_account` issues DNS
+ACME certs (DNS accounts only - webroot accounts are not supported yet) through
+the separately managed `acme` state/pillar; appsvc derives the
+`/opt/acme/cert/<name>_<first-name>_*` paths and does not manage accounts.
+
+**Migration (breaking):** the old single-vhost shape
+`nginx: {manage, vhost_name: X, upstream: U, servers: [{names, acme_account}], auth_basic}`
+now fails loud. Write it as
+`nginx: {manage, vhosts: {X: {name: X, upstream: U, names: [...], acme_account: ..., auth_basic: [...]}}}`;
+`name: X` keeps the same file and ACME cert path (the old default was the instance
+name). One old `servers[]` entry becomes one vhost.
 
 ## The `lib.py` layer
 

@@ -315,21 +315,47 @@ others — flagged in WHITEPAPER §10.
 
 ### [ ] 18. App-management blocks (post-rename roadmap)
 Order, each step deployable on its own (target: moituristy mt-crm):
-1. foundations - `{home}` placeholder, `sources` block (`git.latest`, or
-   `git.cloned` for `once: true`), hook-based scripts (generalize
-   `commands.phase`; a script hooked on a block runs `onchanges` of it by
-   default), `dirs` block, `cron` block.
-2. `php_fpm.pools` map + `nginx.vhosts` keyed map with custom `vhost_config`
-   templates (breaking change to today's single reverse-proxy vhost).
-3. `nvm`, `pyenv`, `tools` (composer) + a generated `{home}/.appsvc/env.sh`.
+1. [x] foundations (done) - `{home}` placeholder, `sources` block (`git.latest`,
+   or `git.cloned` for `once: true`), `commands.onchanges` (replaces the
+   `hook:` idea; composes with `phase`), `dirs` block, `cron` block, plus a
+   systemd guard (managed unit without ExecStart now fails the render). Not
+   yet verified by a real apply (Git/Cron state names, second-run
+   idempotency).
+2. [x] `php_fpm.pools` map (pools only, reload per version on change) +
+   `nginx.vhosts` keyed map with built-in or custom jinja templates (breaking:
+   the old single-vhost `nginx.{vhost_name,upstream,servers,auth_basic}` now
+   fails loud; migrate to `nginx.vhosts.<key>` with `name:` to keep the file
+   and ACME cert path). Also: a `config` entry inside a `sources` target now
+   `require`s that source, and a `dirs` entry inside a source target fails
+   loud (found in production: a failed clone + makedirs left a non-empty
+   non-repo target that every later `git.cloned` refused). Not yet verified by
+   a real apply (pool reload, vhost render through Salt, `require` on the
+   config entry), only by unit tests and a standalone jinja render.
+3. [x] `nvm`, `pyenv`, `tools` (composer) + a generated env file (`env_sh`),
+   per-user when `user.name` is not root, global when it is; new phase-2
+   placeholders `{nvm_dir}`, `{pyenv_root}`, `{tools_dir}`, `{env_sh}`. Not
+   verified by a real apply (only unit tests and a fake-state emit): assumes
+   `nvm version <v>` prints `N/A` when absent, that the pinned tags
+   (nvm v0.40.1, pyenv v2.4.0) exist, and that File.prepend / makedirs
+   ownership behave as expected.
 4. `docker` (networks, registry login via stdin, containers, container cron
    as root `docker exec` without `-it`).
 
-### [ ] 19. Remove the binsvc -> appsvc compatibility shims
-`init.sls` falls back to the legacy `binsvc:` pillar root, and
-`blocks/systemd_unit.sls` stops/disables/removes a leftover
-`binsvc_<name>.service` before starting `appsvc_<name>`. Delete both once
-every client pillar uses `appsvc:` and every host has been applied once.
+### [ ] 20. Gaps left by app-management step 2
+- [x] **logrotate** for app logs - done: `blocks/logrotate.sls` composes one
+  `/etc/logrotate.d/appsvc-<instance>` from the declared pool/vhost logs.
+- **ACME webroot accounts**: only DNS accounts work (the vhost needs the cert
+  files before `nginx -t`; there is no snakeoil first pass for webroot
+  validation).
+- **php-fpm reload on code change** (opcache) is not done: pool reload is
+  `onchanges` of the pool file only; deploys own reloading after a release.
+
+### [x] 19. Remove the binsvc -> appsvc compatibility shims
+**Resolved:** removed - every client pillar was renamed to `appsvc:` and every
+host applied once, so nothing reads the old `binsvc:` pillar root or needs the old unit
+cleanup any more. The shims were: `init.sls` falling back to the legacy `binsvc:`
+pillar root, and `blocks/systemd_unit.sls` stopping/removing a leftover pre-rename
+`binsvc_<name>.service` before starting `appsvc_<name>`.
 One-time side effects of the rename on a legacy host: the service restarts
 under its new unit name, archives re-download into `/var/cache/salt/appsvc`
 (the old `/var/cache/salt/binsvc` is left behind - safe to delete), version

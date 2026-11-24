@@ -176,11 +176,15 @@ expansions compose better than ever-earlier global phases.
 `dispatch(prefix, settings)` runs, per instance, in fixed order:
 
 ```
-user_and_ssh → install_dir → config_files → fetch_source → venv → commands(pre)
-  → systemd_unit(watch=changed) → commands(post) → nginx_vhost
+user_and_ssh → install_dir → dirs → pyenv → nvm → tools → env_sh → sources
+  → config_files → fetch_source → venv → php_fpm → commands(pre) → systemd_unit(watch=changed) → commands(post) → cron
+  → nginx_vhost(php_sockets) → logrotate
 ```
 
-Order matters: `install_dir` runs ahead of `config_files` on purpose — a config
+Order matters: the runtimes (`pyenv`/`nvm`/`tools`/`env_sh`) need only the user and precede `venv` (which may use a pyenv python) and `commands` (which use node/composer); their refs, except `env_sh`, join `changed`. `dirs` precede `sources` so a checkout's parent exists, and
+`sources` precede `config_files` so a config entry can write into a checkout;
+`sources` returns a `{key: ref}` dict whose values join `changed` and whose
+per-key refs gate `commands.onchanges`; `install_dir` runs ahead of `config_files` on purpose — a config
 entry with `makedirs: True` would otherwise create the install dir root-owned
 before the service user's ownership is applied; `venv` runs after `fetch_source`
 because `venv.requirements_files` can point at a `requirements.txt` that arrives
@@ -191,7 +195,7 @@ start; `commands(post)` runs after the service is known running when systemd is
 managed. `install_dir` is **not** gated on `svc` — a venv-only instance with no
 `svc` block at all still needs its install dir owned.
 
-**The contract**: `config_files`, `fetch_source`, and `venv` (`blocks/venv.sls`)
+**The contract**: `sources` (as a `{key: ref}` dict, values folded in), `config_files`, `fetch_source`, and `venv` (`blocks/venv.sls`)
 each return a *list of pyobjects requisite references* (`[File(id)]`,
 `[Cmd(id)]`, ...) meaning "if these change, the service should restart".
 `dispatch` concatenates them and passes them as `systemd_unit`'s `watch=`, folded
@@ -303,13 +307,13 @@ production path — these presets are not replacements or a migration invitation
   replaces the previous layer wholesale. Deliberately **not**
   generalized into `merge` — structured args' "ordered list of single-key
   mappings" shape is what makes by-name merging well-defined, and that shape
-  isn't universal (cf. `nginx.auth_basic`/`servers`). `merge_args` also
+  isn't universal (cf. `nginx.vhosts.<key>.auth_basic`). `merge_args` also
   falls back to wholesale replace when a layer is a top-level string or repeats
   a flag (e.g. multiple `remoteWrite.url`) rather than guess.
 - **ACME in `nginx_vhost` is a cross-formula dependency.** appsvc accepts
-  per-server `acme_account` values, but never manages accounts; the separate
+  per-vhost `acme_account` values, but never manages accounts; the separate
   `acme` state/pillar must create `/opt/acme/home/<acct>/verify_and_issue.sh`.
-  The nginx block derives cert paths internally from vhost name and the first
+  The nginx block derives cert paths internally from the vhost `name` and the first
   domain instead of asking pillar to cross-reference expand placeholders, mirrors
   the acme `verify_and_issue` command inline with `shell="/bin/bash"` and
   `success_retcodes=[2]`, and makes nginx reload require issuance so `nginx -t`
