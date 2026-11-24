@@ -1,16 +1,22 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import select_commands
+from salt://appsvc/lib.py import select_commands, resolve_onchanges
 
 
-def run_commands(prefix, settings, phase, require=None):
+def run_commands(prefix, settings, phase, require=None, refs=None):
     """Emit Cmd.run states for `settings["commands"]` entries in `phase`.
 
     Commands do not feed the changed/watch restart contract. Use `unless` or
     `onlyif` on entries that must be idempotent. `require` is threaded in by
     dispatch so pre-commands wait for fetch/config, and post-commands wait for
     the service-running state when systemd is managed.
+
+    An entry with `onchanges: [sources:<key>, ...]` (or `[sources]` for any)
+    only runs when one of those states reported changes. `refs` is
+    {"sources": {key: ref}} from dispatch; an unknown key, or a list that
+    resolves to nothing, raises. `onchanges` composes with `phase`, which still
+    decides when in the run the command sits.
     """
     sid = "_".join(prefix + ["cmd"])
     for name, item in select_commands(settings.get("commands"), phase, settings):
@@ -18,6 +24,8 @@ def run_commands(prefix, settings, phase, require=None):
         kwargs = dict(name=item["cmd"], shell="/bin/bash")
         if require:
             kwargs["require"] = list(require)
+        if "onchanges" in item:
+            kwargs["onchanges"] = resolve_onchanges(name, item["onchanges"], refs)
         for key in ("cwd", "runas", "unless", "onlyif", "stdin", "env"):
             if key in item:
                 kwargs[key] = item[key]

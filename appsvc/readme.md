@@ -7,9 +7,7 @@ Loki, Prometheus, exporters, ...) and Python daemons in a managed venv under
 systemd. In progress: multi-runtime web apps (php-fpm pools, node/python
 runtimes, git sources, docker) - see TODO.md item 18.
 
-Formerly `binsvc`. A legacy `binsvc:` pillar root and leftover
-`binsvc_<name>.service` units are still handled transparently (TODO.md
-item 19), so a client can bump the formula before renaming its pillar.
+Formerly `binsvc`.
 
 This is a fresh, opinionated state, not a refactor of the existing
 `exporter`/`victoriametrics`/`app` formulas - those remain in production use
@@ -62,15 +60,19 @@ For every entry under `appsvc:instances`:
    - *Phase 2* adds `install_dir`, `exec`, `args` (top-level raw string, or args
      list joined from `{args_prefix}key=value` mappings and literal string
      tokens; default prefix `-`), `user_name`,
-     `user_group` - keys only knowable once phase 1 has run - so e.g.
+     `user_group`, `home` (`user.home`, else `/root` for root, else
+     `/home/<user.name>`), `svc_target`, `venv_dir` - keys only knowable once phase 1 has run - so e.g.
      `systemd.Service.ExecStart: "{exec} {args}"` just works, without resorting
      to fragile nested-placeholder syntax like `{svc[exec]}`.
 4. **Dispatch** the building blocks that apply, in a fixed order:
-   `user_ssh` -> `install_dir` -> `config_file` -> `fetch` -> `venv` ->
-   `commands(pre)` -> `systemd_unit` -> `commands(post)` -> `nginx_vhost`.
+   `user_ssh` -> `install_dir` -> `dirs` -> `sources` -> `config_file` ->
+   `fetch` -> `venv` -> `commands(pre)` -> `systemd_unit` -> `commands(post)` ->
+   `cron` -> `nginx_vhost`.
    `install_dir` runs ahead of `config_file` on purpose: a config entry with
    `makedirs: True` would otherwise create the install dir root-owned before
-   the service user's ownership is applied. `venv` runs after `fetch`: its
+   the service user's ownership is applied. `dirs` runs before `sources` so a
+   checkout's parent exists; `sources` runs before `config_file` so a config
+   entry can write into a checkout (e.g. a `.env.local`). `venv` runs after `fetch`: its
    `venv.requirements_files` may point at a `requirements.txt` that arrives
    inside the fetched archive.
    An optional `appsvc:filter` (usually typed on the CLI, e.g.
@@ -81,7 +83,7 @@ For every entry under `appsvc:instances`:
    only the **resolution** (step 2) and **dispatch** (step 4). Manual scoping,
    not change detection: a new exporter's job reaches vmagent only when vmagent
    is also in scope.
-   `fetch`, `config_file`, and `venv` each return the list of pyobjects
+   `sources`, `fetch`, `config_file`, and `venv` each return the list of pyobjects
    requisite references that mean "the binary/config/requirement set
    changed"; `dispatch` threads that list into `systemd_unit`'s `watch`, so
    the service restarts exactly when it needs to - without any block
@@ -119,12 +121,18 @@ only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 | `venv` | `venv` | create/maintain a Python venv (`venv.dir`, default `{install_dir}/venv`) matching `venv.requirements`/`venv.requirements_files` - no-op unless `venv.manage`; runs after `fetch` so a requirements file shipped inside a fetched archive is already on disk. A single `Cmd.run` `unless`-guarded by a sha256 digest (interpreter version + `pip_args` + requirements file contents) computed on the minion at runtime, stamped inside `venv.dir` only on a successful install so a failed run retries. `venv.recreate_on_change` (default true) rebuilds with `--clear` whenever the requirement set changes; false only forces a fresh venv on a missing/wrong-version interpreter and otherwise reuses it. Root-owned like fetched program files; writable state still goes through `svc.data_dirs` |
 | `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage` |
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
-| `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets |
+| `dirs` | `dirs` | create writable/working directories from a keyed map (string shorthand = path; `user`/`group` default to the instance user, `mode` default `"755"`, `makedirs` default true, `recurse: true` -> ownership only). Does not replace `svc.data_dirs` |
+| `sources` | `sources` | git checkouts from a keyed map: `git.latest` by default, `git.cloned` (clone if missing, never update) with `once: true`. `target` must be absolute after expansion (use `{home}`, not `~`). `force_reset` is **not** defaulted: a dirty tree fails loud instead of being discarded. Returns per-key refs; a change restarts the service (`changed` contract) and gates `commands.onchanges` |
+| `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets, `onchanges: [sources:<key>]` (or `[sources]`) runs the command only when that source changed (see the trap in `presets/generic.yaml`) |
+| `cron` | `cron` | crontab entries from a keyed map (`schedule` = five fields or one `@special`, `cmd`, `user` default the instance user, `comment`, `disabled`, `absent`), tagged with identifier `appsvc_<instance>_<key>`. Removing an entry from pillar does NOT remove it from the crontab - set `absent: true` |
 | `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
 | `nginx_vhost` | `nginx` | reverse-proxy vhost (one upstream, `servers[]` blocks, optional per-server TLS + shared basic auth) - no-op unless `nginx.manage` |
 
-`svc`/`systemd`/`nginx`/`config`/`commands`/`user`/`ssh` are all optional; an instance
-that doesn't set a block's key simply skips it.
+`svc`/`systemd`/`nginx`/`config`/`commands`/`user`/`ssh`/`dirs`/`sources`/`cron` are all
+optional; an instance that doesn't set a block's key simply skips it. An instance
+with no daemon (a pure app checkout) must set `systemd.manage: false`:
+`systemd.manage` defaults to true, and with no `systemd.Service.ExecStart` the
+render fails loud.
 
 `nginx.servers[]` entries declare `names` and exactly one TLS source:
 `acme_account`, `ssl_cert`+`ssl_key`, or neither. `acme_account` issues DNS ACME

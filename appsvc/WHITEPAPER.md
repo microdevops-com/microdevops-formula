@@ -176,11 +176,14 @@ expansions compose better than ever-earlier global phases.
 `dispatch(prefix, settings)` runs, per instance, in fixed order:
 
 ```
-user_and_ssh → install_dir → config_files → fetch_source → venv → commands(pre)
-  → systemd_unit(watch=changed) → commands(post) → nginx_vhost
+user_and_ssh → install_dir → dirs → sources → config_files → fetch_source → venv
+  → commands(pre) → systemd_unit(watch=changed) → commands(post) → cron → nginx_vhost
 ```
 
-Order matters: `install_dir` runs ahead of `config_files` on purpose — a config
+Order matters: `dirs` precede `sources` so a checkout's parent exists, and
+`sources` precede `config_files` so a config entry can write into a checkout;
+`sources` returns a `{key: ref}` dict whose values join `changed` and whose
+per-key refs gate `commands.onchanges`; `install_dir` runs ahead of `config_files` on purpose — a config
 entry with `makedirs: True` would otherwise create the install dir root-owned
 before the service user's ownership is applied; `venv` runs after `fetch_source`
 because `venv.requirements_files` can point at a `requirements.txt` that arrives
@@ -191,7 +194,7 @@ start; `commands(post)` runs after the service is known running when systemd is
 managed. `install_dir` is **not** gated on `svc` — a venv-only instance with no
 `svc` block at all still needs its install dir owned.
 
-**The contract**: `config_files`, `fetch_source`, and `venv` (`blocks/venv.sls`)
+**The contract**: `sources` (as a `{key: ref}` dict, values folded in), `config_files`, `fetch_source`, and `venv` (`blocks/venv.sls`)
 each return a *list of pyobjects requisite references* (`[File(id)]`,
 `[Cmd(id)]`, ...) meaning "if these change, the service should restart".
 `dispatch` concatenates them and passes them as `systemd_unit`'s `watch=`, folded

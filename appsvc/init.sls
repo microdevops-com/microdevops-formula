@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-# appsvc (formerly binsvc): run N instances of a service or application -
+# appsvc: run N instances of a service or application -
 # prebuilt binaries (VictoriaMetrics, Grafana, exporters, ...), Python daemons,
 # and (in progress) multi-runtime web apps - under systemd, each independently configured from one merged
 # defaults -> preset -> instance settings dict. See readme.md for the full
@@ -10,15 +10,18 @@
 import logging
 import yaml
 
-from salt://appsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances
+from salt://appsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances, user_home
 
 from salt://appsvc/blocks/install_dir.sls import install_dir
 from salt://appsvc/blocks/fetch.sls import fetch_source
 from salt://appsvc/blocks/venv.sls import python_venv
 from salt://appsvc/blocks/user_ssh.sls import user_and_ssh
+from salt://appsvc/blocks/dirs.sls import dirs
+from salt://appsvc/blocks/sources.sls import sources
 from salt://appsvc/blocks/config_file.sls import config_files
 from salt://appsvc/blocks/commands.sls import run_commands
 from salt://appsvc/blocks/systemd_unit.sls import systemd_unit
+from salt://appsvc/blocks/cron.sls import cron
 from salt://appsvc/blocks/nginx_vhost.sls import nginx_vhost
 from salt://appsvc/utils.sls import get_salt_file
 
@@ -35,25 +38,9 @@ DEFAULTS = yaml.safe_load(get_salt_file("salt://appsvc/defaults.yaml") or "") or
 _preset_cache = {}
 
 
-# Legacy pillar root. This formula was `binsvc` until it grew app management
-# and was renamed; ~10 client repos still carry a `binsvc:` pillar (the fleet
-# monitoring stack). Falling back to it lets a client bump the formula before
-# renaming its pillar, instead of the apply silently finding zero instances.
-# Each key is read from appsvc: first, so a CLI pillar='{appsvc: {filter: ..}}'
-# still works on a legacy host. Instances under both roots is ambiguous - fail
-# loud. Remove once no client pillar has `binsvc:` (see TODO.md).
-LEGACY_PILLAR = pillar("binsvc:instances", None) is not None
-if LEGACY_PILLAR and pillar("appsvc:instances", None) is not None:
-    raise ValueError("both appsvc:instances and legacy binsvc:instances are set - "
-                     "move everything under appsvc:")
-
-
 def cfg(key, default=None):
-    """pillar("appsvc:<key>"), falling back to the legacy binsvc: root."""
-    value = pillar("appsvc:" + key, None)
-    if value is None and LEGACY_PILLAR:
-        value = pillar("binsvc:" + key, None)
-    return default if value is None else value
+    """pillar("appsvc:<key>") with a default."""
+    return pillar("appsvc:" + key, default)
 
 
 def load_preset(name):
@@ -90,19 +77,23 @@ def resolve_latest_version(svc_settings):
 
 def dispatch(prefix, settings):
     """Run the building blocks an instance's merged settings call for, in a
-    fixed order: user/ssh, then install_dir (ahead of config - a config entry
-    with makedirs would otherwise create the install dir root-owned before the
-    service user's ownership is applied), then config, then the svc fetch, then
-    venv (after fetch - venv.requirements_files may point at a
-    requirements.txt that arrives inside the fetched archive), pre-systemd
-    commands, systemd, post-systemd commands, then nginx. Fetch/config/venv
-    changes are wired via the `changed` requisite-list contract so systemd
-    restarts whenever the binary, config, or requirement set actually
-    changed."""
+    fixed order: user/ssh, install_dir (ahead of config - a config entry with
+    makedirs would otherwise create the install dir root-owned before the
+    service user's ownership is applied), dirs (before sources, so a
+    checkout's parent exists), sources (before config, so a config entry can
+    write into a checkout, e.g. a .env.local), config, the svc fetch, venv
+    (after fetch - venv.requirements_files may point at a requirements.txt that
+    arrives inside the fetched archive), pre-systemd commands, systemd,
+    post-systemd commands, cron, then nginx. Source/fetch/config/venv changes
+    are wired via the `changed` requisite-list contract so systemd restarts
+    whenever the code, binary, config, or requirement set actually changed.
+    Commands with `onchanges` get the per-key source refs via `refs`."""
 
     user_and_ssh(prefix, settings)
     install_dir(prefix, settings)
-    changed = list(config_files(prefix, settings) or [])
+    dirs(prefix, settings)
+    source_refs = sources(prefix, settings)
+    changed = list(source_refs.values()) + list(config_files(prefix, settings) or [])
 
     svc = settings.get("svc")
     if svc:
@@ -110,13 +101,16 @@ def dispatch(prefix, settings):
 
     changed = list(python_venv(prefix, settings) or []) + changed
 
-    run_commands(prefix, settings, phase="pre", require=changed)
+    refs = {"sources": source_refs}
+    run_commands(prefix, settings, phase="pre", require=changed, refs=refs)
 
     running = None
     if settings.get("systemd", {}).get("manage", True):
         running = systemd_unit(prefix, settings, watch=changed)
 
-    run_commands(prefix, settings, phase="post", require=running)
+    run_commands(prefix, settings, phase="post", require=running, refs=refs)
+
+    cron(prefix, settings)
 
     nginx_vhost(prefix, settings)
 
@@ -141,7 +135,7 @@ global_vars = cfg("globals", {})
 # Placeholder names injected into the phase-2 scope (see below). Reserved here so
 # a global can't pass the phase-1 collision check and then be silently
 # overwritten in the second expand pass.
-PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir")
+PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir", "home")
 
 # Optional `appsvc:filter` (operator-typed, usually on the CLI) scopes this apply
 # to a subset - e.g. pillar='{appsvc: {filter: "name: vm* *gra*"}}'. It gates the
@@ -206,6 +200,7 @@ for instance_name, instance in instances.items():
                        args=join_args(svc.get("args", []), svc.get("args_prefix", "-") or "-"),
                        user_name=user.get("name", "root"),
                        user_group=user.get("group", user.get("name", "root")),
+                       home=user_home(user),
                        # Guarded on svc.source so a no-svc (or not-yet-resolved,
                        # e.g. grafana's intentionally-empty source pre-resolve)
                        # instance gets "" instead of fetch_target's ValueError.

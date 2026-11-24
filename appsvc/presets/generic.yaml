@@ -23,6 +23,7 @@
 #   {user_group}    resolved user.group, default {user_name}
 #   {svc_target}    resolved fetch destination (kind: file's target, or the
 #                   would-be one) when svc.source is set, else ""
+#   {home}          user.home if set, else /root for root, else /home/<user.name>
 #   {venv_dir}      resolved venv.dir, e.g. "{install_dir}/venv" - NOT {venv},
 #                   which would render the whole venv config dict's repr
 #   plus any key from appsvc:globals (top-level pillar), e.g. {foo} below
@@ -256,6 +257,56 @@ user:
 #     source: salt://my-formula/files/extra.conf.jinja
 #     template: jinja           # default jinja when source is used
 
+# Writable / working directories (keyed map; does not replace svc.data_dirs).
+# A string value is shorthand for {name: <path>}. Runs after install_dir and
+# before sources, so a checkout's parent exists.
+#
+# dirs:
+#   sessions: /var/lib/php/app-sessions
+#   logs:
+#     name: "{home}/log"        # required, absolute after expansion
+#     user: "{user_name}"       # default: instance user name (root if unmanaged)
+#     group: "{user_group}"     # default: instance user group
+#     mode: "750"               # default "755"; MUST be a quoted string
+#     makedirs: true            # default true
+#     recurse: false            # true -> recurse=[user, group] (never mode)
+
+# Git checkouts (keyed map; the key becomes part of a state ID: [A-Za-z0-9_.-]+).
+# Runs before config, so a config entry can write into a checkout (.env.local).
+# A change restarts the service (unless once: true, where only the first clone
+# counts) and can gate commands via `onchanges` below.
+#
+# sources:
+#   backend:
+#     git: git@gitlab.example.com:group/backend.git   # required
+#     target: "{home}/backend"    # required, absolute after expansion (no ~)
+#     once: false                 # true -> git.cloned: clone if missing, never update
+#     branch: master              # optional
+#     identity: "{home}/.ssh/id_ed25519"   # optional
+#     # git.latest-only (rejected together with once: true):
+#     rev: master
+#     depth: 1
+#     submodules: false
+#     force_reset: false          # NOT defaulted to true (unlike app.*): with
+#                                 # false a dirty tree fails loud rather than
+#                                 # silently discarding local changes
+#     force_checkout: false
+#     force_clone: false
+#     force_fetch: false
+
+# Cron entries (keyed map), tagged with identifier appsvc_<instance>_<key>.
+# Runs after the post commands. REMOVING an entry from pillar does NOT remove
+# it from the crontab - set `absent: true` for a run to delete it.
+#
+# cron:
+#   session_clean:
+#     schedule: "0 * * * *"     # five fields, or one @special (@daily, @reboot, ...)
+#     cmd: "find /var/lib/php/app-sessions -mtime +10 -delete"
+#     user: root                # default: instance user name
+#     comment: "..."            # optional
+#     disabled: false           # optional -> commented: true
+#     absent: false             # true -> Cron.absent (cmd/schedule then optional)
+
 # One-shot commands. Entries run in declaration order, never feed the
 # fetch/config changed -> systemd restart contract, and should carry their own
 # `unless` or `onlyif` when they must be idempotent.
@@ -285,6 +336,19 @@ user:
 #     # stdin is preferred for secrets. The block defaults output_loglevel to
 #     # quiet whenever stdin is present, unless explicitly overridden.
 #     stdin: "{admin_password}"
+#   backend_deps:
+#     cmd: "composer install --no-dev --optimize-autoloader"
+#     cwd: "{home}/backend"
+#     runas: "{user_name}"      # runas is never defaulted
+#     phase: pre                # onchanges composes with phase (when in the run)
+#     # Run only when a source changed: [sources:<key>, ...], or [sources] for
+#     # any source. Must be a non-empty list; an unknown key, or [sources]
+#     # with no sources declared, fails the render.
+#     # TRAP: if the first run fails, the command will NOT run again until the
+#     # source changes again (the git state already reported its change).
+#     # Re-run it by hand, or temporarily drop `onchanges`. With `once: true`
+#     # sources it runs exactly once, on the initial clone.
+#     onchanges: [sources:backend]
 
 # Keep this reference preset inert when applied as-is: DEFAULTS enables systemd,
 # so without this a bare `preset: generic` would try to start a unit with no

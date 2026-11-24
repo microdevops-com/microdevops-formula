@@ -24,6 +24,9 @@ from lib import (
     parse_filter, select_instances,
     render_config, render_unit, merge_args, join_args,
     acme_cert_paths, resolve_nginx_servers,
+    user_home, check_map_key, git_source_state, parse_onchanges, resolve_onchanges,
+    normalize_dirs, cron_identifier, cron_schedule_kwargs, normalize_cron,
+    check_systemd_exec,
 )
 
 
@@ -1127,3 +1130,256 @@ def test_merge_args_falls_back_to_wholesale_replace_for_raw_string_layer():
 def test_merge_args_returns_empty_list_for_no_layers():
     assert merge_args() == []
     assert merge_args(None, None) == []
+
+
+# ── home ─────────────────────────────────────────────────────────────────────
+
+def test_user_home_root_default_and_empty_user():
+    assert user_home({"name": "root"}) == "/root"
+    assert user_home({}) == "/root"
+    assert user_home(None) == "/root"
+
+
+def test_user_home_named_user_default():
+    assert user_home({"name": "releaser"}) == "/home/releaser"
+
+
+def test_user_home_explicit_home_wins():
+    assert user_home({"name": "releaser", "home": "/var/www/.releaser"}) == "/var/www/.releaser"
+    assert user_home({"name": "root", "home": "/srv/root"}) == "/srv/root"
+
+
+def test_expand_resolves_home_in_install_dir_and_dependent_values():
+    # Mirrors init.sls: phase 1 leaves {home} untouched (not in scope yet),
+    # phase 2 adds home + install_dir and resolves both chains.
+    settings = {"install_dir": "{home}/app", "config": {"p": "{install_dir}/x"},
+                "sources": {"b": {"target": "{home}/backend"}}}
+    phase1 = expand(settings, {"name": "crm"})
+    assert phase1["install_dir"] == "{home}/app"
+    scope = {"name": "crm", "install_dir": phase1["install_dir"],
+             "home": user_home({"name": "releaser", "home": "/var/www/.releaser"})}
+    phase2 = expand(phase1, scope)
+    assert phase2["install_dir"] == "/var/www/.releaser/app"
+    assert phase2["config"]["p"] == "/var/www/.releaser/app/x"
+    assert phase2["sources"]["b"]["target"] == "/var/www/.releaser/backend"
+
+
+# ── sources ──────────────────────────────────────────────────────────────────
+
+def test_check_map_key_accepts_and_rejects():
+    assert check_map_key("x", "back-end_1.v2") == "back-end_1.v2"
+    for bad in ("", "a b", "a/b", "a:b", None, 5):
+        with pytest.raises(ValueError, match="invalid key"):
+            check_map_key("x", bad)
+
+
+def test_git_source_state_latest_minimal_as_root_omits_user():
+    fn, kw = git_source_state("b", {"git": "g@h:r.git", "target": "/srv/b"}, "root")
+    assert fn == "latest"
+    assert kw == {"name": "g@h:r.git", "target": "/srv/b"}   # force_reset NOT defaulted
+
+
+def test_git_source_state_latest_passes_only_present_optionals_and_user():
+    fn, kw = git_source_state("b", {
+        "git": "u", "target": "/srv/b", "branch": "main", "rev": "v1", "identity": "/k",
+        "depth": 1, "submodules": True, "force_reset": True, "force_checkout": False,
+        "force_clone": True, "force_fetch": False}, "releaser")
+    assert fn == "latest"
+    assert kw == {"name": "u", "target": "/srv/b", "user": "releaser", "branch": "main",
+                  "rev": "v1", "identity": "/k", "depth": 1, "submodules": True,
+                  "force_reset": True, "force_checkout": False, "force_clone": True,
+                  "force_fetch": False}
+
+
+def test_git_source_state_once_uses_cloned_with_branch_identity_only():
+    fn, kw = git_source_state("b", {"git": "u", "target": "/srv/b", "once": True,
+                                    "branch": "m", "identity": "/k"}, "releaser")
+    assert fn == "cloned"
+    assert kw == {"name": "u", "target": "/srv/b", "user": "releaser", "branch": "m", "identity": "/k"}
+    assert "once" not in kw
+
+
+def test_git_source_state_once_false_is_latest():
+    assert git_source_state("b", {"git": "u", "target": "/srv/t", "once": False}, "root")[0] == "latest"
+
+
+@pytest.mark.parametrize("source,match", [
+    ({"target": "/srv/b"}, "git"),
+    ({"git": "", "target": "/srv/b"}, "git"),
+    ({"git": "u"}, "target"),
+    ({"git": "u", "target": "~/b"}, "target"),
+    ({"git": "u", "target": "{home}/b"}, "target"),
+    ({"git": "u", "target": "rel/b"}, "target"),
+    ({"git": "u", "target": "/srv/b", "bogus": 1}, "bogus"),
+    ({"git": "u", "target": "/srv/b", "once": True, "rev": "x"}, "rev"),
+    ({"git": "u", "target": "/srv/b", "once": True, "force_reset": False}, "force_reset"),
+    ({"git": "u", "target": "/srv/b", "once": True, "depth": 1}, "depth"),
+    ("not-a-dict", "mapping"),
+])
+def test_git_source_state_raises_naming_the_problem(source, match):
+    with pytest.raises(ValueError, match=match):
+        git_source_state("b", source, "root")
+
+
+def test_git_source_state_error_names_source_key_and_rejects_bad_key():
+    with pytest.raises(ValueError, match="sources:backend"):
+        git_source_state("backend", {"git": "u"}, "root")
+    with pytest.raises(ValueError, match="invalid key"):
+        git_source_state("bad key", {"git": "u", "target": "/x"}, "root")
+
+
+# ── commands: onchanges ──────────────────────────────────────────────────────
+
+def test_parse_onchanges_key_and_whole_block():
+    assert parse_onchanges(["sources:backend", "sources"]) == [("sources", "backend"), ("sources", None)]
+
+
+@pytest.mark.parametrize("spec,match", [
+    ("sources:backend", "must be a list"),
+    (None, "must be a list"),
+    ([], "empty"),
+    (["dirs:x"], "unknown block.*sources"),
+    (["nonsense"], "unknown block"),
+    (["sources:"], "empty key"),
+    ([5], "string"),
+])
+def test_parse_onchanges_raises(spec, match):
+    with pytest.raises(ValueError, match=match):
+        parse_onchanges(spec)
+
+
+def test_resolve_onchanges_per_key_and_all():
+    refs = {"sources": {"a": "REF_A", "b": "REF_B"}}
+    assert resolve_onchanges("c", ["sources:b"], refs) == ["REF_B"]
+    assert resolve_onchanges("c", ["sources"], refs) == ["REF_A", "REF_B"]
+    assert resolve_onchanges("c", ["sources:a", "sources"], refs) == ["REF_A", "REF_B"]
+
+
+def test_resolve_onchanges_unknown_key_and_empty_resolution_raise():
+    with pytest.raises(ValueError, match="sources:nope"):
+        resolve_onchanges("c", ["sources:nope"], {"sources": {"a": "R"}})
+    with pytest.raises(ValueError, match="never run"):
+        resolve_onchanges("c", ["sources"], {"sources": {}})
+    with pytest.raises(ValueError, match="never run"):
+        resolve_onchanges("c", ["sources"], None)
+
+
+def test_select_commands_keeps_onchanges_entries_in_order():
+    commands = OrderedDict([
+        ("a", {"cmd": "a", "phase": "pre", "onchanges": ["sources:x"]}),
+        ("b", {"cmd": "b", "phase": "pre"}),
+        ("c", {"cmd": "c", "phase": "pre", "onchanges": ["sources"]}),
+    ])
+    assert [n for n, _ in select_commands(commands, "pre", {})] == ["a", "b", "c"]
+    assert select_commands(commands, "pre", {})[0][1]["onchanges"] == ["sources:x"]
+
+
+# ── dirs ─────────────────────────────────────────────────────────────────────
+
+def test_normalize_dirs_string_shorthand_and_defaults():
+    assert normalize_dirs({"s": "/var/lib/s"}, "u", "g") == [
+        ("s", {"name": "/var/lib/s", "user": "u", "group": "g", "mode": "755", "makedirs": True})]
+
+
+def test_normalize_dirs_full_entry_and_recurse_and_order():
+    result = normalize_dirs(OrderedDict([
+        ("z", "/z"),
+        ("logs", {"name": "/l", "user": "x", "group": "y", "mode": "750",
+                  "makedirs": False, "recurse": True}),
+    ]), "u", "g")
+    assert [k for k, _ in result] == ["z", "logs"]
+    assert result[1][1] == {"name": "/l", "user": "x", "group": "y", "mode": "750",
+                            "makedirs": False, "recurse": ["user", "group"]}
+
+
+def test_normalize_dirs_empty_is_empty_list():
+    assert normalize_dirs(None, "u", "g") == []
+    assert normalize_dirs({}, "u", "g") == []
+
+
+@pytest.mark.parametrize("dirs,match", [
+    ({"bad key": "/x"}, "invalid key"),
+    ({"a": "rel/x"}, "absolute"),
+    ({"a": "~/x"}, "absolute"),
+    ({"a": {"mode": "750"}}, "absolute"),
+    ({"a": {"name": "/x", "owner": "u"}}, "owner"),
+    ({"a": {"name": "/x", "mode": 750}}, "mode"),
+    ({"a": 5}, "path string or a mapping"),
+    (["/x"], "keyed map"),
+])
+def test_normalize_dirs_raises(dirs, match):
+    with pytest.raises(ValueError, match=match):
+        normalize_dirs(dirs, "u", "g")
+
+
+# ── cron ─────────────────────────────────────────────────────────────────────
+
+def test_cron_identifier():
+    assert cron_identifier("crm", "session_clean") == "appsvc_crm_session_clean"
+
+
+def test_cron_schedule_kwargs_five_fields_and_special():
+    assert cron_schedule_kwargs("0 * * * *") == {
+        "minute": "0", "hour": "*", "daymonth": "*", "month": "*", "dayweek": "*"}
+    assert cron_schedule_kwargs("*/5  1-3 * * 1,2") == {
+        "minute": "*/5", "hour": "1-3", "daymonth": "*", "month": "*", "dayweek": "1,2"}
+    assert cron_schedule_kwargs("@daily") == {"special": "@daily"}
+    assert cron_schedule_kwargs("@reboot") == {"special": "@reboot"}
+
+
+@pytest.mark.parametrize("schedule", ["daily", "* * * *", "* * * * * *", "", "@bogus", "@daily x", None])
+def test_cron_schedule_kwargs_raises(schedule):
+    with pytest.raises(ValueError, match="cron schedule"):
+        cron_schedule_kwargs(schedule)
+
+
+def test_normalize_cron_present_defaults_and_options():
+    result = normalize_cron(OrderedDict([
+        ("clean", {"schedule": "0 * * * *", "cmd": "find x", "user": "root"}),
+        ("job", {"schedule": "@daily", "cmd": "run", "comment": "hi", "disabled": True}),
+    ]), "crm", "releaser")
+    assert [(k, f) for k, f, _ in result] == [("clean", "present"), ("job", "present")]
+    assert result[0][2] == {"name": "find x", "user": "root", "identifier": "appsvc_crm_clean",
+                            "minute": "0", "hour": "*", "daymonth": "*", "month": "*", "dayweek": "*"}
+    assert result[1][2] == {"name": "run", "user": "releaser", "identifier": "appsvc_crm_job",
+                            "special": "@daily", "comment": "hi", "commented": True}
+
+
+def test_normalize_cron_absent_needs_no_cmd_or_schedule():
+    result = normalize_cron({"old": {"absent": True}, "old2": {"absent": True, "cmd": "x"}}, "crm", "u")
+    assert result == [
+        ("old", "absent", {"user": "u", "identifier": "appsvc_crm_old"}),
+        ("old2", "absent", {"user": "u", "identifier": "appsvc_crm_old2", "name": "x"})]
+
+
+@pytest.mark.parametrize("cron,match", [
+    ({"a": {"schedule": "@daily"}}, "cmd"),
+    ({"a": {"cmd": "x"}}, "schedule"),
+    ({"a": {"cmd": "x", "schedule": "@daily", "when": 1}}, "when"),
+    ({"a": {"cmd": "x", "schedule": "nope"}}, "cron schedule"),
+    ({"bad key": {"cmd": "x", "schedule": "@daily"}}, "invalid key"),
+    ({"a": "x"}, "mapping"),
+    (["x"], "keyed map"),
+])
+def test_normalize_cron_raises(cron, match):
+    with pytest.raises(ValueError, match=match):
+        normalize_cron(cron, "crm", "u")
+
+
+def test_normalize_cron_empty():
+    assert normalize_cron(None, "crm", "u") == []
+
+
+# ── systemd guard ────────────────────────────────────────────────────────────
+
+def test_check_systemd_exec_raises_when_managed_without_execstart():
+    for systemd in ({}, {"manage": True}, {"Service": {}}, {"Service": {"ExecStart": ""}},
+                    {"Service": {"ExecStart": "  "}}, {"Service": {"ExecStart": []}}):
+        with pytest.raises(ValueError, match="systemd.manage: false"):
+            check_systemd_exec(systemd, "crm")
+
+
+def test_check_systemd_exec_passes_when_unmanaged_or_set():
+    check_systemd_exec({"manage": False}, "crm")
+    check_systemd_exec({"Service": {"ExecStart": "/bin/x"}}, "crm")
+    check_systemd_exec({"Service": {"ExecStart": ["/bin/x"]}}, "crm")

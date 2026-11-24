@@ -6,7 +6,7 @@ files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
 Directly importable by pytest for unit tests.
 
-Sections: substitute · merge · scrape · fetch · release · commands · config · nginx · systemd
+Sections: substitute · merge · scrape · fetch · release · commands · home · sources · dirs · cron · systemd guard · config · nginx · systemd
 """
 
 import configparser
@@ -737,6 +737,273 @@ def select_commands(commands, phase, settings):
             continue
         selected.append((name, item))
     return selected
+
+
+# ── home ──────────────────────────────────────────────────────────────────────
+# The {home} placeholder: apps live in the service user's home directory.
+
+
+def user_home(user):
+    """Home directory of the instance user: `user.home` if set, else /root for
+    root (or an empty `user`), else /home/<name>."""
+    user = user or {}
+    if user.get("home"):
+        return user["home"]
+    name = user.get("name") or "root"
+    return "/root" if name == "root" else "/home/{}".format(name)
+
+
+# ── keyed-map keys ────────────────────────────────────────────────────────────
+# The key of sources/dirs/cron entries becomes part of a Salt state ID (and, for
+# cron, of the crontab identifier), so restrict its charset.
+
+_KEY_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+def check_map_key(what, key):
+    """Raise ValueError unless `key` is a non-empty [A-Za-z0-9_.-]+ string."""
+    if not isinstance(key, str) or not _KEY_RE.match(key):
+        raise ValueError("{}: invalid key {!r} - keys become part of a state ID, "
+                         "allowed characters are [A-Za-z0-9_.-]".format(what, key))
+    return key
+
+
+def _check_unknown_keys(what, key, item, allowed):
+    unknown = sorted(str(k) for k in item if k not in allowed)
+    if unknown:
+        raise ValueError("{}:{}: unknown key(s) {} - allowed: {}".format(
+            what, key, ", ".join(unknown), ", ".join(sorted(allowed))))
+
+
+# ── sources ───────────────────────────────────────────────────────────────────
+# Git checkouts (the `sources` block). Pure derivation of git.latest / git.cloned
+# kwargs; the block only emits the state.
+
+SOURCE_COMMON_KEYS = ("git", "target", "once", "branch", "identity")
+SOURCE_LATEST_ONLY_KEYS = ("rev", "depth", "submodules", "force_reset",
+                           "force_checkout", "force_clone", "force_fetch")
+SOURCE_KEYS = SOURCE_COMMON_KEYS + SOURCE_LATEST_ONLY_KEYS
+
+
+def git_source_state(key, source, user_name):
+    """Derive `(function_name, kwargs)` for one `sources` entry: function_name is
+    "latest" or "cloned" (`once: true`), kwargs are ready for Git.<function_name>.
+
+    `force_reset` is deliberately NOT defaulted (app.* defaults it to true,
+    which silently discards local changes on the server): unset, git.latest
+    fails loud on a dirty tree. Raises ValueError (naming the key) on a bad
+    map key, missing/empty `git`, missing or non-absolute `target`, unknown
+    keys, or `once: true` combined with a git.latest-only key."""
+    check_map_key("sources", key)
+    if not isinstance(source, dict):
+        raise ValueError("sources:{}: must be a mapping, got {!r}".format(key, source))
+    _check_unknown_keys("sources", key, source, SOURCE_KEYS)
+
+    if not source.get("git"):
+        raise ValueError("sources:{}: `git` (repository URL) is required".format(key))
+    target = source.get("target")
+    if not target or not isinstance(target, str) or not target.startswith("/"):
+        raise ValueError("sources:{}: `target` must be an absolute path after expansion "
+                         "(use {{home}}, not ~), got {!r}".format(key, target))
+
+    once = bool(source.get("once", False))
+    if once:
+        clash = [k for k in SOURCE_LATEST_ONLY_KEYS if k in source]
+        if clash:
+            raise ValueError("sources:{}: `once: true` uses git.cloned, which does not "
+                             "support {} (git.latest-only)".format(key, ", ".join(clash)))
+
+    kwargs = {"name": source["git"], "target": target}
+    if user_name and user_name != "root":
+        kwargs["user"] = user_name
+    for opt in ("branch", "identity") + SOURCE_LATEST_ONLY_KEYS:
+        if opt in source:
+            kwargs[opt] = source[opt]
+    return ("cloned" if once else "latest"), kwargs
+
+
+# ── commands: onchanges ───────────────────────────────────────────────────────
+
+ONCHANGES_BLOCKS = ("sources",)
+
+
+def parse_onchanges(spec):
+    """Validate a command's `onchanges` list and return [(block, key_or_None)].
+    Entries are "<block>" (any entry of that block changed) or "<block>:<key>".
+    Only `sources` is a valid block in this step. Raises ValueError on a
+    non-list, an empty list (the gate could never fire), a non-string entry,
+    an unknown block, or an empty key."""
+    if not isinstance(spec, list):
+        raise ValueError("commands onchanges must be a list like [sources:backend], "
+                         "got {!r}".format(spec))
+    if not spec:
+        raise ValueError("commands onchanges is empty - the command would never run")
+    parsed = []
+    for entry in spec:
+        if not isinstance(entry, str):
+            raise ValueError("commands onchanges entry {!r} must be a string".format(entry))
+        block, sep, key = entry.partition(":")
+        if block not in ONCHANGES_BLOCKS:
+            raise ValueError("commands onchanges {!r}: unknown block {!r}, valid: {}".format(
+                entry, block, ", ".join(ONCHANGES_BLOCKS)))
+        if sep and not key:
+            raise ValueError("commands onchanges {!r}: empty key after ':'".format(entry))
+        parsed.append((block, key if sep else None))
+    return parsed
+
+
+def resolve_onchanges(cmd_name, spec, refs):
+    """Resolve a command's `onchanges` spec against `refs` ({block: {key: ref}})
+    to a flat, de-duplicated list of refs. Raises ValueError for an unknown
+    key or when nothing resolves (the command could never run)."""
+    refs = refs or {}
+    resolved = []
+    for block, key in parse_onchanges(spec):
+        available = refs.get(block) or {}
+        if key is None:
+            picked = list(available.values())
+        elif key in available:
+            picked = [available[key]]
+        else:
+            raise ValueError("commands:{}: onchanges {}:{} - no such {} entry (declared: {})".format(
+                cmd_name, block, key, block, ", ".join(sorted(available)) or "none"))
+        for ref in picked:
+            if ref not in resolved:
+                resolved.append(ref)
+    if not resolved:
+        raise ValueError("commands:{}: onchanges {!r} resolved to nothing (no {} declared) - "
+                         "the command could never run".format(cmd_name, spec, "/".join(ONCHANGES_BLOCKS)))
+    return resolved
+
+
+# ── dirs ──────────────────────────────────────────────────────────────────────
+
+DIR_KEYS = ("name", "user", "group", "mode", "makedirs", "recurse")
+
+
+def normalize_dirs(dirs, user_name, user_group):
+    """Turn the `dirs` keyed map into an ordered list of `(key, kwargs)` for
+    File.directory. A string value is shorthand for `{name: <string>}`.
+    Defaults: user/group = the instance user/group, mode "755", makedirs true;
+    `recurse: true` -> recurse=["user", "group"] (never mode). `mode` must be a
+    string (an unquoted YAML 750 / 0750 is an int and would be silently wrong).
+    Raises ValueError on bad keys, unknown keys, or a missing/relative name."""
+    if not dirs:
+        return []
+    if not isinstance(dirs, dict):
+        raise ValueError("dirs must be a keyed map, got {!r}".format(dirs))
+    result = []
+    for key, item in dirs.items():
+        check_map_key("dirs", key)
+        if isinstance(item, str):
+            item = {"name": item}
+        if not isinstance(item, dict):
+            raise ValueError("dirs:{}: must be a path string or a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("dirs", key, item, DIR_KEYS)
+        name = item.get("name")
+        if not isinstance(name, str) or not name.startswith("/"):
+            raise ValueError("dirs:{}: `name` must be an absolute path after expansion "
+                             "(use {{home}}, not ~), got {!r}".format(key, name))
+        mode = item.get("mode", "755")
+        if not isinstance(mode, str):
+            raise ValueError("dirs:{}: `mode` must be a quoted string like \"750\", "
+                             "got {!r}".format(key, mode))
+        kwargs = {
+            "name": name,
+            "user": item.get("user", user_name),
+            "group": item.get("group", user_group),
+            "mode": mode,
+            "makedirs": bool(item.get("makedirs", True)),
+        }
+        if item.get("recurse", False):
+            kwargs["recurse"] = ["user", "group"]
+        result.append((key, kwargs))
+    return result
+
+
+# ── cron ──────────────────────────────────────────────────────────────────────
+
+CRON_KEYS = ("schedule", "cmd", "user", "comment", "disabled", "absent")
+CRON_SPECIALS = ("@reboot", "@yearly", "@annually", "@monthly", "@weekly",
+                 "@daily", "@midnight", "@hourly")
+CRON_FIELDS = ("minute", "hour", "daymonth", "month", "dayweek")
+
+
+def cron_identifier(instance_name, key):
+    """Salt cron `identifier`, unique across instances sharing a crontab."""
+    return "appsvc_{}_{}".format(instance_name, key)
+
+
+def cron_schedule_kwargs(schedule):
+    """`{"special": "@daily"}` for one @-token, or minute/hour/daymonth/month/
+    dayweek for five whitespace-separated fields. Raises ValueError otherwise
+    (including a single non-@ token or an unknown @special)."""
+    parts = schedule.split() if isinstance(schedule, str) else []
+    if len(parts) == 1 and parts[0].startswith("@"):
+        if parts[0] not in CRON_SPECIALS:
+            raise ValueError("cron schedule {!r}: unknown special, valid: {}".format(
+                schedule, ", ".join(CRON_SPECIALS)))
+        return {"special": parts[0]}
+    if len(parts) == 5:
+        return dict(zip(CRON_FIELDS, parts))
+    raise ValueError("cron schedule {!r}: expected five fields or one @special "
+                     "({})".format(schedule, ", ".join(CRON_SPECIALS)))
+
+
+def normalize_cron(cron, instance_name, default_user):
+    """Turn the `cron` keyed map into an ordered list of
+    `(key, function_name, kwargs)` for Cron.present / Cron.absent.
+
+    `cmd` and `schedule` are required unless `absent: true`, which only needs
+    the user + identifier (Salt matches on identifier; `name` is passed only if
+    `cmd` was given). `disabled: true` -> commented=True. Raises ValueError on a
+    bad key, unknown keys, or missing cmd/schedule."""
+    if not cron:
+        return []
+    if not isinstance(cron, dict):
+        raise ValueError("cron must be a keyed map, got {!r}".format(cron))
+    result = []
+    for key, item in cron.items():
+        check_map_key("cron", key)
+        if not isinstance(item, dict):
+            raise ValueError("cron:{}: must be a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("cron", key, item, CRON_KEYS)
+        kwargs = {"user": item.get("user", default_user),
+                  "identifier": cron_identifier(instance_name, key)}
+        if item.get("cmd"):
+            kwargs["name"] = item["cmd"]
+        if item.get("absent", False):
+            result.append((key, "absent", kwargs))
+            continue
+        for required in ("cmd", "schedule"):
+            if not item.get(required):
+                raise ValueError("cron:{}: `{}` is required (unless `absent: true`)".format(key, required))
+        kwargs.update(cron_schedule_kwargs(item["schedule"]))
+        if item.get("comment"):
+            kwargs["comment"] = item["comment"]
+        if item.get("disabled", False):
+            kwargs["commented"] = True
+        result.append((key, "present", kwargs))
+    return result
+
+
+# ── systemd guard ─────────────────────────────────────────────────────────────
+
+
+def check_systemd_exec(systemd, instance_name):
+    """Raise ValueError when systemd is managed (the default) but
+    `systemd.Service.ExecStart` is missing/empty - an app instance with no
+    daemon would otherwise get a unit that cannot start."""
+    systemd = systemd or {}
+    if not systemd.get("manage", True):
+        return
+    exec_start = (systemd.get("Service") or {}).get("ExecStart")
+    if isinstance(exec_start, (list, tuple)):
+        exec_start = " ".join(str(e) for e in exec_start)
+    if not exec_start or not str(exec_start).strip():
+        raise ValueError("instance {}: systemd.manage is true but systemd.Service.ExecStart "
+                         "is missing/empty - set systemd.manage: false (no daemon) "
+                         "or an ExecStart".format(instance_name))
 
 
 # ── config ────────────────────────────────────────────────────────────────────

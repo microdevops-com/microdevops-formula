@@ -315,21 +315,24 @@ others — flagged in WHITEPAPER §10.
 
 ### [ ] 18. App-management blocks (post-rename roadmap)
 Order, each step deployable on its own (target: moituristy mt-crm):
-1. foundations - `{home}` placeholder, `sources` block (`git.latest`, or
-   `git.cloned` for `once: true`), hook-based scripts (generalize
-   `commands.phase`; a script hooked on a block runs `onchanges` of it by
-   default), `dirs` block, `cron` block.
+1. [x] foundations (done) - `{home}` placeholder, `sources` block (`git.latest`,
+   or `git.cloned` for `once: true`), `commands.onchanges` (replaces the
+   `hook:` idea; composes with `phase`), `dirs` block, `cron` block, plus a
+   systemd guard (managed unit without ExecStart now fails the render). Not
+   yet verified by a real apply (Git/Cron state names, second-run
+   idempotency).
 2. `php_fpm.pools` map + `nginx.vhosts` keyed map with custom `vhost_config`
    templates (breaking change to today's single reverse-proxy vhost).
 3. `nvm`, `pyenv`, `tools` (composer) + a generated `{home}/.appsvc/env.sh`.
 4. `docker` (networks, registry login via stdin, containers, container cron
    as root `docker exec` without `-it`).
 
-### [ ] 19. Remove the binsvc -> appsvc compatibility shims
-`init.sls` falls back to the legacy `binsvc:` pillar root, and
-`blocks/systemd_unit.sls` stops/disables/removes a leftover
-`binsvc_<name>.service` before starting `appsvc_<name>`. Delete both once
-every client pillar uses `appsvc:` and every host has been applied once.
+### [x] 19. Remove the binsvc -> appsvc compatibility shims
+**Resolved:** removed - every client pillar was renamed to `appsvc:` and every
+host applied once, so nothing reads the old `binsvc:` pillar root or needs the old unit
+cleanup any more. The shims were: `init.sls` falling back to the legacy `binsvc:`
+pillar root, and `blocks/systemd_unit.sls` stopping/removing a leftover pre-rename
+`binsvc_<name>.service` before starting `appsvc_<name>`.
 One-time side effects of the rename on a legacy host: the service restarts
 under its new unit name, archives re-download into `/var/cache/salt/appsvc`
 (the old `/var/cache/salt/binsvc` is left behind - safe to delete), version

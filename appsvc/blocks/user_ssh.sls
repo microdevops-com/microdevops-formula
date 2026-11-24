@@ -1,6 +1,8 @@
 #!pyobjects
 # vim: set ft=python:
 
+from salt://appsvc/lib.py import user_home
+
 # Refactored out of application/utils.py's user()/ssh() - same behavior
 # (group+user, .ssh dir, keys, authorized_keys, config, known_hosts), adapted
 # to the (prefix, settings) building-block calling convention and fixing the
@@ -12,7 +14,7 @@ def _manage_user(prefix, user):
     sid = "_".join(prefix + ["user"])
     name = user["name"]
     group = user.get("group", name)
-    home = user.get("home", "/home/{}".format(name))
+    home = user_home(user)
 
     Group.present(sid + "_group", name=group)
 
