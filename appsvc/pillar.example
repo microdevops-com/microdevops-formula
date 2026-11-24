@@ -418,7 +418,7 @@ appsvc:
       # tools:
       #   composer:
       #     source: https://getcomposer.org/download/2.6.6/composer.phar
-      #     source_hash: https://getcomposer.org/download/2.6.6/composer.phar.sha256
+      #     source_hash: https://getcomposer.org/download/2.6.6/composer.phar.sha256sum
       php_fpm:
         pools:
           mt-back:

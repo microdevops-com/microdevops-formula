@@ -304,7 +304,7 @@ user:
 # tools:
 #   composer:
 #     source: https://getcomposer.org/download/2.6.6/composer.phar
-#     source_hash: https://getcomposer.org/download/2.6.6/composer.phar.sha256  # else unverified
+#     source_hash: https://getcomposer.org/download/2.6.6/composer.phar.sha256sum  # else unverified
 #     # target: "{tools_dir}/composer"   # default {tools_dir}/<key>
 #     # mode: "755"                      # default; must be a string
 #
