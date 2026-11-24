@@ -8,7 +8,7 @@ install_proftpd:
   {%- if grains['os_family'] == "RedHat" %}
       - proftpd
       - proftpd-utils
-  {%- elif grains['oscodename'] == "noble" %}
+  {%- elif (grains['os'] == "Ubuntu" and grains['osmajorrelease']|int >= 24) or (grains['os'] == "Debian" and grains['osmajorrelease']|int >= 13) %}
       - proftpd-core
       - proftpd-mod-crypto
       - proftpd-mod-wrap
@@ -87,17 +87,6 @@ create_rsa_key:
     - require:
       - file: ensure_proftpd_key_dir_exists
 
-create_dsa_key:
-  cmd.run:
-    - name: ssh-keygen -m PEM -f proftpd_host_dsa_key -N '' -t dsa -b 1024
-    - cwd: /etc/proftpd/keys
-    - shell: /bin/bash
-    - runas: proftpd
-    - umask: 0377
-    - creates: /etc/proftpd/keys/proftpd_host_dsa_key
-    - require:
-      - file: ensure_proftpd_key_dir_exists
-
 create_ecdsa_key:
   cmd.run:
     - name: ssh-keygen -m PEM -f proftpd_host_ecdsa_key -N '' -t ecdsa -b 521
@@ -132,7 +121,6 @@ create_config_file:
                 Port 2226
                 SFTPLog     /var/log/proftpd/sftp.log
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_rsa_key
-                SFTPHostKey /etc/proftpd/keys/proftpd_host_dsa_key
                 SFTPHostKey /etc/proftpd/keys/proftpd_host_ecdsa_key
                 SFTPAuthMethods password
                 SFTPOptions IgnoreSCPUploadPerms IgnoreSFTPUploadPerms IgnoreSFTPSetOwners IgnoreSFTPSetPerms IgnoreSFTPSetTimes
