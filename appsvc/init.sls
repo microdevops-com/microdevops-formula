@@ -56,7 +56,7 @@ def load_preset(name):
     of copying whole app configs into pillar. A preset name with no matching
     bundled file is treated as empty - only the pillar override applies."""
     if name not in _preset_cache:
-        _content = get_salt_file("salt://appsvc/presets/{}.yaml".format(name))
+        _content = get_salt_file("salt://appsvc/presets/{}.yaml".format(name), missing_ok=True)
         bundled = yaml.safe_load(_content or "") or {}
         override = cfg("presets:{}".format(name), {})
         _preset_cache[name] = merge(bundled, override or {})
