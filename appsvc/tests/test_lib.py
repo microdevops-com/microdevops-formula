@@ -10,6 +10,9 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from lib import (
+    logrotate_plan,
+    render_logrotate,
+    php_reopen_command,
     parse_known_host,
     deep_format, expand, merge_globals,
     merge,
@@ -1695,3 +1698,57 @@ def test_env_sh_placeholder_not_shadowed_by_shell_env_settings():
     settings = {"shell_env": {"profile": False}, "cmd": ". {env_sh} && composer install"}
     out = expand(settings, {"env_sh": "/home/helium/.appsvc/crm.sh"})
     assert out["cmd"] == ". /home/helium/.appsvc/crm.sh && composer install"
+
+
+
+# --- logrotate ----------------------------------------------------------------
+
+def _pool(key, version, error_log):
+    return {"key": key, "version": version, "error_log": error_log}
+
+
+def _vhost(key, access_log, error_log):
+    return {"key": key, "access_log": access_log, "error_log": error_log}
+
+
+def test_logrotate_groups_nginx_and_php_per_version():
+    plan = logrotate_plan(
+        {}, [_pool("a", "8.3", "/srv/log/php/a.log"), _pool("b", "8.1", "/srv/log/php/b.log"),
+             _pool("c", "8.3", "/srv/log/php/c.log")],
+        [_vhost("w", "/srv/log/nginx/w.access.log", "/srv/log/nginx/w.error.log")],
+        "helium", "helium")
+    assert [s["paths"] for s in plan["stanzas"]] == [
+        ["/srv/log/nginx/w.access.log", "/srv/log/nginx/w.error.log"],
+        ["/srv/log/php/a.log", "/srv/log/php/c.log"],
+        ["/srv/log/php/b.log"]]
+    assert plan["stanzas"][0]["postrotate"] == "/usr/sbin/nginx -s reopen"
+    assert plan["stanzas"][1]["postrotate"] == php_reopen_command("8.3")
+    body = render_logrotate(plan, "crm")
+    assert "/srv/log/nginx/w.access.log\n/srv/log/nginx/w.error.log {" in body
+    assert "    create 640 helium helium" in body and "    rotate 31" in body
+    assert body.count("postrotate") == 3
+
+
+def test_logrotate_skips_distro_nginx_logs_and_pools_without_error_log():
+    plan = logrotate_plan({}, [_pool("a", "8.3", None)],
+                          [_vhost("w", "/var/log/nginx/w.access.log", "/var/log/nginx/w.error.log")],
+                          "root", "root")
+    assert plan["stanzas"] == []
+
+
+def test_logrotate_duplicate_path_raises():
+    with pytest.raises(ValueError, match="declared by both"):
+        logrotate_plan({}, [_pool("a", "8.3", "/srv/x.log")], [_vhost("w", "/srv/x.log", "/srv/y.log")],
+                       "u", "u")
+
+
+@pytest.mark.parametrize("conf", [{"rotate": "31"}, {"frequency": "often"}, {"mode": 640},
+                                  {"skip": "/var/log/*"}, {"bogus": 1}])
+def test_logrotate_rejects_bad_options(conf):
+    with pytest.raises(ValueError):
+        logrotate_plan(conf, [], [], "u", "u")
+
+
+def test_logrotate_relative_path_raises():
+    with pytest.raises(ValueError, match="absolute"):
+        logrotate_plan({}, [_pool("a", "8.3", "log/a.log")], [], "u", "u")

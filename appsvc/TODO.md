@@ -342,8 +342,8 @@ Order, each step deployable on its own (target: moituristy mt-crm):
    as root `docker exec` without `-it`).
 
 ### [ ] 20. Gaps left by app-management step 2
-- **logrotate** for app logs: php pool `error_log` and nginx vhost logs
-  (`app.*` rotated them; appsvc does not yet).
+- [x] **logrotate** for app logs - done: `blocks/logrotate.sls` composes one
+  `/etc/logrotate.d/appsvc-<instance>` from the declared pool/vhost logs.
 - **ACME webroot accounts**: only DNS accounts work (the vhost needs the cert
   files before `nginx -t`; there is no snakeoil first pass for webroot
   validation).

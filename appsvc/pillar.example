@@ -23,7 +23,8 @@
 #      instances' `scrape` stanzas are appended to the configured config path.
 #   4. building blocks run in order: user/ssh, install_dir, dirs, pyenv, nvm, tools,
 #      env_sh, sources, config,
-#      svc (fetch), venv, php_fpm, commands(pre), systemd, commands(post), cron, nginx.
+#      svc (fetch), venv, php_fpm, commands(pre), systemd, commands(post), cron, nginx,
+#      logrotate.
 #      dirs precede sources (a checkout's parent exists), sources precede
 #      config (a config entry can write into a checkout). install_dir runs
 #      ahead of config on purpose (a config entry with makedirs would otherwise

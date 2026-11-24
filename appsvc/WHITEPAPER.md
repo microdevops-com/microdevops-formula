@@ -178,7 +178,7 @@ expansions compose better than ever-earlier global phases.
 ```
 user_and_ssh → install_dir → dirs → pyenv → nvm → tools → env_sh → sources
   → config_files → fetch_source → venv → php_fpm → commands(pre) → systemd_unit(watch=changed) → commands(post) → cron
-  → nginx_vhost(php_sockets)
+  → nginx_vhost(php_sockets) → logrotate
 ```
 
 Order matters: the runtimes (`pyenv`/`nvm`/`tools`/`env_sh`) need only the user and precede `venv` (which may use a pyenv python) and `commands` (which use node/composer); their refs, except `env_sh`, join `changed`. `dirs` precede `sources` so a checkout's parent exists, and

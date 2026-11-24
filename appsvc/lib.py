@@ -1772,3 +1772,114 @@ def join_args(args, prefix="-"):
             else:
                 items.extend(flag(key, value) for key, value in entry.items())
     return " ".join(items)
+
+
+# ── logrotate ─────────────────────────────────────────────────────────────────
+# One /etc/logrotate.d/appsvc-<instance> composed from the logs the pillar
+# already declares (php pool error_log, nginx vhost access/error logs) - no
+# separate list to keep in sync.
+
+LOGROTATE_KEYS = ("manage", "rotate", "frequency", "mode", "skip")
+LOGROTATE_FREQUENCIES = ("hourly", "daily", "weekly", "monthly", "yearly")
+NGINX_REOPEN = "/usr/sbin/nginx -s reopen"
+
+
+def php_reopen_command(version):
+    """php-fpm's packaged helper (Debian/Ubuntu/ondrej) that USR1s the master."""
+    helper = "/usr/lib/php/php{}-fpm-reopenlogs".format(version)
+    return "if [ -x {0} ]; then {0}; fi".format(helper)
+
+
+def logrotate_plan(conf, php_pools, nginx_vhosts, user_name, user_group):
+    """Group the instance's declared logs into logrotate stanzas.
+
+    `php_pools` / `nginx_vhosts` are the normalized lists from
+    normalize_php_pools / normalize_nginx_vhosts (pass [] for an inactive
+    block). Returns {"options": {...}, "stanzas": [{"paths", "postrotate"}]}
+    with empty stanzas when there is nothing to rotate (the block then
+    removes the file). Paths matching `skip` globs (default: the distro's own
+    /var/log/nginx/*.log, which its logrotate config already covers) are left
+    out: logrotate aborts on a log listed by two configs. A path declared twice
+    within the instance raises for the same reason."""
+    conf = conf or {}
+    if not isinstance(conf, dict):
+        raise ValueError("logrotate must be a mapping, got {!r}".format(conf))
+    _check_unknown_keys("logrotate", "(block)", conf, LOGROTATE_KEYS)
+
+    rotate = conf.get("rotate", 31)
+    if not isinstance(rotate, int) or isinstance(rotate, bool) or rotate < 0:
+        raise ValueError("logrotate.rotate must be a non-negative int, got {!r}".format(rotate))
+    frequency = conf.get("frequency", "daily")
+    if frequency not in LOGROTATE_FREQUENCIES:
+        raise ValueError("logrotate.frequency {!r} not one of {}".format(
+            frequency, ", ".join(LOGROTATE_FREQUENCIES)))
+    mode = conf.get("mode", "640")
+    if not isinstance(mode, str) or not re.match(r"^0?[0-7]{3}$", mode):
+        raise ValueError("logrotate.mode must be a quoted octal string like \"640\", got {!r}".format(mode))
+    skip = conf.get("skip", ["/var/log/nginx/*.log"])
+    if not isinstance(skip, list):
+        raise ValueError("logrotate.skip must be a list of globs, got {!r}".format(skip))
+
+    seen = {}
+
+    def take(paths, owner):
+        kept = []
+        for path in paths:
+            if not path:
+                continue
+            if not path.startswith("/") or any(c.isspace() for c in path):
+                raise ValueError("log path {!r} ({}) must be absolute without whitespace".format(path, owner))
+            if any(fnmatch.fnmatch(path, glob) for glob in skip):
+                continue
+            if path in seen:
+                raise ValueError("log {} is declared by both {} and {} - logrotate would "
+                                 "abort on the duplicate".format(path, seen[path], owner))
+            seen[path] = owner
+            kept.append(path)
+        return kept
+
+    stanzas = []
+    nginx_paths = []
+    for vhost in nginx_vhosts or []:
+        nginx_paths += take([vhost["access_log"], vhost["error_log"]], "nginx vhost " + vhost["key"])
+    if nginx_paths:
+        stanzas.append({"paths": nginx_paths, "postrotate": NGINX_REOPEN})
+
+    by_version = {}
+    for pool in php_pools or []:
+        kept = take([pool["error_log"]], "php pool " + pool["key"])
+        if kept:
+            by_version.setdefault(pool["version"], []).extend(kept)
+    for version, paths in by_version.items():
+        stanzas.append({"paths": paths, "postrotate": php_reopen_command(version)})
+
+    return {
+        "options": {"rotate": rotate, "frequency": frequency, "mode": mode,
+                    "user": user_name, "group": user_group},
+        "stanzas": stanzas,
+    }
+
+
+def render_logrotate(plan, instance_name):
+    """logrotate.d body for logrotate_plan's output."""
+    opts = plan["options"]
+    lines = ["# Managed by salt (appsvc instance {}) - do not edit.".format(instance_name)]
+    for stanza in plan["stanzas"]:
+        lines.append("")
+        lines.extend(stanza["paths"][:-1])
+        lines.append(stanza["paths"][-1] + " {")
+        lines += [
+            "    " + opts["frequency"],
+            "    rotate {}".format(opts["rotate"]),
+            "    missingok",
+            "    notifempty",
+            "    compress",
+            "    delaycompress",
+            "    create {} {} {}".format(opts["mode"], opts["user"], opts["group"]),
+            "    sharedscripts",
+            "    postrotate",
+            "        " + stanza["postrotate"],
+            "    endscript",
+            "}",
+        ]
+    return "\n".join(lines) + "\n"

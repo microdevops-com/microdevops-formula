@@ -33,6 +33,19 @@ user:
 nginx:
   manage: false
 
+# One /etc/logrotate.d/appsvc-<instance> composed from the declared php pool
+# error_logs and nginx vhost logs (blocks/logrotate.sls). Inert until one of
+# those exists outside `skip`.
+logrotate:
+  manage: true
+  rotate: 31
+  frequency: daily
+  mode: "640"
+  # The distro's /etc/logrotate.d/nginx already rotates these; logrotate
+  # aborts on a log listed by two configs.
+  skip:
+    - /var/log/nginx/*.log
+
 systemd:
   manage: true
   unit: "appsvc_{name}"

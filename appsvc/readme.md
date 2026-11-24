@@ -68,7 +68,7 @@ For every entry under `appsvc:instances`:
    `user_ssh` -> `install_dir` -> `dirs` -> `pyenv` -> `nvm` -> `tools` -> `env_sh` ->
    `sources` -> `config_file` -> `fetch` -> `venv` -> `php_fpm` -> `commands(pre)` -> `systemd_unit` ->
    `commands(post)` -> `cron` -> `nginx_vhost` (which receives `php_fpm`'s
-   `{pool_key: socket}` map).
+   `{pool_key: socket}` map) -> `logrotate`.
    `install_dir` runs ahead of `config_file` on purpose: a config entry with
    `makedirs: True` would otherwise create the install dir root-owned before
    the service user's ownership is applied. `dirs` runs before `sources` so a
@@ -135,6 +135,7 @@ only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 | `cron` | `cron` | crontab entries from a keyed map (`schedule` = five fields or one `@special`, `cmd`, `user` default the instance user, `comment`, `disabled`, `absent`), tagged with identifier `appsvc_<instance>_<key>`. Removing an entry from pillar does NOT remove it from the crontab - set `absent: true` |
 | `php_fpm` | `php_fpm` | php-fpm **pools only** (never installs PHP) from the keyed map `php_fpm.pools`: one `/etc/php/<ver>/fpm/pool.d/<name>.conf` per pool (`version` is required and must be a quoted string; `name`, `user`/`group`, `listen`, `listen_*`, `error_log`, raw `config` lines), plus one `php-fpm<ver> -t && systemctl reload php<ver>-fpm` per version, only on a pool-file change (`reload: false` opts out). Removing a pool from pillar does NOT delete its file. Returns `{pool_key: socket}` for `nginx_vhost`; does not restart the service. No-op without pools |
 | `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
+| `logrotate` | `logrotate` (optional tunables) | one `/etc/logrotate.d/appsvc-<instance>` composed from the logs the pillar already declares: every php pool `error_log` (one stanza per PHP version, `postrotate` php-fpm's `reopenlogs` helper) and every vhost `access_log`/`error_log` (`postrotate nginx -s reopen`). Paths matching `logrotate.skip` (default `/var/log/nginx/*.log`, which the distro's nginx config already rotates) are left out, because logrotate aborts on a log listed by two configs; a path declared twice in one instance fails the render. Validated with `logrotate -d` before install; removed when no log remains. Defaults: daily, rotate 31, compress + delaycompress, `create 640 <user> <group>`. `logrotate.manage: false` disables |
 | `nginx_vhost` | `nginx` | one vhost per key of `nginx.vhosts` (keyed map): built-in reverse proxy (`upstream`) or a custom jinja `template` (+ `vars`, and `php_fpm_sockets` in its context), optional per-vhost TLS and basic auth; ACME issuance per vhost, one `nginx -t && nginx -s reload` per instance - no-op unless `nginx.manage` |
 
 `svc`/`systemd`/`nginx`/`php_fpm`/`config`/`commands`/`user`/`ssh`/`dirs`/`sources`/`cron`/`nvm`/`pyenv`/`tools`/`shell_env` are all

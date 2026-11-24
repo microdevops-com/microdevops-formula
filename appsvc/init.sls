@@ -28,6 +28,7 @@ from salt://appsvc/blocks/commands.sls import run_commands
 from salt://appsvc/blocks/systemd_unit.sls import systemd_unit
 from salt://appsvc/blocks/cron.sls import cron
 from salt://appsvc/blocks/nginx_vhost.sls import nginx_vhost
+from salt://appsvc/blocks/logrotate.sls import logrotate
 from salt://appsvc/utils.sls import get_salt_file
 
 log = logging.getLogger(__name__)
@@ -92,7 +93,8 @@ def dispatch(prefix, settings):
     (after fetch - venv.requirements_files may point at a requirements.txt that
     arrives inside the fetched archive), php_fpm pools, pre-systemd commands,
     systemd, post-systemd commands, cron, then nginx (which gets the php_fpm
-    {pool_key: socket} map). Source/fetch/config/venv changes
+    {pool_key: socket} map), then logrotate (composed from the pool and vhost
+    logs). Source/fetch/config/venv changes
     are wired via the `changed` requisite-list contract so systemd restarts
     whenever the code, binary, config, or requirement set actually changed.
     Commands with `onchanges` get the per-key source refs via `refs`."""
@@ -126,6 +128,8 @@ def dispatch(prefix, settings):
     cron(prefix, settings)
 
     nginx_vhost(prefix, settings, php_sockets)
+
+    logrotate(prefix, settings)
 
 
 # --- main loop: merge+format every instance, then gather+dispatch the selected -

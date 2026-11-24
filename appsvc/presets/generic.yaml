@@ -473,6 +473,17 @@ nginx:
   #     #   - username: admin
   #     #     password: change-me
 
+# logrotate: one /etc/logrotate.d/appsvc-<instance> composed from the logs
+# declared above and below - php_fpm pool error_logs and nginx vhost
+# access/error logs. Nothing to list; these are only tunables (defaults.yaml):
+# logrotate:
+#   manage: true                 # false: don't write (or remove) the file
+#   rotate: 31
+#   frequency: daily             # hourly|daily|weekly|monthly|yearly
+#   mode: "640"                  # create <mode> <user.name> <user.group>
+#   skip:                        # globs left out (already rotated elsewhere;
+#     - /var/log/nginx/*.log     # logrotate aborts on a log listed twice)
+
 # php-fpm pools (keyed map). appsvc NEVER installs PHP - the php<ver>-fpm
 # package is another state's job. One pool.d file per pool plus one
 # `php-fpm<ver> -t && systemctl reload php<ver>-fpm` per distinct version, only
