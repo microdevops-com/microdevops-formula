@@ -3,6 +3,14 @@
 
 from salt://appsvc/lib.py import normalize_cron
 
+# Built explicitly, not taken from pyobjects' injected globals: pyobjects only
+# injects factories for state modules that load on the *rendering* host, and
+# under salt-ssh that is the master/container, which may lack the binary the
+# module's __virtual__ needs (crontab -> "name 'Cron' is not defined").
+# The target still runs the real state; render no longer depends on the master.
+from salt.utils.pyobjects import StateFactory
+Cron = StateFactory("cron")
+
 
 def cron(prefix, settings):
     """Manage crontab entries from `settings["cron"]` (a keyed map). Entries

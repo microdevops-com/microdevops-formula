@@ -3,6 +3,14 @@
 
 from salt://appsvc/lib.py import git_source_state
 
+# Built explicitly, not taken from pyobjects' injected globals: pyobjects only
+# injects factories for state modules that load on the *rendering* host, and
+# under salt-ssh that is the master/container, which may lack the binary the
+# module's __virtual__ needs (git -> "name 'Git' is not defined").
+# The target still runs the real state; render no longer depends on the master.
+from salt.utils.pyobjects import StateFactory
+Git = StateFactory("git")
+
 
 def sources(prefix, settings):
     """Clone/update the git checkouts declared in `settings["sources"]` (a keyed

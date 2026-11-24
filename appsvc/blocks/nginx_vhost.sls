@@ -2,6 +2,14 @@
 # vim: set ft=python:
 from salt://appsvc/lib.py import resolve_nginx_servers
 
+# Built explicitly, not taken from pyobjects' injected globals: pyobjects only
+# injects factories for state modules that load on the *rendering* host, and
+# under salt-ssh that is the master/container, which may lack the binary the
+# module's __virtual__ needs (htpasswd -> "name 'Webutil' is not defined").
+# The target still runs the real state; render no longer depends on the master.
+from salt.utils.pyobjects import StateFactory
+Webutil = StateFactory("webutil")
+
 # Generic reverse-proxy vhost: one upstream, one or more server blocks, optional
 # per-server TLS via ACME DNS issuance or operator-supplied certs, and optional
 # top-level HTTP basic auth shared by every server block. Driven by
