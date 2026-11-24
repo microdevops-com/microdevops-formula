@@ -10,13 +10,17 @@
 import logging
 import yaml
 
-from salt://appsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances, user_home
+from salt://appsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, runtime_paths, select_instances, user_home
 
 from salt://appsvc/blocks/install_dir.sls import install_dir
 from salt://appsvc/blocks/fetch.sls import fetch_source
 from salt://appsvc/blocks/venv.sls import python_venv
 from salt://appsvc/blocks/user_ssh.sls import user_and_ssh
 from salt://appsvc/blocks/dirs.sls import dirs
+from salt://appsvc/blocks/pyenv.sls import pyenv
+from salt://appsvc/blocks/nvm.sls import nvm
+from salt://appsvc/blocks/tools.sls import tools
+from salt://appsvc/blocks/env_sh.sls import env_sh
 from salt://appsvc/blocks/sources.sls import sources
 from salt://appsvc/blocks/config_file.sls import config_files
 from salt://appsvc/blocks/php_fpm.sls import php_fpm
@@ -96,8 +100,11 @@ def dispatch(prefix, settings):
     user_and_ssh(prefix, settings)
     install_dir(prefix, settings)
     dirs(prefix, settings)
+    runtime_refs = (list(pyenv(prefix, settings) or []) + list(nvm(prefix, settings) or [])
+                    + list(tools(prefix, settings) or []))
+    env_sh(prefix, settings)
     source_refs = sources(prefix, settings)
-    changed = list(source_refs.values()) + list(config_files(prefix, settings, source_refs) or [])
+    changed = runtime_refs + list(source_refs.values()) + list(config_files(prefix, settings, source_refs) or [])
 
     svc = settings.get("svc")
     if svc:
@@ -141,7 +148,8 @@ global_vars = cfg("globals", {})
 # Placeholder names injected into the phase-2 scope (see below). Reserved here so
 # a global can't pass the phase-1 collision check and then be silently
 # overwritten in the second expand pass.
-PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir", "home")
+PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir", "home",
+                      "nvm_dir", "pyenv_root", "tools_dir", "env_sh")
 
 # Optional `appsvc:filter` (operator-typed, usually on the CLI) scopes this apply
 # to a subset - e.g. pillar='{appsvc: {filter: "name: vm* *gra*"}}'. It gates the
@@ -200,7 +208,19 @@ for instance_name, instance in instances.items():
     # syntax like "{svc[exec]}" in pillar/presets.
     svc = settings.get("svc") or {}
     user = settings.get("user") or {}
+    user_name = user.get("name", "root")
+    home = user_home(user)
+    # Runtime paths (nvm_dir/pyenv_root/tools_dir/env_sh): per-user layout for a
+    # non-root user, global for root, explicit nvm.dir/pyenv.root/shell_env.path win.
+    runtime = runtime_paths(user_name, home, instance_name, settings.get("nvm"),
+                            settings.get("pyenv"), settings.get("shell_env"),
+                            scope={"home": home, "user_name": user_name,
+                                   "install_dir": settings.get("install_dir", "")})
     extra_scope = dict(base_scope,
+                       nvm_dir=runtime["nvm_dir"],
+                       pyenv_root=runtime["pyenv_root"],
+                       tools_dir=runtime["tools_dir"],
+                       env_sh=runtime["env_sh"],
                        install_dir=settings.get("install_dir", ""),
                        exec=svc.get("exec", ""),
                        args=join_args(svc.get("args", []), svc.get("args_prefix", "-") or "-"),

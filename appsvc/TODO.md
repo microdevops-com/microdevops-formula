@@ -331,7 +331,13 @@ Order, each step deployable on its own (target: moituristy mt-crm):
    non-repo target that every later `git.cloned` refused). Not yet verified by
    a real apply (pool reload, vhost render through Salt, `require` on the
    config entry), only by unit tests and a standalone jinja render.
-3. `nvm`, `pyenv`, `tools` (composer) + a generated `{home}/.appsvc/env.sh`.
+3. [x] `nvm`, `pyenv`, `tools` (composer) + a generated env file (`env_sh`),
+   per-user when `user.name` is not root, global when it is; new phase-2
+   placeholders `{nvm_dir}`, `{pyenv_root}`, `{tools_dir}`, `{env_sh}`. Not
+   verified by a real apply (only unit tests and a fake-state emit): assumes
+   `nvm version <v>` prints `N/A` when absent, that the pinned tags
+   (nvm v0.40.1, pyenv v2.4.0) exist, and that File.prepend / makedirs
+   ownership behave as expected.
 4. `docker` (networks, registry login via stdin, containers, container cron
    as root `docker exec` without `-it`).
 

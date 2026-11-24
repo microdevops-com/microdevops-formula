@@ -26,6 +26,10 @@
 #   {home}          user.home if set, else /root for root, else /home/<user.name>
 #   {venv_dir}      resolved venv.dir, e.g. "{install_dir}/venv" - NOT {venv},
 #                   which would render the whole venv config dict's repr
+#   {nvm_dir} {pyenv_root} {tools_dir} {env_sh}
+#                   runtime paths: per-user under {home} for a non-root user.name,
+#                   global (/usr/local/..., /etc/profile.d/appsvc-<name>.sh) for
+#                   root; explicit nvm.dir / pyenv.root / shell_env.path win
 #   plus any key from appsvc:globals (top-level pillar), e.g. {foo} below
 
 type: generic
@@ -273,6 +277,47 @@ user:
 #     mode: "750"               # default "755"; MUST be a quoted string
 #     makedirs: true            # default true
 #     recurse: false            # true -> recurse=[user, group] (never mode)
+
+# Language runtimes, installed per user when user.name is not root and globally
+# (/usr/local) when it is. They run right after dirs, before sources/venv/
+# commands, and their refs join `changed`. appsvc never installs node or python
+# any other way. `versions` are lists, not keyed maps: the set is atomic and
+# ordered (the first entry is the default), so a merge replaces it wholesale.
+# Every version MUST be a quoted string (unquoted 3.10 is the float 3.1; unquoted
+# 20 is an int) - anything else fails the render. Without `versions` the blocks
+# do nothing (rev/repo/build_pkgs defaults live in defaults.yaml).
+#
+# nvm:
+#   versions: ["20"]            # first = `nvm alias default`
+#   rev: v0.40.1                # nvm git tag (default in defaults.yaml)
+#   # dir: "{home}/.nvm"        # default {nvm_dir}
+#   # repo: https://github.com/nvm-sh/nvm.git
+#
+# pyenv:
+#   versions: ["3.8.13"]        # first = `pyenv global`
+#   rev: v2.4.0
+#   # root: "{home}/.pyenv"     # default {pyenv_root}
+#   # repo: https://github.com/pyenv/pyenv.git
+#   # build_pkgs: [build-essential, libssl-dev, ...]   # default list in defaults.yaml; [] skips
+#
+# Single-file downloads (keyed map), e.g. composer.
+# tools:
+#   composer:
+#     source: https://getcomposer.org/download/2.6.6/composer.phar
+#     source_hash: https://getcomposer.org/download/2.6.6/composer.phar.sha256  # else unverified
+#     # target: "{tools_dir}/composer"   # default {tools_dir}/<key>
+#     # mode: "755"                      # default; must be a string
+#
+# env_sh: when any of nvm/pyenv/tools is active, one file ({env_sh}) puts them on
+# PATH. Use it in commands: cmd: ". {env_sh} && composer install". For a non-root
+# user a source line is PREPENDED to {home}/.bashrc (Ubuntu's .bashrc returns
+# early for non-interactive shells, e.g. CI's `ssh user@host '<cmd>'`).
+# shell_env:                      # settings key; {env_sh} is the resolved path
+#   path: "{env_sh}"              # default shown by layout; override here
+#   profile: "{home}/.bashrc"     # default for non-root; false disables; root: none
+#
+# venv.python can point at a pyenv interpreter:
+#   venv: {python: "{pyenv_root}/versions/3.8.13/bin/python"}
 
 # Git checkouts (keyed map; the key becomes part of a state ID: [A-Za-z0-9_.-]+).
 # Runs before config, so a config entry can write into a checkout (.env.local);

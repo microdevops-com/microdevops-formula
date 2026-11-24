@@ -54,3 +54,17 @@ systemd:
     WorkingDirectory: "{install_dir}"
   Install:
     WantedBy: multi-user.target
+
+# nvm / pyenv: defaults only supply rev/repo (and pyenv's build packages). The
+# blocks do nothing until an instance sets `versions` (a list of QUOTED strings,
+# first = default), so these stay inert. See blocks/nvm.sls, blocks/pyenv.sls.
+nvm:
+  rev: v0.40.1
+  repo: https://github.com/nvm-sh/nvm.git
+
+pyenv:
+  rev: v2.4.0
+  repo: https://github.com/pyenv/pyenv.git
+  build_pkgs: [build-essential, libssl-dev, zlib1g-dev, libbz2-dev, libreadline-dev,
+               libsqlite3-dev, libncursesw5-dev, xz-utils, tk-dev, libxml2-dev,
+               libxmlsec1-dev, libffi-dev, liblzma-dev]

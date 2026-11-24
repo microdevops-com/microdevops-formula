@@ -21,7 +21,8 @@
 #      known. scrape stanzas are expanded by this same pass, in producer scope.
 #   3. if `scrape_collect` is set, the (now-expanded) jobs from matching
 #      instances' `scrape` stanzas are appended to the configured config path.
-#   4. building blocks run in order: user/ssh, install_dir, dirs, sources, config,
+#   4. building blocks run in order: user/ssh, install_dir, dirs, pyenv, nvm, tools,
+#      env_sh, sources, config,
 #      svc (fetch), venv, php_fpm, commands(pre), systemd, commands(post), cron, nginx.
 #      dirs precede sources (a checkout's parent exists), sources precede
 #      config (a config entry can write into a checkout). install_dir runs
@@ -54,6 +55,13 @@
 #   {venv_dir}      resolved venv.dir, e.g. "{install_dir}/venv" (2nd pass
 #                   only) - NOT {venv}, which would render the whole venv
 #                   config dict's repr
+#   {nvm_dir}       nvm checkout: {home}/.nvm for a non-root user.name, /usr/local/nvm
+#                   for root; an explicit nvm.dir wins (2nd pass only)
+#   {pyenv_root}    {home}/.pyenv, or /usr/local/pyenv for root; pyenv.root wins
+#   {tools_dir}     {home}/.local/bin, or /usr/local/bin for root
+#   {env_sh}        {home}/.appsvc/<name>.sh, or /etc/profile.d/appsvc-<name>.sh
+#                   for root; shell_env.path wins. Always defined, even without
+#                   nvm/pyenv/tools: e.g. cmd ". {env_sh} && composer install"
 #   {<global>}      any key under appsvc:globals (see below)
 
 
@@ -402,6 +410,15 @@ appsvc:
           name: "{install_dir}/mt-back/.env.local"
           mode: "640"
           contents: "APP_NAME=tat\n"
+      # Runtimes (see presets/generic.yaml): versions are lists of QUOTED strings,
+      # the first is the default. Per-user here (user.name is not root); a root
+      # instance gets /usr/local/{nvm,pyenv} and /etc/profile.d instead.
+      # nvm: {versions: ["20"]}
+      # pyenv: {versions: ["3.8.13"]}
+      # tools:
+      #   composer:
+      #     source: https://getcomposer.org/download/2.6.6/composer.phar
+      #     source_hash: https://getcomposer.org/download/2.6.6/composer.phar.sha256
       php_fpm:
         pools:
           mt-back:

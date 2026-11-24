@@ -176,12 +176,12 @@ expansions compose better than ever-earlier global phases.
 `dispatch(prefix, settings)` runs, per instance, in fixed order:
 
 ```
-user_and_ssh → install_dir → dirs → sources → config_files → fetch_source → venv
-  → php_fpm → commands(pre) → systemd_unit(watch=changed) → commands(post) → cron
+user_and_ssh → install_dir → dirs → pyenv → nvm → tools → env_sh → sources
+  → config_files → fetch_source → venv → php_fpm → commands(pre) → systemd_unit(watch=changed) → commands(post) → cron
   → nginx_vhost(php_sockets)
 ```
 
-Order matters: `dirs` precede `sources` so a checkout's parent exists, and
+Order matters: the runtimes (`pyenv`/`nvm`/`tools`/`env_sh`) need only the user and precede `venv` (which may use a pyenv python) and `commands` (which use node/composer); their refs, except `env_sh`, join `changed`. `dirs` precede `sources` so a checkout's parent exists, and
 `sources` precede `config_files` so a config entry can write into a checkout;
 `sources` returns a `{key: ref}` dict whose values join `changed` and whose
 per-key refs gate `commands.onchanges`; `install_dir` runs ahead of `config_files` on purpose — a config
