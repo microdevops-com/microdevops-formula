@@ -22,7 +22,7 @@
 #   3. if `scrape_collect` is set, the (now-expanded) jobs from matching
 #      instances' `scrape` stanzas are appended to the configured config path.
 #   4. building blocks run in order: user/ssh, install_dir, dirs, sources, config,
-#      svc (fetch), venv, commands(pre), systemd, commands(post), cron, nginx.
+#      svc (fetch), venv, php_fpm, commands(pre), systemd, commands(post), cron, nginx.
 #      dirs precede sources (a checkout's parent exists), sources precede
 #      config (a config entry can write into a checkout). install_dir runs
 #      ahead of config on purpose (a config entry with makedirs would otherwise
@@ -122,28 +122,32 @@ appsvc:
           - httpListenAddr: "127.0.0.1:9429"
       nginx:
         manage: true
-        upstream: "127.0.0.1:9429"
-        # auth_basic is top-level: applies to every server block below, one
-        # htpasswd file keyed on the vhost name.
-        auth_basic:
-          - username: admin
-            password: change-me
-        servers:
+        # One entry per server group. `name` keeps the sites-available file and
+        # ACME cert path stable ("vlserver_b" = this instance's old default).
+        # auth_basic is per vhost: one htpasswd file keyed on the vhost name.
+        vhosts:
           # ACME DNS: write only acme_account; the block derives ssl_cert/
-          # ssl_key from /opt/acme/cert/<vhost>_<first-name>_{fullchain.cer,key.key}.
+          # ssl_key from /opt/acme/cert/<name>_<first-name>_{fullchain.cer,key.key}.
           # The account must exist in pillar["acme"] and be applied by the acme
           # state; appsvc does not manage acme accounts.
-          - names:
-              - logs.example.com
+          public:
+            name: vlserver_b
+            upstream: "127.0.0.1:9429"
+            names: [logs.example.com]
             acme_account: example_com
+            auth_basic:
+              - username: admin
+                password: change-me
           # Operator-supplied certs:
-          - names:
-              - logs-internal.example.com
+          internal:
+            upstream: "127.0.0.1:9429"
+            names: [logs-internal.example.com]
             ssl_cert: /etc/ssl/certs/internal.fullchain.pem
             ssl_key: /etc/ssl/private/internal.key
           # No TLS -> HTTP only:
-          - names:
-              - logs-plain.example.com
+          plain:
+            upstream: "127.0.0.1:9429"
+            names: [logs-plain.example.com]
 
     # --- VictoriaMetrics from a direct URL instead of "latest"/a tag ---
     vmserver:
@@ -228,10 +232,11 @@ appsvc:
         group: grafana
       nginx:
         manage: true
-        upstream: "127.0.0.1:3000"
-        servers:
-          - names:
-              - grafana.example.com
+        vhosts:
+          grafana:
+            name: grafana
+            upstream: "127.0.0.1:3000"
+            names: [grafana.example.com]
             acme_account: example_com
 
     # --- no preset at all: every building block driven straight from pillar ---
@@ -378,3 +383,44 @@ appsvc:
           user: root
       systemd:
         manage: false
+
+    # --- an app with php-fpm pools and nginx vhosts (Symfony back + React front) ---
+    # appsvc never installs PHP, nginx or node: those are other states' jobs.
+    # dirs must stay OUTSIDE the sources' targets (render fails otherwise); a
+    # config entry inside a source target requires that source automatically.
+    mt-helium:
+      install_dir: /var/www/helium/crm
+      user: {manage: true, name: helium, group: helium, shell: /bin/bash}
+      dirs:
+        nginx_log: "{install_dir}/log/nginx/mt-back"
+        php_log: "{install_dir}/log/php/mt-back"
+      sources:
+        mt-front: {git: "git@gitlab.example.com:group/front.git", target: "{install_dir}/mt-front", once: true}
+        mt-back: {git: "git@gitlab.example.com:group/back.git", target: "{install_dir}/mt-back", once: true}
+      config:
+        env_local:
+          name: "{install_dir}/mt-back/.env.local"
+          mode: "640"
+          contents: "APP_NAME=tat\n"
+      php_fpm:
+        pools:
+          mt-back:
+            version: "8.3"            # a quoted string
+            error_log: "{install_dir}/log/php/mt-back/mt-back.error.log"
+            config: |
+              pm = dynamic
+              pm.max_children = 20
+      nginx:
+        manage: true
+        vhosts:
+          mt-back:
+            names: [app.example.com]
+            acme_account: example_com
+            # Custom jinja; sees vhost_name, domain, names, ssl_cert, ssl_key,
+            # access_log, error_log, htpasswd_file, php_fpm_sockets
+            # ({pool_key: socket}) plus `vars`.
+            template: salt://my-formula/nginx/mt-back.conf
+            access_log: "{install_dir}/log/nginx/mt-back/mt-back.access.log"
+            error_log: "{install_dir}/log/nginx/mt-back/mt-back.error.log"
+            vars: {php_version: "8.3"}
+      systemd: {manage: false}

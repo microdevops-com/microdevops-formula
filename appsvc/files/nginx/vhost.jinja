@@ -1,14 +1,12 @@
-upstream {{ vhost_name }} {
-    server {{ nginx["upstream"] }};
+upstream {{ vhost["name"] }} {
+    server {{ vhost["upstream"] }};
     keepalive 10;
 }
-{%- for server in servers %}
-{%- set names = " ".join(server["names"]) %}
-{%- if server["tls"] %}
+{%- if vhost["tls"] %}
 
 server {
     listen 80;
-    server_name {{ names }};
+    server_name {{ vhost["domain"] }};
     location / {
         return 301 https://$host$request_uri;
     }
@@ -16,33 +14,33 @@ server {
 {%- endif %}
 
 server {
-{%- if server["tls"] %}
+{%- if vhost["tls"] %}
     listen 443 ssl;
-    server_name {{ names }};
+    server_name {{ vhost["domain"] }};
 
-    ssl_certificate {{ server["ssl_cert"] }};
-    ssl_certificate_key {{ server["ssl_key"] }};
+    ssl_certificate {{ vhost["ssl_cert"] }};
+    ssl_certificate_key {{ vhost["ssl_key"] }};
 {%- else %}
     listen 80;
-    server_name {{ names }};
+    server_name {{ vhost["domain"] }};
 {%- endif %}
-{%- if "auth_basic" in nginx %}
+{%- if vhost["htpasswd_file"] %}
 
     auth_basic "Administrator's Area";
-    auth_basic_user_file /etc/nginx/htpasswd/{{ vhost_name }};
+    auth_basic_user_file {{ vhost["htpasswd_file"] }};
 {%- endif %}
 
     root /dev/null;
     charset UTF-8;
     autoindex off;
 
-    access_log /var/log/nginx/{{ vhost_name }}.access.log;
-    error_log /var/log/nginx/{{ vhost_name }}.error.log;
+    access_log {{ vhost["access_log"] }};
+    error_log {{ vhost["error_log"] }};
 
     client_max_body_size 25m;
 
     location / {
-        proxy_pass http://{{ vhost_name }};
+        proxy_pass http://{{ vhost["name"] }};
         proxy_set_header       Host             $host;
         proxy_set_header       X-Real-IP        $remote_addr;
         proxy_set_header       X-Forwarded-For  $proxy_add_x_forwarded_for;
@@ -51,4 +49,3 @@ server {
         proxy_connect_timeout  240;
     }
 }
-{%- endfor %}

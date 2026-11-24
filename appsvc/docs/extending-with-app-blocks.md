@@ -104,9 +104,9 @@ Current fixed order, for reference (§6):
 
 ```
 user_and_ssh → install_dir → dirs → sources → config_files → fetch_source → venv
-  → commands(pre) → systemd_unit → commands(post) → cron → nginx_vhost
-                      │                    │
-        pre-systemd app phase here        post-systemd app phase here
+  → php_fpm → commands(pre) → systemd_unit → commands(post) → cron → nginx_vhost
+                           │                    │
+             pre-systemd app phase here        post-systemd app phase here
 ```
 
 ## Cross-instance aggregation (one instance reads others)

@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import render_config, deep_format
+from salt://appsvc/lib.py import render_config, deep_format, sources_containing
 
 # Renders the instance's config file(s) from `settings["config"]`, a dict of
 # named entries each describing one file. The entry's key is available as
@@ -23,9 +23,16 @@ from salt://appsvc/lib.py import render_config, deep_format
 # block calling into file_manager directly if an instance needs more.
 
 
-def config_files(prefix, settings):
+def config_files(prefix, settings, source_refs=None):
     """Render the instance's config file(s). Returns the list of pyobjects
-    requisite references that should trigger a restart when they change."""
+    requisite references that should trigger a restart when they change.
+
+    An entry whose `name` lies inside a `sources` target requires that
+    source's state (`source_refs`, {key: ref}): otherwise a failed clone still
+    lets the entry's makedirs create the target, and every later git.cloned
+    refuses the non-empty non-repo directory."""
+
+    source_refs = source_refs or {}
 
     config = settings.get("config", {})
     owner = settings.get("user", {})
@@ -56,6 +63,11 @@ def config_files(prefix, settings):
             if isinstance(contents, (dict, list)):
                 contents = render_config(contents, item.get("format", "yaml"))
             kwargs["contents"] = contents
+
+        needs = [source_refs[k] for k in sources_containing(item["name"], settings.get("sources"))
+                 if k in source_refs]
+        if needs:
+            kwargs["require"] = needs
 
         File.managed(item_id, **kwargs)
         changed.append(File(item_id))

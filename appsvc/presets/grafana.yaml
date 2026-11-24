@@ -53,6 +53,7 @@ systemd:
     Group: "{user_group}"
     WorkingDirectory: "{install_dir}"
 
+# Enable per instance with nginx.manage: true and
+# nginx.vhosts.<key>: {names: [...], upstream: "127.0.0.1:3000", acme_account: ...}.
 nginx:
   manage: false
-  upstream: "127.0.0.1:3000"

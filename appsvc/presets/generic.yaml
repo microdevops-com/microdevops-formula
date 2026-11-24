@@ -259,7 +259,10 @@ user:
 
 # Writable / working directories (keyed map; does not replace svc.data_dirs).
 # A string value is shorthand for {name: <path>}. Runs after install_dir and
-# before sources, so a checkout's parent exists.
+# before sources, so a checkout's parent exists. A dir INSIDE a sources target
+# fails loud at render (it would block the clone) - create such a directory with
+# a `commands` entry using `onchanges: [sources:<key>]`, or place it outside the
+# checkout.
 #
 # dirs:
 #   sessions: /var/lib/php/app-sessions
@@ -272,7 +275,10 @@ user:
 #     recurse: false            # true -> recurse=[user, group] (never mode)
 
 # Git checkouts (keyed map; the key becomes part of a state ID: [A-Za-z0-9_.-]+).
-# Runs before config, so a config entry can write into a checkout (.env.local).
+# Runs before config, so a config entry can write into a checkout (.env.local);
+# such a config entry (its `name` inside a source target) automatically
+# `require`s that source, so a failed clone skips it instead of leaving a
+# makedirs-created target behind.
 # A change restarts the service (unless once: true, where only the first clone
 # counts) and can gate commands via `onchanges` below.
 #
@@ -382,27 +388,71 @@ systemd:
 #   Install:
 #     WantedBy: multi-user.target
 
-# Optional nginx reverse proxy. `auth_basic` passwords should live in secured or
-# encrypted pillar; the current implementation rewrites htpasswd entries. ACME
-# DNS servers set only `acme_account`; appsvc derives cert paths and expects the
-# account to be managed by the separate acme state/pillar.
+# Optional nginx vhosts: `vhosts` is a keyed map, one server group per key (the
+# key becomes part of a state ID: [A-Za-z0-9_.-]+). `manage` is the on/off gate.
+# Each vhost uses EXACTLY ONE of `upstream` (built-in reverse-proxy template) or
+# `template` (a custom jinja file). ACME DNS vhosts set only `acme_account`;
+# appsvc derives cert paths /opt/acme/cert/<name>_<first-name>_* and expects the
+# account to be managed by the separate acme state/pillar (DNS accounts only -
+# webroot accounts are not supported yet). `auth_basic` passwords should live in
+# secured or encrypted pillar; the current implementation rewrites htpasswd
+# entries. One `nginx -t && nginx -s reload` runs per instance, when any vhost
+# file/symlink changed.
+#
+# BREAKING (was nginx.{vhost_name,upstream,servers,auth_basic}): the old
+# top-level keys now fail loud. Migrate to
+#   nginx: {manage: true, vhosts: {<key>: {name: <old vhost_name>, upstream: <U>,
+#           names: [...], acme_account: ...}}}
+# - `name:` keeps the same sites-available file and ACME cert path.
 nginx:
   manage: false
-  # vhost_name: "{name}"          # default: instance name
-  # upstream: "127.0.0.1:9000"
-  # servers:
-  #   - names:
-  #       - app.example.com
-  #     acme_account: example_com
-  #   - names:
-  #       - app-internal.example.com
-  #     ssl_cert: /etc/ssl/certs/app.fullchain.pem
-  #     ssl_key: /etc/ssl/private/app.key
-  #   - names:
-  #       - app-plain.example.com
-  # auth_basic:
-  #   - username: admin
-  #     password: change-me
+  # vhosts:
+  #   app:
+  #     # name: "{name}_app"        # default "<instance>_<key>": file, upstream,
+  #     #                           # ACME and log name
+  #     names: [app.example.com]    # required, non-empty list
+  #     acme_account: example_com   # OR ssl_cert + ssl_key, OR neither (plain :80)
+  #     # ssl_cert: /etc/ssl/certs/app.fullchain.pem
+  #     # ssl_key: /etc/ssl/private/app.key
+  #     upstream: "127.0.0.1:9000"  # built-in reverse proxy ...
+  #     # template: salt://my-formula/nginx/app.conf   # ... OR a custom jinja file
+  #     # vars: {centrifugo_port: 8012}   # custom template only: extra context.
+  #     #   Template context: vhost_name, domain (names joined by space), names,
+  #     #   ssl_cert, ssl_key ("" without TLS), access_log, error_log,
+  #     #   htpasswd_file ("" without auth_basic), php_fpm_sockets
+  #     #   ({pool_key: socket} from php_fpm.pools), then `vars` on top
+  #     #   (a vars key shadowing one of those names fails loud).
+  #     # access_log: /var/log/nginx/<name>.access.log   # default
+  #     # error_log: /var/log/nginx/<name>.error.log     # default
+  #     # auth_basic:
+  #     #   - username: admin
+  #     #     password: change-me
+
+# php-fpm pools (keyed map). appsvc NEVER installs PHP - the php<ver>-fpm
+# package is another state's job. One pool.d file per pool plus one
+# `php-fpm<ver> -t && systemctl reload php<ver>-fpm` per distinct version, only
+# when a pool file changed (php-fpm is not the instance's systemd unit, so this
+# never restarts the service). REMOVING a pool from pillar does NOT delete its
+# file. Each pool's socket is handed to nginx custom templates as
+# php_fpm_sockets.<pool key>. Reloading for a code change (opcache) is not done
+# here - deploys own it.
+#
+# php_fpm:
+#   pools:
+#     web:
+#       version: "8.3"              # required; MUST be a quoted string ("8.10" != 8.1)
+#       # name: "{name}_web"        # default "<instance>_<key>": [section] + file name
+#       # user: "{user_name}"       # default: the instance user
+#       # group: "{user_group}"
+#       # listen: "/run/php/php{version}-fpm-{pool_name}.sock"   # default
+#       # listen_owner: www-data
+#       # listen_group: www-data
+#       # listen_mode: "0660"       # a string
+#       error_log: "{install_dir}/log/php/web.error.log"   # optional
+#       # reload: true              # default true
+#       config: |                   # raw lines appended verbatim
+#         pm = dynamic
+#         pm.max_children = 20
 
 # Top-level semantic values are allowed and become visible to placeholder
 # expansion because expand folds top-level settings keys into scope. Presets can

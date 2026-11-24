@@ -66,13 +66,17 @@ For every entry under `appsvc:instances`:
      to fragile nested-placeholder syntax like `{svc[exec]}`.
 4. **Dispatch** the building blocks that apply, in a fixed order:
    `user_ssh` -> `install_dir` -> `dirs` -> `sources` -> `config_file` ->
-   `fetch` -> `venv` -> `commands(pre)` -> `systemd_unit` -> `commands(post)` ->
-   `cron` -> `nginx_vhost`.
+   `fetch` -> `venv` -> `php_fpm` -> `commands(pre)` -> `systemd_unit` ->
+   `commands(post)` -> `cron` -> `nginx_vhost` (which receives `php_fpm`'s
+   `{pool_key: socket}` map).
    `install_dir` runs ahead of `config_file` on purpose: a config entry with
    `makedirs: True` would otherwise create the install dir root-owned before
    the service user's ownership is applied. `dirs` runs before `sources` so a
    checkout's parent exists; `sources` runs before `config_file` so a config
-   entry can write into a checkout (e.g. a `.env.local`). `venv` runs after `fetch`: its
+   entry can write into a checkout (e.g. a `.env.local`); such an entry (its `name`
+   inside a source `target`) also `require`s that source, so a failed clone skips it
+   instead of leaving a makedirs-created target behind, and a `dirs` entry inside a
+   source target fails loud at render. `venv` runs after `fetch`: its
    `venv.requirements_files` may point at a `requirements.txt` that arrives
    inside the fetched archive.
    An optional `appsvc:filter` (usually typed on the CLI, e.g.
@@ -125,19 +129,30 @@ only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 | `sources` | `sources` | git checkouts from a keyed map: `git.latest` by default, `git.cloned` (clone if missing, never update) with `once: true`. `target` must be absolute after expansion (use `{home}`, not `~`). `force_reset` is **not** defaulted: a dirty tree fails loud instead of being discarded. Returns per-key refs; a change restarts the service (`changed` contract) and gates `commands.onchanges` |
 | `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets, `onchanges: [sources:<key>]` (or `[sources]`) runs the command only when that source changed (see the trap in `presets/generic.yaml`) |
 | `cron` | `cron` | crontab entries from a keyed map (`schedule` = five fields or one `@special`, `cmd`, `user` default the instance user, `comment`, `disabled`, `absent`), tagged with identifier `appsvc_<instance>_<key>`. Removing an entry from pillar does NOT remove it from the crontab - set `absent: true` |
+| `php_fpm` | `php_fpm` | php-fpm **pools only** (never installs PHP) from the keyed map `php_fpm.pools`: one `/etc/php/<ver>/fpm/pool.d/<name>.conf` per pool (`version` is required and must be a quoted string; `name`, `user`/`group`, `listen`, `listen_*`, `error_log`, raw `config` lines), plus one `php-fpm<ver> -t && systemctl reload php<ver>-fpm` per version, only on a pool-file change (`reload: false` opts out). Removing a pool from pillar does NOT delete its file. Returns `{pool_key: socket}` for `nginx_vhost`; does not restart the service. No-op without pools |
 | `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
-| `nginx_vhost` | `nginx` | reverse-proxy vhost (one upstream, `servers[]` blocks, optional per-server TLS + shared basic auth) - no-op unless `nginx.manage` |
+| `nginx_vhost` | `nginx` | one vhost per key of `nginx.vhosts` (keyed map): built-in reverse proxy (`upstream`) or a custom jinja `template` (+ `vars`, and `php_fpm_sockets` in its context), optional per-vhost TLS and basic auth; ACME issuance per vhost, one `nginx -t && nginx -s reload` per instance - no-op unless `nginx.manage` |
 
-`svc`/`systemd`/`nginx`/`config`/`commands`/`user`/`ssh`/`dirs`/`sources`/`cron` are all
+`svc`/`systemd`/`nginx`/`php_fpm`/`config`/`commands`/`user`/`ssh`/`dirs`/`sources`/`cron` are all
 optional; an instance that doesn't set a block's key simply skips it. An instance
 with no daemon (a pure app checkout) must set `systemd.manage: false`:
 `systemd.manage` defaults to true, and with no `systemd.Service.ExecStart` the
 render fails loud.
 
-`nginx.servers[]` entries declare `names` and exactly one TLS source:
-`acme_account`, `ssl_cert`+`ssl_key`, or neither. `acme_account` issues DNS ACME
-certs through the separately managed `acme` state/pillar; appsvc derives the
-`/opt/acme/cert/<vhost>_<first-name>_*` paths and does not manage accounts.
+`nginx.vhosts.<key>` entries declare `names` (required list), exactly one of
+`upstream` / `template`, and at most one TLS source: `acme_account`,
+`ssl_cert`+`ssl_key`, or neither. `name` defaults to `<instance>_<key>` and names
+the sites-available file, upstream, ACME cert and logs. `acme_account` issues DNS
+ACME certs (DNS accounts only - webroot accounts are not supported yet) through
+the separately managed `acme` state/pillar; appsvc derives the
+`/opt/acme/cert/<name>_<first-name>_*` paths and does not manage accounts.
+
+**Migration (breaking):** the old single-vhost shape
+`nginx: {manage, vhost_name: X, upstream: U, servers: [{names, acme_account}], auth_basic}`
+now fails loud. Write it as
+`nginx: {manage, vhosts: {X: {name: X, upstream: U, names: [...], acme_account: ..., auth_basic: [...]}}}`;
+`name: X` keeps the same file and ACME cert path (the old default was the instance
+name). One old `servers[]` entry becomes one vhost.
 
 ## The `lib.py` layer
 

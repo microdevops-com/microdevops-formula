@@ -6,7 +6,7 @@ files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
 Directly importable by pytest for unit tests.
 
-Sections: substitute · merge · scrape · fetch · release · commands · home · sources · dirs · cron · systemd guard · config · nginx · systemd
+Sections: substitute · merge · scrape · fetch · release · commands · home · sources · dirs · cron · systemd guard · config · php-fpm · nginx · systemd
 """
 
 import configparser
@@ -843,6 +843,31 @@ def git_source_state(key, source, user_name):
     return ("cloned" if once else "latest"), kwargs
 
 
+def _norm_path(path):
+    """Strip trailing slashes (keeps a bare "/" as "/")."""
+    return path.rstrip("/") or "/"
+
+
+def sources_containing(path, sources):
+    """Sorted keys of the `sources` entries whose `target` contains `path`:
+    equal to it, or under it with a `/` boundary (/a/b is not inside /a/bc).
+    Trailing slashes are ignored. `sources` is the expanded settings["sources"]
+    map (may be empty/None); entries without a string `target` are skipped
+    (git_source_state fails loud on those)."""
+    if not sources or not isinstance(path, str):
+        return []
+    path = _norm_path(path)
+    found = []
+    for key, source in sources.items():
+        target = source.get("target") if isinstance(source, dict) else None
+        if not isinstance(target, str) or not target:
+            continue
+        target = _norm_path(target)
+        if path == target or path.startswith(target.rstrip("/") + "/"):
+            found.append(key)
+    return sorted(found)
+
+
 # ── commands: onchanges ───────────────────────────────────────────────────────
 
 ONCHANGES_BLOCKS = ("sources",)
@@ -940,6 +965,22 @@ def normalize_dirs(dirs, user_name, user_group):
             kwargs["recurse"] = ["user", "group"]
         result.append((key, kwargs))
     return result
+
+
+def check_dirs_outside_sources(dirs_normalized, sources):
+    """Raise ValueError when a normalized `dirs` entry (the `(key, kwargs)` list
+    from normalize_dirs) lies inside a `sources` target. dirs run before
+    sources, so the directory would make the checkout's target non-empty and
+    non-repo and every git.cloned/git.latest would refuse it."""
+    for key, kwargs in dirs_normalized:
+        inside = sources_containing(kwargs["name"], sources)
+        if inside:
+            raise ValueError(
+                "dirs:{}: {!r} is inside the checkout of sources:{} - dirs run before "
+                "sources, so it would make the clone target non-empty and block the "
+                "clone. Use a `commands` entry with `onchanges: [sources:{}]` to create "
+                "it after the checkout, or put the directory outside the checkout"
+                .format(key, kwargs["name"], inside[0], inside[0]))
 
 
 # ── cron ──────────────────────────────────────────────────────────────────────
@@ -1075,11 +1116,124 @@ def _render_ini(contents):
     return buf.getvalue()
 
 
+# ── php-fpm ───────────────────────────────────────────────────────────────────
+# Pool files only (never PHP installation). Used by blocks/php_fpm.sls.
+
+PHP_POOL_KEYS = ("version", "name", "user", "group", "listen", "listen_owner",
+                 "listen_group", "listen_mode", "error_log", "reload", "config")
+PHP_DEFAULT_LISTEN = "/run/php/php{version}-fpm-{pool_name}.sock"
+_PHP_VERSION_RE = re.compile(r"^\d+\.\d+$")
+
+
+def normalize_php_pools(pools, instance_name, user_name, user_group):
+    """Turn the `php_fpm.pools` keyed map into an ordered list of fully resolved
+    dicts (key, name, version, user, group, listen, listen_owner, listen_group,
+    listen_mode, error_log|None, reload, config, path). `listen` may use
+    {version} and {pool_name}. Raises ValueError on a bad key, unknown keys, a
+    `version` that is not a "N.N" string (a YAML float like 8.10 loses its
+    zero), a bad `name` charset or a non-string `listen_mode`."""
+    if not pools:
+        return []
+    if not isinstance(pools, dict):
+        raise ValueError("php_fpm.pools must be a keyed map, got {!r}".format(pools))
+    result = []
+    for key, item in pools.items():
+        check_map_key("php_fpm.pools", key)
+        if not isinstance(item, dict):
+            raise ValueError("php_fpm.pools:{}: must be a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("php_fpm.pools", key, item, PHP_POOL_KEYS)
+
+        version = item.get("version")
+        if not isinstance(version, str):
+            raise ValueError("php_fpm.pools:{}: `version` is required and must be a quoted "
+                             "string like \"8.3\" (quote it: YAML 8.10 would become 8.1), "
+                             "got {!r}".format(key, version))
+        if not _PHP_VERSION_RE.match(version):
+            raise ValueError("php_fpm.pools:{}: `version` must look like \"8.3\", "
+                             "got {!r}".format(key, version))
+
+        name = item.get("name", "{}_{}".format(instance_name, key))
+        if not isinstance(name, str) or not _KEY_RE.match(name):
+            raise ValueError("php_fpm.pools:{}: invalid `name` {!r} - it becomes the pool "
+                             "section and file name, allowed characters are [A-Za-z0-9_.-]"
+                             .format(key, name))
+
+        listen_mode = item.get("listen_mode", "0660")
+        if not isinstance(listen_mode, str):
+            raise ValueError("php_fpm.pools:{}: `listen_mode` must be a quoted string like "
+                             "\"0660\", got {!r}".format(key, listen_mode))
+
+        listen = item.get("listen", PHP_DEFAULT_LISTEN)
+        if not isinstance(listen, str) or not listen.startswith("/"):
+            raise ValueError("php_fpm.pools:{}: `listen` must be an absolute socket path, "
+                             "got {!r}".format(key, listen))
+        listen = listen.replace("{version}", version).replace("{pool_name}", name)
+
+        error_log = item.get("error_log") or None
+        config = item.get("config") or ""
+        if not isinstance(config, str):
+            raise ValueError("php_fpm.pools:{}: `config` must be a string of raw pool "
+                             "lines, got {!r}".format(key, config))
+
+        result.append({
+            "key": key,
+            "name": name,
+            "version": version,
+            "user": item.get("user", user_name),
+            "group": item.get("group", user_group),
+            "listen": listen,
+            "listen_owner": item.get("listen_owner", "www-data"),
+            "listen_group": item.get("listen_group", "www-data"),
+            "listen_mode": listen_mode,
+            "error_log": error_log,
+            "reload": bool(item.get("reload", True)),
+            "config": config,
+            "path": "/etc/php/{}/fpm/pool.d/{}.conf".format(version, name),
+        })
+    return result
+
+
+def render_php_pool(pool):
+    """Render one normalized pool to a pool.d file body (same shape as
+    app/files/php-generic/pool.conf). error_log lines only when it is set;
+    `config` is appended verbatim after a blank line; ends with a newline."""
+    lines = [
+        "[{}]".format(pool["name"]),
+        "user = {}".format(pool["user"]),
+        "group = {}".format(pool["group"]),
+        "",
+        "listen = {}".format(pool["listen"]),
+        "listen.owner = {}".format(pool["listen_owner"]),
+        "listen.group = {}".format(pool["listen_group"]),
+        "listen.mode = {}".format(pool["listen_mode"]),
+    ]
+    if pool["error_log"]:
+        lines += ["",
+                  "php_admin_value[error_log] = {}".format(pool["error_log"]),
+                  "php_admin_flag[log_errors] = on"]
+    body = "\n".join(lines) + "\n"
+    if pool["config"]:
+        body += "\n" + pool["config"]
+        if not body.endswith("\n"):
+            body += "\n"
+    return body
+
+
+def php_reload_command(version):
+    """Validate the config, then reload the versioned php-fpm unit."""
+    return "php-fpm{v} -t && systemctl reload php{v}-fpm".format(v=version)
+
+
 # ── nginx ─────────────────────────────────────────────────────────────────────
 # Pure nginx-vhost normalization used by blocks/nginx_vhost.sls.
 
 
 ACME_CERT_DIR = "/opt/acme/cert"
+NGINX_VHOST_KEYS = ("name", "names", "acme_account", "ssl_cert", "ssl_key", "upstream",
+                    "template", "vars", "access_log", "error_log", "auth_basic")
+NGINX_OLD_SHAPE_KEYS = ("upstream", "servers", "vhost_name", "auth_basic")
+NGINX_RESERVED_CONTEXT = ("vhost_name", "domain", "names", "ssl_cert", "ssl_key",
+                          "access_log", "error_log", "htpasswd_file", "php_fpm_sockets")
 
 
 def acme_cert_paths(vhost_name, first_domain, cert_dir=ACME_CERT_DIR):
@@ -1088,47 +1242,136 @@ def acme_cert_paths(vhost_name, first_domain, cert_dir=ACME_CERT_DIR):
     return base + "_fullchain.cer", base + "_key.key"
 
 
-def resolve_nginx_servers(nginx, vhost_name):
-    """Validate and normalize nginx['servers'] into render-ready dicts.
+def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
+    """Validate `nginx.vhosts` (keyed map) into an ordered list of render-ready
+    dicts: key, name, names, domain, tls, acme_account, ssl_cert, ssl_key,
+    upstream|None, template|None, vars, access_log, error_log, auth_basic (list),
+    htpasswd_file|None. ACME cert paths derive from `name` + the first domain.
 
-    Each server has names plus one TLS source: acme_account, ssl_cert+ssl_key,
-    or neither. ACME cert paths are derived from vhost_name and first domain.
-    """
-    out = []
-    for idx, server in enumerate(nginx.get("servers", [])):
-        names = server.get("names")
-        if not names or not isinstance(names, list):
-            raise ValueError(
-                "nginx server #{} for vhost {!r} needs a non-empty 'names' list"
-                .format(idx, vhost_name))
+    Raises ValueError on the pre-vhosts shape (top-level upstream/servers/
+    vhost_name/auth_basic), unknown keys, missing/empty `names`, not exactly one
+    of upstream/template, `vars` without template, ambiguous or partial TLS,
+    or a bad key/name charset. `php_sockets` is accepted for signature symmetry
+    with the template context and is not used here."""
+    nginx = nginx or {}
+    old = [k for k in NGINX_OLD_SHAPE_KEYS if k in nginx]
+    if old:
+        raise ValueError(
+            "nginx: {} at the top level is the removed single-vhost shape. Use "
+            "nginx.vhosts.<key> instead, e.g. nginx: {{manage: true, vhosts: {{<key>: "
+            "{{name: <old vhost_name, keeps the file and ACME cert name>, upstream: "
+            "\"127.0.0.1:9000\", names: [app.example.com], acme_account: example_com, "
+            "auth_basic: [{{username: admin, password: x}}]}}}}}}".format(", ".join(old)))
 
-        acme = server.get("acme_account")
-        cert = server.get("ssl_cert")
-        key = server.get("ssl_key")
+    vhosts = nginx.get("vhosts")
+    if not vhosts:
+        raise ValueError("instance {!r}: nginx.manage is true but nginx.vhosts is empty"
+                         .format(instance_name))
+    if not isinstance(vhosts, dict):
+        raise ValueError("nginx.vhosts must be a keyed map, got {!r}".format(vhosts))
 
-        if acme and (cert or key):
-            raise ValueError(
-                "nginx server {!r} sets both acme_account and ssl_cert/ssl_key "
-                "- pick one TLS source".format(names[0]))
-        if bool(cert) != bool(key):
-            raise ValueError(
-                "nginx server {!r} must set both ssl_cert and ssl_key, got only one"
-                .format(names[0]))
+    result = []
+    for key, item in vhosts.items():
+        check_map_key("nginx.vhosts", key)
+        if not isinstance(item, dict):
+            raise ValueError("nginx.vhosts:{}: must be a mapping, got {!r}".format(key, item))
+        _check_unknown_keys("nginx.vhosts", key, item, NGINX_VHOST_KEYS)
+
+        name = item.get("name", "{}_{}".format(instance_name, key))
+        if not isinstance(name, str) or not _KEY_RE.match(name):
+            raise ValueError("nginx.vhosts:{}: invalid `name` {!r} - it becomes the file, "
+                             "upstream, ACME and log name, allowed characters are "
+                             "[A-Za-z0-9_.-]".format(key, name))
+
+        names = item.get("names")
+        if (not names or not isinstance(names, list)
+                or not all(isinstance(n, str) and n for n in names)):
+            raise ValueError("nginx.vhosts:{}: `names` must be a non-empty list of "
+                             "server names, got {!r}".format(key, names))
+
+        acme = item.get("acme_account")
+        cert = item.get("ssl_cert")
+        ssl_key = item.get("ssl_key")
+        if acme and (cert or ssl_key):
+            raise ValueError("nginx.vhosts:{}: sets both acme_account and ssl_cert/ssl_key "
+                             "- pick one TLS source".format(key))
+        if bool(cert) != bool(ssl_key):
+            raise ValueError("nginx.vhosts:{}: must set both ssl_cert and ssl_key, "
+                             "got only one".format(key))
+
+        upstream = item.get("upstream") or None
+        template = item.get("template") or None
+        if bool(upstream) == bool(template):
+            raise ValueError("nginx.vhosts:{}: set exactly one of `upstream` (built-in "
+                             "reverse proxy) or `template` (custom jinja), got {}"
+                             .format(key, "both" if upstream else "neither"))
+        vhost_vars = item.get("vars") or {}
+        if not isinstance(vhost_vars, dict):
+            raise ValueError("nginx.vhosts:{}: `vars` must be a mapping, got {!r}"
+                             .format(key, vhost_vars))
+        if vhost_vars and not template:
+            raise ValueError("nginx.vhosts:{}: `vars` is only used with a custom `template`"
+                             .format(key))
+
+        auth_basic = item.get("auth_basic") or []
+        if not isinstance(auth_basic, list):
+            raise ValueError("nginx.vhosts:{}: `auth_basic` must be a list of "
+                             "{{username, password}}".format(key))
+        for auth in auth_basic:
+            if (not isinstance(auth, dict) or not auth.get("username")
+                    or "password" not in auth):
+                raise ValueError("nginx.vhosts:{}: each auth_basic entry needs `username` "
+                                 "and `password`, got {!r}".format(key, auth))
 
         entry = {
+            "key": key,
+            "name": name,
             "names": names,
+            "domain": " ".join(names),
             "tls": False,
             "acme_account": None,
             "ssl_cert": None,
             "ssl_key": None,
+            "upstream": upstream,
+            "template": template,
+            "vars": vhost_vars,
+            "access_log": item.get("access_log", "/var/log/nginx/{}.access.log".format(name)),
+            "error_log": item.get("error_log", "/var/log/nginx/{}.error.log".format(name)),
+            "auth_basic": auth_basic,
+            "htpasswd_file": "/etc/nginx/htpasswd/{}".format(name) if auth_basic else None,
         }
         if acme:
-            cert, key = acme_cert_paths(vhost_name, names[0])
-            entry.update(tls=True, acme_account=acme, ssl_cert=cert, ssl_key=key)
+            cert, ssl_key = acme_cert_paths(name, names[0])
+            entry.update(tls=True, acme_account=acme, ssl_cert=cert, ssl_key=ssl_key)
         elif cert:
-            entry.update(tls=True, ssl_cert=cert, ssl_key=key)
-        out.append(entry)
-    return out
+            entry.update(tls=True, ssl_cert=cert, ssl_key=ssl_key)
+        result.append(entry)
+    return result
+
+
+def nginx_template_context(vhost, php_sockets=None):
+    """The jinja `context` for a vhost's custom template: vhost_name, domain,
+    names, ssl_cert, ssl_key (empty strings without TLS), access_log, error_log,
+    htpasswd_file ("" without auth_basic), php_fpm_sockets ({pool_key: socket}),
+    with `vars` merged on top. A `vars` key shadowing a reserved name raises."""
+    clash = sorted(k for k in vhost["vars"] if k in NGINX_RESERVED_CONTEXT)
+    if clash:
+        raise ValueError("nginx.vhosts:{}: `vars` key(s) {} collide with reserved template "
+                         "variables ({})".format(vhost["key"], ", ".join(clash),
+                                                 ", ".join(NGINX_RESERVED_CONTEXT)))
+    context = {
+        "vhost_name": vhost["name"],
+        "domain": vhost["domain"],
+        "names": vhost["names"],
+        "ssl_cert": vhost["ssl_cert"] or "",
+        "ssl_key": vhost["ssl_key"] or "",
+        "access_log": vhost["access_log"],
+        "error_log": vhost["error_log"],
+        "htpasswd_file": vhost["htpasswd_file"] or "",
+        "php_fpm_sockets": dict(php_sockets or {}),
+    }
+    context.update(vhost["vars"])
+    return context
 
 
 # ── systemd ───────────────────────────────────────────────────────────────────

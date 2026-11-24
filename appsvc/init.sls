@@ -19,6 +19,7 @@ from salt://appsvc/blocks/user_ssh.sls import user_and_ssh
 from salt://appsvc/blocks/dirs.sls import dirs
 from salt://appsvc/blocks/sources.sls import sources
 from salt://appsvc/blocks/config_file.sls import config_files
+from salt://appsvc/blocks/php_fpm.sls import php_fpm
 from salt://appsvc/blocks/commands.sls import run_commands
 from salt://appsvc/blocks/systemd_unit.sls import systemd_unit
 from salt://appsvc/blocks/cron.sls import cron
@@ -80,11 +81,14 @@ def dispatch(prefix, settings):
     fixed order: user/ssh, install_dir (ahead of config - a config entry with
     makedirs would otherwise create the install dir root-owned before the
     service user's ownership is applied), dirs (before sources, so a
-    checkout's parent exists), sources (before config, so a config entry can
-    write into a checkout, e.g. a .env.local), config, the svc fetch, venv
+    checkout's parent exists; a dir inside a source target fails loud), sources
+    (before config, so a config entry can write into a checkout, e.g. a
+    .env.local - and such an entry `require`s its source, so a failed clone
+    never leaves a makedirs-created target behind), config, the svc fetch, venv
     (after fetch - venv.requirements_files may point at a requirements.txt that
-    arrives inside the fetched archive), pre-systemd commands, systemd,
-    post-systemd commands, cron, then nginx. Source/fetch/config/venv changes
+    arrives inside the fetched archive), php_fpm pools, pre-systemd commands,
+    systemd, post-systemd commands, cron, then nginx (which gets the php_fpm
+    {pool_key: socket} map). Source/fetch/config/venv changes
     are wired via the `changed` requisite-list contract so systemd restarts
     whenever the code, binary, config, or requirement set actually changed.
     Commands with `onchanges` get the per-key source refs via `refs`."""
@@ -93,13 +97,15 @@ def dispatch(prefix, settings):
     install_dir(prefix, settings)
     dirs(prefix, settings)
     source_refs = sources(prefix, settings)
-    changed = list(source_refs.values()) + list(config_files(prefix, settings) or [])
+    changed = list(source_refs.values()) + list(config_files(prefix, settings, source_refs) or [])
 
     svc = settings.get("svc")
     if svc:
         changed = list(fetch_source(prefix, settings) or []) + changed
 
     changed = list(python_venv(prefix, settings) or []) + changed
+
+    php_sockets = php_fpm(prefix, settings)
 
     refs = {"sources": source_refs}
     run_commands(prefix, settings, phase="pre", require=changed, refs=refs)
@@ -112,7 +118,7 @@ def dispatch(prefix, settings):
 
     cron(prefix, settings)
 
-    nginx_vhost(prefix, settings)
+    nginx_vhost(prefix, settings, php_sockets)
 
 
 # --- main loop: merge+format every instance, then gather+dispatch the selected -

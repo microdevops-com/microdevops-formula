@@ -321,11 +321,28 @@ Order, each step deployable on its own (target: moituristy mt-crm):
    systemd guard (managed unit without ExecStart now fails the render). Not
    yet verified by a real apply (Git/Cron state names, second-run
    idempotency).
-2. `php_fpm.pools` map + `nginx.vhosts` keyed map with custom `vhost_config`
-   templates (breaking change to today's single reverse-proxy vhost).
+2. [x] `php_fpm.pools` map (pools only, reload per version on change) +
+   `nginx.vhosts` keyed map with built-in or custom jinja templates (breaking:
+   the old single-vhost `nginx.{vhost_name,upstream,servers,auth_basic}` now
+   fails loud; migrate to `nginx.vhosts.<key>` with `name:` to keep the file
+   and ACME cert path). Also: a `config` entry inside a `sources` target now
+   `require`s that source, and a `dirs` entry inside a source target fails
+   loud (found in production: a failed clone + makedirs left a non-empty
+   non-repo target that every later `git.cloned` refused). Not yet verified by
+   a real apply (pool reload, vhost render through Salt, `require` on the
+   config entry), only by unit tests and a standalone jinja render.
 3. `nvm`, `pyenv`, `tools` (composer) + a generated `{home}/.appsvc/env.sh`.
 4. `docker` (networks, registry login via stdin, containers, container cron
    as root `docker exec` without `-it`).
+
+### [ ] 20. Gaps left by app-management step 2
+- **logrotate** for app logs: php pool `error_log` and nginx vhost logs
+  (`app.*` rotated them; appsvc does not yet).
+- **ACME webroot accounts**: only DNS accounts work (the vhost needs the cert
+  files before `nginx -t`; there is no snakeoil first pass for webroot
+  validation).
+- **php-fpm reload on code change** (opcache) is not done: pool reload is
+  `onchanges` of the pool file only; deploys own reloading after a release.
 
 ### [x] 19. Remove the binsvc -> appsvc compatibility shims
 **Resolved:** removed - every client pillar was renamed to `appsvc:` and every
