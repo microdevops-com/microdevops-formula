@@ -10,6 +10,7 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from lib import (
+    parse_known_host,
     deep_format, expand, merge_globals,
     merge,
     normalize_osarch, archive_path, tar_extract_command,
@@ -1383,3 +1384,22 @@ def test_check_systemd_exec_passes_when_unmanaged_or_set():
     check_systemd_exec({"manage": False}, "crm")
     check_systemd_exec({"Service": {"ExecStart": "/bin/x"}}, "crm")
     check_systemd_exec({"Service": {"ExecStart": ["/bin/x"]}}, "crm")
+
+
+# --- parse_known_host ---------------------------------------------------------
+
+def test_parse_known_host_port_is_int():
+    # A string "22" made Salt write "[host]:22", which OpenSSH never matches.
+    assert parse_known_host("gitlab.example.com:22") == ("gitlab.example.com", 22, "ssh-ed25519", None)
+
+
+def test_parse_known_host_defaults_and_full_form():
+    assert parse_known_host("example.com") == ("example.com", 22, "ssh-ed25519", None)
+    assert parse_known_host("example.com:2222:ssh-rsa") == ("example.com", 2222, "ssh-rsa", None)
+    assert parse_known_host("example.com:22:ssh-ed25519:AAAA") == ("example.com", 22, "ssh-ed25519", "AAAA")
+
+
+@pytest.mark.parametrize("entry", ["", ":22", "h:x", "h:22:e:k:extra"])
+def test_parse_known_host_rejects_bad_entries(entry):
+    with pytest.raises(ValueError):
+        parse_known_host(entry)

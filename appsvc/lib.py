@@ -743,6 +743,27 @@ def select_commands(commands, phase, settings):
 # The {home} placeholder: apps live in the service user's home directory.
 
 
+def parse_known_host(entry):
+    """Parse an `ssh.known_hosts.hosts` entry "host[:port[:enc[:key]]]" into
+    (host, port, enc, key). port is an int (default 22), enc defaults to
+    ssh-ed25519, key to None (ssh-keyscan fetches it).
+
+    The int matters: Salt's ssh_known_hosts writes "[host]:port" whenever
+    port != 22, so a string "22" produced an entry OpenSSH never matches for
+    the default port ("Host key verification failed")."""
+    parts = str(entry).split(":")
+    if len(parts) > 4 or not parts[0]:
+        raise ValueError("ssh.known_hosts entry {!r} is not host[:port[:enc[:key]]]".format(entry))
+    host = parts[0]
+    try:
+        port = int(parts[1]) if len(parts) > 1 and parts[1] else 22
+    except ValueError:
+        raise ValueError("ssh.known_hosts entry {!r}: port {!r} is not a number".format(entry, parts[1]))
+    enc = parts[2] if len(parts) > 2 and parts[2] else "ssh-ed25519"
+    key = parts[3] if len(parts) > 3 and parts[3] else None
+    return host, port, enc, key
+
+
 def user_home(user):
     """Home directory of the instance user: `user.home` if set, else /root for
     root (or an empty `user`), else /home/<name>."""
