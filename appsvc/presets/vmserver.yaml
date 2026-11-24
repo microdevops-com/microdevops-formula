@@ -3,7 +3,7 @@
 # https://github.com/VictoriaMetrics/VictoriaMetrics
 #
 # Note: an established victoriametrics/ formula already exists in this repo;
-# this preset is a binsvc design driver (proving multi-instance support for
+# this preset is a appsvc design driver (proving multi-instance support for
 # the same archive-fetch shape vlserver uses), not a replacement for it.
 
 type: vmserver

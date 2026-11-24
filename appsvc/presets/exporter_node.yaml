@@ -1,7 +1,7 @@
 # Prometheus Node Exporter - host metrics exporter.
 # https://github.com/prometheus/node_exporter
 #
-# Ported from the legacy exporter state's `node` defaults into binsvc's
+# Ported from the legacy exporter state's `node` defaults into appsvc's
 # archive-only preset shape. Exporter presets use `exporter_<name>` identity.
 
 type: exporter_node

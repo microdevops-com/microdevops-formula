@@ -1,13 +1,13 @@
-# Generic binsvc preset - reference template for the full supported feature set.
+# Generic appsvc preset - reference template for the full supported feature set.
 #
 # This preset is intentionally inert by default: it documents the available
 # settings without declaring an active `svc`, `config`, `commands`, `ssh`, or
 # nginx vhost. Copy only the parts you need into an instance or a
-# `binsvc:presets:generic` override. Any `{placeholder}` string below is resolved
+# `appsvc:presets:generic` override. Any `{placeholder}` string below is resolved
 # by init.sls's two-pass expand pipeline.
 #
 # Common placeholders:
-#   {name}          instance key under binsvc:instances
+#   {name}          instance key under appsvc:instances
 #   {type}          preset name, or {name} if no preset is used
 #   {version}       svc.version after resolver runs
 #   {tag}           release tag, usually == version
@@ -25,21 +25,21 @@
 #                   would-be one) when svc.source is set, else ""
 #   {venv_dir}      resolved venv.dir, e.g. "{install_dir}/venv" - NOT {venv},
 #                   which would render the whole venv config dict's repr
-#   plus any key from binsvc:globals (top-level pillar), e.g. {foo} below
+#   plus any key from appsvc:globals (top-level pillar), e.g. {foo} below
 
 type: generic
 
 # Global/default-level knobs. Usually keep these in defaults.yaml or top-level
 # pillar, not per preset.
 #
-# cache_dir: /var/cache/salt/binsvc
+# cache_dir: /var/cache/salt/appsvc
 # resolve_cache_ttl: 3600
 # install_dir: "/opt/services/{type}/{name}"
-# github_token: ghp_xxxxxxxxxxxxxxxxxxxx  # top-level binsvc pillar only; secret
+# github_token: ghp_xxxxxxxxxxxxxxxxxxxx  # top-level appsvc pillar only; secret
 
 # Service user. `user.manage: false` means "run as an externally-managed user".
 # Extra keys accepted by Salt's user.present can be passed through here, except
-# manage/name/group/groups which binsvc handles explicitly.
+# manage/name/group/groups which appsvc handles explicitly.
 user:
   manage: false
   name: root
@@ -79,7 +79,7 @@ user:
 # "file". Left unset, it's inferred: `svc.tar` present, or the source's
 # basename ends in a recognized archive suffix (.tar.gz/.tgz/.tar.bz2/.tbz2/
 # .tar.xz/.txz/.tar.zst/.tar) -> archive; a *recognized-but-unsupported*
-# archive suffix (.zip/.7z/.rar/.gz/.bz2/.xz - binsvc extracts with `tar` only)
+# archive suffix (.zip/.7z/.rar/.gz/.bz2/.xz - appsvc extracts with `tar` only)
 # raises rather than silently mis-fetching; otherwise -> file. Set svc.kind
 # explicitly whenever the inference could be ambiguous (e.g. a URL with no
 # extension that is actually an archive).
@@ -133,7 +133,7 @@ user:
 #
 #   # Generic idempotency fallback for binaries with no `--version` flag (e.g.
 #   # a source tarball with only scripts): when set and version_check is NOT,
-#   # fetch itself writes {install_dir}/.binsvc_version after a successful
+#   # fetch itself writes {install_dir}/.appsvc_version after a successful
 #   # extract and compares against it on the next run - no hand-rolled stamp
 #   # command needed. Ignored (and irrelevant) when version_check is set.
 #   # version_stamp: true
@@ -196,7 +196,7 @@ user:
 #                                  # otherwise reuses it (pip install in place)
 #   upgrade_pip: false
 #   pip_args: ""                  # --no-cache-dir, --index-url, ...
-#   requirements:                 # inline; written to {install_dir}/.binsvc-requirements.txt
+#   requirements:                 # inline; written to {install_dir}/.appsvc-requirements.txt
 #     - "redis>=4.2"
 #     - "PyYAML>=5.0"
 #   requirements_files: []        # e.g. ["{install_dir}/requirements.txt"] shipped in an archive
@@ -297,9 +297,9 @@ systemd:
 #
 # systemd:
 #   manage: true
-#   unit: "binsvc_{name}"
+#   unit: "appsvc_{name}"
 #   Unit:
-#     Description: "binsvc: {type} ({name})"
+#     Description: "appsvc: {type} ({name})"
 #     After:
 #       - network.target
 #       - local-fs.target
@@ -320,7 +320,7 @@ systemd:
 
 # Optional nginx reverse proxy. `auth_basic` passwords should live in secured or
 # encrypted pillar; the current implementation rewrites htpasswd entries. ACME
-# DNS servers set only `acme_account`; binsvc derives cert paths and expects the
+# DNS servers set only `acme_account`; appsvc derives cert paths and expects the
 # account to be managed by the separate acme state/pillar.
 nginx:
   manage: false

@@ -14,7 +14,7 @@
 type: redis_check
 
 svc:
-  source: "salt://binsvc/files/scripts/redis_check/redis_check.py"
+  source: "salt://appsvc/files/scripts/redis_check/redis_check.py"
   target: "{install_dir}/redis_check.py"
   mode: "755"
   # Same convention as every other preset: declare the command line once here
@@ -50,7 +50,7 @@ config:
 systemd:
   manage: true
   Unit:
-    Description: "binsvc: redis_check ({name})"
+    Description: "appsvc: redis_check ({name})"
     After:
       - network-online.target
       - redis-server.service

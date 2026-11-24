@@ -83,7 +83,7 @@ def _manage_ssh(prefix, ssh, name, group, home):
 
 def user_and_ssh(prefix, settings):
     """Manage the service's system user/group and (optionally) its SSH
-    identity. A no-op unless `user.manage` is true - binsvc instances that run
+    identity. A no-op unless `user.manage` is true - appsvc instances that run
     as root or an externally-managed user simply omit/disable this block."""
 
     user = settings.get("user", {})

@@ -1,12 +1,13 @@
-# binsvc - run N instances of a statically-built binary
-# (VictoriaMetrics, VictoriaLogs, Grafana, Loki, Prometheus, exporters, ...)
-# under systemd, each independently configured.
+# appsvc (formerly binsvc) - run N instances of a service or application
+# (VictoriaMetrics, VictoriaLogs, Grafana, exporters, Python daemons, ...)
+# under systemd, each independently configured. A legacy `binsvc:` root is
+# still read as a fallback (TODO.md item 19).
 #
-# Resolution, see binsvc/init.sls / readme.md for the full story. Pass 1 merges
+# Resolution, see appsvc/init.sls / readme.md for the full story. Pass 1 merges
 # and formats EVERY instance; pass 2 gathers cross-instance scrape jobs and
 # dispatches the selected subset:
 #   1. each instance is merged:
-#      settings = merge(binsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
+#      settings = merge(appsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
 #      - everything here merges deep-dict-wise / replaces-wholesale, EXCEPT
 #        structured svc.args, which is merged by flag name (merge_args in
 #        lib.py), so an instance can override e.g. just httpListenAddr from a
@@ -30,7 +31,7 @@
 #      requirements.txt that arrives inside the fetched archive.
 #
 # Available placeholders (anywhere in an instance's settings):
-#   {name}          instance key (the dict key under binsvc:instances)
+#   {name}          instance key (the dict key under appsvc:instances)
 #   {type}          preset name, or {name} if no preset is used
 #   {version}       svc.version, resolved if it was "latest"
 #   {tag}           release tag (usually == version, e.g. "v1.9.0")
@@ -50,10 +51,10 @@
 #   {venv_dir}      resolved venv.dir, e.g. "{install_dir}/venv" (2nd pass
 #                   only) - NOT {venv}, which would render the whole venv
 #                   config dict's repr
-#   {<global>}      any key under binsvc:globals (see below)
+#   {<global>}      any key under appsvc:globals (see below)
 
 
-binsvc:
+appsvc:
 
   # Optional GitHub API token for `version: latest` resolution (github resolver).
   # Lifts the unauthenticated 60 req/hr/IP limit to 5000/hr - the fix for minions
@@ -64,7 +65,7 @@ binsvc:
 
   # Scope a single `state.apply` to a subset of instances. Usually typed on the
   # CLI, not stored here:
-  #   state.apply binsvc pillar='{binsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'
+  #   state.apply appsvc pillar='{appsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'
   # Semicolon-separated "<key>: <glob>..." clauses; keys are name or preset
   # (anything else fails loud). Union semantics: an instance applies if its name
   # matches any name glob OR its preset matches any preset glob. All other
@@ -81,7 +82,7 @@ binsvc:
   #   dc: eu-west-1
   #   remote_write: "https://vm.eu-west-1.example.com/api/v1/write"
 
-  # Per-preset overrides, deep-merged over the bundled salt://binsvc/presets/
+  # Per-preset overrides, deep-merged over the bundled salt://appsvc/presets/
   # files - only specify what differs. Omit a preset entirely to use it as-is.
   presets:
     vlserver:
@@ -128,7 +129,7 @@ binsvc:
           # ACME DNS: write only acme_account; the block derives ssl_cert/
           # ssl_key from /opt/acme/cert/<vhost>_<first-name>_{fullchain.cer,key.key}.
           # The account must exist in pillar["acme"] and be applied by the acme
-          # state; binsvc does not manage acme accounts.
+          # state; appsvc does not manage acme accounts.
           - names:
               - logs.example.com
             acme_account: example_com
@@ -196,10 +197,10 @@ binsvc:
       # scrape.config is expanded like any other config, in the PRODUCER's own
       # scope (a job is declared here yet rendered into the consumer's config),
       # so {name}/{type}/{grain_id}/{install_dir}/... all work. One caveat: under
-      # binsvc:filter, {version}/{tag} of a producer NOT in the selected subset
+      # appsvc:filter, {version}/{tag} of a producer NOT in the selected subset
       # stay unresolved (resolution is gated to selected instances) until a full
       # apply. For values outside the placeholder set, use Salt jinja IN PILLAR
-      # (rendered before binsvc; pillar only, not a bundled presets/*.yaml, which
+      # (rendered before appsvc; pillar only, not a bundled presets/*.yaml, which
       # is yaml.safe_load'd) - e.g. {{ grains["fqdn"] }}.
       scrape:
         vmagent: ["metrics"]
@@ -301,7 +302,7 @@ binsvc:
           Restart: on-failure
           RestartSec: 10
 
-    # --- redis_check: a Python daemon under a binsvc-managed venv ---
+    # --- redis_check: a Python daemon under a appsvc-managed venv ---
     # This is the whole point of the venv block (TODO.md item 17): the preset
     # (presets/redis_check.yaml) supplies kind: file fetch + venv.requirements
     # + the systemd unit; the instance only sets svc.source and whatever

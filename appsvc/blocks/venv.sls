@@ -1,9 +1,9 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://binsvc/lib.py import venv_requirement_paths, venv_build_command, venv_guard_command, VENV_STAMP_NAME
+from salt://appsvc/lib.py import venv_requirement_paths, venv_build_command, venv_guard_command, VENV_STAMP_NAME
 
-# Generic mechanism for running a Python daemon under binsvc: create/maintain a
+# Generic mechanism for running a Python daemon under appsvc: create/maintain a
 # venv matching a declared requirement set. Driven by the top-level `venv:`
 # key (not svc.venv) - a PyPI-distributed daemon (venv.requirements: [...], no
 # svc block at all) is a valid instance. See PATCH.md phase 2 and

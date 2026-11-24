@@ -1,4 +1,4 @@
-cache_dir: /var/cache/salt/binsvc
+cache_dir: /var/cache/salt/appsvc
 
 # TTL (seconds) for the on-disk cache of version/source API responses, shared
 # across render processes on the render host. Collapses a many-minion highstate
@@ -35,9 +35,9 @@ nginx:
 
 systemd:
   manage: true
-  unit: "binsvc_{name}"
+  unit: "appsvc_{name}"
   Unit:
-    Description: "binsvc: {type} ({name})"
+    Description: "appsvc: {type} ({name})"
     After: network.target
     # Cap auto-restarts: give up after StartLimitBurst starts within
     # StartLimitIntervalSec, instead of looping forever. These belong in [Unit]

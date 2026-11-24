@@ -1,6 +1,6 @@
-"""binsvc lib — all pure Python helpers for the binsvc formula.
+"""appsvc lib — all pure Python helpers for the appsvc formula.
 
-Imported via `from salt://binsvc/lib.py import ...` (no sys.path or hardcoded
+Imported via `from salt://appsvc/lib.py import ...` (no sys.path or hardcoded
 FORMULA_DIR needed). `init.sls` imports the helpers it uses directly, and block
 files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
@@ -78,7 +78,7 @@ def expand(mapping, scope=None, rounds=3):
 
 
 def merge_globals(global_vars, *, extra_reserved=(), **reserved):
-    """Overlay operator-supplied `binsvc:globals` onto the reserved expand scope.
+    """Overlay operator-supplied `appsvc:globals` onto the reserved expand scope.
 
     The reserved/derived placeholders are passed directly as keyword arguments
     (`name=..., grain_id=..., ...`); `global_vars` are the operator's literal
@@ -91,7 +91,7 @@ def merge_globals(global_vars, *, extra_reserved=(), **reserved):
     clash = set(global_vars or {}) & (set(reserved) | set(extra_reserved))
     if clash:
         raise ValueError(
-            "binsvc:globals keys shadow reserved placeholders: {}".format(
+            "appsvc:globals keys shadow reserved placeholders: {}".format(
                 ", ".join(sorted(clash))))
     return dict(reserved, **(global_vars or {}))
 
@@ -163,7 +163,7 @@ def append_at_path(container, path, items, sep=":", unique_key=None):
 
 
 # ── filter ────────────────────────────────────────────────────────────────────
-# Operator-typed `binsvc:filter` selector to scope `state.apply` to a subset of
+# Operator-typed `appsvc:filter` selector to scope `state.apply` to a subset of
 # instances. Parsing/matching only - the loop in init.sls still merges ALL
 # instances first (so scrape aggregation stays correct), then dispatches just
 # the selected ones.
@@ -172,7 +172,7 @@ FILTER_KEYS = ("name", "preset")
 
 
 def parse_filter(spec):
-    """Parse a `binsvc:filter` selector string into {key: [globs]}.
+    """Parse a `appsvc:filter` selector string into {key: [globs]}.
 
     Format: "name: vm* *gra*; preset: exporter*" - semicolon-separated clauses,
     each "<key>: <glob> <glob> ...". Keys must be one of name/preset; an unknown
@@ -185,16 +185,16 @@ def parse_filter(spec):
             continue
         if ":" not in clause:
             raise ValueError(
-                "binsvc:filter clause {!r} is not '<key>: <glob>...'".format(clause))
+                "appsvc:filter clause {!r} is not '<key>: <glob>...'".format(clause))
         key, globs = clause.split(":", 1)
         key = key.strip()
         if key not in FILTER_KEYS:
             raise ValueError(
-                "binsvc:filter key {!r} unknown; expected one of {}".format(
+                "appsvc:filter key {!r} unknown; expected one of {}".format(
                     key, ", ".join(FILTER_KEYS)))
         patterns = globs.split()
         if not patterns:
-            raise ValueError("binsvc:filter key {!r} has no globs".format(key))
+            raise ValueError("appsvc:filter key {!r} has no globs".format(key))
         result.setdefault(key, []).extend(patterns)
     return result
 
@@ -259,7 +259,7 @@ def tar_extract_command(archive, install_dir, args="", unpack=""):
 ARCHIVE_SUFFIXES = (".tar.gz", ".tgz", ".tar.bz2", ".tbz2",
                     ".tar.xz", ".txz", ".tar.zst", ".tar")
 
-# Recognized-but-unsupported: binsvc extracts with `tar` only. Failing loud
+# Recognized-but-unsupported: appsvc extracts with `tar` only. Failing loud
 # beats silently "downloading" a .zip and calling it an executable.
 UNSUPPORTED_ARCHIVE_SUFFIXES = (".zip", ".7z", ".rar", ".gz", ".bz2", ".xz")
 
@@ -297,7 +297,7 @@ def fetch_kind(svc):
         return "archive"
     if basename.endswith(UNSUPPORTED_ARCHIVE_SUFFIXES):
         raise ValueError(
-            "source {!r} looks like an archive binsvc can't extract (tar only); "
+            "source {!r} looks like an archive appsvc can't extract (tar only); "
             "set svc.kind explicitly to override".format(basename))
     return "file"
 
@@ -331,13 +331,13 @@ def fetch_target(svc, install_dir):
 #     stock Debian has no bare `python`.
 #   - --require-virtualenv is kept from exporter.
 
-VENV_INLINE_REQUIREMENTS_NAME = ".binsvc-requirements.txt"
-VENV_STAMP_NAME = ".binsvc-requirements.sha256"
+VENV_INLINE_REQUIREMENTS_NAME = ".appsvc-requirements.txt"
+VENV_STAMP_NAME = ".appsvc-requirements.sha256"
 
 
 def venv_requirement_paths(venv_conf, install_dir):
     """Ordered list of `-r` paths: the inline requirements file
-    ("{install_dir}/.binsvc-requirements.txt", only when venv["requirements"]
+    ("{install_dir}/.appsvc-requirements.txt", only when venv["requirements"]
     is non-empty) followed by venv["requirements_files"]. Raises ValueError
     when both are empty - a managed venv with nothing to install is a
     preset/pillar bug, not a silently-empty no-op."""
@@ -543,7 +543,7 @@ def cached_get_json(url, cache_dir, ttl, timeout=10, headers=None):
             return data
         except Exception:
             if entry is not None:
-                log.warning("binsvc: resolve refresh failed, serving stale cache for %s", url)
+                log.warning("appsvc: resolve refresh failed, serving stale cache for %s", url)
                 return entry["data"]
             raise
 

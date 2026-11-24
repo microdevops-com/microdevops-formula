@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://binsvc/lib.py import archive_path, tar_extract_command, deep_format, fetch_kind, fetch_target
+from salt://appsvc/lib.py import archive_path, tar_extract_command, deep_format, fetch_kind, fetch_target
 
 # Generalizes exporter/macro.jinja's download/tar/move/executable macros and
 # victoriametrics/_setup.sls's archive handling into one reusable block.
@@ -72,7 +72,7 @@ def fetch_source(prefix, settings):
     # File.directory moved out to blocks/install_dir.sls, plus version_stamp
     # and executable below.
     source = svc["source"]
-    archive = archive_path(settings.get("cache_dir", "/var/cache/salt/binsvc"), settings["type"], source)
+    archive = archive_path(settings.get("cache_dir", "/var/cache/salt/appsvc"), settings["type"], source)
     source_hash = svc.get("source_hash")
 
     archive_kwargs = dict(name=archive, source=source, makedirs=True)
@@ -111,7 +111,7 @@ def fetch_source(prefix, settings):
         # rest ({version}/{tag}/{install_dir}/...) by init.sls's expand.
         check = svc.get("version_check")
         if not check and svc.get("version_stamp"):
-            check = '[ "$(cat {install_dir}/.binsvc_version 2>/dev/null)" = "{tag}" ]'.format(
+            check = '[ "$(cat {install_dir}/.appsvc_version 2>/dev/null)" = "{tag}" ]'.format(
                 install_dir=install_dir, tag=tag)
         if check:
             binary = svc.get("exec", "").split()[0] if svc.get("exec") else ""
@@ -127,7 +127,7 @@ def fetch_source(prefix, settings):
             # depends on already is. Nested inside `tar is not None`: the
             # requisite below only resolves when sid + "_extract" exists.
             File.managed(sid + "_version_stamp",
-                         name=install_dir + "/.binsvc_version",
+                         name=install_dir + "/.appsvc_version",
                          contents=tag, user="root", group="root", mode="644",
                          onchanges=[Cmd(sid + "_extract")])
     elif svc.get("version_stamp"):

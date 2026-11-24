@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://binsvc/lib.py import select_commands
+from salt://appsvc/lib.py import select_commands
 
 
 def run_commands(prefix, settings, phase, require=None):

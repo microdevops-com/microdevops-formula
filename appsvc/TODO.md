@@ -1,4 +1,4 @@
-# binsvc — TODO / open concerns
+# appsvc — TODO / open concerns
 
 Stable tracker for known issues and follow-ups. Survives context compaction
 and new sessions. Update the status box when something is done; don't delete
@@ -7,7 +7,7 @@ history of *why* a decision was made stays visible.
 
 Status legend: `[ ]` open · `[~]` in progress · `[x]` done · `[-]` won't do (with reason)
 
-Source: code review on 2026-06-09 (Opus) of the binsvc state. Each item lists
+Source: code review on 2026-06-09 (Opus) of the appsvc state. Each item lists
 **why** it matters and **what** to do, with file references.
 
 ---
@@ -20,7 +20,7 @@ Source: code review on 2026-06-09 (Opus) of the binsvc state. Each item lists
 The global `sys.modules["lib"]` injection (and its generic-name collision risk
 + in-body deferred-import boilerplate) is gone. The hypothesis held: pyobjects
 runs its `from salt://...import` regex pass on **each** file as it's imported,
-so a block carrying its *own* top-line `from salt://binsvc/lib.py import <names>`
+so a block carrying its *own* top-line `from salt://appsvc/lib.py import <names>`
 gets those names in its globals before its body runs — no frozen-globals bug,
 no global module. `init.sls` dropped the injection + `import sys`/`import types`;
 `blocks/fetch_archive.sls` and `blocks/systemd_unit.sls` now import their
@@ -37,7 +37,7 @@ tests don't exercise the pyobjects path). Docs updated: `lib.py` docstring,
   window, shared across render processes via `flock` + atomic writes, with
   serve-stale-on-error so a GitHub blip/rate-limit doesn't fail the render.
   Covers GitHub and Grafana.
-- Optional `binsvc:github_token` (top-level pillar) → Bearer auth on the github
+- Optional `appsvc:github_token` (top-level pillar) → Bearer auth on the github
   resolver only (never sent to grafana.com, kept out of the cache key); lifts
   GitHub to 5000 req/hr. This is the mitigation for the **NAT unhappy path**
   (minions rendering locally behind a shared egress IP don't share the cache
@@ -58,7 +58,7 @@ falls back to `skip_verify=True` only when a preset/instance declares no
 ### [x] 11. Remove `store`; introduce `version_resolver` (archive-only)
 **Resolved 2026-06-18.**
 
-Outcome note: binsvc is archive-only; `store`/`FETCH_HANDLERS`/`fetch_package`
+Outcome note: appsvc is archive-only; `store`/`FETCH_HANDLERS`/`fetch_package`
 are removed, `version_resolver` drives GitHub vs Grafana resolution, and
 Grafana resolves package URLs/checksums through the packages API because its
 tarball URL is not derivable from the version alone.
@@ -82,14 +82,14 @@ conflation.
   was `13.0.2`. Version strings have **no leading `v`**.
 
 **Consequences:** delete `blocks/fetch_package.sls` + `FETCH_HANDLERS`; Grafana
-flips to binsvc-managed systemd (tarball has no postinst, so `systemd.manage`
+flips to appsvc-managed systemd (tarball has no postinst, so `systemd.manage`
 goes true + the preset gains a `systemd:` section); WHITEPAPER §4/§8/§10 + readme
 need updating *as part of the change* (don't pre-edit — keep doc/code in sync).
 
 ### [x] 16. Split `fetch_archive` into `install_dir` + kind-aware `fetch`
 **Resolved 2026-08-20.**
 
-**Why:** binsvc assumed every install was "download a tarball and extract it."
+**Why:** appsvc assumed every install was "download a tarball and extract it."
 That assumption breaks for the first Python daemon (`redis_check.py`, a single
 plaintext script served from a URL or `salt://`) and for bare binaries with the
 same shape - neither has anything to `tar`-extract. It also breaks for a
@@ -180,7 +180,7 @@ a separate idempotency question (`version_check` assumes `binary -version`).
 
 ### [x] 4. lib.py docstring corrected
 **Resolved (via item 1's per-block-import approach).** The docstring now
-describes blocks carrying their own top-level `from salt://binsvc/lib.py import`
+describes blocks carrying their own top-level `from salt://appsvc/lib.py import`
 lines (pyobjects populates each block's frozen globals at the block's own
 import) — the old "lands in block `__globals__` automatically" claim is gone.
 (The `sys.modules` injection #4 originally pointed at was itself superseded by
@@ -213,13 +213,13 @@ Outcome note: `config[*].format` now supports yaml/ini/json through tested
 
 Passwords in pillar plaintext and the `force=True` htpasswd rewrite are
 understood and accepted: secret-handling is an operator/pillar-encryption
-concern repo-wide, not a binsvc-specific defect, and the per-run rewrite is
+concern repo-wide, not a appsvc-specific defect, and the per-run rewrite is
 idempotent in effect. No behavioral change planned.
 
 ### [-] 8. Working-tree `.pyc` / pytest cache
 **Closed 2026-06-20 — cosmetic, ignored by design.**
-**Where:** `binsvc/__pycache__/lib.cpython-311.pyc`,
-`binsvc/tests/__pycache__/`, `binsvc/.pytest_cache/`.
+**Where:** `appsvc/__pycache__/lib.cpython-311.pyc`,
+`appsvc/tests/__pycache__/`, `appsvc/.pytest_cache/`.
 
 `.gitignore` already covers `__pycache__/` and `.pytest_cache/`, so they never
 reach a commit. Their presence in the working tree is fine and expected after
@@ -313,13 +313,56 @@ others — flagged in WHITEPAPER §10.
 
 ---
 
+### [ ] 18. App-management blocks (post-rename roadmap)
+Order, each step deployable on its own (target: moituristy mt-crm):
+1. foundations - `{home}` placeholder, `sources` block (`git.latest`, or
+   `git.cloned` for `once: true`), hook-based scripts (generalize
+   `commands.phase`; a script hooked on a block runs `onchanges` of it by
+   default), `dirs` block, `cron` block.
+2. `php_fpm.pools` map + `nginx.vhosts` keyed map with custom `vhost_config`
+   templates (breaking change to today's single reverse-proxy vhost).
+3. `nvm`, `pyenv`, `tools` (composer) + a generated `{home}/.appsvc/env.sh`.
+4. `docker` (networks, registry login via stdin, containers, container cron
+   as root `docker exec` without `-it`).
+
+### [ ] 19. Remove the binsvc -> appsvc compatibility shims
+`init.sls` falls back to the legacy `binsvc:` pillar root, and
+`blocks/systemd_unit.sls` stops/disables/removes a leftover
+`binsvc_<name>.service` before starting `appsvc_<name>`. Delete both once
+every client pillar uses `appsvc:` and every host has been applied once.
+One-time side effects of the rename on a legacy host: the service restarts
+under its new unit name, archives re-download into `/var/cache/salt/appsvc`
+(the old `/var/cache/salt/binsvc` is left behind - safe to delete), version
+stamps and venv digests change file names so each re-extracts/rebuilds once.
+
 ## Resolved / decisions on record (do not relitigate)
 
-- **[x] Scope: service-mgmt of prebuilt binaries/packages, NOT app-mgmt.**
-  PHP-FPM/LEMP is deliberately out of scope. Unifying "download a binary" with
-  "deploy a PHP app with fpm pools" would produce a worse abstraction. Keep
-  them separate. (Original open question from project kickoff — resolved by the
-  shape the code took.)
+- **[x] Scope widened: services AND applications (renamed binsvc -> appsvc).**
+  Supersedes the kickoff decision "service-mgmt of prebuilt binaries, NOT
+  app-mgmt; PHP-FPM/LEMP out of scope". What changed: real apps are
+  multi-runtime (php-fpm + node, python + node, + docker, + a userspace
+  daemon) and `app.*`'s one-type-per-app shape can't express them as one
+  unit, while key-presence block dispatch can. The old warning still binds
+  the *how*: php-fpm/app features are their own blocks, never squeezed
+  through `svc`/`systemd_unit`. Agreed shape (see TODO 18):
+  - one instance = one unix user and everything it owns; `svc` stays optional
+    (apps usually omit it).
+  - every multi-valued app key is a **keyed map**, not a list (php pools,
+    nginx vhosts, git sources, tools, cron) - `merge` replaces lists
+    wholesale, so only maps let a preset ship a default the pillar tweaks.
+  - **portable**: no includes of / dependencies on other formulas in this
+    repo. Installing nginx, php-fpm, docker is their own states' job; external
+    contracts (acme.sh `verify_and_issue.sh` path) are documented, not imported.
+  - php-fpm: appsvc manages **pools only**, never PHP installation. Reload
+    `php{ver}-fpm` strictly `onchanges` of the pool file (`app.php-fpm`
+    reloads on every apply, which is why pillars there set `reload: False`).
+  - pyenv/nvm: per-user when `user.name` isn't root, global when it is.
+  - composer etc.: a generic `tools:` map of single-file downloads (reusing
+    fetch's `kind: file`), not per-tool blocks.
+  - queue workers stay under supervisor (dozens of processes, numprocs);
+    systemd units are for the main long-running app process only.
+  - no migration from `app.*` is planned; both live indefinitely.
+
 - **[x] GitHub resolvers read releases, not `/tags`.**
   `/tags` is unsorted and can return tags never published as releases. The
   default `github` resolver uses `/releases/latest`; `github_versionsort` lists

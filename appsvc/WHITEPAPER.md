@@ -1,6 +1,6 @@
-# binsvc — design whitepaper
+# appsvc — design whitepaper
 
-Short orientation for maintainers (human or model): *why* `binsvc` is shaped the
+Short orientation for maintainers (human or model): *why* `appsvc` is shaped the
 way it is, plus the non-obvious mechanics you'd otherwise re-derive from scratch.
 Read this before touching `init.sls`, `lib.py`, or the building-block contract.
 
@@ -11,9 +11,9 @@ Read this before touching `init.sls`, `lib.py`, or the building-block contract.
 
 ## 1. Origin
 
-binsvc supersedes three overlapping, partial answers to "run a downloaded
+appsvc supersedes three overlapping, partial answers to "run a downloaded
 binary under systemd, maybe several per host" — all left in production
-untouched (binsvc is a parallel new state, not a refactor-in-place):
+untouched (appsvc is a parallel new state, not a refactor-in-place):
 
 - **`exporter/`** (jinja) — type-registry + per-instance loop; good reusable
   primitives, but logic and directive emission are interleaved in dict-mutating
@@ -23,16 +23,16 @@ untouched (binsvc is a parallel new state, not a refactor-in-place):
 - **`application/`** (pyobjects, stalled) — the right *shape* (named
   building-block stages + a dispatch loop) but its fetcher was a one-off.
 
-binsvc = `exporter`'s reusable-primitives idea + `application`'s dispatch shape,
+appsvc = `exporter`'s reusable-primitives idea + `application`'s dispatch shape,
 with the logic/directives tangle solved by physically separating the two (§3)
 and multi-instance support as a first-class requirement. It's also a trial run
 for a future `application/` rewrite (§10).
 
 ## 2. What it does, in one paragraph
 
-binsvc reads a dict of **instances** from pillar (`binsvc:instances`). Each
+appsvc reads a dict of **instances** from pillar (`appsvc:instances`). Each
 instance names an optional **preset** (a bundled type config — "this is a
-vlserver") plus per-instance overrides. For each instance, binsvc
+vlserver") plus per-instance overrides. For each instance, appsvc
 deep-merges `defaults.yaml` → preset → instance into one **settings** dict,
 expands every `{placeholder}` string against the instance's resolved identity
 (name, type, version, install dir, arch, …), then runs whichever **building
@@ -55,7 +55,7 @@ imported names with `Registry.enabled = True`.
 **The unblock**: that restriction only bites files that *emit directives at
 import time*. A file of pure `def`s with zero references to
 `File`/`Cmd`/`Group`/`pillar`/`grains`/`__salt__` has no Salt coupling — it's
-just a Python module, importable and pytest-able normally. So binsvc draws a
+just a Python module, importable and pytest-able normally. So appsvc draws a
 hard line:
 
 - **`lib.py`** — one plain Python file. Pure functions over plain dicts/strings:
@@ -63,7 +63,7 @@ hard line:
   construction, arg joining/merging. Zero Salt directives. Fully covered by
   `tests/test_lib.py` (plain pytest, no minion).
 - **`blocks/*.sls`** — `#!pyobjects` fragments of `def`s that emit directives
-  when called; imported into `init.sls` via `from salt://binsvc/blocks/x.sls
+  when called; imported into `init.sls` via `from salt://appsvc/blocks/x.sls
   import y`.
 - **`init.sls`** — orchestrator. Owns all I/O (`pillar`, `grains`,
   `get_salt_file`), imports the blocks, drives the per-instance loop.
@@ -71,7 +71,7 @@ hard line:
 ### How lib helpers reach blocks (no sys.path, no hardcoded paths)
 
 `init.sls` imports the helpers *it* calls directly. **Each block carries its own
-top-level `from salt://binsvc/lib.py import <names>` line** for the helpers it
+top-level `from salt://appsvc/lib.py import <names>` line** for the helpers it
 needs. This matters because of the frozen-globals snapshot above: names added to
 `init.sls`'s globals *after* a block was imported are not visible inside that
 block. Putting the import in the block's own source makes pyobjects populate that
@@ -84,15 +84,15 @@ imports.
 `sys.path` (brittle to deploy path); a process-global `sys.modules["lib"]`
 injection (generic name → cross-formula collision risk). See `TODO.md` item 1.
 
-`DEFAULTS` and presets load via `get_salt_file("salt://binsvc/...")` — a helper
-in `binsvc/utils.sls` using `salt.fileclient` directly. This works under
+`DEFAULTS` and presets load via `get_salt_file("salt://appsvc/...")` — a helper
+in `appsvc/utils.sls` using `salt.fileclient` directly. This works under
 salt-ssh; `__salt__["cp.get_file_str"]` does **not** (different fileclient
 plumbing in the salt-ssh render context).
 
 ## 4. Resolution pipeline
 
 ```
-binsvc:
+appsvc:
   presets:                 # optional pillar overrides, deep-merged over presets/<name>.yaml
     <preset_name>: {...}
   instances:
@@ -101,7 +101,7 @@ binsvc:
       install_dir / user / ssh / svc / config / systemd / nginx: {...}
 ```
 
-`init.sls` runs **two passes** over `binsvc:instances`. Pass 1 merges and
+`init.sls` runs **two passes** over `appsvc:instances`. Pass 1 merges and
 formats *every* instance; pass 2 gathers cross-instance scrape jobs and
 dispatches the `selected` subset. The split exists because step 5's gather needs
 every producer already formatted — including producers excluded from this apply.
@@ -111,7 +111,7 @@ gather is cross-instance, so it gets its own.
 **Pass 1 — for every instance:**
 
 1. **Load preset** (`load_preset`) — parse `presets/<name>.yaml` once per run
-   (`_preset_cache`), deep-merged with any `binsvc:presets:<name>` pillar
+   (`_preset_cache`), deep-merged with any `appsvc:presets:<name>` pillar
    override.
 2. **Merge** — `settings = merge(defaults, preset, instance)`. Dicts merge
    recursively; everything else (incl. **lists**) is replaced wholesale by the
@@ -124,7 +124,7 @@ gather is cross-instance, so it gets its own.
    template. Grafana resolves both `latest` and concrete versions through its
    packages API, filling `svc.source` and `svc.source_hash` because the tarball
    URL contains a build ID that is not derivable from the version alone (§10).
-   **This is the one network step, and the only one `binsvc:filter` gates** — it
+   **This is the one network step, and the only one `appsvc:filter` gates** — it
    runs only for `selected` instances; unselected ones still format (so they can
    be gathered) but keep their unresolved `version`/`tag`.
 4. **Expand placeholders, two passes** (`expand`, §5). Uniform: scrape stanzas
@@ -156,7 +156,7 @@ nested-placeholder syntax (`{svc[exec]}`), `init.sls` runs `expand` **twice**:
 
 - **Phase 1** scope: grain identity (`osarch` via `normalize_osarch`,
   `kernel_lower`, `cpuarch`, `grain_id` = `grains:id`) + static keys (`name`,
-  `type`, `version`, `tag`, `tag_vstrip`) + operator-defined `binsvc:globals`
+  `type`, `version`, `tag`, `tag_vstrip`) + operator-defined `appsvc:globals`
   (overlaid via `merge_globals`, which raises if a global shadows a reserved
   key — see §10). Resolves `install_dir`, `svc.source`, `svc.exec`, …
 - **Phase 2** scope: phase 1 **plus** `install_dir`, `exec`, `args`
@@ -207,7 +207,7 @@ still render, just without a service-running requisite. Commands deliberately
 do **not** feed the `changed` list; setup commands are not "new binary/config"
 events and should carry their own `unless`/`onlyif` if they need idempotency.
 
-binsvc is no longer archive-only: `fetch_source` (`fetch.sls`) picks between two
+appsvc is no longer archive-only: `fetch_source` (`fetch.sls`) picks between two
 fetch **kinds** via `lib.py`'s `fetch_kind` — `archive` (the original download
 → cache → optional `tar`-extract shape) and `file` (a bare script or binary
 fetched and compared in place by `File.managed`, no cache hop, no extract).
@@ -216,7 +216,7 @@ remained and is a separate, still-open question; if it returns, it should come
 back as a real fetch registry entry with the same `changed` contract rather than
 by reusing `version_resolver` for fetch semantics.
 
-binsvc also runs Python daemons via `venv` (`blocks/venv.sls`), driven by a
+appsvc also runs Python daemons via `venv` (`blocks/venv.sls`), driven by a
 top-level `venv:` key (not `svc.venv` — a PyPI-distributed daemon with no
 `svc` block at all is a valid instance). `{venv_dir}` is a phase-2 placeholder
 (never `{venv}`, which would render the config dict's repr) resolving
@@ -243,7 +243,7 @@ rule (§10); writable state still goes through `svc.data_dirs`.
 ## 7. Multi-instance
 
 A first-class requirement (the ecosystem usually assumes one instance per host).
-Every block receives a `prefix` (e.g. `["binsvc", "vl_main"]`) and derives
+Every block receives a `prefix` (e.g. `["appsvc", "vl_main"]`) and derives
 **all** state IDs, paths, and unit names from it (`sid = "_".join(prefix)`, …).
 `settings["name"]` is always the **instance key**, so `{name}` placeholders
 disambiguate even when `{type}` is shared. Two instances of one preset never
@@ -255,7 +255,7 @@ it: two independent vlserver instances side by side, distinct ports/users/units.
 
 A preset (`presets/<name>.yaml`) is a bundled, ready-to-use type config, loaded
 lazily and cached per run (`load_preset`/`_preset_cache`). Presets are **not**
-meant to be copied into pillar — `binsvc:presets:<name>` exists only for
+meant to be copied into pillar — `appsvc:presets:<name>` exists only for
 *targeted overrides* (pin a version, change a port), deep-merged over the bundled
 file. An instance needing something a preset lacks just sets the key directly
 (see `custom_exporter` in `pillar.example` — no preset at all).
@@ -274,7 +274,7 @@ production path — these presets are not replacements or a migration invitation
   payoff of the split: the fiddliest logic is the easiest to test.
 - **Render path** (the pyobjects wiring) is **not** covered by the unit tests —
   they import `lib.py` directly, bypassing pyobjects entirely. It must be checked
-  with a real render (`salt-call --local state.show_sls binsvc`, and a salt-ssh
+  with a real render (`salt-call --local state.show_sls appsvc`, and a salt-ssh
   render — the two use different fileclient plumbing; this area has bitten
   salt-ssh before). The TODO item 1 change was validated this way.
 
@@ -306,7 +306,7 @@ production path — these presets are not replacements or a migration invitation
   isn't universal (cf. `nginx.auth_basic`/`servers`). `merge_args` also
   falls back to wholesale replace when a layer is a top-level string or repeats
   a flag (e.g. multiple `remoteWrite.url`) rather than guess.
-- **ACME in `nginx_vhost` is a cross-formula dependency.** binsvc accepts
+- **ACME in `nginx_vhost` is a cross-formula dependency.** appsvc accepts
   per-server `acme_account` values, but never manages accounts; the separate
   `acme` state/pillar must create `/opt/acme/home/<acct>/verify_and_issue.sh`.
   The nginx block derives cert paths internally from vhost name and the first
@@ -317,7 +317,7 @@ production path — these presets are not replacements or a migration invitation
   remain owned by the acme formula.
 - **Two-phase expand, no phase 3.** See §5 — prefer computing a value inside the
   block that needs it over adding a global phase.
-- **`binsvc:filter` gates resolution and dispatch, never merge/format.** An
+- **`appsvc:filter` gates resolution and dispatch, never merge/format.** An
   operator-typed selector string (`"name: vm* *gra*; preset: exporter*"`,
   semicolon clauses, union semantics, `fnmatch` globs) scopes a `state.apply` to
   a subset of instances. It is intentionally a small **string DSL**, not
@@ -329,7 +329,7 @@ production path — these presets are not replacements or a migration invitation
   `dispatch`. This is **manual scoping, not change detection**: filtering to a
   new exporter won't refresh vmagent's scrape config until vmagent is also in
   scope.
-- **`binsvc:globals` are scope, not settings.** Operator-defined placeholders
+- **`appsvc:globals` are scope, not settings.** Operator-defined placeholders
   (`{foo}`) shared by every instance live in the **expand scope**, never in the
   `defaults→preset→instance` merge — they are template variables, not per-instance
   config. Values are **literal** (inserted verbatim, no recursive expansion).
@@ -339,9 +339,14 @@ production path — these presets are not replacements or a migration invitation
   by being un-overridable, not by precedence. `{grain_id}` is the minion id
   (`grains:id`) — named for the machinery, not "hostname", since the two can
   diverge.
-- **Scope: prebuilt-binary service management, not app deployment.**
-  PHP-FPM/LEMP is out of scope (owned by `app/`). Unifying "download a binary"
-  with "deploy a PHP app with fpm pools" would yield a worse abstraction.
+- **Scope: services and applications (renamed binsvc -> appsvc).** Originally
+  prebuilt-binary service management only, with PHP-FPM/LEMP left to `app/`.
+  Widened because real apps are multi-runtime (php-fpm + node, python + node,
+  + docker, + a daemon) and `app/`'s one-type-per-app shape can't describe them
+  as one unit. The original warning still governs the *how*: app features are
+  sibling blocks (pools, sources, runtimes, docker), never forced through the
+  binary-service `svc`/`systemd_unit` path. Agreed shape: TODO.md "decisions on
+  record" and item 18.
 - **`config_file` is intentionally narrow** — one or two managed files per
   instance. `contents` renders through `render_config` as yaml/ini/json, or an
   entry can use `source`+`template`. It is still not a replacement for
@@ -414,7 +419,7 @@ production path — these presets are not replacements or a migration invitation
   with no version flag can point it at a stamp file or any command (exit 0 = up
   to date), or omit it to accept restart-on-every-apply. `svc.version_stamp:
   true` gets a stamp file for free instead of hand-rolling one: `fetch_source`
-  writes `{install_dir}/.binsvc_version` after a successful extract
+  writes `{install_dir}/.appsvc_version` after a successful extract
   (`onchanges`-gated, so a failed extract never marks a version as installed)
   and, absent an explicit `version_check`, compares against it. Generic
   replacement for `exporter`'s `.salt_version_info` — makes a source tarball
@@ -434,7 +439,7 @@ production path — these presets are not replacements or a migration invitation
   so the cache can't help them — use a GitHub token (TODO #2) there. (Whether
   rendering is host-shared depends on your setup; the cache is best-effort and a
   harmless no-op for any render that doesn't share the cache dir.) An optional
-  top-level `binsvc:github_token` pillar lifts GitHub to 5000 req/hr (sent as a
+  top-level `appsvc:github_token` pillar lifts GitHub to 5000 req/hr (sent as a
   Bearer header by the github resolver only, never to grafana.com, and kept out
   of the cache key) — this is the mitigation for the NAT path.
 
@@ -443,8 +448,8 @@ production path — these presets are not replacements or a migration invitation
 | Question | Look at |
 |---|---|
 | What pillar keys does an instance support? | `pillar.example` (inline docs), `readme.md` placeholder table |
-| What does the merged/expanded settings dict look like for instance X? | `state.show_sls binsvc` on a minion |
-| Why can `lib.py` functions be called inside block functions? | §3 — each block has its own top-level `from salt://binsvc/lib.py import ...` |
+| What does the merged/expanded settings dict look like for instance X? | `state.show_sls appsvc` on a minion |
+| Why can `lib.py` functions be called inside block functions? | §3 — each block has its own top-level `from salt://appsvc/lib.py import ...` |
 | How do I add a version resolver? | Add a pure helper in `lib.py`, register it in `VERSION_RESOLVERS`, and have it return a settings patch for `resolve_latest` |
 | How do I add a building block (cron, logrotate)? | New `blocks/<name>.sls` exporting `<name>(prefix, settings)`; wire into `dispatch`, guarded by its settings key / `manage: true` |
 | How do I add app-specific management (Grafana datasources, etc.)? | `docs/extending-with-app-blocks.md` — generic gap → generic block; app knowledge → preset data; irreducible app logic → a thin app block |

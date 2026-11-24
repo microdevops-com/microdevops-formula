@@ -1,50 +1,71 @@
 #!pyobjects
 # vim: set ft=python:
 
-# binsvc: run N instances of a statically-built binary
-# (VictoriaMetrics, VictoriaLogs, Grafana, Loki, Prometheus, exporters, ...)
-# under systemd, each independently configured from one merged
+# appsvc (formerly binsvc): run N instances of a service or application -
+# prebuilt binaries (VictoriaMetrics, Grafana, exporters, ...), Python daemons,
+# and (in progress) multi-runtime web apps - under systemd, each independently configured from one merged
 # defaults -> preset -> instance settings dict. See readme.md for the full
-# pillar shape and binsvc/lib.py's docstring for the design rationale.
+# pillar shape and appsvc/lib.py's docstring for the design rationale.
 
 import logging
 import yaml
 
-from salt://binsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances
+from salt://appsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, select_instances
 
-from salt://binsvc/blocks/install_dir.sls import install_dir
-from salt://binsvc/blocks/fetch.sls import fetch_source
-from salt://binsvc/blocks/venv.sls import python_venv
-from salt://binsvc/blocks/user_ssh.sls import user_and_ssh
-from salt://binsvc/blocks/config_file.sls import config_files
-from salt://binsvc/blocks/commands.sls import run_commands
-from salt://binsvc/blocks/systemd_unit.sls import systemd_unit
-from salt://binsvc/blocks/nginx_vhost.sls import nginx_vhost
-from salt://binsvc/utils.sls import get_salt_file
+from salt://appsvc/blocks/install_dir.sls import install_dir
+from salt://appsvc/blocks/fetch.sls import fetch_source
+from salt://appsvc/blocks/venv.sls import python_venv
+from salt://appsvc/blocks/user_ssh.sls import user_and_ssh
+from salt://appsvc/blocks/config_file.sls import config_files
+from salt://appsvc/blocks/commands.sls import run_commands
+from salt://appsvc/blocks/systemd_unit.sls import systemd_unit
+from salt://appsvc/blocks/nginx_vhost.sls import nginx_vhost
+from salt://appsvc/utils.sls import get_salt_file
 
 log = logging.getLogger(__name__)
 
 
 # --- defaults & presets -------------------------------------------------------
 #
-# get_salt_file (binsvc/utils.sls) uses salt.fileclient directly and works
+# get_salt_file (appsvc/utils.sls) uses salt.fileclient directly and works
 # under salt-ssh. __salt__["cp.get_file_str"] does not work there.
 
-DEFAULTS = yaml.safe_load(get_salt_file("salt://binsvc/defaults.yaml") or "") or {}
+DEFAULTS = yaml.safe_load(get_salt_file("salt://appsvc/defaults.yaml") or "") or {}
 
 _preset_cache = {}
 
 
+# Legacy pillar root. This formula was `binsvc` until it grew app management
+# and was renamed; ~10 client repos still carry a `binsvc:` pillar (the fleet
+# monitoring stack). Falling back to it lets a client bump the formula before
+# renaming its pillar, instead of the apply silently finding zero instances.
+# Each key is read from appsvc: first, so a CLI pillar='{appsvc: {filter: ..}}'
+# still works on a legacy host. Instances under both roots is ambiguous - fail
+# loud. Remove once no client pillar has `binsvc:` (see TODO.md).
+LEGACY_PILLAR = pillar("binsvc:instances", None) is not None
+if LEGACY_PILLAR and pillar("appsvc:instances", None) is not None:
+    raise ValueError("both appsvc:instances and legacy binsvc:instances are set - "
+                     "move everything under appsvc:")
+
+
+def cfg(key, default=None):
+    """pillar("appsvc:<key>"), falling back to the legacy binsvc: root."""
+    value = pillar("appsvc:" + key, None)
+    if value is None and LEGACY_PILLAR:
+        value = pillar("binsvc:" + key, None)
+    return default if value is None else value
+
+
 def load_preset(name):
-    """Lazily load & cache a bundled preset (salt://binsvc/presets/{name}.yaml),
-    deep-merged with any pillar override at binsvc:presets:{name}. Presets ship
+    """Lazily load & cache a bundled preset (salt://appsvc/presets/{name}.yaml),
+    deep-merged with any pillar override at appsvc:presets:{name}. Presets ship
     with the formula so instances only need to override what differs, instead
     of copying whole app configs into pillar. A preset name with no matching
     bundled file is treated as empty - only the pillar override applies."""
     if name not in _preset_cache:
-        _content = get_salt_file("salt://binsvc/presets/{}.yaml".format(name))
+        _content = get_salt_file("salt://appsvc/presets/{}.yaml".format(name))
         bundled = yaml.safe_load(_content or "") or {}
-        override = pillar("binsvc:presets:{}".format(name), {})
+        override = cfg("presets:{}".format(name), {})
         _preset_cache[name] = merge(bundled, override or {})
     return _preset_cache[name]
 
@@ -59,7 +80,7 @@ def resolve_latest_version(svc_settings):
         "osarch": normalize_osarch(grains("osarch") or ""),
         "cache_dir": DEFAULTS.get("cache_dir"),
         "resolve_cache_ttl": DEFAULTS.get("resolve_cache_ttl", 0),
-        "github_token": pillar("binsvc:github_token", None),
+        "github_token": cfg("github_token", None),
     }
     return resolve_latest(svc_settings, svc_settings.get("version_resolver", "github"), context)
 
@@ -110,26 +131,26 @@ def dispatch(prefix, settings):
 # are expanded by the same two-phase pass as everything else, in the producer's
 # own scope - no separate formatting step.
 
-instances = pillar("binsvc:instances", {})
+instances = cfg("instances", {})
 
 # Operator-defined placeholders shared by every instance, usable as {key} in
 # any settings string alongside {name}/{type}/... Literal values, no recursive
 # expansion; a key colliding with a reserved placeholder fails loud.
-global_vars = pillar("binsvc:globals", {})
+global_vars = cfg("globals", {})
 
 # Placeholder names injected into the phase-2 scope (see below). Reserved here so
 # a global can't pass the phase-1 collision check and then be silently
 # overwritten in the second expand pass.
 PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir")
 
-# Optional `binsvc:filter` (operator-typed, usually on the CLI) scopes this apply
-# to a subset - e.g. pillar='{binsvc: {filter: "name: vm* *gra*"}}'. It gates the
+# Optional `appsvc:filter` (operator-typed, usually on the CLI) scopes this apply
+# to a subset - e.g. pillar='{appsvc: {filter: "name: vm* *gra*"}}'. It gates the
 # expensive `latest` resolution (pass 1) and dispatch (pass 2); formatting itself
 # runs for every instance so cross-instance scrape gathering stays correct.
-selected = select_instances(instances, parse_filter(pillar("binsvc:filter", "")))
+selected = select_instances(instances, parse_filter(cfg("filter", "")))
 if not selected and instances:
-    log.warning("binsvc:filter %r matched no instances; nothing to apply",
-                pillar("binsvc:filter", ""))
+    log.warning("appsvc:filter %r matched no instances; nothing to apply",
+                cfg("filter", ""))
 
 # Pass 1: merge + two-phase expand every instance into a fully formatted dict.
 expanded = {}
@@ -211,4 +232,4 @@ for instance_name, settings in expanded.items():
         jobs = collect_scrape_jobs(expanded, instance_name)
         append_at_path(settings, settings["scrape_collect"], jobs, unique_key="job_name")
 
-    dispatch(["binsvc", instance_name], settings)
+    dispatch(["appsvc", instance_name], settings)

@@ -1,22 +1,26 @@
-# binsvc
+# appsvc
 
-Run N independent instances of a statically-built binary
-(VictoriaMetrics, VictoriaLogs, Grafana, Loki, Prometheus, Promtail,
-exporters, ...) under systemd on the same host - each with its own install
-dir, user, config, and (optionally) nginx vhost.
+Run N independent instances of a service or application on the same host -
+each with its own install dir, user, config, and (optionally) nginx vhost.
+Today: statically-built binaries (VictoriaMetrics, VictoriaLogs, Grafana,
+Loki, Prometheus, exporters, ...) and Python daemons in a managed venv under
+systemd. In progress: multi-runtime web apps (php-fpm pools, node/python
+runtimes, git sources, docker) - see TODO.md item 18.
+
+Formerly `binsvc`. A legacy `binsvc:` pillar root and leftover
+`binsvc_<name>.service` units are still handled transparently (TODO.md
+item 19), so a client can bump the formula before renaming its pillar.
 
 This is a fresh, opinionated state, not a refactor of the existing
-`exporter`/`victoriametrics`/`application` formulas - those remain in
-production use untouched. The patterns proven here (preset/instance merge,
-building-block dispatch, a plain-Python logic layer split out from the
-Salt-directive layer) are also a deliberate trial run for a possible future
-rewrite of `application` into a general-purpose app-management state.
+`exporter`/`victoriametrics`/`app` formulas - those remain in production use
+untouched. It is deliberately portable: it does not include or depend on
+other formulas in this repository.
 
 ## Usage
 
 ```bash
-salt 'minion-id' state.apply binsvc
-salt 'minion-id' state.apply binsvc test=True
+salt 'minion-id' state.apply appsvc
+salt 'minion-id' state.apply appsvc test=True
 ```
 
 See `pillar.example` for the full pillar shape, available placeholders, and
@@ -26,10 +30,10 @@ and a no-preset custom instance).
 
 ## How an instance is resolved
 
-For every entry under `binsvc:instances`:
+For every entry under `appsvc:instances`:
 
 1. **Merge**: `defaults.yaml` -> `presets/<preset>.yaml` (deep-merged with any
-   `binsvc:presets:<preset>` pillar override) -> the instance's own pillar.
+   `appsvc:presets:<preset>` pillar override) -> the instance's own pillar.
    Later layers win; dicts merge recursively, everything else (including
    lists) is replaced wholesale - **except `svc.args`**, which is re-merged
    by flag name (`merge_args` in `lib.py`) right after. Mapping entries render
@@ -47,12 +51,12 @@ For every entry under `binsvc:instances`:
    Grafana's API to resolve both latest/concrete versions and the real package
    URL, because Grafana archive names contain build IDs that are not derivable
    from the version alone. This network step runs only for instances **selected**
-   by `binsvc:filter` (all of them when no filter is given).
+   by `appsvc:filter` (all of them when no filter is given).
 3. **Expand placeholders**, in two passes (`expand` in `lib.py`):
    - *Phase 1* against grain-derived identity (`osarch`, `kernel_lower`,
      `cpuarch`, `grain_id` = the minion id) plus the instance's own static keys
      (`name`, `type`, `version`, `tag`, `tag_vstrip`) and any operator-defined
-     `binsvc:globals` (literal `{key}` values shared by all instances; a key
+     `appsvc:globals` (literal `{key}` values shared by all instances; a key
      clashing with a reserved one fails loud) - enough to resolve `install_dir`,
      `svc.source`, `svc.exec`, etc.
    - *Phase 2* adds `install_dir`, `exec`, `args` (top-level raw string, or args
@@ -69,8 +73,8 @@ For every entry under `binsvc:instances`:
    the service user's ownership is applied. `venv` runs after `fetch`: its
    `venv.requirements_files` may point at a `requirements.txt` that arrives
    inside the fetched archive.
-   An optional `binsvc:filter` (usually typed on the CLI, e.g.
-   `pillar='{binsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'`) scopes
+   An optional `appsvc:filter` (usually typed on the CLI, e.g.
+   `pillar='{appsvc: {filter: "name: vm* *gra*; preset: exporter*"}}'`) scopes
    the apply to a subset: semicolon-separated `name`/`preset` glob clauses, union
    semantics. Steps 1 and 3 (merge + expand) still run for **every** instance so
    a selected vmagent can gather any producer's scrape jobs; the filter gates
@@ -83,7 +87,7 @@ For every entry under `binsvc:instances`:
    the service restarts exactly when it needs to - without any block
    hardcoding another block's state IDs.
 
-Resolution runs in two passes over `binsvc:instances`: **pass 1** merges and
+Resolution runs in two passes over `appsvc:instances`: **pass 1** merges and
 expands (steps 1-3) *every* instance into a fully formatted map; **pass 2**
 gathers cross-instance scrape jobs and dispatches (step 4) the selected subset.
 The split exists so a consumer can gather producers that were already formatted —
@@ -103,7 +107,7 @@ the consumer's config, so it resolves against the producer) — `{name}`,
 the `latest` resolution is gated to selected instances, `{version}`/`{tag}` of a
 producer *not* in the selected subset stay unresolved until a full apply. For
 values outside the placeholder set, use Salt's own jinja in the **pillar**
-(`instance: {{ grains["fqdn"] }}`), which renders before binsvc sees it — pillar
+(`instance: {{ grains["fqdn"] }}`), which renders before appsvc sees it — pillar
 only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 
 ## Building blocks (`blocks/*.sls`)
@@ -111,7 +115,7 @@ only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 | block | settings key | does |
 |---|---|---|
 | `install_dir` | `install_dir` | create/own `install_dir` ahead of `config_file`/`fetch` - no-op when `install_dir` is unset; runs even without a `svc` block (e.g. a venv-only instance still needs somewhere to live) |
-| `fetch` | `svc` | fetch `svc.source` per its detected **kind**: `archive` (download, cache, optionally `tar`-extract and/or `move` it into `install_dir`, ensure it's executable) or `file` (a single script/bare binary compared as-is via `File.managed` - no cache hop, no extract). Kind is `svc.kind` if set, else inferred: `svc.tar` present or a recognized archive suffix (`.tar.gz`, `.tgz`, `.tar.bz2`, `.tbz2`, `.tar.xz`, `.txz`, `.tar.zst`, `.tar`) -> `archive`; an unsupported archive suffix (`.zip`, `.7z`, `.rar`, `.gz`, `.bz2`, `.xz`) raises rather than silently mis-fetching; otherwise -> `file`. Either kind: make any `svc.data_dirs` service-user-owned for writable state (program files stay root-owned). Archive re-extract is guarded by an optional `svc.version_check` `unless` command, or by `svc.version_stamp` (writes `.binsvc_version` into `install_dir` after a successful extract) as a generic fallback guard — **no default**, so with neither set the archive re-extracts (and the service restarts) every run. The `file` kind needs no guard at all: `File.managed` reports `changed` only when the fetched content actually differs |
+| `fetch` | `svc` | fetch `svc.source` per its detected **kind**: `archive` (download, cache, optionally `tar`-extract and/or `move` it into `install_dir`, ensure it's executable) or `file` (a single script/bare binary compared as-is via `File.managed` - no cache hop, no extract). Kind is `svc.kind` if set, else inferred: `svc.tar` present or a recognized archive suffix (`.tar.gz`, `.tgz`, `.tar.bz2`, `.tbz2`, `.tar.xz`, `.txz`, `.tar.zst`, `.tar`) -> `archive`; an unsupported archive suffix (`.zip`, `.7z`, `.rar`, `.gz`, `.bz2`, `.xz`) raises rather than silently mis-fetching; otherwise -> `file`. Either kind: make any `svc.data_dirs` service-user-owned for writable state (program files stay root-owned). Archive re-extract is guarded by an optional `svc.version_check` `unless` command, or by `svc.version_stamp` (writes `.appsvc_version` into `install_dir` after a successful extract) as a generic fallback guard — **no default**, so with neither set the archive re-extracts (and the service restarts) every run. The `file` kind needs no guard at all: `File.managed` reports `changed` only when the fetched content actually differs |
 | `venv` | `venv` | create/maintain a Python venv (`venv.dir`, default `{install_dir}/venv`) matching `venv.requirements`/`venv.requirements_files` - no-op unless `venv.manage`; runs after `fetch` so a requirements file shipped inside a fetched archive is already on disk. A single `Cmd.run` `unless`-guarded by a sha256 digest (interpreter version + `pip_args` + requirements file contents) computed on the minion at runtime, stamped inside `venv.dir` only on a successful install so a failed run retries. `venv.recreate_on_change` (default true) rebuilds with `--clear` whenever the requirement set changes; false only forces a fresh venv on a missing/wrong-version interpreter and otherwise reuses it. Root-owned like fetched program files; writable state still goes through `svc.data_dirs` |
 | `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage` |
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
@@ -124,7 +128,7 @@ that doesn't set a block's key simply skips it.
 
 `nginx.servers[]` entries declare `names` and exactly one TLS source:
 `acme_account`, `ssl_cert`+`ssl_key`, or neither. `acme_account` issues DNS ACME
-certs through the separately managed `acme` state/pillar; binsvc derives the
+certs through the separately managed `acme` state/pillar; appsvc derives the
 `/opt/acme/cert/<vhost>_<first-name>_*` paths and does not manage accounts.
 
 ## The `lib.py` layer
@@ -135,13 +139,13 @@ deep-merge, GitHub release resolution, archive/command helpers,
 Grafana package resolution, systemd unit rendering). Unit-tested with plain pytest (`tests/test_lib.py`,
 run via `python -m pytest tests/`), no minion required.
 
-`init.sls` loads it with a single `from salt://binsvc/lib.py import ...`
+`init.sls` loads it with a single `from salt://appsvc/lib.py import ...`
 line — the same `from salt://...import` mechanism used for block files, no
 hardcoded path or `sys.path` manipulation needed. Because pyobjects gives each
 block file a frozen snapshot of `_globals` at exec time (before `init.sls`'s
 own body runs), lib functions are NOT automatically in block `__globals__`.
 Blocks that need helpers therefore import them in their own source with a
-top-level `from salt://binsvc/lib.py import ...` line, so pyobjects populates
+top-level `from salt://appsvc/lib.py import ...` line, so pyobjects populates
 that block's globals during the block import itself.
 
 ## Presets (`presets/*.yaml`)
@@ -149,7 +153,7 @@ that block's globals during the block import itself.
 Bundled, ready-to-use type configs (`vlserver`, `vlagent`, `vmserver`,
 `vmagent`, `vmauth`, `exporter_node`, `exporter_mysqld`, `exporter_redis`,
 `grafana`, `redis_check`) loaded lazily and cached per Salt run, deep-merged with optional
-`binsvc:presets:<name>` pillar overrides - so instances only need to specify
+`appsvc:presets:<name>` pillar overrides - so instances only need to specify
 what differs from the bundled defaults (typically just `install_dir`, `user`,
 `svc.version`, and `nginx`).
 

@@ -325,8 +325,8 @@ def test_normalize_osarch_maps_known_aliases_and_passes_through_others():
 
 def test_archive_path_joins_cache_dir_kind_and_url_basename():
     source = "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.101.0/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
-    assert archive_path("/var/cache/salt/binsvc/", "vmserver", source) == (
-        "/var/cache/salt/binsvc/vmserver/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
+    assert archive_path("/var/cache/salt/appsvc/", "vmserver", source) == (
+        "/var/cache/salt/appsvc/vmserver/victoria-metrics-linux-amd64-v1.101.0.tar.gz"
     )
 
 

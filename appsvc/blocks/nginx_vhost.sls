@@ -1,6 +1,6 @@
 #!pyobjects
 # vim: set ft=python:
-from salt://binsvc/lib.py import resolve_nginx_servers
+from salt://appsvc/lib.py import resolve_nginx_servers
 
 # Generic reverse-proxy vhost: one upstream, one or more server blocks, optional
 # per-server TLS via ACME DNS issuance or operator-supplied certs, and optional
@@ -58,7 +58,7 @@ def nginx_vhost(prefix, settings):
 
     File.managed(sid + "_vhost",
                  name=vhost_path,
-                 source="salt://binsvc/files/nginx/vhost.jinja",
+                 source="salt://appsvc/files/nginx/vhost.jinja",
                  template="jinja",
                  context={"vhost_name": vhost_name, "nginx": nginx, "servers": servers})
 

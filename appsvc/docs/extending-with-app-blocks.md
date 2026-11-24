@@ -1,9 +1,9 @@
-# Extending binsvc: app-specific management (the "Grafana datasources" problem)
+# Extending appsvc: app-specific management (the "Grafana datasources" problem)
 
 When a tool needs more than fetch + systemd + a config file — e.g. Grafana
 wants provisioned datasources/dashboards, an edited `grafana.ini`, installed
 plugins, maybe API-driven setup — the instinct is "write a Grafana module."
-Usually that's the wrong first move. This note records *how* to extend binsvc
+Usually that's the wrong first move. This note records *how* to extend appsvc
 for app-specific management without breaking what the design bought you.
 
 Read `WHITEPAPER.md` first (esp. §3 logic/directives split, §6 the
@@ -11,7 +11,7 @@ Read `WHITEPAPER.md` first (esp. §3 logic/directives split, §6 the
 
 ## The governing principle
 
-binsvc splits three things on purpose:
+appsvc splits three things on purpose:
 
 - **generic mechanism → code** (`blocks/*.sls` + `lib.py`)
 - **app-specific knowledge → data** (`presets/*.yaml`, pillar)
@@ -35,7 +35,7 @@ the need into primitives, then route each primitive by the litmus test below.
 
 The failure mode to avoid: a fat app module that re-implements fetch/systemd/
 config or bakes in behavior other tools also need. That's exactly
-`application/`'s hardcoded `vmagent()` one-off — the thing binsvc exists to kill.
+`application/`'s hardcoded `vmagent()` one-off — the thing appsvc exists to kill.
 
 ## Worked decomposition: "extended Grafana management"
 
@@ -56,7 +56,7 @@ Alertmanager will want the same `config_dir` / `commands` / INI capabilities).
 1. **Fill the generic gaps first** (these are missing vocabulary, not app work):
    - `config_dir` — render N files into a directory, return the `changed`
      contract. Covers any tool with a provisioning/conf.d directory.
-   - `commands` / `exec` — done in binsvc: run ordered pre/post commands with
+   - `commands` / `exec` — done in appsvc: run ordered pre/post commands with
      `when_set`, `unless`/`onlyif`, and `stdin`. Covers `grafana-cli`, cache
      warms, one-shot migrations.
    - TOML output for `config_file` only if a real consumer needs it; INI/JSON/YAML are already covered.
@@ -135,7 +135,7 @@ consumer's `scrape_collect` colon path; no app-block registry was needed for v1.
   second consumer needs a different contribution shape.
 
 - **Selector-scoped, never "scan all".** "Collect every scrape job" assumes one
-  vmagent per host, which contradicts binsvc's multi-instance reason for being.
+  vmagent per host, which contradicts appsvc's multi-instance reason for being.
   Producers declare `scrape: {vmagent: <scalar-or-list-of-globs>, config: [...]}`;
   `vmagent` is required when `scrape` is present, and a consumer gathers only
   what matches its instance name. Matching nothing is a no-op.
@@ -149,7 +149,7 @@ consumer's `scrape_collect` colon path; no app-block registry was needed for v1.
   (`-httpListenAddr` vs `--web.listen-address`); that's the silently-tool-specific
   trap. (v2, if wanted: expand each source in its own scope before gathering.)
 
-- **Host-local by design.** Pillar-scan sees only this minion's `binsvc:instances`
+- **Host-local by design.** Pillar-scan sees only this minion's `appsvc:instances`
   (same boundary the file-glob had). Remote scrape targets go directly in the
   consumer's own config.
 
@@ -171,12 +171,12 @@ consumer's `scrape_collect` colon path; no app-block registry was needed for v1.
 
 ## Why not a parallel formula
 
-Running a separate Grafana state alongside binsvc throws away the merge/expand
+Running a separate Grafana state alongside appsvc throws away the merge/expand
 pipeline, the `changed`/`watch` restart contract, and `prefix`-based
 multi-instance — you'd hand-reimplement orchestration and slide back into the
-one-instance-per-host pattern binsvc was built to kill. Grafana is fetch +
-systemd + config + provisioning: almost entirely binsvc's wheelhouse. Reserve
-"separate formula" for something that shares *nothing* with binsvc (the repo's
+one-instance-per-host pattern appsvc was built to kill. Grafana is fetch +
+systemd + config + provisioning: almost entirely appsvc's wheelhouse. Reserve
+"separate formula" for something that shares *nothing* with appsvc (the repo's
 existing Docker-based `grafana/` formula is a different deployment model, not
 "extended management" — not a counterexample).
 
