@@ -98,6 +98,7 @@ auditd_rules:
     - defaults:
         watch_agent: {{ laurel_drop_cron | length > 0 }}
         track_forks: {{ laurel_drop_cron | length > 0 }}
+        drop_cron_sessions: {{ auditd.get("drop_cron_sessions", True) }}
     - mode: 640
     - user: root
     - group: root

@@ -62,6 +62,19 @@
 -a always,exit -F arch=b64 -S fork,vfork,clone -F auid!=unset -k fork
 -a always,exit -F arch=b32 -S fork,vfork,clone -F auid!=unset -k fork
 {%- endif %}
+{%- if drop_cron_sessions %}
+
+# cron opens a PAM session for every job run: account check, credentials, login uid, session start and end,
+# 6-7 records that only say "cron started a job as root". On a host with many jobs this is ~40% of the log.
+# The commands the job runs stay in user_commands; sshd, sudo and su sessions are not affected (other exe).
+-a always,exclude -F msgtype=LOGIN -F exe=/usr/sbin/cron
+-a always,exclude -F msgtype=USER_ACCT -F exe=/usr/sbin/cron
+-a always,exclude -F msgtype=CRED_ACQ -F exe=/usr/sbin/cron
+-a always,exclude -F msgtype=CRED_REFR -F exe=/usr/sbin/cron
+-a always,exclude -F msgtype=USER_START -F exe=/usr/sbin/cron
+-a always,exclude -F msgtype=USER_END -F exe=/usr/sbin/cron
+-a always,exclude -F msgtype=CRED_DISP -F exe=/usr/sbin/cron
+{%- endif %}
 
 # Kernel modules
 -a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k kernel_modules
