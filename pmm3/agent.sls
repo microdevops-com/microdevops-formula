@@ -10,7 +10,8 @@
 {%- set pmm_user = agent.get('pmm_user', 'admin') %}
 {%- set services = agent.get('services', {}) %}
 {%- set agent_config = '/usr/local/percona/pmm/config/pmm-agent.yaml' %}
-{#- pmm-admin names services <os hostname>-<type>; the name is set explicitly, alert rules match <node_name>-mysql #}
+{#- pmm-admin names services <os hostname>-<type>; the name is set explicitly: <node_name>-mysql (alert rules match it),
+    <node_name>-mongodb #}
 {%- set service_prefix = agent.get('node_name') or grains['nodename'] %}
 
 pmm3_agent_percona_release:
@@ -114,13 +115,24 @@ pmm3_agent_haproxy_service:
 {%- endif %}
 {%- if services.get('mongodb', {}).get('enabled') %}
 {%- set mongodb = services['mongodb'] %}
+{%- set mongodb_service = service_prefix ~ '-mongodb' %}
+{#- none - metrics only; mongolog - QAN from the slow operations in the mongod log (MongoDB 5.0+);
+    profiler - QAN from system.profile, needs the profiler enabled in mongod #}
+{%- set mongodb_query_source = mongodb.get('query_source', 'none') %}
+{%- if mongodb_query_source not in ['none', 'mongolog', 'profiler'] %}
+  {{ raise('pmm3_agent:services:mongodb:query_source must be none, mongolog or profiler, got ' ~ mongodb_query_source) }}
+{%- endif %}
 
 pmm3_agent_mongodb_service:
   cmd.run:
     - name: >-
-        pmm-admin add mongodb --username={{ mongodb.get('user', 'mongoadmin') }} --password="$MONGODB_PMM_PASSWORD"
-        --query-source=profiler
+        pmm-admin add mongodb --service-name={{ mongodb_service }}
+        --host={{ mongodb.get('host', '127.0.0.1') }} --port={{ mongodb.get('port', 27017) }}
+        --username={{ mongodb.get('user', 'pmm') }} --password="$MONGODB_PMM_PASSWORD"
+        --query-source={{ mongodb_query_source }}
         {%- if mongodb.get('cluster') %} --cluster={{ mongodb['cluster'] }}{%- endif %}
+        {%- if mongodb.get('replication_set') %} --replication-set={{ mongodb['replication_set'] }}{%- endif %}
+        {%- if mongodb.get('environment') %} --environment={{ mongodb['environment'] }}{%- endif %}
     - env:
       - MONGODB_PMM_PASSWORD: {{ mongodb['password'] | json }}
     - unless: pmm-admin list | grep -qE '^MongoDB '

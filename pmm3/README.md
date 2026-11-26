@@ -48,5 +48,14 @@ and every notification arrives twice.
   the node, and PMM drops its services. `pmm3.agent` registers only an agent that is not yet registered to
   `pmm_host:pmm_port` (checked in `/usr/local/percona/pmm/config/pmm-agent.yaml`, not by `Connected`).
 - A changed `pmm3_agent:services:mysql:password` re-creates the PMM MySQL service (`pmm-admin remove` + `add`) with
-  the same name. The MongoDB password is not managed: after changing it, run `pmm-admin remove mongodb <name>` and apply
-  `pmm3.agent` again.
+  the same name. The MongoDB password is not managed: after changing it, run `pmm-admin remove mongodb <node_name>-mongodb`
+  and apply `pmm3.agent` again.
+- MongoDB: `pmm3.agent` registers the service as `<node_name>-mongodb`, but does not create the MongoDB user. Create it
+  before the first apply: user `pmm` (default `pmm3_agent:services:mongodb:user`) in `admin`, with the roles `pmmMonitor`
+  (custom role: `find`, `dbHash`, `listIndexes`, `listCollections`, `collStats`, `dbStats`, `indexStats` on all
+  collections, plus `system.version` and `system.profile`), `read@local` (oplog metrics), `clusterMonitor`, and on
+  MongoDB 8.0+ `directShardOperations`. On a replica set, create it on the primary only.
+- MongoDB `query_source`: `none` (default, metrics only), `mongolog` (QAN from the slow operations in the mongod log,
+  MongoDB 5.0+, the log must be a file readable by pmm-agent and rotated with `copytruncate`), `profiler` (QAN from
+  `system.profile`, the profiler must be enabled in mongod). Changing it on a registered service: `pmm-admin remove
+  mongodb <node_name>-mongodb` and apply again.
