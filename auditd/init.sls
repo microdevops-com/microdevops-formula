@@ -46,7 +46,9 @@ auditd_laurel_log_dir:
     - name: /var/log/laurel
     - user: _laurel
     - group: _laurel
-    - mode: 750
+    # laurel sets its directory to 755 on every start (no config option), 750 here only flapped on each apply.
+    # The log files themselves are 640 _laurel:_laurel, so other users still cannot read them.
+    - mode: 755
     - require:
       - user: auditd_laurel_user
 
@@ -98,6 +100,7 @@ auditd_rules:
     - defaults:
         watch_agent: {{ laurel_drop_cron | length > 0 }}
         track_forks: {{ laurel_drop_cron | length > 0 }}
+        drop_cron_sessions: {{ auditd.get("drop_cron_sessions", True) }}
     - mode: 640
     - user: root
     - group: root
@@ -120,12 +123,37 @@ auditd_rules_finalize:
     - require:
       - pkg: auditd_pkg
 
+# Ubuntu's auditd.service has ProtectHome=true, and the unit loads the rules itself (ExecStartPost augenrules).
+# /home is then invisible while rules load, so every "-w /home/<user>/.ssh/" watch fails with "No such file"
+# after each auditd restart or reboot, and key changes of normal users are not logged. read-only keeps /home
+# visible for path lookups and still forbids writes. Debian 13 has ProtectHome=no, the drop-in is harmless there.
+auditd_unit_protect_home:
+  file.managed:
+    - name: /etc/systemd/system/auditd.service.d/microdevops.conf
+    - makedirs: True
+    - mode: 644
+    - user: root
+    - group: root
+    - contents: |
+        # Managed by Salt (auditd state). Keep /home visible so watches on users' .ssh load.
+        [Service]
+        ProtectHome=read-only
+    - require:
+      - pkg: auditd_pkg
+
+auditd_unit_daemon_reload:
+  cmd.run:
+    - name: systemctl daemon-reload
+    - onchanges:
+      - file: auditd_unit_protect_home
+
 auditd_service:
   service.running:
     - name: auditd
     - enable: True
     - require:
       - pkg: auditd_pkg
+      - cmd: auditd_unit_daemon_reload
 
 # systemctl restart auditd is refused by the unit (RefuseManualStop), the service command is the supported way.
 # It reloads plugins. It does not touch rules locked with -e 2.
@@ -136,6 +164,7 @@ auditd_restart_for_plugin:
       - cmd: auditd_laurel_binary
       - file: auditd_laurel_config
       - file: auditd_laurel_plugin
+      - file: auditd_unit_protect_home
     - require:
       - service: auditd_service
 
@@ -153,5 +182,6 @@ auditd_load_rules:
       - file: auditd_rules_finalize
     - require:
       - service: auditd_service
+      - cmd: auditd_restart_for_plugin
   {%- endif %}
 {% endif %}

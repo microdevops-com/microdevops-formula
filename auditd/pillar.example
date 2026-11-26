@@ -7,6 +7,7 @@
 
 auditd:
   #immutable: True # optional, default True: lock rules with -e 2. After that new rules need a reboot, the state warns
+  #drop_cron_sessions: True # optional, default True: skip the PAM session records of cron jobs (their commands are still logged)
   #extra_rules: | # optional, added before the lock
   #  -w /opt/app/config.yaml -p wa -k app_config
   #laurel: # optional
