@@ -31,18 +31,25 @@ app_{{ app_type }}_user_{{ loop_index }}:
     - shell: {{ app["shell"] }}
     - fullname: {{ "application " ~ app_name }}
 
+        {%- set _app_root_group = (app.get("app_root_group") or "www-data")|replace("__APP_NAME__", app_name) %}
+        {%- set _app_root_mode = app.get("app_root_mode", "750") %}
+        {%- set _app_root_is_home = consider_user_home.rstrip("/") == _app_app_root.rstrip("/") %}
+
 app_{{ app_type }}_user_homedir_create_{{ loop_index }}:
   file.directory:
     - name: {{ consider_user_home }}
     - user: {{ _app_user }}
-    - group: {{ _app_group }}
+    - group: {{ _app_root_group if _app_root_is_home else _app_group }}
     - makedirs: True
 
 app_{{ app_type }}_user_homedir_userown_{{ loop_index }}:
   file.directory:
     - name: {{ _app_app_root }} {# TODO #}
     - user: {{ _app_user }}
-    - group: {{ _app_group }}
+    - group: {{ _app_root_group }}
+        {%- if _app_root_mode is not none %}
+    - mode: {{ _app_root_mode }}
+        {%- endif %}
     - makedirs: True
 
 app_{{ app_type }}_user_ssh_dir_{{ loop_index }}:
