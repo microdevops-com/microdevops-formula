@@ -43,6 +43,9 @@ app_{{ app_type }}_user_homedir_userown_{{ loop_index }}:
     - name: {{ _app_app_root }} {# TODO #}
     - user: {{ _app_user }}
     - group: {{ _app_group }}
+        {%- if app.get("app_root_mode", "750") is not none %}
+    - mode: {{ app.get("app_root_mode", "750") }}
+        {%- endif %}
     - makedirs: True
 
 app_{{ app_type }}_user_ssh_dir_{{ loop_index }}:

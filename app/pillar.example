@@ -47,6 +47,8 @@ app:
                                          # useful to set one level higher than app_root to be able to host several apps under one linux user
                                          # or separate app and other files
         app_root: /var/www/__APP_NAME__/app # required, base for relative paths
+        #app_root_mode: "750" # optional, default "750", quote it to avoid yaml octal parsing, set to null to leave mode unmanaged
+                              # nginx user (www-data) needs access to app_root to serve files, e.g. add it to the app group
         #keep_user: True # optional, turns off user management, intended to use with existing user on server
         #app_auth_keys: # optional, ensure ssh keys for user
         #  - ssh-rsa AAAA...== rsa-key-19700101
