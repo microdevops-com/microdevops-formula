@@ -68,6 +68,8 @@ pmm3_agent_setup:
 {%- set mysql_user = mysql.get('user', 'pmm') %}
 {%- set mysql_socket = mysql.get('socket', '$(mysql -sNe "select @@socket")') %}
 {%- set mysql_service = service_prefix ~ '-mysql' %}
+{#- pmm-admin names a service <os hostname>-<type> by default: the name of a former registration #}
+{%- set mysql_former = grains['nodename'] ~ '-mysql' %}
 
 pmm3_agent_mysql_user:
   cmd.run:
@@ -98,11 +100,25 @@ pmm3_agent_mysql_service:
         --password="$MYSQL_PMM_PASSWORD" --query-source={{ mysql.get('query_source', 'perfschema') }}
     - env:
       - MYSQL_PMM_PASSWORD: {{ mysql['password'] | json }}
-    - unless: pmm-admin list | grep -qE '^MySQL '
+    - unless: pmm-admin list | awk '$1 == "MySQL" && $2 == "{{ mysql_service }}" { f = 1 } END { exit !f }'
     - require:
       - cmd: pmm3_agent_setup
       - cmd: pmm3_agent_mysql_user
       - cmd: pmm3_agent_mysql_service_password
+{%- if mysql_former != mysql_service %}
+
+{#- the former registration of this instance (<os hostname>-mysql on the same socket) is removed once the service is
+    registered under the new name: pmm-admin add checks the connection, so a failed add (an outdated password) leaves
+    the former one collecting. pmm-admin list: type, name, address (the socket, or host:port), id #}
+pmm3_agent_mysql_service_former:
+  cmd.run:
+    - name: pmm-admin remove mysql {{ mysql_former }}
+    - onlyif:
+      - pmm-admin list | awk '$1 == "MySQL" && $2 == "{{ mysql_service }}" { f = 1 } END { exit !f }'
+      - pmm-admin list | awk -v a="{{ mysql_socket }}" '$1 == "MySQL" && $2 == "{{ mysql_former }}" && $3 == a { f = 1 } END { exit !f }'
+    - require:
+      - cmd: pmm3_agent_mysql_service
+{%- endif %}
 {%- endif %}
 {%- if services.get('haproxy', {}).get('enabled') %}
 
@@ -116,9 +132,16 @@ pmm3_agent_haproxy_service:
 {%- if services.get('mongodb', {}).get('enabled') %}
 {%- set mongodb = services['mongodb'] %}
 {%- set mongodb_service = service_prefix ~ '-mongodb' %}
-{#- none - metrics only; mongolog - QAN from the slow operations in the mongod log (MongoDB 5.0+);
+{%- set mongodb_host = mongodb.get('host', '127.0.0.1') %}
+{%- set mongodb_port = mongodb.get('port', 27017) %}
+{#- the address as pmm-admin list prints it: host:port, an IPv6 host in brackets #}
+{%- set mongodb_address = ('[' ~ mongodb_host ~ ']' if ':' in mongodb_host else mongodb_host) ~ ':' ~ mongodb_port %}
+{%- set mongodb_former = grains['nodename'] ~ '-mongodb' %}
+{#- the defaults are those of the former formula (user mongoadmin, query source profiler), so an existing pillar
+    registers the service as before. Recommended: user pmm (README), query_source none or mongolog.
+    none - metrics only; mongolog - QAN from the slow operations in the mongod log (MongoDB 5.0+);
     profiler - QAN from system.profile, needs the profiler enabled in mongod #}
-{%- set mongodb_query_source = mongodb.get('query_source', 'none') %}
+{%- set mongodb_query_source = mongodb.get('query_source', 'profiler') %}
 {%- if mongodb_query_source not in ['none', 'mongolog', 'profiler'] %}
   {{ raise('pmm3_agent:services:mongodb:query_source must be none, mongolog or profiler, got ' ~ mongodb_query_source) }}
 {%- endif %}
@@ -127,16 +150,29 @@ pmm3_agent_mongodb_service:
   cmd.run:
     - name: >-
         pmm-admin add mongodb --service-name={{ mongodb_service }}
-        --host={{ mongodb.get('host', '127.0.0.1') }} --port={{ mongodb.get('port', 27017) }}
-        --username={{ mongodb.get('user', 'pmm') }} --password="$MONGODB_PMM_PASSWORD"
+        --host={{ mongodb_host }} --port={{ mongodb_port }}
+        --username={{ mongodb.get('user', 'mongoadmin') }} --password="$MONGODB_PMM_PASSWORD"
         --query-source={{ mongodb_query_source }}
         {%- if mongodb.get('cluster') %} --cluster={{ mongodb['cluster'] }}{%- endif %}
         {%- if mongodb.get('replication_set') %} --replication-set={{ mongodb['replication_set'] }}{%- endif %}
         {%- if mongodb.get('environment') %} --environment={{ mongodb['environment'] }}{%- endif %}
     - env:
       - MONGODB_PMM_PASSWORD: {{ mongodb['password'] | json }}
-    - unless: pmm-admin list | grep -qE '^MongoDB '
+    - unless: pmm-admin list | awk '$1 == "MongoDB" && $2 == "{{ mongodb_service }}" { f = 1 } END { exit !f }'
     - require:
       - cmd: pmm3_agent_setup
+{%- if mongodb_former != mongodb_service %}
+
+{#- the former registration of this instance (<os hostname>-mongodb at the same host:port) is removed once the service
+    is registered under the new name: pmm-admin add checks the connection, a failed add leaves the former one collecting #}
+pmm3_agent_mongodb_service_former:
+  cmd.run:
+    - name: pmm-admin remove mongodb {{ mongodb_former }}
+    - onlyif:
+      - pmm-admin list | awk '$1 == "MongoDB" && $2 == "{{ mongodb_service }}" { f = 1 } END { exit !f }'
+      - pmm-admin list | awk -v a="{{ mongodb_address }}" '$1 == "MongoDB" && $2 == "{{ mongodb_former }}" && $3 == a { f = 1 } END { exit !f }'
+    - require:
+      - cmd: pmm3_agent_mongodb_service
+{%- endif %}
 {%- endif %}
 {%- endif %}

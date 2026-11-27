@@ -56,31 +56,34 @@ pmm3:
       panel_cpu_usage_alert_pending_for: 1m
       panel_cpu_iowait_alert_pending_for: 3m
     dashboard_definitions:
-      # template - dashboard kind from catalog.jinja; one dashboard + its alert rules per definition.
+      # template - dashboard kind from catalog.jinja; one dashboard + its alert rules per definition, one dashboard per subject.
       # folder - optional; or the directory of path (/srv/grafana/dashboards/<folder>/<file>.json); or dashboards:folder.
       # context - subject and overrides: panel_<alert>_alert_conditions_evaluator_params (threshold),
-      #   _evaluator_type (gt|lt), _reducer_type, _query_params ('"A","5m","now"'), _frequency, _pending_for, panel_<alert>_title.
+      #   _evaluator_type (gt|lt), _reducer_type, _query_params ('"A","5m","now"'), _frequency, _pending_for, panel_<alert>_title;
+      #   section_<section>_enable: true|false - turn a section of the kind on or off.
       #
-      # disk_memory_cpu_mysql-replica alerts: disk_space_usage, free_memory, swap_usage, undo_log_size, cpu_usage, cpu_iowait,
-      #   mysql_replication_status, mysql_replication_lag (with panel_mysql_replication_enable: true),
-      #   server_uptime_threshold (with is_mysql_server: true, default).
-      - template: disk_memory_cpu_mysql-replica
+      # node (subject node_name), sections:
+      #   disk_memory: disk_space_usage, free_memory, swap_usage
+      #   cpu:         cpu_usage, cpu_iowait
+      # mysql = node + sections:
+      #   mysql:             server_uptime_threshold, undo_log_size
+      #   mysql_replication: mysql_replication_status, mysql_replication_lag (off by default)
+      # pxc_cluster (subject wsrep_cluster_name), section pxc: pxc_size, pxc_flow_control
+      - template: mysql
         context:
-          node_name: db1.example.com            # PMM node name
+          node_name: db1.example.com            # PMM node name; the MySQL service is <node_name>-mysql (pmm3.agent)
           panel_cpu_usage_alert_conditions_evaluator_params: 60
-      - template: disk_memory_cpu_mysql-replica
+      - template: mysql
         path: /srv/grafana/dashboards/pmm_alerts_dashboards/db2.example.com.json
         context:
           node_name: db2.example.com
-          panel_mysql_replication_enable: true
+          section_mysql_replication_enable: true
           panel_mysql_replication_lag_alert_pending_for: 10m
-      - template: disk_memory_cpu_mysql-replica
+      - template: node
         folder: other_folder                    # optional, per definition
         context:
           node_name: web1.example.com
-          is_mysql_server: false
-      # pxc_size alerts: pxc_size, pxc_flow_control
-      - template: pxc_size
+      - template: pxc_cluster
         context:
           wsrep_cluster_name: example-cluster
           board_name: Example Percona XtraDB Cluster

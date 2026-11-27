@@ -2,20 +2,39 @@
   PMM 3: alert dashboards + Grafana Unified Alerting (file provisioning) + Telegram relay.
 
   Host layout (pmm3:srv_path is mounted into the PMM container as /srv, see server.sls):
-    <srv_path>/grafana/provisioning/alerting/salt-*.yaml  - contact point, policy, rules
+    <srv_path>/grafana/provisioning/alerting/salt-*.yaml  - contact point, policy, rules, deleteRules of the stale rules
                                                             (PMM's own pmm-builtin.json lives there too - not touched)
+    <provisioning_path>/alert-rule-uids[.applied]         - uids of the generated rules [of the last successful reload]
     <srv_path>/grafana/dashboards/<folder>/<subject>.json - dashboards (Salt owns the directory)
     <telegram_relay:path>/relay.py, relay.env             - Telegram relay: Grafana -> webhook -> relay -> Telegram,
                                                             one post per alert (panel image + text as caption)
 -#}
 {%- if pillar['pmm3'] is defined and pillar['pmm3'].get('alerting') %}
 {%- from 'pmm3/map.jinja' import pmm3 with context %}
-{%- from 'pmm3/alerts.jinja' import dashboards, rule_groups with context %}
+{%- from 'pmm3/alerts.jinja' import dashboards, rule_groups, rule_uids with context %}
 {%- set alerting_dir = pmm3['srv_path'] ~ '/grafana/provisioning/alerting' %}
 {%- set dashboards_dir = pmm3['srv_path'] ~ '/grafana/dashboards' %}
 {%- set tg = pmm3['alerting']['telegram'] %}
 {%- set relay = pmm3['alerting']['telegram_relay'] %}
 {%- set policy = pmm3['alerting']['policy'] %}
+{%- set rules_file = alerting_dir ~ '/salt-rules.yaml' %}
+{%- set rule_uids_file = pmm3['provisioning_path'] ~ '/alert-rule-uids' %}
+{%- set applied_uids_file = rule_uids_file ~ '.applied' %}
+{#- Grafana file provisioning never deletes a rule that left salt-rules.yaml. The previous rules that are not generated
+    now go to deleteRules. Previous: the set of the last successful reload (alert-rule-uids.applied, written by
+    pmm3_alerting_reload) and the rules in salt-rules.yaml on the host, before it is rewritten - the first run of this
+    version (no .applied yet), and the rules a failed reload may have created in part. Rules of other provisioning
+    files are in neither; deleting a uid Grafana no longer has is a no-op #}
+{%- set previous_uids = [] %}
+{%- if salt['file.file_exists'](applied_uids_file) %}
+  {%- do previous_uids.extend(salt['file.read'](applied_uids_file).split()) %}
+{%- endif %}
+{%- if salt['file.file_exists'](rules_file) %}
+  {%- for group in (salt['file.read'](rules_file) | load_yaml or {}).get('groups') or [] %}
+    {%- do previous_uids.extend((group.get('rules') or []) | map(attribute='uid') | list) %}
+  {%- endfor %}
+{%- endif %}
+{%- set stale_uids = previous_uids | reject('in', rule_uids) | unique | sort | list %}
 
 {#- PMM runs as uid 1000 gid 0 and owns /srv; it also resets the alerting dir to 775 on every start #}
 pmm3_alerting_dirs:
@@ -135,12 +154,35 @@ pmm3_alerting_contact_points:
 
 pmm3_alerting_rules:
   file.serialize:
-    - name: {{ alerting_dir }}/salt-rules.yaml
+    - name: {{ rules_file }}
     - mode: 644
     - formatter: yaml
     - require:
       - file: pmm3_alerting_provisioning_dir
     - dataset: {{ {'apiVersion': 1, 'groups': rule_groups} | json }}
+
+pmm3_alerting_rule_uids:
+  file.managed:
+    - name: {{ rule_uids_file }}
+    - mode: 644
+    - contents: {{ (rule_uids | sort | join('\n')) | json }}
+
+{#- a failed reload leaves .applied as it was: the same rules are listed again on the next run #}
+pmm3_alerting_stale_rules:
+{%- if stale_uids %}
+  {%- set delete_rules = [] %}
+  {%- for uid in stale_uids %}{% do delete_rules.append({'orgId': 1, 'uid': uid}) %}{% endfor %}
+  file.serialize:
+    - name: {{ alerting_dir }}/salt-rules-delete.yaml
+    - mode: 644
+    - formatter: yaml
+    - require:
+      - file: pmm3_alerting_provisioning_dir
+    - dataset: {{ {'apiVersion': 1, 'deleteRules': delete_rules} | json }}
+{%- else %}
+  file.absent:
+    - name: {{ alerting_dir }}/salt-rules-delete.yaml
+{%- endif %}
 
 {#- folder dirs are declared explicitly, otherwise clean removes them as "extra" #}
 {%- set folder_dirs = [] %}
@@ -191,14 +233,18 @@ pmm3_alerting_reload:
     - name: |
         curl -sSfk -u "$PMM_AUTH" -X POST {{ pmm3['api_url'] }}/api/admin/provisioning/dashboards/reload && echo &&
         curl -sSfk -u "$PMM_AUTH" -X POST {{ pmm3['api_url'] }}/api/admin/provisioning/alerting/reload && echo &&
+        cp {{ rule_uids_file }} {{ applied_uids_file }} &&
         {{ checksums }} > {{ stamp }}
     - shell: /bin/bash
     - env:
       - PMM_AUTH: {{ ('admin:' ~ pmm3['admin_password']) | json }}
-    {#- skip when Grafana is down or nothing changed since the last successful reload #}
-    - unless: '! curl -sfk -o /dev/null {{ pmm3['api_url'] }}/api/health || diff -q {{ stamp }} <({{ checksums }}) > /dev/null 2>&1'
+    {#- skip when Grafana is down or nothing changed since the last successful reload;
+        no .applied yet - reload once to record the applied set #}
+    - unless: '! curl -sfk -o /dev/null {{ pmm3['api_url'] }}/api/health || (test -f {{ applied_uids_file }} && diff -q {{ stamp }} <({{ checksums }}) > /dev/null 2>&1)'
     - require:
       - file: pmm3_alerting_contact_points
       - file: pmm3_alerting_rules
+      - file: pmm3_alerting_rule_uids
+      - file: pmm3_alerting_stale_rules
       - file: pmm3_dashboards_clean
 {%- endif %}
