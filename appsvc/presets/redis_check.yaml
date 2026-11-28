@@ -12,6 +12,7 @@
 # which is unverified (skip_verify) unless svc.source_hash is set too.
 
 type: redis_check
+install_dir: "/opt/services/{type}/{name}"
 
 svc:
   source: "salt://appsvc/files/scripts/redis_check/redis_check.py"

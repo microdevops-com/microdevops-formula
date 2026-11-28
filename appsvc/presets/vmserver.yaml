@@ -7,6 +7,7 @@
 # the same archive-fetch shape vlserver uses), not a replacement for it.
 
 type: vmserver
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: true

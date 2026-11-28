@@ -4,6 +4,7 @@
 # Same release resolver/archive family as vlserver, but with the vlagent binary.
 
 type: vlagent
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: true

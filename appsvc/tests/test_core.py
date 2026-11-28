@@ -5,6 +5,8 @@ import pytest
 from appsvc_lib.core import (
     append_at_path,
     check_dir_isolation,
+    check_install_dir_set,
+    check_no_install_dir_used,
     check_map_key,
     collect_scrape_jobs,
     deep_format,
@@ -624,3 +626,28 @@ def test_lift_dir_specs_leaves_input_alone():
     assert lift_dir_specs(layer) == {"install_dir": {"name": "/x"}, "user": {"home": {"name": "/h"}}}
     assert layer == {"install_dir": "/x", "user": {"home": "/h"}}
     assert lift_dir_specs({}) == {} and lift_dir_specs(None) is None
+
+
+# ── install_dir is required ──────────────────────────────────────────────────
+
+def test_check_install_dir_set():
+    check_install_dir_set({"install_dir": "/x"}, "a")
+    check_install_dir_set({"install_dir": None}, "a")    # explicit null = none
+    with pytest.raises(ValueError, match=r"a: install_dir is not set.*0.2-install-dir"):
+        check_install_dir_set({"user": {}}, "a")
+
+
+def test_check_no_install_dir_used():
+    settings = {"systemd": {"defaults": {"Service": {"WorkingDirectory": "{install_dir}"}}},
+                "venv": {"manage": False, "dir": "{install_dir}/venv"},
+                "cron": {"x": {"cmd": "true"}}}
+    check_no_install_dir_used(settings, "a", [])          # inert defaults only
+    units = [{"key": "main", "delete": False,
+              "sections": {"Service": {"WorkingDirectory": "{install_dir}", "ExecStart": "/bin/x"}}},
+             {"key": "old", "delete": True, "sections": {"Service": {"WorkingDirectory": "{install_dir}"}}}]
+    with pytest.raises(ValueError, match=r"systemd.units.main.Service.WorkingDirectory still uses"):
+        check_no_install_dir_used(settings, "a", units)
+    bad = dict(settings, venv={"manage": True}, dirs={"logs": {"name": "{install_dir}/log"}},
+               commands={"c": {"cmd": ["cd {install_dir}"]}})
+    with pytest.raises(ValueError, match=r"venv.manage, dirs.logs.name, commands.c.cmd.0 still use "):
+        check_no_install_dir_used(bad, "a", [])

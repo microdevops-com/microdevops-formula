@@ -2,6 +2,7 @@
 # https://github.com/czerwonk/ping_exporter/
 
 type: exporter_ping
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: false

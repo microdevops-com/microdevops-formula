@@ -3,6 +3,7 @@
 # include build IDs that are not derivable from the version alone.
 
 type: grafana
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: true

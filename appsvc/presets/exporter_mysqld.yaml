@@ -4,6 +4,7 @@
 # Exporter presets use `exporter_<name>` identity.
 
 type: exporter_mysqld
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: false

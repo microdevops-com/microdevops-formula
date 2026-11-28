@@ -8,7 +8,10 @@ cache_dir: /var/cache/salt/appsvc
 # see WHITEPAPER.md §10.
 resolve_cache_ttl: 3600
 
-install_dir: "/opt/services/{type}/{name}"
+# No install_dir default: a bundled preset sets one; an instance without a
+# preset must set a path, or `install_dir: null` when it has no directory of
+# its own (CHANGELOG.md#0.2-install-dir). A forgotten one used to land in
+# /opt/services/{type}/{name} silently.
 
 # Managed Python venv for a Python-based daemon. block runs only when
 # venv.manage is true (like user/nginx). Top-level, not svc.venv - a

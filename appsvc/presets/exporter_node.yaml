@@ -5,6 +5,7 @@
 # archive-only preset shape. Exporter presets use `exporter_<name>` identity.
 
 type: exporter_node
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: true

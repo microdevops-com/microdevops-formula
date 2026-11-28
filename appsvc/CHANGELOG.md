@@ -11,6 +11,35 @@ recognises the old shape itself, which says more than a version number could.
 
 ## 0.2
 
+<a id="0.2-install-dir"></a>
+### Breaking: `install_dir` has no default
+
+`defaults.yaml` no longer sets `install_dir: "/opt/services/{type}/{name}"`. A
+forgotten `install_dir` (most web apps live in `/var/www/{name}/app`) used to
+land there silently. Every bundled preset now sets it explicitly, so
+preset-based instances render as before. An instance without a preset must set
+it, and the render fails if neither the preset nor the instance does.
+
+```yaml
+# before: no install_dir, got /opt/services/{type}/{name}
+mt-argon:
+  user: {manage: true, name: argon}
+
+# after
+mt-argon:
+  install_dir: /var/www/{name}/app           # or the old path, to keep it
+  user: {manage: true, name: argon}
+
+# an instance with no directory of its own (cron-only, nginx-only, ...)
+cleanup:
+  install_dir: null
+```
+
+With `install_dir: null`, the render fails where an applied setting still
+uses `{install_dir}`: a systemd unit's `WorkingDirectory` (the default is
+`{install_dir}`, so set your own), `venv.manage`, a `kind: archive` `svc` or
+a `kind: file` one without `svc.target`, or any of your own values.
+
 <a id="0.2-systemd-units"></a>
 ### Breaking: one instance, several systemd units (`systemd.units`)
 

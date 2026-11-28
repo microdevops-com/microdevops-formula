@@ -11,7 +11,7 @@ import logging
 import yaml
 
 from salt://appsvc/compat.py import check_compat
-from salt://appsvc/lib/core.py import append_at_path, check_dir_isolation, collect_scrape_jobs, expand, join_args, lift_dir_specs, merge, merge_args, merge_globals, parse_filter, select_instances, selected_blocks, split_dir_perms, user_home
+from salt://appsvc/lib/core.py import INSTALL_DIR_PLACEHOLDER, append_at_path, check_dir_isolation, check_install_dir_set, check_no_install_dir_used, collect_scrape_jobs, expand, join_args, lift_dir_specs, merge, merge_args, merge_globals, parse_filter, select_instances, selected_blocks, split_dir_perms, user_home
 from salt://appsvc/lib/release.py import fetch_target, normalize_osarch, resolve_latest
 from salt://appsvc/lib/runtimes.py import runtime_paths
 from salt://appsvc/lib/systemd.py import check_unit_names, systemd_plan
@@ -119,7 +119,15 @@ for instance_name, instance in instances.items():
     # before expand (see lib/core.py:lift_dir_specs / split_dir_perms).
     settings = merge(*(lift_dir_specs(layer) for layer in (DEFAULTS, preset, instance)))
     settings["name"] = instance_name
+    # No default install_dir: the preset or the instance sets it (null = none).
+    check_install_dir_set(settings, instance_name)
     settings = split_dir_perms(settings)
+    # install_dir: null - dropped from settings and kept as a literal
+    # {install_dir} in the phase-2 scope (None would render "None"), so any
+    # applied setting still using it is found after expand.
+    no_install_dir = settings.get("install_dir") is None
+    if no_install_dir:
+        settings.pop("install_dir")
     settings.setdefault("type", preset_name or instance_name)
 
     # Structured svc.args merge by flag name rather than replacing wholesale so
@@ -167,13 +175,13 @@ for instance_name, instance in instances.items():
     runtime = runtime_paths(user_name, home, instance_name, settings.get("nvm"),
                             settings.get("pyenv"), settings.get("shell_env"),
                             scope={"home": home, "user_name": user_name,
-                                   "install_dir": settings.get("install_dir", "")})
+                                   "install_dir": settings.get("install_dir", INSTALL_DIR_PLACEHOLDER)})
     extra_scope = dict(base_scope,
                        nvm_dir=runtime["nvm_dir"],
                        pyenv_root=runtime["pyenv_root"],
                        tools_dir=runtime["tools_dir"],
                        env_sh=runtime["env_sh"],
-                       install_dir=settings.get("install_dir", ""),
+                       install_dir=settings.get("install_dir", INSTALL_DIR_PLACEHOLDER),
                        exec=svc.get("exec", ""),
                        args=join_args(svc.get("args", []), svc.get("args_prefix", "-") or "-"),
                        user_name=user.get("name", "root"),
@@ -184,7 +192,7 @@ for instance_name, instance in instances.items():
                        # instance gets "" instead of fetch_target's ValueError.
                        # {svc_target} is what makes a plaintext-script instance
                        # near zero-config: ExecStart: "{venv_dir}/bin/python {svc_target}".
-                       svc_target=fetch_target(svc, settings.get("install_dir", "")) if svc.get("source") else "",
+                       svc_target=fetch_target(svc, settings.get("install_dir", INSTALL_DIR_PLACEHOLDER)) if svc.get("source") else "",
                        # {venv_dir}, never {venv}: expand folds top-level settings
                        # keys into scope, so {venv} would render the config dict's
                        # repr - same reason svc exposes {exec} rather than {svc}.
@@ -193,6 +201,11 @@ for instance_name, instance in instances.items():
                        # install_dir/svc.source do - see WHITEPAPER.md §5).
                        venv_dir=(settings.get("venv") or {}).get("dir", ""))
     settings = expand(settings, extra_scope)
+
+    if no_install_dir:
+        check_no_install_dir_used(settings, instance_name,
+                                  systemd_plan(settings.get("systemd"), instance_name))
+        settings["install_dir"] = None
 
     expanded[instance_name] = settings
 

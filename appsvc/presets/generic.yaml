@@ -39,7 +39,8 @@ type: generic
 #
 # cache_dir: /var/cache/salt/appsvc
 # resolve_cache_ttl: 3600
-# install_dir: "/opt/services/{type}/{name}"
+# install_dir: "/opt/services/{type}/{name}"   # required, no default: a path,
+#                       # or null for an instance with no directory of its own
 # install_dir: {name: "/var/www/{name}/app", group: www-data, mode: "750"}  # string or
 #                       # {name, user, group, mode}; mode is the dir itself, never recursive
 # github_token: ghp_xxxxxxxxxxxxxxxxxxxx  # top-level appsvc pillar only; secret

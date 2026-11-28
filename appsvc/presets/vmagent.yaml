@@ -6,6 +6,7 @@
 # (`vmagent-prod`) and vmagent-specific flags/config.
 
 type: vmagent
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: true

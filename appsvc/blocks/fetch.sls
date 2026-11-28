@@ -26,7 +26,7 @@ def fetch_source(prefix, settings):
     when they change - the dispatcher wires these into the systemd block."""
 
     svc = settings["svc"]
-    install_dir = settings["install_dir"]
+    install_dir = settings.get("install_dir")
     owner = settings.get("user", {})
     sid = "_".join(prefix)
 
@@ -50,6 +50,9 @@ def fetch_source(prefix, settings):
                 "svc.source is empty - a kind: file instance must set it "
                 "(see the redis_check preset's header)")
 
+        if not install_dir and not svc.get("target"):
+            raise ValueError("svc: install_dir is null, so a kind: file source "
+                             "needs an explicit svc.target")
         target = fetch_target(svc, install_dir)
         source_hash = svc.get("source_hash")
 
@@ -68,6 +71,10 @@ def fetch_source(prefix, settings):
         changed = [File(sid + "_file")]
         _data_dirs(sid, svc, owner, changed)
         return changed
+
+    if not install_dir:
+        raise ValueError("svc: a kind: archive source extracts into install_dir, "
+                         "but install_dir is null")
 
     # kind == "archive": today's path, unchanged - except the install_dir
     # File.directory moved out to blocks/install_dir.sls, plus version_stamp

@@ -370,6 +370,62 @@ def dir_perms(settings):
     return result
 
 
+# ── install_dir is required ───────────────────────────────────────────────────
+# No default: a forgotten install_dir used to land silently in
+# /opt/services/{type}/{name}. Bundled presets set it; an instance without a
+# preset sets a path, or `install_dir: null` when it has no directory of its own.
+
+INSTALL_DIR_PLACEHOLDER = "{install_dir}"
+
+
+def check_install_dir_set(settings, instance_name):
+    """Raise when the merged settings (defaults -> preset -> instance) have no
+    `install_dir` key at all - `install_dir: null` counts as set."""
+    if "install_dir" not in settings:
+        raise ValueError(
+            "appsvc:instances:{}: install_dir is not set (no default since 0.2). Set the "
+            "path, e.g. /var/www/{{name}}/app, or install_dir: null if the instance has no "
+            "directory of its own [0.2, appsvc/CHANGELOG.md#0.2-install-dir]".format(instance_name))
+
+
+def _placeholder_paths(value, path=""):
+    if isinstance(value, str):
+        return [path] if INSTALL_DIR_PLACEHOLDER in value else []
+    if isinstance(value, dict):
+        items = value.items()
+    elif isinstance(value, (list, tuple)):
+        items = enumerate(value)
+    else:
+        return []
+    found = []
+    for key, item in items:
+        found += _placeholder_paths(item, "{}.{}".format(path, key) if path else str(key))
+    return found
+
+
+def check_no_install_dir_used(settings, instance_name, units):
+    """With install_dir: null, fail where an applied setting still holds a
+    literal {install_dir}: the resolved systemd `units` (systemd_plan, so the
+    defaults' WorkingDirectory counts) and every other top-level key; a managed
+    venv needs install_dir outright. systemd/venv as written are skipped - their defaults.yaml
+    placeholders are inert until a unit / venv.manage uses them."""
+    found = []
+    for unit in units:
+        if not unit.get("delete"):
+            found += ["systemd.units.{}.{}".format(unit["key"], p)
+                      for p in _placeholder_paths(unit.get("sections"))]
+    if (settings.get("venv") or {}).get("manage"):
+        found.append("venv.manage")    # writes its requirements file into install_dir
+    for key, value in settings.items():
+        if key not in ("systemd", "venv", "_dir_perms"):
+            found += _placeholder_paths(value, key)
+    if found:
+        raise ValueError(
+            "appsvc:instances:{}: install_dir is null but {} still use{} {{install_dir}} - "
+            "set install_dir, or replace the placeholder".format(
+                instance_name, ", ".join(found), "s" if len(found) == 1 else ""))
+
+
 def check_dir_isolation(expanded):
     """A locked directory (mode with no `x` for others, group other than its
     owner's own) relies on nobody else being in that group. Raise if any

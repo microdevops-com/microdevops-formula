@@ -4,6 +4,7 @@
 # Same archive family as vmagent, but with vmauth-specific binary and config.
 
 type: vmauth
+install_dir: "/opt/services/{type}/{name}"
 
 user:
   manage: true
