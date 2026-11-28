@@ -28,7 +28,8 @@ def php_fpm(prefix, settings):
     user = settings.get("user") or {}
     user_name = user.get("name", "root")
     user_group = user.get("group", user_name)
-    pools = normalize_php_pools(conf.get("pools"), prefix[-1], user_name, user_group)
+    pools = normalize_php_pools(conf.get("pools"), prefix[-1], user_name, user_group,
+                                conf.get("defaults"))
     if not pools:
         return {}
 

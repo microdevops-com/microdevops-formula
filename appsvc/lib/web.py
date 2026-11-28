@@ -10,7 +10,7 @@ the pyobjects renderer parses), and tests load it through tests/conftest.py.
 import fnmatch
 import re
 
-from salt://appsvc/lib/core.py import _KEY_RE, _check_unknown_keys, check_map_key
+from salt://appsvc/lib/core.py import _KEY_RE, _check_unknown_keys, check_map_key, deep_format, merge
 
 
 # ── php-fpm ───────────────────────────────────────────────────────────────────
@@ -22,6 +22,29 @@ PHP_LOG_KEYS = ("error", "slow", "slow_timeout", "slow_trace_depth")
 PHP_SLOW_TIMEOUT = 10        # seconds, when log.slow is set
 PHP_SLOW_TRACE_DEPTH = 0
 _PHP_DURATION_RE = re.compile(r"^[1-9]\d*[smhd]?$")
+
+
+def _entry_defaults(section, defaults, allowed):
+    """`<section>.defaults`: a mapping merged under every entry (the entry
+    wins), like systemd.defaults under each unit. Same keys as an entry."""
+    if defaults is None:
+        return {}
+    if not isinstance(defaults, dict):
+        raise ValueError("{}.defaults must be a mapping, got {!r}".format(section, defaults))
+    _check_unknown_keys(section, "defaults", defaults, allowed)
+    return defaults
+
+
+def _entry(section, key, item, allowed):
+    """One keyed-map entry: key checked, None (`back:` in YAML) = {}, unknown
+    keys rejected - on the entry as written, before defaults are merged in."""
+    check_map_key(section, key)
+    if item is None:
+        item = {}
+    if not isinstance(item, dict):
+        raise ValueError("{}:{}: must be a mapping, got {!r}".format(section, key, item))
+    _check_unknown_keys(section, key, item, allowed)
+    return item
 
 
 def _log_map(section, key, item, allowed):
@@ -40,11 +63,9 @@ def _php_slow_log(key, log):
     """(slow_log|None, timeout|None, trace_depth|None) from a pool's `log`.
     Timeout: positive int seconds, or a php-fpm duration string ("5s", "1m")."""
     slow = log.get("slow") or None
-    tuning = [name for name in ("slow_timeout", "slow_trace_depth") if log.get(name) is not None]
     if not slow:
-        if tuning:
-            raise ValueError("php_fpm.pools:{}: log.{} needs log.slow (the slowlog path)".format(
-                key, "/".join(tuning)))
+        # slow_timeout/slow_trace_depth come from php_fpm.defaults for every
+        # pool, so without a slowlog they are simply unused.
         return None, None, None
     timeout = log.get("slow_timeout", PHP_SLOW_TIMEOUT)
     if isinstance(timeout, bool) or not (
@@ -57,16 +78,18 @@ def _php_slow_log(key, log):
         raise ValueError("php_fpm.pools:{}: log.slow_trace_depth must be an integer >= 0, "
                          "got {!r}".format(key, depth))
     return slow, "{}s".format(timeout) if isinstance(timeout, int) else timeout, depth
-PHP_DEFAULT_LISTEN = "/run/php/php{version}-fpm-{pool_name}.sock"
+PHP_DEFAULT_LISTEN = "/run/php/php{php_version}-fpm-{pool_name}.sock"
 _PHP_VERSION_RE = re.compile(r"^\d+\.\d+$")
 
 
-def normalize_php_pools(pools, instance_name, user_name, user_group):
+def normalize_php_pools(pools, instance_name, user_name, user_group, defaults=None):
     """Turn the `php_fpm.pools` keyed map into an ordered list of fully resolved
     dicts (key, name, version, user, group, listen, listen_owner, listen_group,
     listen_mode, error_log|None, slow_log|None, slow_timeout|None,
     slow_trace_depth|None, reload, config, path) - from pillar `log.error`,
-    `log.slow`, `log.slow_timeout`, `log.slow_trace_depth`. `listen` may use
+    `log.slow`, `log.slow_timeout`, `log.slow_trace_depth`. Each pool is
+    merge(`defaults` (php_fpm.defaults), pool); then {pool} (the key) is
+    filled in `name`, and {pool}, {pool_name}, {php_version} everywhere. `listen` may use
     {version} and {pool_name}. Raises ValueError on a bad key, unknown keys, a
     `version` that is not a "N.N" string (a YAML float like 8.10 loses its
     zero), a bad `name` charset or a non-string `listen_mode`."""
@@ -74,12 +97,10 @@ def normalize_php_pools(pools, instance_name, user_name, user_group):
         return []
     if not isinstance(pools, dict):
         raise ValueError("php_fpm.pools must be a keyed map, got {!r}".format(pools))
+    defaults = _entry_defaults("php_fpm", defaults, PHP_POOL_KEYS)
     result = []
     for key, item in pools.items():
-        check_map_key("php_fpm.pools", key)
-        if not isinstance(item, dict):
-            raise ValueError("php_fpm.pools:{}: must be a mapping, got {!r}".format(key, item))
-        _check_unknown_keys("php_fpm.pools", key, item, PHP_POOL_KEYS)
+        item = merge(defaults, _entry("php_fpm.pools", key, item, PHP_POOL_KEYS))
 
         version = item.get("version")
         if not isinstance(version, str):
@@ -90,11 +111,12 @@ def normalize_php_pools(pools, instance_name, user_name, user_group):
             raise ValueError("php_fpm.pools:{}: `version` must look like \"8.3\", "
                              "got {!r}".format(key, version))
 
-        name = item.get("name", "{}_{}".format(instance_name, key))
+        name = deep_format(item.get("name", "{}_{}".format(instance_name, key)), {"pool": key})
         if not isinstance(name, str) or not _KEY_RE.match(name):
             raise ValueError("php_fpm.pools:{}: invalid `name` {!r} - it becomes the pool "
                              "section and file name, allowed characters are [A-Za-z0-9_.-]"
                              .format(key, name))
+        item = deep_format(item, {"pool": key, "pool_name": name, "php_version": version})
 
         listen_mode = item.get("listen_mode", "0660")
         if not isinstance(listen_mode, str):
@@ -105,7 +127,7 @@ def normalize_php_pools(pools, instance_name, user_name, user_group):
         if not isinstance(listen, str) or not listen.startswith("/"):
             raise ValueError("php_fpm.pools:{}: `listen` must be an absolute socket path, "
                              "got {!r}".format(key, listen))
-        listen = listen.replace("{version}", version).replace("{pool_name}", name)
+        listen = deep_format(listen, {"php_version": version, "pool_name": name, "pool": key})
 
         log = _log_map("php_fpm.pools", key, item, PHP_LOG_KEYS)
         error_log = log.get("error") or None
@@ -143,7 +165,8 @@ def php_fpm_sockets(settings, instance_name):
     conf = settings.get("php_fpm") or {}
     user = settings.get("user") or {}
     user_name = user.get("name", "root")
-    pools = normalize_php_pools(conf.get("pools"), instance_name, user_name, user.get("group", user_name))
+    pools = normalize_php_pools(conf.get("pools"), instance_name, user_name, user.get("group", user_name),
+                                conf.get("defaults"))
     return {pool["key"]: pool["listen"] for pool in pools}
 
 
@@ -206,7 +229,9 @@ def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
     dicts: key, name, names, domain, tls, acme_account, ssl_cert, ssl_key,
     upstream|None, template|None, vars, access_log, error_log (from pillar
     `log.access` / `log.error`, default /var/log/nginx/<name>.*.log), auth_basic (list),
-    htpasswd_file|None. ACME cert paths derive from `name` + the first domain.
+    htpasswd_file|None. Each vhost is merge(nginx.defaults, vhost); then {vhost}
+    (the key) is filled in `name`, and {vhost}, {vhost_name} everywhere.
+    ACME cert paths derive from `name` + the first domain.
 
     Raises ValueError on unknown keys (the pre-vhosts top-level shape is
     reported by compat.py), missing/empty `names`, not exactly one
@@ -221,19 +246,18 @@ def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
     if not isinstance(vhosts, dict):
         raise ValueError("nginx.vhosts must be a keyed map, got {!r}".format(vhosts))
 
+    defaults = _entry_defaults("nginx", nginx.get("defaults"), NGINX_VHOST_KEYS)
     result = []
     for key, item in vhosts.items():
-        check_map_key("nginx.vhosts", key)
-        if not isinstance(item, dict):
-            raise ValueError("nginx.vhosts:{}: must be a mapping, got {!r}".format(key, item))
-        _check_unknown_keys("nginx.vhosts", key, item, NGINX_VHOST_KEYS)
-        log = _log_map("nginx.vhosts", key, item, NGINX_LOG_KEYS)
+        item = merge(defaults, _entry("nginx.vhosts", key, item, NGINX_VHOST_KEYS))
 
-        name = item.get("name", "{}_{}".format(instance_name, key))
+        name = deep_format(item.get("name", "{}_{}".format(instance_name, key)), {"vhost": key})
         if not isinstance(name, str) or not _KEY_RE.match(name):
             raise ValueError("nginx.vhosts:{}: invalid `name` {!r} - it becomes the file, "
                              "upstream, ACME and log name, allowed characters are "
                              "[A-Za-z0-9_.-]".format(key, name))
+        item = deep_format(item, {"vhost": key, "vhost_name": name})
+        log = _log_map("nginx.vhosts", key, item, NGINX_LOG_KEYS)
 
         names = item.get("names")
         if (not names or not isinstance(names, list)

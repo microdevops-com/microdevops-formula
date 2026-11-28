@@ -35,6 +35,25 @@ user:
 
 nginx:
   manage: false
+  # Merged under every nginx.vhosts.<vhost> entry (the entry wins), like
+  # systemd.defaults - a preset can set logs, a template, ... for all of its
+  # vhosts. {vhost} is the entry's key, {vhost_name} the resolved name
+  # ("<instance>_<vhost>" by default, host-unique - hence its use in the
+  # shared /var/log/nginx).
+  defaults:
+    log:
+      access: "/var/log/nginx/{vhost_name}.access.log"
+      error: "/var/log/nginx/{vhost_name}.error.log"
+
+# php-fpm pools (php_fpm.pools.<pool>). php_fpm.defaults is merged under every
+# pool (the pool wins). {pool} is the key, {pool_name} the resolved name
+# ("<instance>_<pool>"), {php_version} the pool's version - NOT {version},
+# which is svc.version. slow_* apply only to a pool that sets log.slow.
+php_fpm:
+  defaults:
+    log:
+      slow_timeout: 10         # seconds, or "5s"/"1m"
+      slow_trace_depth: 0
 
 # One /etc/logrotate.d/appsvc-<instance> composed from the declared php pool
 # logs (log.error, log.slow) and nginx vhost logs (blocks/logrotate.sls). Inert until one of

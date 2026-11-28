@@ -472,6 +472,12 @@ user:
 # - `name:` keeps the same sites-available file and ACME cert path.
 nginx:
   manage: false
+  # defaults:                   # merged under every vhost (the vhost wins), like
+  #                             # systemd.defaults; same keys as a vhost. {vhost} =
+  #                             # the key, {vhost_name} = the resolved name.
+  #   log:                      # defaults.yaml: /var/log/nginx/{vhost_name}.*.log
+  #     access: "{install_dir}/log/nginx/{vhost}.access.log"
+  #     error: "{install_dir}/log/nginx/{vhost}.error.log"
   # vhosts:
   #   app:
   #     # name: "{name}_app"        # default "<instance>_<key>": file, upstream,
@@ -516,13 +522,22 @@ nginx:
 # here - deploys own it.
 #
 # php_fpm:
+#   defaults:                     # merged under every pool (the pool wins); same
+#                                 # keys as a pool. {pool} = the key, {pool_name}
+#                                 # = the resolved name, {php_version} = version
+#                                 # ({version} is svc.version, not the pool's).
+#     version: "8.3"
+#     log:
+#       error: "{install_dir}/log/php/{pool}.error.log"
+#       slow: "{install_dir}/log/php/{pool}.slow.log"
+#       # slow_timeout: 10 / slow_trace_depth: 0 come from defaults.yaml
 #   pools:
 #     web:
 #       version: "8.3"              # required; MUST be a quoted string ("8.10" != 8.1)
 #       # name: "{name}_web"        # default "<instance>_<key>": [section] + file name
 #       # user: "{user_name}"       # default: the instance user
 #       # group: "{user_group}"
-#       # listen: "/run/php/php{version}-fpm-{pool_name}.sock"   # default
+#       # listen: "/run/php/php{php_version}-fpm-{pool_name}.sock"   # default
 #       # listen_owner: www-data
 #       # listen_group: www-data
 #       # listen_mode: "0660"       # a string

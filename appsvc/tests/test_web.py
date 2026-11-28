@@ -1,4 +1,5 @@
 import pytest
+from appsvc_lib.core import merge
 
 from appsvc_lib.web import (
     acme_cert_paths,
@@ -120,6 +121,22 @@ def test_nginx_vhost_log():
         _norm({"w": _vh(access_log="/l/a.log")})
 
 
+def test_nginx_vhost_defaults_merge_and_placeholders():
+    nginx = {"manage": True, "defaults": merge(_repo_defaults()["nginx"]["defaults"], {
+                 "template": "salt://t/{vhost}.conf",
+                 "log": {"access": "/srv/log/nginx/{vhost}.access.log"}}),
+             "vhosts": {"back": {"names": ["b.example.com"]},
+                        "front": {"names": ["f.example.com"], "name": "legacy_{vhost}",
+                                  "log": {"error": "/srv/e.log"}}}}
+    back, front = normalize_nginx_vhosts(nginx, "inst")
+    assert (back["template"], back["access_log"], back["error_log"]) == \
+        ("salt://t/back.conf", "/srv/log/nginx/back.access.log", "/var/log/nginx/inst_back.error.log")
+    assert (front["name"], front["access_log"], front["error_log"]) == \
+        ("legacy_front", "/srv/log/nginx/front.access.log", "/srv/e.log")
+    with pytest.raises(ValueError, match="nginx:defaults: unknown key"):
+        normalize_nginx_vhosts(dict(nginx, defaults={"names2": 1}), "inst")
+
+
 def test_nginx_template_context_has_reserved_names_and_vars_on_top():
     [v] = _norm({"w": _vh(name="svc", upstream=None, template="salt://t.conf",
                           acme_account="a", vars={"port": 1})}, "app")
@@ -164,10 +181,10 @@ def test_php_pools_defaults_resolved():
 def test_php_pools_empty_and_order_and_overrides():
     assert _pools(None) == [] and _pools({}) == []
     result = _pools({"b": {"version": "8.1", "name": "x", "user": "u", "reload": False,
-                           "listen": "/run/{pool_name}-{version}.sock"},
+                           "listen": "/run/{pool_name}-{php_version}-{pool}.sock"},
                      "a": {"version": "8.10"}})
     assert [p["key"] for p in result] == ["b", "a"]
-    assert result[0]["listen"] == "/run/x-8.1.sock"
+    assert result[0]["listen"] == "/run/x-8.1-b.sock"
     assert result[0]["user"] == "u" and result[0]["reload"] is False
     assert result[1]["path"] == "/etc/php/8.10/fpm/pool.d/inst_a.conf"
 
@@ -217,8 +234,6 @@ def test_php_slow_log():
 
 
 @pytest.mark.parametrize("log, error", [
-    ({"slow_timeout": 5}, "needs log.slow"),
-    ({"error": "/e", "slow_trace_depth": 2}, "needs log.slow"),
     ({"slow": "/s", "slow_timeout": 0}, "slow_timeout"),
     ({"slow": "/s", "slow_timeout": "10 s"}, "slow_timeout"),
     ({"slow": "/s", "slow_timeout": True}, "slow_timeout"),
@@ -230,6 +245,38 @@ def test_php_slow_log():
 def test_php_log_validation(log, error):
     with pytest.raises(ValueError, match=error):
         _pools({"a": {"version": "8.3", "log": log}})
+
+
+def test_php_slow_tuning_unused_without_slow():
+    [p] = _pools({"a": {"version": "8.3", "log": {"error": "/e", "slow_timeout": 5}}})
+    assert (p["slow_log"], p["slow_timeout"]) == (None, None)
+    assert "slowlog" not in render_php_pool(p)
+
+
+def _repo_defaults():
+    import os, yaml
+    with open(os.path.join(os.path.dirname(__file__), "..", "defaults.yaml")) as f:
+        return yaml.safe_load(f)
+
+
+def test_php_pool_defaults_merge_and_placeholders():
+    defaults = merge(_repo_defaults()["php_fpm"]["defaults"], {
+        "version": "8.3",
+        "log": {"error": "/srv/log/php/{pool}.error.log", "slow": "/srv/log/php/{pool_name}.slow.log"},
+        "config": "php_value[x] = {php_version}\n"})
+    a, b = normalize_php_pools({"a": None, "b": {"version": "8.1", "log": {"slow_timeout": "2s"}}},
+                               "inst", "web", "webgrp", defaults)
+    assert (a["version"], a["error_log"], a["slow_log"], a["slow_timeout"], a["slow_trace_depth"]) == \
+        ("8.3", "/srv/log/php/a.error.log", "/srv/log/php/inst_a.slow.log", "10s", 0)
+    assert a["config"] == "php_value[x] = 8.3\n"
+    assert (b["version"], b["slow_timeout"], b["listen"]) == \
+        ("8.1", "2s", "/run/php/php8.1-fpm-inst_b.sock")
+    [c] = normalize_php_pools({"c": {}}, "inst", "web", "webgrp", {"version": "8.3", "name": "x_{pool}"})
+    assert c["name"] == "x_c" and c["path"] == "/etc/php/8.3/fpm/pool.d/x_c.conf"
+    with pytest.raises(ValueError, match="php_fpm:defaults: unknown key"):
+        normalize_php_pools({"c": {}}, "inst", "web", "webgrp", {"bogus": 1})
+    with pytest.raises(ValueError, match="defaults must be a mapping"):
+        normalize_php_pools({"c": {}}, "inst", "web", "webgrp", "x")
 
 
 def test_php_old_error_log_key_rejected():

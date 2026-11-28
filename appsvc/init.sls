@@ -93,7 +93,9 @@ global_vars = cfg("globals", {})
 PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir", "home",
                       "nvm_dir", "pyenv_root", "tools_dir", "env_sh",
                       # filled per systemd unit by lib/systemd.py:systemd_plan
-                      "unit", "unit_name")
+                      "unit", "unit_name",
+                      # filled per vhost / pool by lib/web.py
+                      "vhost", "vhost_name", "pool", "pool_name", "php_version")
 
 # Optional `appsvc:filter` (operator-typed, usually on the CLI) scopes this apply
 # to a subset - e.g. pillar='{appsvc: {filter: "name: vm* *gra*; block: cron"}}'.

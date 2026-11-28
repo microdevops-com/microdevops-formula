@@ -125,6 +125,12 @@ Also in 0.2 (additive):
   `error_log`). New: `log.slow` (php-fpm slowlog) with `log.slow_timeout`
   (default 10 s) and `log.slow_trace_depth` (default 0); slow logs join the
   logrotate file. The old keys now fail as unknown keys.
+- `nginx.defaults` / `php_fpm.defaults`: merged under every vhost / pool,
+  like `systemd.defaults`, so a preset can set logs (or a version, a
+  template, ...) for all of them. Placeholders `{vhost}`/`{vhost_name}`,
+  `{pool}`/`{pool_name}`/`{php_version}`. A pool may be empty (`back:`).
+  `{version}` in a pool `listen` is now `{php_version}` (`{version}` is
+  `svc.version` and was already expanded away before the pool saw it).
 - `install_dir` and `user.home` also take a mapping, `{name, group, mode}`
   (`install_dir` also takes `user`). A plain path string still works and
   behaves as before. Use it for per-site isolation: `750 <user>:www-data` on

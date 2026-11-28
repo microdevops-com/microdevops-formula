@@ -22,8 +22,9 @@ def logrotate(prefix, settings):
     user_name = user.get("name", "root")
     user_group = user.get("group", user_name)
 
-    pools = normalize_php_pools((settings.get("php_fpm") or {}).get("pools"),
-                                prefix[-1], user_name, user_group)
+    php = settings.get("php_fpm") or {}
+    pools = normalize_php_pools(php.get("pools"), prefix[-1], user_name, user_group,
+                                php.get("defaults"))
     nginx = settings.get("nginx") or {}
     vhosts = normalize_nginx_vhosts(nginx, prefix[-1]) if nginx.get("manage", False) else []
 
