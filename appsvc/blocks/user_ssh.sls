@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import user_home, parse_known_host
+from salt://appsvc/lib/core.py import user_home, parse_known_host
 
 # Refactored out of application/utils.py's user()/ssh() - same behavior
 # (group+user, .ssh dir, keys, authorized_keys, config, known_hosts), adapted

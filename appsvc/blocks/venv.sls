@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import venv_requirement_paths, venv_build_command, venv_guard_command, VENV_STAMP_NAME
+from salt://appsvc/lib/release.py import venv_requirement_paths, venv_build_command, venv_guard_command, VENV_STAMP_NAME
 
 # Generic mechanism for running a Python daemon under appsvc: create/maintain a
 # venv matching a declared requirement set. Driven by the top-level `venv:`

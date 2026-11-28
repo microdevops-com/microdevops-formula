@@ -13,7 +13,7 @@ Read `WHITEPAPER.md` first (esp. §3 logic/directives split, §6 the
 
 appsvc splits three things on purpose:
 
-- **generic mechanism → code** (`blocks/*.sls` + `lib.py`)
+- **generic mechanism → code** (`blocks/*.sls` + `lib/`)
 - **app-specific knowledge → data** (`presets/*.yaml`, pillar)
 - **irreducible app-specific logic → code**, but *thin* and contract-following
 
@@ -31,7 +31,7 @@ the need into primitives, then route each primitive by the litmus test below.
 3. **Needs genuinely app-specific logic** (HTTP-API upsert, app-specific
    ordering/validation, a nicer pillar API that takes real translation)? → a
    **thin app block** (`blocks/<app>.sls`) that composes generic blocks and puts
-   pure logic in `lib.py`.
+   pure logic in `lib/`.
 
 The failure mode to avoid: a fat app module that re-implements fetch/systemd/
 config or bakes in behavior other tools also need. That's exactly
@@ -45,7 +45,7 @@ config or bakes in behavior other tools also need. That's exactly
 | Provision dashboards | provider YAML + dashboard JSON files | generic `config_dir` → preset data |
 | Edit `grafana.ini` | render an INI file | `config_file` with `format: ini` |
 | Install plugins | `grafana-cli plugins install …` | generic `commands` block |
-| API provisioning | idempotent upsert via Grafana HTTP API, after start | thin `blocks/grafana.sls` + pure `lib.py` helpers |
+| API provisioning | idempotent upsert via Grafana HTTP API, after start | thin `blocks/grafana.sls` + pure `lib/` helpers |
 
 Note the shape: only the **last row** is Grafana *code*. The rest is Grafana
 *data* over mechanisms that aren't Grafana-specific at all (Loki, Prometheus,
@@ -70,7 +70,7 @@ Alertmanager will want the same `config_dir` / `commands` / INI capabilities).
    - reuse `config_dir`/`config_file` for file work — don't re-emit raw
      `File.managed` it could delegate;
    - put real logic (defaults, validation, API payload building, idempotent
-     upsert decisions) in **pure `lib.py` functions** so it's unit-tested
+     upsert decisions) in **pure `lib/` functions** so it's unit-tested
      without a minion;
    - **return the `changed` list** so restart/reload threads correctly (§6).
 
@@ -185,4 +185,4 @@ existing Docker-based `grafana/` formula is a different deployment model, not
 Extend, don't fork. Generic gap → generic block. App knowledge → preset data.
 Only irreducible app logic → a thin app block (dispatched via an app-key
 registry, honoring the `changed`/`watch` contract and the pre/post-systemd
-ordering, with pure logic in `lib.py`).
+ordering, with pure logic in `lib/`).

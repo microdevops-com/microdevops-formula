@@ -9,10 +9,10 @@ them clean.
 
 A check only RECOGNISES an old shape and says how to move to the new one, with
 a pointer to the CHANGELOG.md entry. It never validates the new shape - that
-stays in lib.py next to the code that uses it. Checks are kept indefinitely:
+stays in lib/ next to the code that uses it. Checks are kept indefinitely:
 they are cheap, and long-frozen pillar is exactly what they exist for.
 
-No salt imports, so the module is unit-tested with plain pytest.
+No salt or lib imports, so the module is unit-tested with plain pytest.
 """
 
 CHANGELOG = "appsvc/CHANGELOG.md"

@@ -34,7 +34,7 @@ For every entry under `appsvc:instances`:
    `appsvc:presets:<preset>` pillar override) -> the instance's own pillar.
    Later layers win; dicts merge recursively, everything else (including
    lists) is replaced wholesale - **except `svc.args`**, which is re-merged
-   by flag name (`merge_args` in `lib.py`) right after. Mapping entries render
+   by flag name (`merge_args` in `lib/core.py`) right after. Mapping entries render
    as `{args_prefix}key=value`; string entries inside an args list render
    literally, so value-less flags like `--livereload` can be mixed in. A
    top-level raw string `svc.args` is still a complete args line and replaces
@@ -50,7 +50,7 @@ For every entry under `appsvc:instances`:
    URL, because Grafana archive names contain build IDs that are not derivable
    from the version alone. This network step runs only for instances **selected**
    by `appsvc:filter` (all of them when no filter is given).
-3. **Expand placeholders**, in two passes (`expand` in `lib.py`):
+3. **Expand placeholders**, in two passes (`expand` in `lib/core.py`):
    - *Phase 1* against grain-derived identity (`osarch`, `kernel_lower`,
      `cpuarch`, `grain_id` = the minion id) plus the instance's own static keys
      (`name`, `type`, `version`, `tag`, `tag_vstrip`) and any operator-defined
@@ -164,21 +164,38 @@ now fails loud. Write it as
 `name: X` keeps the same file and ACME cert path (the old default was the instance
 name). One old `servers[]` entry becomes one vhost.
 
-## The `lib.py` layer
+## The `lib/` layer
 
-`lib.py` is a plain, normally-importable Python file with **zero Salt
-directives** — pure functions over plain dicts (placeholder expansion,
-deep-merge, GitHub release resolution, archive/command helpers,
-Grafana package resolution, systemd unit rendering). Unit-tested with plain pytest (`tests/test_lib.py`,
-run via `python -m pytest tests/`), no minion required.
+`lib/*.py` are plain Python modules with **zero Salt directives** — pure
+functions over plain dicts, one module per area:
 
-`init.sls` loads it with a single `from salt://appsvc/lib.py import ...`
-line — the same `from salt://...import` mechanism used for block files, no
-hardcoded path or `sys.path` manipulation needed. Because pyobjects gives each
+| module | holds |
+|---|---|
+| `lib/core.py` | placeholder expansion, deep merge, scrape collection, the apply filter, user home / known_hosts, keyed-map key checks, `svc.args` merge/join |
+| `lib/release.py` | fetch kinds/targets, archive extraction, venv, `latest` resolvers + resolve cache (the only network code) |
+| `lib/app.py` | commands (phases, onchanges), sources, dirs, cron, config rendering |
+| `lib/runtimes.py` | runtime layout, nvm, pyenv, tools, env_sh |
+| `lib/web.py` | php-fpm pools, nginx vhosts, logrotate |
+| `lib/systemd.py` | `systemd.units` planning, unit-name checks, unit rendering |
+
+Every module depends only on `core.py` (never the other way round, never on
+each other). `compat.py` (old pillar shapes, see CHANGELOG.md) imports nothing
+from `lib/`.
+
+Unit-tested with plain pytest, one `tests/test_<module>.py` per module (run via
+`python -m pytest tests/`), no minion required.
+
+`init.sls` and the blocks load them with one-line
+`from salt://appsvc/lib/<module>.py import ...` statements — the same
+`from salt://...import` mechanism used for block files, no hardcoded path or
+`sys.path` manipulation needed. The modules import `core.py` the same way, which
+plain Python cannot parse, so `tests/conftest.py` serves them to pytest as the
+package `appsvc_lib` (`from appsvc_lib.web import ...`), rewriting just those
+import lines. Because pyobjects gives each
 block file a frozen snapshot of `_globals` at exec time (before `init.sls`'s
 own body runs), lib functions are NOT automatically in block `__globals__`.
 Blocks that need helpers therefore import them in their own source with a
-top-level `from salt://appsvc/lib.py import ...` line, so pyobjects populates
+top-level `from salt://appsvc/lib/<module>.py import ...` line, so pyobjects populates
 that block's globals during the block import itself.
 
 ## Presets (`presets/*.yaml`)

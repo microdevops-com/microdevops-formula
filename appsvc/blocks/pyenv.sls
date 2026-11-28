@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import runtime_plans
+from salt://appsvc/lib/runtimes.py import runtime_plans
 
 # Built explicitly, not taken from pyobjects' injected globals - see
 # blocks/sources.sls for why.

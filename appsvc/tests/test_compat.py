@@ -1,17 +1,15 @@
 import glob
 import os
 import re
-import sys
 
 import pytest
 import yaml
 
-HERE = os.path.dirname(__file__)
-ROOT = os.path.join(HERE, "..")
-sys.path.insert(0, ROOT)
+from appsvc_lib.core import deep_format, merge
+from appsvc_lib.systemd import check_unit_names, systemd_plan
+from compat import CHECKS, check_compat, find_problems
 
-from compat import CHECKS, check_compat, find_problems  # noqa: E402
-from lib import deep_format, merge, systemd_plan  # noqa: E402
+ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 
 def _yaml(path):
@@ -89,7 +87,6 @@ def test_bundled_preset_units_keep_pre_0_2_names():
 
 
 def test_pillar_example_units_plan():
-    from lib import check_unit_names
     defaults, bundled = _yaml("defaults.yaml"), _bundled_presets()
     example = _yaml("pillar.example")["appsvc"]
     plans = {}

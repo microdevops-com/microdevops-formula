@@ -355,6 +355,14 @@ Not done: **user units** (`systemctl --user`: `~/.config/systemd/user`,
 service states don't cover them) - a later per-unit `scope: user` fits this
 shape.
 
+### [x] 22. Split lib.py by area
+**Resolved:** the ~2k-line `lib.py` became `lib/{core,release,app,runtimes,
+web,systemd}.py` (pure move, no behavior change), each depending only on
+`core.py`, with one `tests/test_<module>.py` each. Modules import `core.py` with
+pyobjects' `from salt://appsvc/lib/core.py import ...`; `tests/conftest.py`
+serves `lib/` to pytest as the package `appsvc_lib`, rewriting only those lines.
+Older items below that say `lib.py` / `tests/test_lib.py` predate the split.
+
 ### [ ] 20. Gaps left by app-management step 2
 - [x] **logrotate** for app logs - done: `blocks/logrotate.sls` composes one
   `/etc/logrotate.d/appsvc-<instance>` from the declared pool/vhost logs.

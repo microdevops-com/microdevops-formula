@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import normalize_dirs, check_dirs_outside_sources
+from salt://appsvc/lib/app.py import normalize_dirs, check_dirs_outside_sources
 
 
 def dirs(prefix, settings):

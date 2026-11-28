@@ -1,11 +1,12 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import archive_path, tar_extract_command, deep_format, fetch_kind, fetch_target
+from salt://appsvc/lib/core.py import deep_format
+from salt://appsvc/lib/release.py import archive_path, tar_extract_command, fetch_kind, fetch_target
 
 # Generalizes exporter/macro.jinja's download/tar/move/executable macros and
 # victoriametrics/_setup.sls's archive handling into one reusable block.
-# Renamed from fetch_archive.sls: fetch_kind (lib.py) now picks between two
+# Renamed from fetch_archive.sls: fetch_kind (lib/release.py) now picks between two
 # strategies - "archive" (this file's original behavior, unchanged below) and
 # "file" (a bare script/binary compared as-is via File.managed, no cache hop) -
 # see PATCH.md phase 1 for the "why".
@@ -37,7 +38,7 @@ def fetch_source(prefix, settings):
             raise ValueError(
                 "svc.{} only applies to kind: archive, but this instance's "
                 "svc.kind is (or resolves to) 'file' - see fetch_kind in "
-                "lib.py".format(bad[0]))
+                "lib/release.py".format(bad[0]))
 
         # fetch_target only raises on an empty source when svc.target is unset,
         # and presets that have no release to resolve (redis_check) ship

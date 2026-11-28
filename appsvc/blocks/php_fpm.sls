@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import normalize_php_pools, render_php_pool, php_reload_command
+from salt://appsvc/lib/web.py import normalize_php_pools, render_php_pool, php_reload_command
 
 # php-fpm pools only - this block never installs PHP. Driven by
 # `settings["php_fpm"]["pools"]` (keyed map, see presets/generic.yaml):

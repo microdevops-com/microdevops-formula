@@ -1,9 +1,9 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import render_unit, systemd_plan
+from salt://appsvc/lib/systemd.py import render_unit, systemd_plan
 
-# One system unit per `systemd.units.<unit>` entry (lib.systemd_plan validates
+# One system unit per `systemd.units.<unit>` entry (lib/systemd.py:systemd_plan validates
 # and resolves names). Presets decide unit content, this block only renders,
 # enables and (re)starts - or, for `delete: true`, stops and removes. Units
 # dropped from pillar are left alone (not managed); deleting one is explicit.

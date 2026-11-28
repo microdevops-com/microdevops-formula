@@ -1,6 +1,6 @@
 #!pyobjects
 # vim: set ft=python:
-from salt://appsvc/lib.py import normalize_nginx_vhosts, nginx_template_context
+from salt://appsvc/lib/web.py import normalize_nginx_vhosts, nginx_template_context
 
 # Built explicitly, not taken from pyobjects' injected globals: pyobjects only
 # injects factories for state modules that load on the *rendering* host, and

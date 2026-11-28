@@ -2,7 +2,7 @@
 
 Short orientation for maintainers (human or model): *why* `appsvc` is shaped the
 way it is, plus the non-obvious mechanics you'd otherwise re-derive from scratch.
-Read this before touching `init.sls`, `lib.py`, or the building-block contract.
+Read this before touching `init.sls`, `lib/`, or the building-block contract.
 
 - `readme.md` — how to use it. `pillar.example` — the full pillar shape.
 - `TODO.md` — *live* open concerns / follow-ups.
@@ -58,10 +58,13 @@ import time*. A file of pure `def`s with zero references to
 just a Python module, importable and pytest-able normally. So appsvc draws a
 hard line:
 
-- **`lib.py`** — one plain Python file. Pure functions over plain dicts/strings:
-  placeholder expansion, deep-merge, release resolution, archive/tar/unit
-  construction, arg joining/merging. Zero Salt directives. Fully covered by
-  `tests/test_lib.py` (plain pytest, no minion).
+- **`lib/*.py`** — plain Python modules, one per area (`core`, `release`, `app`,
+  `runtimes`, `web`, `systemd`; see readme.md). Pure functions over plain
+  dicts/strings: placeholder expansion, deep-merge, release resolution,
+  archive/tar/unit construction, arg joining/merging. Zero Salt directives.
+  Every module depends only on `core.py`. Fully covered by
+  `tests/test_<module>.py` (plain pytest, no minion; `tests/conftest.py` maps
+  the `salt://` imports between modules onto the `appsvc_lib` package).
 - **`blocks/*.sls`** — `#!pyobjects` fragments of `def`s that emit directives
   when called; imported into `init.sls` via `from salt://appsvc/blocks/x.sls
   import y`.
@@ -71,13 +74,15 @@ hard line:
 ### How lib helpers reach blocks (no sys.path, no hardcoded paths)
 
 `init.sls` imports the helpers *it* calls directly. **Each block carries its own
-top-level `from salt://appsvc/lib.py import <names>` line** for the helpers it
-needs. This matters because of the frozen-globals snapshot above: names added to
+top-level `from salt://appsvc/lib/<module>.py import <names>` line** for the
+helpers it needs (lib modules import `core.py` the same way; the pyobjects
+preprocessor handles imports recursively). This matters because of the frozen-globals snapshot above: names added to
 `init.sls`'s globals *after* a block was imported are not visible inside that
 block. Putting the import in the block's own source makes pyobjects populate that
 block's globals while importing the block itself. Keep these imports on **one
 line** — the preprocessor is line-based and breaks on multi-line parenthesized
-imports.
+imports. It also has no module cache: every such line re-executes the whole
+module, which is one more reason the lib is split by area.
 
 *Rejected alternatives (don't reintroduce):* `cp.cache_dir`+`sys.path.insert`
 (returned empty under salt-ssh → `IndexError`); a hardcoded `FORMULA_DIR` on
@@ -116,7 +121,7 @@ gather is cross-instance, so it gets its own.
 2. **Merge** — `settings = merge(defaults, preset, instance)`. Dicts merge
    recursively; everything else (incl. **lists**) is replaced wholesale by the
    more-specific layer. (`svc.args` is the one exception — §10.)
-3. **Resolve version/source** (`resolve_latest_version` → `lib.py`'s
+3. **Resolve version/source** (`resolve_latest_version` → `lib/release.py`'s
    `resolve_latest`, which does the HTTP via `requests.get`, cached on the render
    host — §10) — through the named `svc.version_resolver` (`github` by default).
    GitHub resolvers only resolve `version: latest`, freezing `svc.version`/
@@ -142,7 +147,7 @@ gather is cross-instance, so it gets its own.
 
 ## 5. Placeholder expansion: two phases, no third
 
-`lib.py` provides `deep_format(value, scope)` (recursively `format_map`s every
+`lib/core.py` provides `deep_format(value, scope)` (recursively `format_map`s every
 string in a nested structure; missing keys left as literal `{key}` so partial
 scopes don't blow up) and `expand(mapping, scope, rounds=3)` (folds the
 mapping's own progressively-expanded values into scope each round, so keys can
@@ -213,7 +218,7 @@ do **not** feed the `changed` list; setup commands are not "new binary/config"
 events and should carry their own `unless`/`onlyif` if they need idempotency.
 
 appsvc is no longer archive-only: `fetch_source` (`fetch.sls`) picks between two
-fetch **kinds** via `lib.py`'s `fetch_kind` — `archive` (the original download
+fetch **kinds** via `lib/release.py`'s `fetch_kind` — `archive` (the original download
 → cache → optional `tar`-extract shape) and `file` (a bare script or binary
 fetched and compared in place by `File.managed`, no cache hop, no extract).
 Package-manager fetch support was deliberately removed when no planned users
@@ -274,11 +279,11 @@ production path — these presets are not replacements or a migration invitation
 
 ## 9. Testing
 
-- **`lib.py`**: `~/venv/bin/python -m pytest tests/ -v` — dict/string fixtures,
+- **`lib/`**: `~/venv/bin/python -m pytest tests/ -v` — dict/string fixtures,
   no minion, no mocked Salt internals (lib never touches them). This is the
   payoff of the split: the fiddliest logic is the easiest to test.
 - **Render path** (the pyobjects wiring) is **not** covered by the unit tests —
-  they import `lib.py` directly, bypassing pyobjects entirely. It must be checked
+  they import `lib/` through `tests/conftest.py`, bypassing pyobjects entirely. It must be checked
   with a real render (`salt-call --local state.show_sls appsvc`, and a salt-ssh
   render — the two use different fileclient plumbing; this area has bitten
   salt-ssh before). The TODO item 1 change was validated this way.
@@ -372,7 +377,7 @@ production path — these presets are not replacements or a migration invitation
 - **`store` removed; `version_resolver` added.** `store` conflated fetch
   strategy with "how does latest resolve?" Once apt/package support was dropped,
   fetch became archive-only and the only real variation left was resolver logic.
-  GitHub's releases URL moved from `defaults.yaml` into `lib.py`; it is stable
+  GitHub's releases URL moved from `defaults.yaml` into `lib/release.py`; it is stable
   code, not useful pillar data.
 - **Grafana resolves package source through the API, even for pinned versions.**
   Grafana's versions API exposes stable versions (`13.0.2`), but the package
@@ -432,7 +437,7 @@ production path — these presets are not replacements or a migration invitation
 - **Version resolution is cached on disk at render time, with a NAT caveat.**
   Resolution runs during rendering, so a many-minion highstate (or repeated
   salt-ssh runs) would otherwise hit a fresh API request each time and blow the
-  unauthenticated GitHub limit (60 req/hr/IP). `cached_get_json` (`lib.py`) keeps
+  unauthenticated GitHub limit (60 req/hr/IP). `cached_get_json` (`lib/release.py`) keeps
   a TTL'd file cache under `{cache_dir}/resolve/` (`resolve_cache_ttl`, default
   1h, `0` disables), shared across render *processes* on the host: a lock-free
   read on a fresh entry; an `flock`-guarded, double-checked single refresh on a
@@ -454,8 +459,8 @@ production path — these presets are not replacements or a migration invitation
 |---|---|
 | What pillar keys does an instance support? | `pillar.example` (inline docs), `readme.md` placeholder table |
 | What does the merged/expanded settings dict look like for instance X? | `state.show_sls appsvc` on a minion |
-| Why can `lib.py` functions be called inside block functions? | §3 — each block has its own top-level `from salt://appsvc/lib.py import ...` |
-| How do I add a version resolver? | Add a pure helper in `lib.py`, register it in `VERSION_RESOLVERS`, and have it return a settings patch for `resolve_latest` |
+| Why can `lib/` functions be called inside block functions? | §3 — each block has its own top-level `from salt://appsvc/lib/<module>.py import ...` |
+| How do I add a version resolver? | Add a pure helper in `lib/release.py`, register it in `VERSION_RESOLVERS`, and have it return a settings patch for `resolve_latest` |
 | How do I add a building block (cron, logrotate)? | New `blocks/<name>.sls` exporting `<name>(prefix, settings)`; wire into `dispatch`, guarded by its settings key / `manage: true` |
 | How do I add app-specific management (Grafana datasources, etc.)? | `docs/extending-with-app-blocks.md` — generic gap → generic block; app knowledge → preset data; irreducible app logic → a thin app block |
 | Why is `{install_dir}` sometimes a real path, sometimes a template? | §5 — depends which expansion phase |

@@ -1,7 +1,8 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import render_config, deep_format, sources_containing
+from salt://appsvc/lib/core.py import deep_format
+from salt://appsvc/lib/app.py import render_config, sources_containing
 
 # Renders the instance's config file(s) from `settings["config"]`, a dict of
 # named entries each describing one file. The entry's key is available as

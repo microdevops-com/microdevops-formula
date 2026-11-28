@@ -9,7 +9,7 @@
 #      settings = merge(appsvc/defaults.yaml, presets/<preset>.yaml, <instance>)
 #      - everything here merges deep-dict-wise / replaces-wholesale, EXCEPT
 #        structured svc.args, which is merged by flag name (merge_args in
-#        lib.py), so an instance can override e.g. just httpListenAddr from a
+#        lib/core.py), so an instance can override e.g. just httpListenAddr from a
 #        preset's args without restating storageDataPath/retentionPeriod/... too
 #        (string entries inside args lists are literal tokens; top-level raw
 #        string args replace wholesale)
@@ -124,7 +124,7 @@ appsvc:
         group: vlogs-secondary
       svc:
         version: v1.8.0
-        # args is merged with the preset's by flag name (merge_args in lib.py)
+        # args is merged with the preset's by flag name (merge_args in lib/core.py)
         # rather than replaced wholesale, so overriding just the listen address
         # here still keeps the preset's storageDataPath/retentionPeriod intact.
         args:

@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import git_source_state
+from salt://appsvc/lib/app.py import git_source_state
 
 # Built explicitly, not taken from pyobjects' injected globals: pyobjects only
 # injects factories for state modules that load on the *rendering* host, and

@@ -5,13 +5,16 @@
 # prebuilt binaries (VictoriaMetrics, Grafana, exporters, ...), Python daemons,
 # and (in progress) multi-runtime web apps - under systemd, each independently configured from one merged
 # defaults -> preset -> instance settings dict. See readme.md for the full
-# pillar shape and appsvc/lib.py's docstring for the design rationale.
+# pillar shape and WHITEPAPER.md for the design rationale.
 
 import logging
 import yaml
 
 from salt://appsvc/compat.py import check_compat
-from salt://appsvc/lib.py import append_at_path, check_unit_names, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, runtime_paths, select_instances, systemd_plan, user_home
+from salt://appsvc/lib/core.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, merge_globals, parse_filter, select_instances, user_home
+from salt://appsvc/lib/release.py import fetch_target, normalize_osarch, resolve_latest
+from salt://appsvc/lib/runtimes.py import runtime_paths
+from salt://appsvc/lib/systemd.py import check_unit_names, systemd_plan
 
 from salt://appsvc/blocks/install_dir.sls import install_dir
 from salt://appsvc/blocks/fetch.sls import fetch_source
@@ -67,7 +70,7 @@ def load_preset(name):
 # --- "latest" version resolution ---------------------------------------------
 
 def resolve_latest_version(svc_settings):
-    """Delegate version/source resolution to lib.py's named resolver registry.
+    """Delegate version/source resolution to lib/release.py's named resolver registry.
     Passes the shared resolve-cache config (DEFAULTS, not per-instance: the cache
     is keyed by API URL and shared across instances/minions on the render host)."""
     context = {
@@ -157,7 +160,7 @@ global_vars = cfg("globals", {})
 # overwritten in the second expand pass.
 PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir", "home",
                       "nvm_dir", "pyenv_root", "tools_dir", "env_sh",
-                      # filled per systemd unit by lib.systemd_plan
+                      # filled per systemd unit by lib/systemd.py:systemd_plan
                       "unit", "unit_name")
 
 # Optional `appsvc:filter` (operator-typed, usually on the CLI) scopes this apply

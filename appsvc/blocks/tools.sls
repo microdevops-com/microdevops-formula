@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import runtime_plans
+from salt://appsvc/lib/runtimes.py import runtime_plans
 
 # Single-file downloads (composer & co.) from the keyed map `tools`.
 

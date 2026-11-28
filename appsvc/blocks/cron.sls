@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import normalize_cron
+from salt://appsvc/lib/app.py import normalize_cron
 
 # Built explicitly, not taken from pyobjects' injected globals: pyobjects only
 # injects factories for state modules that load on the *rendering* host, and

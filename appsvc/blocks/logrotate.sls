@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib.py import logrotate_plan, normalize_nginx_vhosts, normalize_php_pools, render_logrotate
+from salt://appsvc/lib/web.py import logrotate_plan, normalize_nginx_vhosts, normalize_php_pools, render_logrotate
 
 # One /etc/logrotate.d/appsvc-<instance>, composed from the logs the pillar
 # already declares: php_fpm pool `error_log`s and nginx vhost
