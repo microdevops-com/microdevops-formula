@@ -214,8 +214,10 @@ user:
 # svc:
 #   exec: "{venv_dir}/bin/python {svc_target}"
 # systemd:
-#   Service:
-#     ExecStart: "{exec} {args}"
+#   units:
+#     main:
+#       Service:
+#         ExecStart: "{exec} {args}"
 #
 # (Inlining "{venv_dir}/bin/python {svc_target}" straight into ExecStart also
 # works, but skips svc.args and breaks the one-place-for-the-command-line
@@ -292,13 +294,14 @@ user:
 #   rev: v0.40.1                # nvm git tag (default in defaults.yaml)
 #   # dir: "{home}/.nvm"        # default {nvm_dir}
 #   # repo: https://github.com/nvm-sh/nvm.git
+#   # build_pkgs: [git, curl]   # default in defaults.yaml; [] skips
 #
 # pyenv:
 #   versions: ["3.8.13"]        # first = `pyenv global`
 #   rev: v2.4.0
 #   # root: "{home}/.pyenv"     # default {pyenv_root}
 #   # repo: https://github.com/pyenv/pyenv.git
-#   # build_pkgs: [build-essential, libssl-dev, ...]   # default list in defaults.yaml; [] skips
+#   # build_pkgs: [git, curl, build-essential, ...]   # default list in defaults.yaml; [] skips
 #
 # Single-file downloads (keyed map), e.g. composer.
 # tools:
@@ -401,37 +404,50 @@ user:
 #     # sources it runs exactly once, on the initial clone.
 #     onchanges: [sources:backend]
 
-# Keep this reference preset inert when applied as-is: DEFAULTS enables systemd,
-# so without this a bare `preset: generic` would try to start a unit with no
-# ExecStart. A real service built on this preset sets `manage: true`.
-systemd:
-  manage: false
-
-# systemd unit rendering. `systemd.manage: false` skips unit creation/start.
-# Sections are rendered as INI; list values render as repeated directives.
+# systemd units: a keyed map, one /etc/systemd/system/<name>.service per key.
+# No units -> nothing is rendered (this reference preset stays inert as-is).
+# `systemd.manage: false` turns off all of an instance's units (e.g. a preset's).
+# Each unit is merged over systemd.defaults (defaults.yaml: Description, restart
+# cap, Restart/RestartSec, WorkingDirectory, WantedBy), so it mostly needs an
+# ExecStart. Sections render as INI; list values render as repeated directives.
+# Every kept unit restarts when code/binary/config/runtimes change. Bundled
+# presets name their single `main` unit "appsvc_{name}" - override it there:
+# systemd.units.main.Service.LimitNOFILE: 65536.
+#
+# Placeholders: {unit} is the key, {unit_name} the resolved unit name (only
+# inside systemd.units.<unit>).
+#
+# BREAKING in 0.2 (was systemd.{Unit,Service,Install,unit} for one unit): the
+# old keys fail the render with a pointer to CHANGELOG.md#0.2-systemd-units.
 #
 # systemd:
 #   manage: true
-#   unit: "appsvc_{name}"
-#   Unit:
-#     Description: "appsvc: {type} ({name})"
-#     After:
-#       - network.target
-#       - local-fs.target
-#     # Restart cap (StartLimit* live in [Unit], not [Service]). Defaults give
-#     # up after 5 starts within 60s; interval must exceed burst * RestartSec.
-#     StartLimitIntervalSec: 60
-#     StartLimitBurst: 5
-#   Service:
-#     Type: simple
-#     ExecStart: "{exec} {args}"
-#     User: "{user_name}"
-#     Group: "{user_group}"
-#     WorkingDirectory: "{install_dir}"
-#     Restart: on-failure
-#     RestartSec: 10            # pause between restarts
-#   Install:
-#     WantedBy: multi-user.target
+#   # defaults:
+#   #   name: "appsvc_{name}_{unit}"     # default unit name (defaults.yaml)
+#   units:
+#     main:
+#       name: "appsvc_{name}"            # unit name, ".service" optional; default
+#                                        # systemd.defaults.name. Must be unique on
+#                                        # the host (checked across instances), no
+#                                        # other suffix, no `@`, no distro names
+#                                        # (nginx, php*-fpm, redis-server, ...).
+#       Unit:
+#         After:
+#           - network.target
+#           - local-fs.target
+#       Service:
+#         ExecStart: "{exec} {args}"
+#         User: "{user_name}"
+#         Group: "{user_group}"
+#     consumer:                          # -> appsvc_<instance>_consumer.service
+#       Unit:
+#         Description: "appsvc: {name} consumer ({unit_name})"
+#       Service:
+#         ExecStart: "/usr/bin/php {install_dir}/bin/console messenger:consume async"
+#         User: "{user_name}"
+#     # A unit dropped from pillar stays on the host untouched. To remove one,
+#     # keep its key with delete: true - stopped, disabled, file removed, once.
+#     # old_worker: {delete: true}
 
 # Optional nginx vhosts: `vhosts` is a keyed map, one server group per key (the
 # key becomes part of a state ID: [A-Za-z0-9_.-]+). `manage` is the on/off gate.

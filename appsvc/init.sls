@@ -10,7 +10,8 @@
 import logging
 import yaml
 
-from salt://appsvc/lib.py import append_at_path, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, runtime_paths, select_instances, user_home
+from salt://appsvc/compat.py import check_compat
+from salt://appsvc/lib.py import append_at_path, check_unit_names, collect_scrape_jobs, expand, fetch_target, join_args, merge, merge_args, merge_globals, normalize_osarch, parse_filter, resolve_latest, runtime_paths, select_instances, systemd_plan, user_home
 
 from salt://appsvc/blocks/install_dir.sls import install_dir
 from salt://appsvc/blocks/fetch.sls import fetch_source
@@ -92,7 +93,7 @@ def dispatch(prefix, settings):
     never leaves a makedirs-created target behind), config, the svc fetch, venv
     (after fetch - venv.requirements_files may point at a requirements.txt that
     arrives inside the fetched archive), php_fpm pools, pre-systemd commands,
-    systemd, post-systemd commands, cron, then nginx (which gets the php_fpm
+    systemd units, post-systemd commands, cron, then nginx (which gets the php_fpm
     {pool_key: socket} map), then logrotate (composed from the pool and vhost
     logs). Source/fetch/config/venv changes
     are wired via the `changed` requisite-list contract so systemd restarts
@@ -119,9 +120,7 @@ def dispatch(prefix, settings):
     refs = {"sources": source_refs}
     run_commands(prefix, settings, phase="pre", require=changed, refs=refs)
 
-    running = None
-    if settings.get("systemd", {}).get("manage", True):
-        running = systemd_unit(prefix, settings, watch=changed)
+    running = systemd_unit(prefix, settings, watch=changed)
 
     run_commands(prefix, settings, phase="post", require=running, refs=refs)
 
@@ -144,6 +143,10 @@ def dispatch(prefix, settings):
 
 instances = cfg("instances", {})
 
+# Old pillar shapes (formats a later appsvc version changed) fail first, all at
+# once, each pointing at its CHANGELOG.md entry - see compat.py.
+check_compat(instances, cfg("presets", {}))
+
 # Operator-defined placeholders shared by every instance, usable as {key} in
 # any settings string alongside {name}/{type}/... Literal values, no recursive
 # expansion; a key colliding with a reserved placeholder fails loud.
@@ -153,7 +156,9 @@ global_vars = cfg("globals", {})
 # a global can't pass the phase-1 collision check and then be silently
 # overwritten in the second expand pass.
 PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group", "svc_target", "venv_dir", "home",
-                      "nvm_dir", "pyenv_root", "tools_dir", "env_sh")
+                      "nvm_dir", "pyenv_root", "tools_dir", "env_sh",
+                      # filled per systemd unit by lib.systemd_plan
+                      "unit", "unit_name")
 
 # Optional `appsvc:filter` (operator-typed, usually on the CLI) scopes this apply
 # to a subset - e.g. pillar='{appsvc: {filter: "name: vm* *gra*"}}'. It gates the
@@ -247,6 +252,11 @@ for instance_name, instance in instances.items():
     settings = expand(settings, extra_scope)
 
     expanded[instance_name] = settings
+
+# Unit names are host-global: two instances must not manage the same unit.
+# Checked across ALL instances, not just the selected ones.
+check_unit_names({instance_name: systemd_plan(settings.get("systemd"), instance_name)
+                  for instance_name, settings in expanded.items()})
 
 # Pass 2: gather cross-instance scrape jobs and dispatch the selected instances.
 for instance_name, settings in expanded.items():

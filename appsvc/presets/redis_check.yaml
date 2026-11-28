@@ -49,24 +49,27 @@ config:
 
 systemd:
   manage: true
-  Unit:
-    Description: "appsvc: redis_check ({name})"
-    After:
-      - network-online.target
-      - redis-server.service
-    Wants: network-online.target
-  Service:
-    Type: simple
-    ExecStart: "{exec} {args}"
-    Environment:
-      - PYTHONUNBUFFERED=1
-      # This preset runs as root (defaults.yaml's user.manage: false), matching
-      # how the daemon is deployed by hand today - it shells out to
-      # notify_devilry. Byte-compiling is off to keep __pycache__ out of the
-      # install dir, and because it would fail outright for an operator who
-      # layers user.manage: true on top: a non-root service user cannot write
-      # into the root-owned install dir.
-      - PYTHONDONTWRITEBYTECODE=1
-    Restart: on-failure
-    RestartSec: 10
-    WorkingDirectory: "{install_dir}"
+  units:
+    main:
+      name: "appsvc_{name}"
+      Unit:
+        Description: "appsvc: redis_check ({name})"
+        After:
+          - network-online.target
+          - redis-server.service
+        Wants: network-online.target
+      Service:
+        Type: simple
+        ExecStart: "{exec} {args}"
+        Environment:
+          - PYTHONUNBUFFERED=1
+          # This preset runs as root (defaults.yaml's user.manage: false), matching
+          # how the daemon is deployed by hand today - it shells out to
+          # notify_devilry. Byte-compiling is off to keep __pycache__ out of the
+          # install dir, and because it would fail outright for an operator who
+          # layers user.manage: true on top: a non-root service user cannot write
+          # into the root-owned install dir.
+          - PYTHONDONTWRITEBYTECODE=1
+        Restart: on-failure
+        RestartSec: 10
+        WorkingDirectory: "{install_dir}"

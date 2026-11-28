@@ -6,7 +6,7 @@ files that need helpers carry their own top-level `from salt://...` imports so
 pyobjects populates each block's frozen globals during that block's import.
 Directly importable by pytest for unit tests.
 
-Sections: substitute · merge · scrape · fetch · release · commands · home · sources · dirs · runtimes (nvm/pyenv/tools/env_sh) · cron · systemd guard · config · php-fpm · nginx · systemd
+Sections: substitute · merge · scrape · fetch · release · commands · home · sources · dirs · runtimes (nvm/pyenv/tools/env_sh) · cron · systemd units · config · php-fpm · nginx · systemd
 """
 
 import configparser
@@ -990,7 +990,7 @@ def check_dirs_outside_sources(dirs_normalized, sources):
 # tools,env_sh}.sls only emit states from them.
 
 RUNTIME_PLACEHOLDERS = ("nvm_dir", "pyenv_root", "tools_dir", "env_sh")
-NVM_KEYS = ("versions", "rev", "dir", "repo")
+NVM_KEYS = ("versions", "rev", "dir", "repo", "build_pkgs")
 PYENV_KEYS = ("versions", "rev", "root", "repo", "build_pkgs")
 ENV_SH_KEYS = ("path", "profile")
 TOOL_KEYS = ("source", "source_hash", "target", "mode")
@@ -1113,16 +1113,26 @@ def _runtime_common(what, conf, allowed, layout_key, conf_key, layout, user_name
     return base
 
 
+def _build_pkgs(kind, conf):
+    """Validated `<kind>.build_pkgs` list (empty/absent -> [], which skips the
+    pkg.installed state)."""
+    pkgs = conf.get("build_pkgs") or []
+    if not isinstance(pkgs, list) or not all(isinstance(p, str) and p for p in pkgs):
+        raise ValueError("{}:build_pkgs must be a list of package names, got {!r}".format(kind, pkgs))
+    return list(pkgs)
+
+
 def nvm_plan(nvm, layout, user_name):
     """Validated nvm plan, or None when `nvm` is absent or has no `versions`
     (defaults.yaml supplies rev/repo only, so defaults stay inert). Keys: dir,
-    repo, rev, versions, default (= versions[0]), user (None for root), env,
-    installs [{version, suffix, name, unless}], default_cmd {name, unless}."""
+    repo, rev, versions, default (= versions[0]), user (None for root),
+    build_pkgs, env, installs [{version, suffix, name, unless}], default_cmd {name, unless}."""
     base = _runtime_common("nvm", nvm, NVM_KEYS, "nvm_dir", "dir", layout, user_name)
     if base is None:
         return None
     versions = _runtime_versions("nvm", nvm["versions"], _NVM_VERSION_RE)
     default = versions[0]
+    pkgs = _build_pkgs("nvm", nvm)
     source = '. "{}/nvm.sh"'.format(base)
     installs = []
     for v in versions:
@@ -1140,6 +1150,7 @@ def nvm_plan(nvm, layout, user_name):
         "versions": versions,
         "default": default,
         "user": None if (user_name or "root") == "root" else user_name,
+        "build_pkgs": pkgs,
         "env": {"NVM_DIR": base},
         "installs": installs,
         "default_cmd": {
@@ -1159,9 +1170,7 @@ def pyenv_plan(pyenv, layout, user_name):
         return None
     versions = _runtime_versions("pyenv", pyenv["versions"], _PYENV_VERSION_RE)
     default = versions[0]
-    pkgs = pyenv.get("build_pkgs") or []
-    if not isinstance(pkgs, list) or not all(isinstance(p, str) and p for p in pkgs):
-        raise ValueError("pyenv:build_pkgs must be a list of package names, got {!r}".format(pkgs))
+    pkgs = _build_pkgs("pyenv", pyenv)
     installs = []
     for v in versions:
         installs.append({
@@ -1177,7 +1186,7 @@ def pyenv_plan(pyenv, layout, user_name):
         "versions": versions,
         "default": default,
         "user": None if (user_name or "root") == "root" else user_name,
-        "build_pkgs": list(pkgs),
+        "build_pkgs": pkgs,
         "env": {"PYENV_ROOT": base},
         "installs": installs,
         "default_cmd": {
@@ -1357,23 +1366,119 @@ def normalize_cron(cron, instance_name, default_user):
     return result
 
 
-# ── systemd guard ─────────────────────────────────────────────────────────────
+# ── systemd units ────────────────────────────────────────────────────────────
+# `systemd.units` is a keyed map: the key is the unit's identity for merging
+# (a preset defines `main`, an instance overrides `main.Service.ExecStart`) and
+# the `{unit}` placeholder; `name` is the systemd unit name, defaulting to
+# systemd.defaults.name ("appsvc_{name}_{unit}"). Bundled presets pin
+# `name: "appsvc_{name}"` so their units keep the pre-0.2 name.
+
+SYSTEMD_KEYS = ("manage", "defaults", "units")
+SYSTEMD_SECTIONS = ("Unit", "Service", "Install")
+SYSTEMD_DEFAULTS_KEYS = ("name",) + SYSTEMD_SECTIONS
+SYSTEMD_UNIT_KEYS = ("name", "delete") + SYSTEMD_SECTIONS
+SYSTEMD_UNIT_DIR = "/etc/systemd/system"
+_UNIT_NAME_RE = re.compile(r"^[A-Za-z0-9:_.-]+$")
+_OTHER_UNIT_SUFFIXES = (".socket", ".timer", ".target", ".path", ".mount", ".automount",
+                        ".swap", ".slice", ".scope", ".device")
+# A file in /etc/systemd/system overrides the packaged unit of the same name in
+# /lib/systemd/system, so these would silently replace (or, with delete: true,
+# stop) a distro service. Not exhaustive - the obvious ones on our hosts.
+SYSTEMD_RESERVED_NAMES = ("nginx", "apache2", "php*-fpm", "redis", "redis-server", "redis-sentinel",
+                          "mysql", "mysqld", "mariadb", "postgresql", "mongod", "rabbitmq-server",
+                          "docker", "containerd", "ssh", "sshd", "cron", "supervisor", "ufw",
+                          "networking", "dbus", "salt-minion", "salt-master", "systemd-*")
 
 
-def check_systemd_exec(systemd, instance_name):
-    """Raise ValueError when systemd is managed (the default) but
-    `systemd.Service.ExecStart` is missing/empty - an app instance with no
-    daemon would otherwise get a unit that cannot start."""
+def _unit_name(raw, where):
+    """Validated unit name without the `.service` suffix."""
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("{}: `name` must be a non-empty string, got {!r}".format(where, raw))
+    name = raw[:-len(".service")] if raw.endswith(".service") else raw
+    if name.endswith(_OTHER_UNIT_SUFFIXES):
+        raise ValueError("{}: `name` {!r} - only .service units are supported".format(where, raw))
+    if not _UNIT_NAME_RE.match(name):
+        raise ValueError("{}: invalid unit `name` {!r} - allowed characters are [A-Za-z0-9:_.-] "
+                         "(an unresolved placeholder left braces in it?)".format(where, raw))
+    if any(fnmatch.fnmatchcase(name, pattern) for pattern in SYSTEMD_RESERVED_NAMES):
+        raise ValueError("{}: unit `name` {!r} is a distro service name - a file in {} would "
+                         "override the packaged unit; pick another name".format(where, name, SYSTEMD_UNIT_DIR))
+    return name
+
+
+def systemd_plan(systemd, instance_name):
+    """Validated units of one instance, in pillar order: [{key, name (no
+    .service suffix), path, delete, sections}]. [] when systemd.manage is false
+    or there are no units. Each unit is merge(systemd.defaults, unit); `{unit}`
+    (the key) is filled in `name`, then `{unit}` and `{unit_name}` in the
+    sections. A unit that isn't `delete: true` needs Service.ExecStart.
+
+    Old-shape keys (systemd.Unit/Service/Install/unit) are reported by
+    compat.py before this runs; here they are just unknown keys."""
     systemd = systemd or {}
+    if not isinstance(systemd, dict):
+        raise ValueError("systemd must be a mapping, got {!r}".format(systemd))
+    _check_unknown_keys("instance {}".format(instance_name), "systemd", systemd, SYSTEMD_KEYS)
     if not systemd.get("manage", True):
-        return
-    exec_start = (systemd.get("Service") or {}).get("ExecStart")
-    if isinstance(exec_start, (list, tuple)):
-        exec_start = " ".join(str(e) for e in exec_start)
-    if not exec_start or not str(exec_start).strip():
-        raise ValueError("instance {}: systemd.manage is true but systemd.Service.ExecStart "
-                         "is missing/empty - set systemd.manage: false (no daemon) "
-                         "or an ExecStart".format(instance_name))
+        return []
+    defaults = systemd.get("defaults") or {}
+    if not isinstance(defaults, dict):
+        raise ValueError("systemd.defaults must be a mapping, got {!r}".format(defaults))
+    _check_unknown_keys("systemd", "defaults", defaults, SYSTEMD_DEFAULTS_KEYS)
+    units = systemd.get("units") or {}
+    if not isinstance(units, dict):
+        raise ValueError("systemd.units must be a keyed map, got {!r}".format(units))
+
+    result, seen = [], {}
+    for key, unit in units.items():
+        check_map_key("systemd.units", key)
+        where = "instance {}: systemd.units.{}".format(instance_name, key)
+        unit = unit or {}
+        if not isinstance(unit, dict):
+            raise ValueError("{}: must be a mapping, got {!r}".format(where, unit))
+        _check_unknown_keys("systemd.units", key, unit, SYSTEMD_UNIT_KEYS)
+        delete = unit.get("delete", False)
+        if not isinstance(delete, bool):
+            raise ValueError("{}: `delete` must be true or false, got {!r}".format(where, delete))
+        merged = merge(defaults, unit)
+        name = _unit_name(deep_format(merged.get("name"), {"unit": key}), where)
+        if name in seen:
+            raise ValueError("instance {}: systemd.units.{} and systemd.units.{} both name unit {}.service"
+                             .format(instance_name, seen[name], key, name))
+        seen[name] = key
+        sections = {}
+        for section in SYSTEMD_SECTIONS:
+            value = merged.get(section)
+            if value is None or value == {}:
+                continue
+            if not isinstance(value, dict):
+                raise ValueError("{}: {} must be a mapping, got {!r}".format(where, section, value))
+            sections[section] = deep_format(value, {"unit": key, "unit_name": name})
+        if not delete:
+            exec_start = (sections.get("Service") or {}).get("ExecStart")
+            if isinstance(exec_start, (list, tuple)):
+                exec_start = " ".join(str(e) for e in exec_start)
+            if not exec_start or not str(exec_start).strip():
+                raise ValueError("{}: Service.ExecStart is missing/empty - set it, mark the unit "
+                                 "`delete: true`, or set systemd.manage: false".format(where))
+        result.append({"key": key, "name": name, "delete": delete, "sections": sections,
+                       "path": "{}/{}.service".format(SYSTEMD_UNIT_DIR, name)})
+    return result
+
+
+def check_unit_names(plans):
+    """Fail when two instances manage (define or delete) the same unit name.
+    `plans` is {instance: systemd_plan(...)}. Unit names are host-global while
+    state IDs are per instance, so Salt itself would not notice two instances
+    fighting over one unit file."""
+    owners = {}
+    for instance, units in plans.items():
+        for unit in units:
+            owners.setdefault(unit["name"], []).append("{}:{}".format(instance, unit["key"]))
+    clashes = {name: who for name, who in owners.items() if len(who) > 1}
+    if clashes:
+        raise ValueError("systemd unit names used by more than one instance: " + "; ".join(
+            "{}.service <- {}".format(name, ", ".join(who)) for name, who in sorted(clashes.items())))
 
 
 # ── config ────────────────────────────────────────────────────────────────────
@@ -1539,7 +1644,6 @@ def php_reload_command(version):
 ACME_CERT_DIR = "/opt/acme/cert"
 NGINX_VHOST_KEYS = ("name", "names", "acme_account", "ssl_cert", "ssl_key", "upstream",
                     "template", "vars", "access_log", "error_log", "auth_basic")
-NGINX_OLD_SHAPE_KEYS = ("upstream", "servers", "vhost_name", "auth_basic")
 NGINX_RESERVED_CONTEXT = ("vhost_name", "domain", "names", "ssl_cert", "ssl_key",
                           "access_log", "error_log", "htpasswd_file", "php_fpm_sockets")
 
@@ -1556,21 +1660,12 @@ def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
     upstream|None, template|None, vars, access_log, error_log, auth_basic (list),
     htpasswd_file|None. ACME cert paths derive from `name` + the first domain.
 
-    Raises ValueError on the pre-vhosts shape (top-level upstream/servers/
-    vhost_name/auth_basic), unknown keys, missing/empty `names`, not exactly one
+    Raises ValueError on unknown keys (the pre-vhosts top-level shape is
+    reported by compat.py), missing/empty `names`, not exactly one
     of upstream/template, `vars` without template, ambiguous or partial TLS,
     or a bad key/name charset. `php_sockets` is accepted for signature symmetry
     with the template context and is not used here."""
     nginx = nginx or {}
-    old = [k for k in NGINX_OLD_SHAPE_KEYS if k in nginx]
-    if old:
-        raise ValueError(
-            "nginx: {} at the top level is the removed single-vhost shape. Use "
-            "nginx.vhosts.<key> instead, e.g. nginx: {{manage: true, vhosts: {{<key>: "
-            "{{name: <old vhost_name, keeps the file and ACME cert name>, upstream: "
-            "\"127.0.0.1:9000\", names: [app.example.com], acme_account: example_com, "
-            "auth_basic: [{{username: admin, password: x}}]}}}}}}".format(", ".join(old)))
-
     vhosts = nginx.get("vhosts")
     if not vhosts:
         raise ValueError("instance {!r}: nginx.manage is true but nginx.vhosts is empty"

@@ -31,10 +31,13 @@ svc:
     - retentionPeriod: "30d"
 
 systemd:
-  Service:
-    ExecStart: "{exec} {args}"
-    User: "{user_name}"
-    Group: "{user_group}"
+  units:
+    main:
+      name: "appsvc_{name}"
+      Service:
+        ExecStart: "{exec} {args}"
+        User: "{user_name}"
+        Group: "{user_group}"
 
 nginx:
   manage: false

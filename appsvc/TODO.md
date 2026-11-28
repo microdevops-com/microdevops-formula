@@ -341,6 +341,20 @@ Order, each step deployable on its own (target: moituristy mt-crm):
 4. `docker` (networks, registry login via stdin, containers, container cron
    as root `docker exec` without `-it`).
 
+### [x] 21. Several systemd units per instance + pillar-format compat checks (0.2)
+**Resolved:** `systemd.units.<unit>` keyed map, merged over `systemd.defaults`;
+unit `name` defaults to `appsvc_{name}_{unit}`, bundled presets pin
+`appsvc_{name}` (renders byte-identical to 0.1, so no fleet restart);
+`delete: true` removes a unit, dropping it from pillar leaves it alone; unit
+names checked unique across instances, distro names rejected. `compat.py`
+recognises old pillar shapes (0.2 systemd, 0.1 nginx single-vhost, moved out of
+lib.py) and fails with a pointer into CHANGELOG.md. Decided: no schema
+version in pillar - shape detection is more precise.
+Not done: **user units** (`systemctl --user`: `~/.config/systemd/user`,
+`XDG_RUNTIME_DIR=/run/user/<uid>` with runas, `loginctl enable-linger`; Salt's
+service states don't cover them) - a later per-unit `scope: user` fits this
+shape.
+
 ### [ ] 20. Gaps left by app-management step 2
 - [x] **logrotate** for app logs - done: `blocks/logrotate.sls` composes one
   `/etc/logrotate.d/appsvc-<instance>` from the declared pool/vhost logs.
@@ -385,8 +399,10 @@ stamps and venv digests change file names so each re-extracts/rebuilds once.
   - pyenv/nvm: per-user when `user.name` isn't root, global when it is.
   - composer etc.: a generic `tools:` map of single-file downloads (reusing
     fetch's `kind: file`), not per-tool blocks.
-  - queue workers stay under supervisor (dozens of processes, numprocs);
-    systemd units are for the main long-running app process only.
+  - queue workers stay under supervisor (dozens of processes, numprocs).
+    Superseded in part (0.2): an instance may run a few systemd units
+    (`systemd.units`, e.g. a main daemon + a consumer); large numproc worker
+    pools still belong to supervisor.
   - no migration from `app.*` is planned; both live indefinitely.
 
 - **[x] GitHub resolvers read releases, not `/tags`.**

@@ -62,7 +62,7 @@ For every entry under `appsvc:instances`:
      tokens; default prefix `-`), `user_name`,
      `user_group`, `home` (`user.home`, else `/root` for root, else
      `/home/<user.name>`), `svc_target`, `venv_dir`, and the runtime paths `nvm_dir`, `pyenv_root`, `tools_dir`, `env_sh` (per-user under `{home}` for a non-root `user.name`, global under `/usr/local` + `/etc/profile.d` for root; an explicit `nvm.dir` / `pyenv.root` / `shell_env.path` wins) - keys only knowable once phase 1 has run - so e.g.
-     `systemd.Service.ExecStart: "{exec} {args}"` just works, without resorting
+     `systemd.units.main.Service.ExecStart: "{exec} {args}"` just works, without resorting
      to fragile nested-placeholder syntax like `{svc[exec]}`.
 4. **Dispatch** the building blocks that apply, in a fixed order:
    `user_ssh` -> `install_dir` -> `dirs` -> `pyenv` -> `nvm` -> `tools` -> `env_sh` ->
@@ -127,22 +127,27 @@ only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
 | `dirs` | `dirs` | create writable/working directories from a keyed map (string shorthand = path; `user`/`group` default to the instance user, `mode` default `"755"`, `makedirs` default true, `recurse: true` -> ownership only). Does not replace `svc.data_dirs` |
 | `pyenv` | `pyenv` | pyenv from git at `rev` + each `versions` entry built (`pyenv install -s`) and the first set as `pyenv global`; build packages from `pyenv.build_pkgs` (defaults.yaml). Per-user under `{home}/.pyenv` for a non-root user, `/usr/local/pyenv` for root (`pyenv.root` overrides). `versions` is a list of **quoted** strings (`3.10` unquoted is the float 3.1). No-op without `versions`. Refs join `changed` |
-| `nvm` | `nvm` | nvm from git at `rev` + each `versions` entry installed and the first set as the `default` alias. `{home}/.nvm` for a non-root user, `/usr/local/nvm` for root (`nvm.dir` overrides). `versions` is a list of quoted strings. No-op without `versions`. Refs join `changed` |
+| `nvm` | `nvm` | Packages from `nvm.build_pkgs` (defaults.yaml: git, curl; `[]` skips), then nvm from git at `rev` + each `versions` entry installed and the first set as the `default` alias. `{home}/.nvm` for a non-root user, `/usr/local/nvm` for root (`nvm.dir` overrides). `versions` is a list of quoted strings. No-op without `versions`. Refs join `changed` |
 | `tools` | `tools` | single-file downloads (composer & co.) from a keyed map: `source`, optional `source_hash` (else no verification), `target` (default `{tools_dir}/<key>`), `mode` (quoted string, default `"755"`). Owned by the instance user. Refs join `changed` |
 | `env_sh` | `shell_env` (optional overrides) | one generated file putting active nvm / pyenv / tools on PATH (`{env_sh}`: `{home}/.appsvc/<instance>.sh`, or `/etc/profile.d/appsvc-<instance>.sh` for root). For a non-root user a source line is **prepended** to `{home}/.bashrc` (`shell_env.profile` overrides, `false` disables) - prepended because Ubuntu's `.bashrc` returns early for non-interactive shells, which is how CI deploys over ssh run. Written only when nvm/pyenv/tools is active; not in `changed` |
 | `sources` | `sources` | git checkouts from a keyed map: `git.latest` by default, `git.cloned` (clone if missing, never update) with `once: true`. `target` must be absolute after expansion (use `{home}`, not `~`). `force_reset` is **not** defaulted: a dirty tree fails loud instead of being discarded. Returns per-key refs; a change restarts the service (`changed` contract) and gates `commands.onchanges` |
 | `commands` | `commands` | run ordered one-shot commands; `phase: pre\|post` controls before/after service start (default post), `when_set` gates on an optional input, `stdin` supports secrets, `onchanges: [sources:<key>]` (or `[sources]`) runs the command only when that source changed (see the trap in `presets/generic.yaml`) |
 | `cron` | `cron` | crontab entries from a keyed map (`schedule` = five fields or one `@special`, `cmd`, `user` default the instance user, `comment`, `disabled`, `absent`), tagged with identifier `appsvc_<instance>_<key>`. Removing an entry from pillar does NOT remove it from the crontab - set `absent: true` |
 | `php_fpm` | `php_fpm` | php-fpm **pools only** (never installs PHP) from the keyed map `php_fpm.pools`: one `/etc/php/<ver>/fpm/pool.d/<name>.conf` per pool (`version` is required and must be a quoted string; `name`, `user`/`group`, `listen`, `listen_*`, `error_log`, raw `config` lines), plus one `php-fpm<ver> -t && systemctl reload php<ver>-fpm` per version, only on a pool-file change (`reload: false` opts out). Removing a pool from pillar does NOT delete its file. Returns `{pool_key: socket}` for `nginx_vhost`; does not restart the service. No-op without pools |
-| `systemd_unit` | `systemd` | render the unit from `systemd.{Unit,Service,Install}`, enable & (re)start it, restart on `watch` changes |
+| `systemd_unit` | `systemd` | one `/etc/systemd/system/<name>.service` per key of the keyed map `systemd.units`, each merged over `systemd.defaults` (`{Unit,Service,Install}` + `name`, default `"appsvc_{name}_{unit}"`; bundled presets pin `name: "appsvc_{name}"` on their `main` unit). Every kept unit is enabled & (re)started and restarts on `watch` changes; `delete: true` stops, disables and removes a unit once, while a unit dropped from pillar is left alone. `{unit}` (key) and `{unit_name}` (resolved name) work inside a unit. Unit names must be unique across all instances, `.service` only, no `@`, no distro names (`nginx`, `php*-fpm`, ...). No units, or `systemd.manage: false`, renders nothing |
 | `logrotate` | `logrotate` (optional tunables) | one `/etc/logrotate.d/appsvc-<instance>` composed from the logs the pillar already declares: every php pool `error_log` (one stanza per PHP version, `postrotate` php-fpm's `reopenlogs` helper) and every vhost `access_log`/`error_log` (`postrotate nginx -s reopen`). Paths matching `logrotate.skip` (default `/var/log/nginx/*.log`, which the distro's nginx config already rotates) are left out, because logrotate aborts on a log listed by two configs; a path declared twice in one instance fails the render. Validated with `logrotate -d` before install; removed when no log remains. Defaults: daily, rotate 31, compress + delaycompress, `create 640 <user> <group>`. `logrotate.manage: false` disables |
 | `nginx_vhost` | `nginx` | one vhost per key of `nginx.vhosts` (keyed map): built-in reverse proxy (`upstream`) or a custom jinja `template` (+ `vars`, and `php_fpm_sockets` in its context), optional per-vhost TLS and basic auth; ACME issuance per vhost, one `nginx -t && nginx -s reload` per instance - no-op unless `nginx.manage` |
 
 `svc`/`systemd`/`nginx`/`php_fpm`/`config`/`commands`/`user`/`ssh`/`dirs`/`sources`/`cron`/`nvm`/`pyenv`/`tools`/`shell_env` are all
 optional; an instance that doesn't set a block's key simply skips it. An instance
-with no daemon (a pure app checkout) must set `systemd.manage: false`:
-`systemd.manage` defaults to true, and with no `systemd.Service.ExecStart` the
-render fails loud.
+with no daemon (a pure app checkout) just has no `systemd.units`. A unit
+without `Service.ExecStart` (and not `delete: true`) fails the render.
+
+**Format changes** are listed in [CHANGELOG.md](CHANGELOG.md). Before anything
+else, `compat.py` checks the raw pillar (every instance and pillar preset) for
+shapes a later version changed, and fails the render listing all of them, each
+with a one-line fix and its changelog anchor. There is no version field in
+pillar.
 
 `nginx.vhosts.<key>` entries declare `names` (required list), exactly one of
 `upstream` / `template`, and at most one TLS source: `acme_account`,

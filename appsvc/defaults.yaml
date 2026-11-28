@@ -48,36 +48,45 @@ logrotate:
 
 systemd:
   manage: true
-  unit: "appsvc_{name}"
-  Unit:
-    Description: "appsvc: {type} ({name})"
-    After: network.target
-    # Cap auto-restarts: give up after StartLimitBurst starts within
-    # StartLimitIntervalSec, instead of looping forever. These belong in [Unit]
-    # (systemd ignores them under [Service]). The interval must comfortably
-    # exceed StartLimitBurst * RestartSec (5 * 10s = 50s) so all attempts fall
-    # in one window and the limit actually trips.
-    StartLimitIntervalSec: 60
-    StartLimitBurst: 5
-  Service:
-    Type: simple
-    Restart: on-failure
-    # Wait 10s between restarts instead of hammering instantly.
-    RestartSec: 10
-    WorkingDirectory: "{install_dir}"
-  Install:
-    WantedBy: multi-user.target
+  # Merged under every systemd.units.<unit> entry (the entry wins). `name` is
+  # the systemd unit name; {unit} is the entry's key, {unit_name} the resolved
+  # name. Bundled presets pin name: "appsvc_{name}" on their `main` unit.
+  defaults:
+    name: "appsvc_{name}_{unit}"
+    Unit:
+      Description: "appsvc: {type} ({name})"
+      After: network.target
+      # Cap auto-restarts: give up after StartLimitBurst starts within
+      # StartLimitIntervalSec, instead of looping forever. These belong in [Unit]
+      # (systemd ignores them under [Service]). The interval must comfortably
+      # exceed StartLimitBurst * RestartSec (5 * 10s = 50s) so all attempts fall
+      # in one window and the limit actually trips.
+      StartLimitIntervalSec: 60
+      StartLimitBurst: 5
+    Service:
+      Type: simple
+      Restart: on-failure
+      # Wait 10s between restarts instead of hammering instantly.
+      RestartSec: 10
+      WorkingDirectory: "{install_dir}"
+    Install:
+      WantedBy: multi-user.target
 
-# nvm / pyenv: defaults only supply rev/repo (and pyenv's build packages). The
-# blocks do nothing until an instance sets `versions` (a list of QUOTED strings,
-# first = default), so these stay inert. See blocks/nvm.sls, blocks/pyenv.sls.
+# nvm / pyenv: defaults only supply rev/repo/build_pkgs (`build_pkgs: []` skips
+# the package state). The blocks do nothing until an instance sets `versions` (a
+# list of QUOTED strings, first = default), so these stay inert. See
+# blocks/nvm.sls, blocks/pyenv.sls.
 nvm:
   rev: v0.40.1
   repo: https://github.com/nvm-sh/nvm.git
+  # git clones nvm; curl downloads node tarballs.
+  build_pkgs: [git, curl]
 
 pyenv:
   rev: v2.4.0
   repo: https://github.com/pyenv/pyenv.git
-  build_pkgs: [build-essential, libssl-dev, zlib1g-dev, libbz2-dev, libreadline-dev,
-               libsqlite3-dev, libncursesw5-dev, xz-utils, tk-dev, libxml2-dev,
-               libxmlsec1-dev, libffi-dev, liblzma-dev]
+  # https://github.com/pyenv/pyenv/wiki#suggested-build-environment (make comes
+  # with build-essential; libzstd-dev is for Python 3.14+).
+  build_pkgs: [git, curl, build-essential, libssl-dev, zlib1g-dev, libbz2-dev,
+               libreadline-dev, libsqlite3-dev, libncursesw5-dev, xz-utils, tk-dev,
+               libxml2-dev, libxmlsec1-dev, libffi-dev, liblzma-dev, libzstd-dev]

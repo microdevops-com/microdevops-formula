@@ -205,9 +205,10 @@ block's state IDs** — adding a config mechanism never requires touching
 `None`/`[]` if nothing changed).
 
 The same decoupling pattern handles post-systemd ordering: `systemd_unit`
-returns its "service is running" requisite and `dispatch` passes that as
-`commands(post)`'s `require`. If systemd management is disabled, post commands
-still render, just without a service-running requisite. Commands deliberately
+returns the "running" requisites of all its units (`systemd.units`, since 0.2;
+every unit restarts on `watch`) and `dispatch` passes them as
+`commands(post)`'s `require`. With no units, or systemd management disabled,
+post commands still render, just without a service-running requisite. Commands deliberately
 do **not** feed the `changed` list; setup commands are not "new binary/config"
 events and should carry their own `unless`/`onlyif` if they need idempotency.
 

@@ -279,10 +279,15 @@ appsvc:
         # data_dirs:
         #   - "{install_dir}/data"
       systemd:
-        Service:
-          ExecStart: "{exec} {args}"
-          User: "{user_name}"
-          Group: "{user_group}"
+        units:
+          main:
+            # Without `name` the unit would be appsvc_custom_exporter_main
+            # (systemd.defaults.name: "appsvc_{name}_{unit}").
+            name: "appsvc_{name}"
+            Service:
+              ExecStart: "{exec} {args}"
+              User: "{user_name}"
+              Group: "{user_group}"
 
     # --- a bare Python script, fetched as a plain file (kind: file) ---
     # No tarball, no tar-extract: svc.source's basename (.py) isn't a
@@ -308,16 +313,32 @@ appsvc:
         # source's basename) - pin a friendlier on-disk name instead:
         target: "{install_dir}/example_script.py"
       systemd:
-        Service:
-          Type: simple
-          # {svc_target} == svc.target above, resolved - avoids repeating the
-          # path here.
-          ExecStart: "/usr/bin/python3 {svc_target}"
-          User: "{user_name}"
-          Group: "{user_group}"
-          WorkingDirectory: "{install_dir}"
-          Restart: on-failure
-          RestartSec: 10
+        # Several units per instance, keyed by {unit}. Each is merged over
+        # systemd.defaults (defaults.yaml) and restarts whenever the script,
+        # config or venv changes.
+        units:
+          main:                   # -> appsvc_plain_script_main.service
+            Service:
+              Type: simple
+              # {svc_target} == svc.target above, resolved - avoids repeating
+              # the path here.
+              ExecStart: "/usr/bin/python3 {svc_target}"
+              User: "{user_name}"
+              Group: "{user_group}"
+              WorkingDirectory: "{install_dir}"
+              Restart: on-failure
+              RestartSec: 10
+          report:
+            name: plain-script-report     # explicit unit name (".service" optional)
+            Unit:
+              Description: "appsvc: {name} report ({unit_name})"
+            Service:
+              ExecStart: "/usr/bin/python3 {svc_target} --report"
+              User: "{user_name}"
+              Group: "{user_group}"
+          # A unit removed from pillar is left as it is on the host. To remove
+          # it, keep the key and mark it - it is stopped, disabled and deleted:
+          # old_worker: {delete: true}
 
     # --- redis_check: a Python daemon under a appsvc-managed venv ---
     # This is the whole point of the venv block (TODO.md item 17): the preset
@@ -334,8 +355,8 @@ appsvc:
               client: acme
 
     # --- crm: a git-deployed app (no daemon) owned by one unix user ---
-    # No `svc`, no systemd unit (systemd.manage: false is REQUIRED for an
-    # instance without ExecStart - the render fails loud otherwise). Clones two
+    # No `svc`, no systemd units (an instance without systemd.units has
+    # none; systemd.manage: false also turns off a preset's units). Clones two
     # repos once, writes an env file into a checkout, installs dependencies
     # only when a checkout changes, and keeps a session-cleanup cron entry.
     # {home} is user.home here: /var/www/.releaser.
@@ -390,8 +411,6 @@ appsvc:
           schedule: "0 * * * *"
           cmd: "find /var/lib/php/crm-sessions -mtime +10 -delete"
           user: root
-      systemd:
-        manage: false
 
     # --- an app with php-fpm pools and nginx vhosts (Symfony back + React front) ---
     # appsvc never installs PHP, nginx or node: those are other states' jobs.

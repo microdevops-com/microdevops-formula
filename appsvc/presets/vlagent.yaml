@@ -43,10 +43,13 @@ scrape:
         - targets: ["127.0.0.1:9429"]
 
 systemd:
-  Service:
-    ExecStart: "{exec} {args}"
-    User: "{user_name}"
-    Group: "{user_group}"
+  units:
+    main:
+      name: "appsvc_{name}"
+      Service:
+        ExecStart: "{exec} {args}"
+        User: "{user_name}"
+        Group: "{user_group}"
 
 nginx:
   manage: false

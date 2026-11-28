@@ -14,8 +14,8 @@ Git = StateFactory("git")
 
 
 def nvm(prefix, settings):
-    """Clone nvm at `rev`, install each version, set the default alias.
-    No-op without nvm.versions. Returns refs of the repo, installs and default
+    """Install nvm.build_pkgs (git/curl), clone nvm at `rev`, install each
+    version, set the default alias. No-op without nvm.versions. Returns refs of the repo, installs and default
     states (they join `changed`)."""
     plan = runtime_plans(settings)["nvm"]
     if not plan:
@@ -24,15 +24,21 @@ def nvm(prefix, settings):
     user = {"user": plan["user"]} if plan["user"] else {}
     run = dict(shell="/bin/bash", env=plan["env"], **({"runas": plan["user"]} if plan["user"] else {}))
 
+    require = []
+    if plan["build_pkgs"]:
+        # Guarded: pkg.installed rejects an empty pkgs list.
+        Pkg.installed(sid + "_build_pkgs", pkgs=plan["build_pkgs"])
+        require.append(Pkg(sid + "_build_pkgs"))
+
     Git.latest(sid + "_repo", name=plan["repo"], target=plan["dir"], rev=plan["rev"],
-               force_reset=False, **user)
+               force_reset=False, require=require, **user)
     refs = [Git(sid + "_repo")]
 
     default_install = None
     for item in plan["installs"]:
         state_id = sid + "_install_" + item["suffix"]
         Cmd.run(state_id, name=item["name"], unless=item["unless"],
-                require=[Git(sid + "_repo")], **run)
+                require=[Git(sid + "_repo")] + require, **run)
         refs.append(Cmd(state_id))
         if item["version"] == plan["default"]:
             default_install = Cmd(state_id)

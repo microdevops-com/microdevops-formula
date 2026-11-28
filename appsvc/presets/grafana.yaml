@@ -47,11 +47,14 @@ commands:
     phase: pre
 
 systemd:
-  Service:
-    ExecStart: "{exec}"
-    User: "{user_name}"
-    Group: "{user_group}"
-    WorkingDirectory: "{install_dir}"
+  units:
+    main:
+      name: "appsvc_{name}"
+      Service:
+        ExecStart: "{exec}"
+        User: "{user_name}"
+        Group: "{user_group}"
+        WorkingDirectory: "{install_dir}"
 
 # Enable per instance with nginx.manage: true and
 # nginx.vhosts.<key>: {names: [...], upstream: "127.0.0.1:3000", acme_account: ...}.

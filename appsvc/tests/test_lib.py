@@ -32,7 +32,7 @@ from lib import (
     normalize_php_pools, render_php_pool, php_reload_command,
     user_home, check_map_key, git_source_state, parse_onchanges, resolve_onchanges,
     normalize_dirs, cron_identifier, cron_schedule_kwargs, normalize_cron,
-    check_systemd_exec,
+    systemd_plan, check_unit_names,
     runtime_layout, runtime_paths, nvm_plan, pyenv_plan, normalize_tools, render_env_sh,
     runtime_plans, runtime_state_suffix,
 )
@@ -999,12 +999,6 @@ def test_nginx_vhosts_reject_bad_key_name_unknown_key_and_empty():
         normalize_nginx_vhosts({"manage": True}, "app")
 
 
-@pytest.mark.parametrize("old", ["upstream", "servers", "vhost_name", "auth_basic"])
-def test_nginx_old_single_vhost_shape_fails_loud(old):
-    with pytest.raises(ValueError, match="nginx.vhosts"):
-        normalize_nginx_vhosts({"manage": True, old: "x", "vhosts": {"w": _vh()}}, "app")
-
-
 def test_nginx_template_context_has_reserved_names_and_vars_on_top():
     [v] = _norm({"w": _vh(name="svc", upstream=None, template="salt://t.conf",
                           acme_account="a", vars={"port": 1})}, "app")
@@ -1490,19 +1484,81 @@ def test_normalize_cron_empty():
     assert normalize_cron(None, "crm", "u") == []
 
 
-# ── systemd guard ────────────────────────────────────────────────────────────
+# ── systemd units ────────────────────────────────────────────────────────────
 
-def test_check_systemd_exec_raises_when_managed_without_execstart():
-    for systemd in ({}, {"manage": True}, {"Service": {}}, {"Service": {"ExecStart": ""}},
-                    {"Service": {"ExecStart": "  "}}, {"Service": {"ExecStart": []}}):
-        with pytest.raises(ValueError, match="systemd.manage: false"):
-            check_systemd_exec(systemd, "crm")
+SD_DEFAULTS = {"name": "appsvc_crm_{unit}",
+               "Unit": {"Description": "appsvc: crm ({unit_name})"},
+               "Service": {"Type": "simple", "Restart": "on-failure"}}
 
 
-def test_check_systemd_exec_passes_when_unmanaged_or_set():
-    check_systemd_exec({"manage": False}, "crm")
-    check_systemd_exec({"Service": {"ExecStart": "/bin/x"}}, "crm")
-    check_systemd_exec({"Service": {"ExecStart": ["/bin/x"]}}, "crm")
+def _sd(units, **extra):
+    return dict({"defaults": SD_DEFAULTS, "units": units}, **extra)
+
+
+def test_systemd_plan_names_and_merge_with_defaults():
+    plan = systemd_plan(_sd({
+        "main": {"name": "appsvc_crm", "Service": {"ExecStart": "/bin/main"}},
+        "consumer": {"Service": {"ExecStart": "/bin/consume {unit}", "Restart": "always"}},
+        "custom": {"name": "crm-worker.service", "Service": {"ExecStart": "/bin/w"}},
+    }), "crm")
+    assert [(u["key"], u["name"], u["path"]) for u in plan] == [
+        ("main", "appsvc_crm", "/etc/systemd/system/appsvc_crm.service"),
+        ("consumer", "appsvc_crm_consumer", "/etc/systemd/system/appsvc_crm_consumer.service"),
+        ("custom", "crm-worker", "/etc/systemd/system/crm-worker.service")]
+    consumer = plan[1]["sections"]
+    assert consumer["Unit"] == {"Description": "appsvc: crm (appsvc_crm_consumer)"}
+    assert consumer["Service"] == {"Type": "simple", "Restart": "always", "ExecStart": "/bin/consume consumer"}
+    assert list(consumer) == ["Unit", "Service"]  # fixed section order, empty ones dropped
+
+
+def test_systemd_plan_empty_or_unmanaged():
+    assert systemd_plan(None, "crm") == []
+    assert systemd_plan({"defaults": SD_DEFAULTS}, "crm") == []
+    assert systemd_plan(_sd({"main": {}}, manage=False), "crm") == []
+
+
+def test_systemd_plan_delete_needs_no_execstart():
+    [unit] = systemd_plan(_sd({"old": {"delete": True}}), "crm")
+    assert unit["delete"] is True and unit["name"] == "appsvc_crm_old"
+
+
+@pytest.mark.parametrize("units,match", [
+    ({"main": {}}, "ExecStart is missing"),
+    ({"main": {"Service": {"ExecStart": "  "}}}, "ExecStart is missing"),
+    ({"main": {"Service": {"ExecStart": []}}}, "ExecStart is missing"),
+    ({"main": {"delete": "yes"}}, "`delete` must be true or false"),
+    ({"main": {"bogus": 1, "Service": {"ExecStart": "x"}}}, "unknown key"),
+    ({"a b": {"Service": {"ExecStart": "x"}}}, "invalid key"),
+    ({"main": {"name": "x.timer", "Service": {"ExecStart": "x"}}}, "only .service"),
+    ({"main": {"name": "a/b", "Service": {"ExecStart": "x"}}}, "invalid unit `name`"),
+    ({"main": {"name": "app_{nope}", "Service": {"ExecStart": "x"}}}, "unresolved placeholder"),
+    ({"main": {"name": "x@1", "Service": {"ExecStart": "x"}}}, "invalid unit `name`"),
+    ({"main": {"name": "nginx", "delete": True}}, "distro service"),
+    ({"main": {"name": "php8.3-fpm.service", "Service": {"ExecStart": "x"}}}, "distro service"),
+    ({"main": {"Service": "x"}}, "Service must be a mapping"),
+    ({"a": {"name": "same", "Service": {"ExecStart": "x"}},
+      "b": {"name": "same.service", "delete": True}}, "both name unit same.service"),
+    (["main"], "keyed map"),
+])
+def test_systemd_plan_fails_loud(units, match):
+    with pytest.raises(ValueError, match=match):
+        systemd_plan(_sd(units), "crm")
+
+
+def test_systemd_plan_rejects_unknown_top_level_and_defaults_keys():
+    with pytest.raises(ValueError, match="unknown key"):
+        systemd_plan({"units": {}, "Service": {}}, "crm")
+    with pytest.raises(ValueError, match="unknown key"):
+        systemd_plan({"defaults": {"delete": True}, "units": {}}, "crm")
+    with pytest.raises(ValueError, match="`name` must be a non-empty string"):
+        systemd_plan({"units": {"main": {"Service": {"ExecStart": "x"}}}}, "crm")
+
+
+def test_check_unit_names_across_instances():
+    unit = lambda key, name: {"key": key, "name": name}
+    check_unit_names({"a": [unit("main", "appsvc_a")], "b": [unit("main", "appsvc_b")], "c": []})
+    with pytest.raises(ValueError, match=r"consumer.service <- a:consumer, b:worker"):
+        check_unit_names({"a": [unit("consumer", "consumer")], "b": [unit("worker", "consumer")]})
 
 
 # --- parse_known_host ---------------------------------------------------------
@@ -1589,6 +1645,8 @@ def test_nvm_plan_commands_non_root():
         "name": '. "/home/helium/.nvm/nvm.sh" && nvm alias default 20',
         "unless": '[ "$(cat /home/helium/.nvm/alias/default 2>/dev/null)" = "20" ]'}
     assert nvm_plan(dict(NVM_BASE, versions=["20"]), runtime_layout("root", "/root", "c"), "root")["user"] is None
+    assert plan["build_pkgs"] == []
+    assert nvm_plan(dict(NVM_BASE, versions=["20"], build_pkgs=["git", "curl"]), layout, "helium")["build_pkgs"] == ["git", "curl"]
 
 
 def test_nvm_plan_validation():
@@ -1602,6 +1660,8 @@ def test_nvm_plan_validation():
         nvm_plan(dict(NVM_BASE, versions=["20"], bogus=1), layout, "root")
     with pytest.raises(ValueError, match="absolute path"):
         nvm_plan(dict(NVM_BASE, versions=["20"], dir='/a"b'), layout, "root")
+    with pytest.raises(ValueError, match="nvm:build_pkgs"):
+        nvm_plan(dict(NVM_BASE, versions=["20"], build_pkgs="git"), layout, "root")
 
 
 def test_pyenv_plan_commands_and_validation():
