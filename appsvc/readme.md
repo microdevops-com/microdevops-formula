@@ -127,14 +127,60 @@ values outside the placeholder set, use Salt's own jinja in the **pillar**
 (`instance: {{ grains["fqdn"] }}`), which renders before appsvc sees it — pillar
 only, not a bundled `presets/*.yaml` (loaded with `yaml.safe_load`, no jinja).
 
+## Directory isolation
+
+Several sites on one host, each with its own user: a compromised site runs as
+its user and can read every other site's world-readable files (a fresh file is
+`644`). Lock each site's **top** directory - the home, when everything of the
+site lives under it - with `750 <user>:www-data`:
+
+```yaml
+user:
+  manage: true
+  name: helium
+  home: {name: /var/www/helium, group: www-data, mode: "750"}
+install_dir: /var/www/helium/app     # under the locked home: nothing more needed
+```
+
+The user owns it (ssh, sftp and `StrictModes` work: the group gets no write);
+nginx (www-data) traverses it via the group; every other user is stopped at
+the door, whatever the modes inside. An `install_dir` outside such a home
+(the default `/opt/services/{type}/{name}` has a shared `755` parent) needs its
+own lock: `install_dir: {name: ..., group: www-data, mode: "750"}`. When
+`install_dir` is the home itself, it takes the home's permissions.
+
+The layers (defaults -> preset -> instance) merge these key by key, a plain
+path counting as `{name: <path>}`. So a php-fpm preset can carry the policy and
+the instance just the path:
+
+```yaml
+# preset                                         # instance
+user: {home: {group: www-data, mode: "750"}}     user: {home: "/var/www/{name}"}
+```
+
+`mode: null` (or `group: null`) in a later layer drops it back to unmanaged.
+
+What still breaks it, so check:
+
+- **A site user in `www-data`** (`user.group` or `user.groups`): it can read
+  every directory locked that way. The render fails for managed users; users
+  added to the group outside appsvc are not seen.
+- **Anything running as www-data** reads every site: the distro's default
+  php-fpm `www` pool, or a pool whose `user` is www-data.
+- **nginx's path**: every directory down to a vhost's `root` must let www-data
+  through (group www-data, or `o+x`). A `750 <user>:<user>` directory on that
+  path gives 403s.
+
+No default changes: without a mapping, modes stay unmanaged as before.
+
 ## Building blocks (`blocks/*.sls`)
 
 | block | settings key | does |
 |---|---|---|
-| `install_dir` | `install_dir` | create/own `install_dir` ahead of `config_file`/`fetch` - no-op when `install_dir` is unset; runs even without a `svc` block (e.g. a venv-only instance still needs somewhere to live) |
+| `install_dir` | `install_dir` | create/own `install_dir` ahead of `config_file`/`fetch` - no-op when `install_dir` is unset; runs even without a `svc` block (e.g. a venv-only instance still needs somewhere to live). A path string, or `{name, user, group, mode}` (mode of the directory itself, never recursive; unset = unmanaged) - see [Directory isolation](#directory-isolation) |
 | `fetch` | `svc` | fetch `svc.source` per its detected **kind**: `archive` (download, cache, optionally `tar`-extract and/or `move` it into `install_dir`, ensure it's executable) or `file` (a single script/bare binary compared as-is via `File.managed` - no cache hop, no extract). Kind is `svc.kind` if set, else inferred: `svc.tar` present or a recognized archive suffix (`.tar.gz`, `.tgz`, `.tar.bz2`, `.tbz2`, `.tar.xz`, `.txz`, `.tar.zst`, `.tar`) -> `archive`; an unsupported archive suffix (`.zip`, `.7z`, `.rar`, `.gz`, `.bz2`, `.xz`) raises rather than silently mis-fetching; otherwise -> `file`. Either kind: make any `svc.data_dirs` service-user-owned for writable state (program files stay root-owned). Archive re-extract is guarded by an optional `svc.version_check` `unless` command, or by `svc.version_stamp` (writes `.appsvc_version` into `install_dir` after a successful extract) as a generic fallback guard — **no default**, so with neither set the archive re-extracts (and the service restarts) every run. The `file` kind needs no guard at all: `File.managed` reports `changed` only when the fetched content actually differs |
 | `venv` | `venv` | create/maintain a Python venv (`venv.dir`, default `{install_dir}/venv`) matching `venv.requirements`/`venv.requirements_files` - no-op unless `venv.manage`; runs after `fetch` so a requirements file shipped inside a fetched archive is already on disk. A single `Cmd.run` `unless`-guarded by a sha256 digest (interpreter version + `pip_args` + requirements file contents) computed on the minion at runtime, stamped inside `venv.dir` only on a successful install so a failed run retries. `venv.recreate_on_change` (default true) rebuilds with `--clear` whenever the requirement set changes; false only forces a fresh venv on a missing/wrong-version interpreter and otherwise reuses it. Root-owned like fetched program files; writable state still goes through `svc.data_dirs` |
-| `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage` |
+| `user_ssh` | `user`, `ssh` | system user/group + `.ssh` (keys, authorized_keys, config, known_hosts) - no-op unless `user.manage`. `user.home` may be `{name, group, mode}` (name optional = default home): a `File.directory` on the home itself, after the user |
 | `config_file` | `config` | render named config file(s) from `contents` using optional `format: yaml\|ini\|json` (default yaml), or `source`+`template` |
 | `dirs` | `dirs` | create writable/working directories from a keyed map (string shorthand = path; `user`/`group` default to the instance user, `mode` default `"755"`, `makedirs` default true, `recurse: true` -> ownership only). Does not replace `svc.data_dirs` |
 | `pyenv` | `pyenv` | pyenv from git at `rev` + each `versions` entry built (`pyenv install -s`) and the first set as `pyenv global`; build packages from `pyenv.build_pkgs` (defaults.yaml). Per-user under `{home}/.pyenv` for a non-root user, `/usr/local/pyenv` for root (`pyenv.root` overrides). `versions` is a list of **quoted** strings (`3.10` unquoted is the float 3.1). No-op without `versions`. Refs join `changed` |
@@ -182,7 +228,7 @@ functions over plain dicts, one module per area:
 
 | module | holds |
 |---|---|
-| `lib/core.py` | placeholder expansion, deep merge, scrape collection, the apply filter, user home / known_hosts, keyed-map key checks, `svc.args` merge/join |
+| `lib/core.py` | placeholder expansion, deep merge, scrape collection, the apply filter, user home / known_hosts, home/install_dir permissions + the isolation check, keyed-map key checks, `svc.args` merge/join |
 | `lib/release.py` | fetch kinds/targets, archive extraction, venv, `latest` resolvers + resolve cache (the only network code) |
 | `lib/app.py` | commands (phases, onchanges), sources, dirs, cron, config rendering |
 | `lib/runtimes.py` | runtime layout, nvm, pyenv, tools, env_sh |

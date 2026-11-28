@@ -11,7 +11,7 @@ import logging
 import yaml
 
 from salt://appsvc/compat.py import check_compat
-from salt://appsvc/lib/core.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, merge_globals, parse_filter, select_instances, selected_blocks, user_home
+from salt://appsvc/lib/core.py import append_at_path, check_dir_isolation, collect_scrape_jobs, expand, join_args, lift_dir_specs, merge, merge_args, merge_globals, parse_filter, select_instances, selected_blocks, split_dir_perms, user_home
 from salt://appsvc/lib/release.py import fetch_target, normalize_osarch, resolve_latest
 from salt://appsvc/lib/runtimes.py import runtime_paths
 from salt://appsvc/lib/systemd.py import check_unit_names, systemd_plan
@@ -47,7 +47,7 @@ def load_preset(name):
         _content = get_salt_file("salt://appsvc/presets/{}.yaml".format(name), missing_ok=True)
         bundled = yaml.safe_load(_content or "") or {}
         override = cfg("presets:{}".format(name), {})
-        _preset_cache[name] = merge(bundled, override or {})
+        _preset_cache[name] = merge(lift_dir_specs(bundled), lift_dir_specs(override or {}))
     return _preset_cache[name]
 
 
@@ -114,8 +114,12 @@ for instance_name, instance in instances.items():
     preset_name = instance.get("preset")
     preset = load_preset(preset_name) if preset_name else {}
 
-    settings = merge(DEFAULTS, preset, instance)
+    # install_dir / user.home may be a path or {name, group, mode}: lifted to
+    # mappings so the layers merge key by key, then back to path strings
+    # before expand (see lib/core.py:lift_dir_specs / split_dir_perms).
+    settings = merge(*(lift_dir_specs(layer) for layer in (DEFAULTS, preset, instance)))
     settings["name"] = instance_name
+    settings = split_dir_perms(settings)
     settings.setdefault("type", preset_name or instance_name)
 
     # Structured svc.args merge by flag name rather than replacing wholesale so
@@ -196,6 +200,9 @@ for instance_name, instance in instances.items():
 # Checked across ALL instances, not just the selected ones.
 check_unit_names({instance_name: systemd_plan(settings.get("systemd"), instance_name)
                   for instance_name, settings in expanded.items()})
+# A user in the group that guards another instance's 750 home/install_dir
+# (typically www-data) could read it.
+check_dir_isolation(expanded)
 
 # Pass 2: gather cross-instance scrape jobs and dispatch the selected instances.
 for instance_name, settings in expanded.items():

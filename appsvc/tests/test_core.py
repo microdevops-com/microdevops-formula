@@ -4,11 +4,14 @@ import pytest
 
 from appsvc_lib.core import (
     append_at_path,
+    check_dir_isolation,
     check_map_key,
     collect_scrape_jobs,
     deep_format,
+    dir_perms,
     expand,
     join_args,
+    lift_dir_specs,
     merge,
     merge_args,
     merge_globals,
@@ -16,6 +19,7 @@ from appsvc_lib.core import (
     parse_known_host,
     select_instances,
     selected_blocks,
+    split_dir_perms,
     user_home,
 )
 
@@ -501,3 +505,122 @@ def test_env_sh_placeholder_not_shadowed_by_shell_env_settings():
     settings = {"shell_env": {"profile": False}, "cmd": ". {env_sh} && composer install"}
     out = expand(settings, {"env_sh": "/home/helium/.appsvc/crm.sh"})
     assert out["cmd"] == ". /home/helium/.appsvc/crm.sh && composer install"
+
+
+# ── home / install_dir permissions ───────────────────────────────────────────
+
+def _site(user="helium", home=None, install_dir="/var/www/helium/app", groups=None, manage=True):
+    settings = {"install_dir": install_dir,
+                "user": {"manage": manage, "name": user, "group": user}}
+    if home is not None:
+        settings["user"]["home"] = home
+    if groups is not None:
+        settings["user"]["groups"] = groups
+    return split_dir_perms(settings)
+
+
+LOCK = {"group": "www-data", "mode": "750"}
+
+
+def test_split_dir_perms_strings_unchanged():
+    settings = _site(home="/var/www/helium")
+    assert settings["install_dir"] == "/var/www/helium/app"
+    assert settings["user"]["home"] == "/var/www/helium"
+    assert settings["_dir_perms"] == {"install_dir": {}, "home": {}}
+    assert dir_perms(settings) == {"install_dir": {"name": "/var/www/helium/app",
+                                                   "user": "helium", "group": "helium"}}
+
+
+def test_split_dir_perms_dicts():
+    settings = _site(home=dict(LOCK, name="/var/www/helium"),
+                     install_dir={"name": "/var/www/helium/app", "user": "root", "mode": "0755"})
+    assert settings["install_dir"] == "/var/www/helium/app"
+    assert settings["user"]["home"] == "/var/www/helium"
+    assert dir_perms(settings) == {
+        "home": {"name": "/var/www/helium", "user": "helium", "group": "www-data", "mode": "750"},
+        "install_dir": {"name": "/var/www/helium/app", "user": "root", "group": "helium", "mode": "0755"},
+    }
+
+
+def test_home_without_name_keeps_default_path():
+    settings = _site(home=dict(LOCK))
+    assert "home" not in settings["user"]
+    assert dir_perms(settings)["home"]["name"] == "/home/helium"
+
+
+def test_install_dir_is_home_shares_home_perms():
+    settings = _site(home=dict(LOCK, name="/var/www/helium"), install_dir="/var/www/helium/")
+    perms = dir_perms(settings)
+    assert perms["install_dir"] == dict(perms["home"])
+    clash = _site(home=dict(LOCK, name="/var/www/helium"),
+                  install_dir={"name": "/var/www/helium", "mode": "755"})
+    with pytest.raises(ValueError, match="install_dir is user.home.*mode"):
+        dir_perms(clash)
+
+
+@pytest.mark.parametrize("install_dir, error", [
+    ({"group": "www-data"}, "needs `name`"),
+    ({"name": "/x", "mode": 750}, "quoted octal"),
+    ({"name": "/x", "mode": "rwx"}, "quoted octal"),
+    ({"name": "/x", "recurse": True}, "unknown key"),
+    (["/x"], "path string or a mapping"),
+])
+def test_split_dir_perms_rejects(install_dir, error):
+    with pytest.raises(ValueError, match=error):
+        _site(install_dir=install_dir)
+
+
+def test_home_perms_need_managed_user():
+    with pytest.raises(ValueError, match="user.manage"):
+        _site(home=dict(LOCK), manage=False)
+    with pytest.raises(ValueError, match="unknown key"):
+        _site(home={"name": "/x", "user": "root"})
+
+
+def test_check_dir_isolation():
+    a = _site("a", home=dict(LOCK, name="/var/www/a"))
+    b = _site("b", home=dict(LOCK, name="/var/www/b"))
+    check_dir_isolation({"a": a, "b": b})
+    # b in www-data could read a's home
+    b_in = _site("b", home=dict(LOCK, name="/var/www/b"), groups=["www-data"])
+    with pytest.raises(ValueError, match="b: user b is in group www-data, which guards a home"):
+        check_dir_isolation({"a": a, "b": b_in})
+    # an unmanaged user's groups are not seen; o+x is not a lock
+    check_dir_isolation({"a": _site("a", home={"group": "www-data", "mode": "755"}), "b": b_in})
+    # the lock owner in its own guard group is fine (nobody else to protect)
+    check_dir_isolation({"a": _site("a", home=dict(LOCK), groups=["www-data"])})
+
+
+def test_check_dir_isolation_primary_group():
+    a = _site("a", install_dir=dict(LOCK, name="/var/www/a"))
+    c = split_dir_perms({"user": {"manage": True, "name": "c", "group": "www-data"}})
+    with pytest.raises(ValueError, match="c: user c is in group www-data, which guards a install_dir"):
+        check_dir_isolation({"a": a, "c": c})
+
+
+def _layered(*layers):
+    return split_dir_perms(merge(*(lift_dir_specs(layer) for layer in layers)))
+
+
+def test_dir_specs_merge_across_layers():
+    defaults = {"install_dir": "/opt/services/{type}/{name}",
+                "user": {"manage": False, "name": "root", "group": "root"}}
+    preset = {"user": {"manage": True, "home": {"group": "www-data", "mode": "755"}}}
+    # the preset's perms survive the instance's plain path
+    settings = _layered(defaults, preset, {"user": {"name": "a", "home": "/var/www/{name}"}})
+    assert settings["user"]["home"] == "/var/www/{name}"
+    assert settings["_dir_perms"]["home"] == {"group": "www-data", "mode": "755"}
+    # an instance {mode} keeps the default path; mode: null resets to unmanaged
+    settings = _layered(defaults, {"install_dir": {"mode": "750"}})
+    assert settings["install_dir"] == "/opt/services/{type}/{name}"
+    assert settings["_dir_perms"]["install_dir"] == {"mode": "750"}
+    settings = _layered(defaults, preset, {"user": {"home": {"mode": None}}})
+    assert settings["_dir_perms"]["home"] == {"group": "www-data"}
+    assert "home" not in settings["user"]    # no name in any layer: default home
+
+
+def test_lift_dir_specs_leaves_input_alone():
+    layer = {"install_dir": "/x", "user": {"home": "/h"}}
+    assert lift_dir_specs(layer) == {"install_dir": {"name": "/x"}, "user": {"home": {"name": "/h"}}}
+    assert layer == {"install_dir": "/x", "user": {"home": "/h"}}
+    assert lift_dir_specs({}) == {} and lift_dir_specs(None) is None

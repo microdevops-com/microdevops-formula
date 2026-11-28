@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 import fake_pyobjects
-from appsvc_lib.core import BLOCKS, deep_format, merge
+from appsvc_lib.core import BLOCKS, deep_format, lift_dir_specs, merge, split_dir_perms
 from appsvc_sls.dispatch import dispatch
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -27,8 +27,9 @@ SCOPE = {"type": "t", "user_name": "helium", "user_group": "helium", "home": "/h
 # tools + env_sh, php pool -> nginx template sockets, systemd units watching
 # `changed`, cron, logrotate composed from pool and vhost logs.
 APP = {
-    "install_dir": "/var/www/helium/crm",
-    "user": {"manage": True, "name": "helium", "group": "helium", "shell": "/bin/bash"},
+    "install_dir": {"name": "/var/www/helium/crm", "group": "www-data", "mode": "750"},
+    "user": {"manage": True, "name": "helium", "group": "helium", "shell": "/bin/bash",
+             "home": {"name": "/var/www/helium", "group": "www-data", "mode": "750"}},
     "dirs": {"php_log": "/var/www/helium/crm/log/php", "nginx_log": "/var/www/helium/crm/log/nginx"},
     "nvm": {"versions": ["22"]},
     "tools": {"composer": {"source": "https://getcomposer.org/download/2.8.6/composer.phar"}},
@@ -59,8 +60,9 @@ VM = {"preset": "vmagent", "install_dir": "/opt/vm", "user": {"manage": True, "n
 
 def _settings(name, instance):
     preset = _yaml("presets/{}.yaml".format(instance["preset"])) if "preset" in instance else {}
-    settings = merge(_yaml("defaults.yaml"), preset, instance)
+    settings = merge(*(lift_dir_specs(layer) for layer in (_yaml("defaults.yaml"), preset, instance)))
     settings["name"] = name  # as init.sls does
+    settings = split_dir_perms(settings)
     return deep_format(settings, dict(SCOPE, name=name))
 
 
@@ -130,3 +132,17 @@ def test_nginx_alone_still_gets_php_sockets():
 def test_systemd_alone_restarts_only_on_unit_file():
     _, kwargs = _emit({"systemd"})[("cmd", "appsvc_app_systemd_consumer_restart")]
     assert kwargs["onchanges"] == [fake_pyobjects.Ref("file", "appsvc_app_systemd_consumer_unit")]
+
+
+def test_home_and_install_dir_permissions():
+    states = _emit({"user", "install_dir"})
+    function, home = states[("file", "appsvc_app_user_home")]
+    assert function == "directory"
+    assert (home["name"], home["user"], home["group"], home["mode"]) == \
+        ("/var/www/helium", "helium", "www-data", "750")
+    assert home["require"] == [fake_pyobjects.Ref("user", "appsvc_app_user")]
+    _, app = states[("file", "appsvc_app_install_dir")]
+    assert (app["group"], app["mode"]) == ("www-data", "750")
+    _, vm = states[("file", "appsvc_vm_install_dir")]
+    assert (vm["user"], vm["group"]) == ("vm", "vm") and "mode" not in vm
+    assert ("file", "appsvc_vm_user_home") not in states

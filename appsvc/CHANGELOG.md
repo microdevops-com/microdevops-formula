@@ -91,6 +91,14 @@ Also in 0.2 (additive):
   instance.
 - `nvm.build_pkgs` (default `[git, curl]`). `pyenv.build_pkgs` gained `git`,
   `curl` and `libzstd-dev`.
+- `install_dir` and `user.home` also take a mapping, `{name, group, mode}`
+  (`install_dir` also takes `user`). A plain path string still works and
+  behaves as before. Use it for per-site isolation: `750 <user>:www-data` on
+  the site's top directory lets nginx in and keeps other site users out. The
+  render fails if a managed user is in the group guarding another instance's
+  directory (see readme, "Directory isolation"). Layers merge key by key (a
+  path string counts as `{name: <path>}`), so a preset's `{group, mode}`
+  survives an instance's plain path.
 
 ## 0.1
 

@@ -421,9 +421,17 @@ appsvc:
     # appsvc never installs PHP, nginx or node: those are other states' jobs.
     # dirs must stay OUTSIDE the sources' targets (render fails otherwise); a
     # config entry inside a source target requires that source automatically.
+    # The site's top directory (here the home) is 750 helium:www-data: nginx
+    # gets in through the group, other site users don't (readme: Directory
+    # isolation). helium must not be in www-data - the render checks that.
     mt-helium:
       install_dir: /var/www/helium/crm
-      user: {manage: true, name: helium, group: helium, shell: /bin/bash}
+      user:
+        manage: true
+        name: helium
+        group: helium
+        shell: /bin/bash
+        home: {name: /var/www/helium, group: www-data, mode: "750"}
       dirs:
         nginx_log: "{install_dir}/log/nginx/mt-back"
         php_log: "{install_dir}/log/php/mt-back"

@@ -40,6 +40,8 @@ type: generic
 # cache_dir: /var/cache/salt/appsvc
 # resolve_cache_ttl: 3600
 # install_dir: "/opt/services/{type}/{name}"
+# install_dir: {name: "/var/www/{name}/app", group: www-data, mode: "750"}  # string or
+#                       # {name, user, group, mode}; mode is the dir itself, never recursive
 # github_token: ghp_xxxxxxxxxxxxxxxxxxxx  # top-level appsvc pillar only; secret
 
 # Service user. `user.manage: false` means "run as an externally-managed user".
@@ -50,6 +52,8 @@ user:
   name: root
   group: root
   # home: "/opt/services/{type}"
+  # home: {name: "/var/www/{name}", group: www-data, mode: "750"}  # per-site
+  #                       # isolation (readme: Directory isolation); name optional
   # groups:
   #   - adm
   # shell: /usr/sbin/nologin

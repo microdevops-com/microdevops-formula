@@ -1,7 +1,7 @@
 #!pyobjects
 # vim: set ft=python:
 
-from salt://appsvc/lib/core.py import user_home, parse_known_host
+from salt://appsvc/lib/core.py import dir_perms, user_home, parse_known_host
 
 # Refactored out of application/utils.py's user()/ssh() - same behavior
 # (group+user, .ssh dir, keys, authorized_keys, config, known_hosts), adapted
@@ -89,6 +89,16 @@ def user_and_ssh(prefix, settings):
         return
 
     name, group, home = _manage_user(prefix, user)
+
+    # user.home: {group, mode} - the home itself, never recursive. useradd
+    # only sets a mode on creation (from login.defs); this keeps it enforced.
+    entry = dir_perms(settings).get("home")
+    if entry:
+        kwargs = dict(name=entry["name"], user=entry["user"], group=entry["group"],
+                      makedirs=True, require=[User("_".join(prefix + ["user"]))])
+        if entry.get("mode"):
+            kwargs["mode"] = entry["mode"]
+        File.directory("_".join(prefix + ["user", "home"]), **kwargs)
 
     if ssh:
         _manage_ssh(prefix, ssh, name, group, home)

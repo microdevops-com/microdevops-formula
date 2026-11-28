@@ -261,6 +261,149 @@ def user_home(user):
     return "/root" if name == "root" else "/home/{}".format(name)
 
 
+# ── home / install_dir ownership and mode ─────────────────────────────────────
+# `install_dir` and `user.home` take a path string or {name, group, mode} (plus
+# `user` for install_dir), like the string-or-dict shorthand of dirs/sources.
+# The typical use is per-site isolation: 750 <user>:www-data on the site's top
+# directory lets nginx (www-data) traverse it and keeps every other site user
+# out. Normalised by split_dir_perms right after merge - before expand, which
+# folds top-level keys into the placeholder scope (a dict install_dir would
+# render {install_dir} as its repr).
+
+INSTALL_DIR_KEYS = ("name", "user", "group", "mode")
+HOME_KEYS = ("name", "group", "mode")
+_MODE_RE = re.compile(r"^0?[0-7]{3}$")
+
+
+def _dir_spec(value, what, allowed, name_required=True):
+    """(path, {perm: value}) from a string-or-dict directory setting. Without
+    `name_required`, a mapping may omit `name` (path None = the default)."""
+    if value is None or isinstance(value, str):
+        return value, {}
+    if not isinstance(value, dict):
+        raise ValueError("{} must be a path string or a mapping with `name`, got {!r}".format(what, value))
+    unknown = sorted(set(value) - set(allowed))
+    if unknown:
+        raise ValueError("{}: unknown key(s) {} (allowed: {})".format(
+            what, ", ".join(unknown), ", ".join(allowed)))
+    if not value.get("name") and name_required:
+        raise ValueError("{}: a mapping needs `name` (the path)".format(what))
+    mode = value.get("mode")
+    if mode is not None and not (isinstance(mode, str) and _MODE_RE.match(mode)):
+        raise ValueError("{}.mode must be a quoted octal string like \"750\", got {!r} "
+                         "(unquoted 0750 is the int 488 in YAML)".format(what, mode))
+    perms = {key: value[key] for key in allowed if key != "name" and value.get(key) is not None}
+    return value.get("name"), perms
+
+
+def lift_dir_specs(layer):
+    """One merge layer (defaults/preset/instance) with a string install_dir /
+    user.home turned into {name: <string>}, so layers merge key by key: a
+    preset's {group, mode} survives an instance's plain path, and an instance's
+    {mode} keeps the default path. Returns a new dict (or the falsy layer)."""
+    if not layer:
+        return layer
+    layer = dict(layer)
+    if isinstance(layer.get("install_dir"), str):
+        layer["install_dir"] = {"name": layer["install_dir"]}
+    user = layer.get("user")
+    if isinstance(user, dict) and isinstance(user.get("home"), str):
+        layer["user"] = dict(user, home={"name": user["home"]})
+    return layer
+
+
+def split_dir_perms(settings):
+    """Flatten `install_dir` / `user.home` back to path strings and keep their
+    ownership/mode under `_dir_perms` (read by dir_perms). Returns a new dict.
+    Raises on a bad shape, or on home permissions for an unmanaged user (that
+    home is someone else's to manage)."""
+    settings = dict(settings)
+    install, install_perms = _dir_spec(settings.get("install_dir"), "install_dir", INSTALL_DIR_KEYS)
+    if install is not None:
+        settings["install_dir"] = install
+    user = dict(settings.get("user") or {})
+    home, home_perms = _dir_spec(user.get("home"), "user.home", HOME_KEYS, name_required=False)
+    if "home" in user:
+        # {group, mode} without name: the default home (/home/<user>).
+        if home:
+            user["home"] = home
+        else:
+            user.pop("home")
+        settings["user"] = user
+    if home_perms and not user.get("manage"):
+        raise ValueError("user.home: group/mode need user.manage: true - appsvc only manages "
+                         "the home of a user it manages")
+    settings["_dir_perms"] = {"install_dir": install_perms, "home": home_perms}
+    return settings
+
+
+def dir_perms(settings):
+    """Effective {name, user, group[, mode]} of the instance's managed home
+    ("home", only when user.manage and group/mode were given) and of
+    "install_dir" (when set), from fully expanded settings. Owner defaults to
+    the instance user/group; no mode = leave it unmanaged. When install_dir IS
+    the managed home, both get the home's permissions (two states fighting over
+    one directory would flap every run); an explicit install_dir value that
+    contradicts the home's raises."""
+    perms = settings.get("_dir_perms") or {}
+    user = settings.get("user") or {}
+    name = user.get("name", "root")
+    group = user.get("group", name)
+    result = {}
+
+    home_perms = perms.get("home") or {}
+    if home_perms and user.get("manage"):
+        result["home"] = dict({"name": user_home(user), "user": name, "group": group}, **home_perms)
+
+    path = settings.get("install_dir")
+    if path:
+        explicit = perms.get("install_dir") or {}
+        home = result.get("home")
+        if home and home["name"].rstrip("/") == path.rstrip("/"):
+            clash = sorted(key for key in explicit if explicit[key] != home.get(key))
+            if clash:
+                raise ValueError("install_dir is user.home ({}) but sets different {} - set "
+                                 "them once, on user.home".format(path, "/".join(clash)))
+            result["install_dir"] = dict(home)
+        else:
+            result["install_dir"] = dict({"name": path, "user": name, "group": group}, **explicit)
+    return result
+
+
+def check_dir_isolation(expanded):
+    """A locked directory (mode with no `x` for others, group other than its
+    owner's own) relies on nobody else being in that group. Raise if any
+    instance's managed user has it as primary group or in user.groups - with
+    www-data that user could read every site locked this way. Only users appsvc
+    manages are seen; members added elsewhere are not."""
+    locks = {}
+    for instance_name, settings in expanded.items():
+        user = settings.get("user") or {}
+        own_group = user.get("group", user.get("name", "root"))
+        for which, entry in dir_perms(settings).items():
+            mode = entry.get("mode")
+            if mode and mode[-1] in "0246" and entry["group"] != own_group:
+                locks.setdefault(entry["group"], []).append(
+                    (instance_name, which, entry["name"], entry["user"]))
+
+    problems = []
+    for instance_name, settings in sorted(expanded.items()):
+        user = settings.get("user") or {}
+        if not user.get("manage"):
+            continue
+        name = user.get("name", "root")
+        member_of = {user.get("group", name)} | set(user.get("groups") or [])
+        for group in sorted(member_of & set(locks)):
+            others = ["{} {} ({})".format(lock_instance, which, path)
+                      for lock_instance, which, path, owner in locks[group] if owner != name]
+            if others:
+                problems.append("{}: user {} is in group {}, which guards {} - it could read "
+                                "them; drop {} from user.group/user.groups".format(
+                                    instance_name, name, group, ", ".join(others), group))
+    if problems:
+        raise ValueError("appsvc: directory isolation broken:\n  " + "\n  ".join(problems))
+
+
 # ── keyed-map keys ────────────────────────────────────────────────────────────
 # The key of sources/dirs/cron entries becomes part of a Salt state ID (and, for
 # cron, of the crontab identifier), so restrict its charset.
