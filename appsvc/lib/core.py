@@ -150,19 +150,27 @@ def append_at_path(container, path, items, sep=":", unique_key=None):
 
 # ── filter ────────────────────────────────────────────────────────────────────
 # Operator-typed `appsvc:filter` selector to scope `state.apply` to a subset of
-# instances. Parsing/matching only - the loop in init.sls still merges ALL
-# instances first (so scrape aggregation stays correct), then dispatches just
-# the selected ones.
+# instances (name/preset) and, within them, to a subset of blocks (block).
+# Parsing/matching only - the loop in init.sls still merges ALL instances first
+# (so scrape aggregation and unit-name checks stay correct), then dispatches
+# just the selected instances and blocks.
 
-FILTER_KEYS = ("name", "preset")
+FILTER_KEYS = ("name", "preset", "block")
+
+# Block names for `block:` - the pillar keys an operator edits, in dispatch
+# order. `user` covers user + ssh; `svc` is the fetch; `shell_env` the env_sh.
+BLOCKS = ("user", "install_dir", "dirs", "pyenv", "nvm", "tools", "shell_env", "sources",
+          "config", "svc", "venv", "php_fpm", "commands", "systemd", "cron", "nginx",
+          "logrotate")
 
 
 def parse_filter(spec):
     """Parse a `appsvc:filter` selector string into {key: [globs]}.
 
-    Format: "name: vm* *gra*; preset: exporter*" - semicolon-separated clauses,
-    each "<key>: <glob> <glob> ...". Keys must be one of name/preset; an unknown
-    key or a clause with no globs raises (a typo fails loud instead of silently
+    Format: "name: vm* *gra*; preset: exporter*; block: cron nginx" -
+    semicolon-separated clauses, each "<key>: <value> <value> ...". name/preset
+    take globs; block takes exact names from BLOCKS. An unknown key or block, or
+    a clause with no values, raises (a typo fails loud instead of silently
     selecting nothing). Returns {} for an empty/whitespace spec (no filter)."""
     result = {}
     for clause in (spec or "").split(";"):
@@ -181,20 +189,32 @@ def parse_filter(spec):
         patterns = globs.split()
         if not patterns:
             raise ValueError("appsvc:filter key {!r} has no globs".format(key))
+        if key == "block":
+            unknown = [p for p in patterns if p not in BLOCKS]
+            if unknown:
+                raise ValueError("appsvc:filter block {} unknown; expected some of {}".format(
+                    ", ".join(unknown), ", ".join(BLOCKS)))
         result.setdefault(key, []).extend(patterns)
     return result
+
+
+def selected_blocks(filter_spec):
+    """The set of block names a parsed filter selects, or None for all."""
+    blocks = (filter_spec or {}).get("block")
+    return set(blocks) if blocks else None
 
 
 def select_instances(merged_instances, filter_spec):
     """Return the set of instance names to dispatch for a parsed `filter_spec`.
 
-    Empty/None filter -> every instance. Otherwise union semantics: an instance
-    is selected if its name matches any `name` glob OR its preset matches any
-    `preset` glob. A preset-less instance can only be matched by name."""
-    if not filter_spec:
+    No name/preset globs (no filter, or `block` only) -> every instance.
+    Otherwise union semantics: an instance is selected if its name matches any
+    `name` glob OR its preset matches any `preset` glob. A preset-less instance
+    can only be matched by name. `block` never narrows the instance set."""
+    name_globs = (filter_spec or {}).get("name", [])
+    preset_globs = (filter_spec or {}).get("preset", [])
+    if not name_globs and not preset_globs:
         return set(merged_instances)
-    name_globs = filter_spec.get("name", [])
-    preset_globs = filter_spec.get("preset", [])
     selected = set()
     for name, settings in merged_instances.items():
         if any(fnmatch.fnmatch(name, g) for g in name_globs):

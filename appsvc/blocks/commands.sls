@@ -4,7 +4,7 @@
 from salt://appsvc/lib/app.py import select_commands, resolve_onchanges
 
 
-def run_commands(prefix, settings, phase, require=None, refs=None):
+def run_commands(prefix, settings, phase, require=None, refs=None, skipped=()):
     """Emit Cmd.run states for `settings["commands"]` entries in `phase`.
 
     Commands do not feed the changed/watch restart contract. Use `unless` or
@@ -16,7 +16,9 @@ def run_commands(prefix, settings, phase, require=None, refs=None):
     only runs when one of those states reported changes. `refs` is
     {"sources": {key: ref}} from dispatch; an unknown key, or a list that
     resolves to nothing, raises. `onchanges` composes with `phase`, which still
-    decides when in the run the command sits.
+    decides when in the run the command sits. In a filtered apply, `skipped`
+    names the blocks left out: an `onchanges` that only watches skipped blocks
+    cannot fire, so the command is not emitted at all.
     """
     sid = "_".join(prefix + ["cmd"])
     for name, item in select_commands(settings.get("commands"), phase, settings):
@@ -25,7 +27,10 @@ def run_commands(prefix, settings, phase, require=None, refs=None):
         if require:
             kwargs["require"] = list(require)
         if "onchanges" in item:
-            kwargs["onchanges"] = resolve_onchanges(name, item["onchanges"], refs)
+            onchanges = resolve_onchanges(name, item["onchanges"], refs, skipped)
+            if onchanges is None:
+                continue
+            kwargs["onchanges"] = onchanges
         for key in ("cwd", "runas", "unless", "onlyif", "stdin", "env"):
             if key in item:
                 kwargs[key] = item[key]

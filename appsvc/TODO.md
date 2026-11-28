@@ -355,6 +355,15 @@ Not done: **user units** (`systemctl --user`: `~/.config/systemd/user`,
 service states don't cover them) - a later per-unit `scope: user` fits this
 shape.
 
+### [x] 23. Block filter (`appsvc:filter block:`)
+**Resolved:** `block: cron nginx` applies only those blocks of the selected
+instances (all instances without name/preset). Requisites are cut at the
+block boundary (see WHITEPAPER §5); `dispatch` moved from `init.sls` to
+`dispatch.sls`, and `tests/test_dispatch.py` runs it on fake pyobjects
+factories (`tests/fake_pyobjects.py`) to assert no dangling requisite for every
+single-block selection. Not done: skipping `latest` resolution when `svc` is
+filtered out - other blocks may use {version}/{tag}, so it still resolves.
+
 ### [x] 22. Split lib.py by area
 **Resolved:** the ~2k-line `lib.py` became `lib/{core,release,app,runtimes,
 web,systemd}.py` (pure move, no behavior change), each depending only on

@@ -86,6 +86,9 @@ Detected by: `systemd.Unit`, `systemd.Service`, `systemd.Install` or
 
 Also in 0.2 (additive):
 
+- `appsvc:filter` takes a `block:` clause (`"name: mt-argon; block: cron"`)
+  that applies only those blocks. Without `name`/`preset` it covers every
+  instance.
 - `nvm.build_pkgs` (default `[git, curl]`). `pyenv.build_pkgs` gained `git`,
   `curl` and `libzstd-dev`.
 

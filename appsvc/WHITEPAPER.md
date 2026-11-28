@@ -178,7 +178,8 @@ expansions compose better than ever-earlier global phases.
 
 ## 6. Dispatch & the `changed`/`watch` contract
 
-`dispatch(prefix, settings)` runs, per instance, in fixed order:
+`dispatch(prefix, settings, blocks)` (`dispatch.sls`) runs, per instance, in fixed order
+(`blocks` from `appsvc:filter block:`, None = all; see §5):
 
 ```
 user_and_ssh → install_dir → dirs → pyenv → nvm → tools → env_sh → sources
@@ -339,6 +340,16 @@ production path — these presets are not replacements or a migration invitation
   `dispatch`. This is **manual scoping, not change detection**: filtering to a
   new exporter won't refresh vmagent's scrape config until vmagent is also in
   scope.
+- **`block:` filters blocks, with requisites cut at the boundary.** The
+  `block:` clause (exact names, not globs) narrows `dispatch` to some blocks.
+  A skipped block contributes no refs, never placeholder refs: `changed` only
+  carries what this run applies, the php-fpm socket map comes from pillar
+  (`php_fpm_sockets`), a config entry inside a skipped source drops its
+  `require`, and a command whose `onchanges` only watches skipped blocks is not
+  emitted (it could not fire - dropping `onchanges` instead would run it
+  unconditionally). `dispatch` lives in `dispatch.sls` so
+  `tests/test_dispatch.py` can run it on fake state factories and assert no
+  dangling requisite for every selection.
 - **`appsvc:globals` are scope, not settings.** Operator-defined placeholders
   (`{foo}`) shared by every instance live in the **expand scope**, never in the
   `defaults→preset→instance` merge — they are template variables, not per-instance
@@ -461,7 +472,7 @@ production path — these presets are not replacements or a migration invitation
 | What does the merged/expanded settings dict look like for instance X? | `state.show_sls appsvc` on a minion |
 | Why can `lib/` functions be called inside block functions? | §3 — each block has its own top-level `from salt://appsvc/lib/<module>.py import ...` |
 | How do I add a version resolver? | Add a pure helper in `lib/release.py`, register it in `VERSION_RESOLVERS`, and have it return a settings patch for `resolve_latest` |
-| How do I add a building block (cron, logrotate)? | New `blocks/<name>.sls` exporting `<name>(prefix, settings)`; wire into `dispatch`, guarded by its settings key / `manage: true` |
+| How do I add a building block (cron, logrotate)? | New `blocks/<name>.sls` exporting `<name>(prefix, settings)`; wire into `dispatch.sls` behind `on("<key>")`, add the key to `BLOCKS` (`lib/core.py`) and an instance using it to `tests/test_dispatch.py`, guarded by its settings key / `manage: true` |
 | How do I add app-specific management (Grafana datasources, etc.)? | `docs/extending-with-app-blocks.md` — generic gap → generic block; app knowledge → preset data; irreducible app logic → a thin app block |
 | Why is `{install_dir}` sometimes a real path, sometimes a template? | §5 — depends which expansion phase |
 | Is it safe to run twice / does it restart unnecessarily? | §6 — restarts are `onchanges`-based off the `changed`/`watch` contract |

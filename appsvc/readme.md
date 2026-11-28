@@ -87,6 +87,17 @@ For every entry under `appsvc:instances`:
    only the **resolution** (step 2) and **dispatch** (step 4). Manual scoping,
    not change detection: a new exporter's job reaches vmagent only when vmagent
    is also in scope.
+   A `block:` clause limits which **blocks** run for the selected instances, e.g.
+   `filter: "name: mt-argon; block: cron"` or, for every instance,
+   `filter: "block: cron nginx"`. Values are exact block names: `user` (user + ssh), `install_dir`, `dirs`, `pyenv`, `nvm`, `tools`, `shell_env`, `sources`, `config`, `svc` (the fetch), `venv`, `php_fpm`, `commands`, `systemd`, `cron`, `nginx`, `logrotate`
+   (anything else fails loud). A skipped block contributes no requisites, so the
+   rest still renders: `changed` holds only what this run applies (`block:
+   systemd` restarts a unit only if its file changed), nginx gets the php-fpm
+   sockets computed from pillar, a config entry inside a skipped source drops its
+   `require` (the checkout is assumed to exist), and a command whose `onchanges`
+   only watches skipped sources is not run at all - it has nothing to react to.
+   `tests/test_dispatch.py` renders every single-block selection against fake
+   states and checks that no requisite points at a missing state.
    `sources`, `fetch`, `config_file`, and `venv` each return the list of pyobjects
    requisite references that mean "the binary/config/requirement set
    changed"; `dispatch` threads that list into `systemd_unit`'s `watch`, so

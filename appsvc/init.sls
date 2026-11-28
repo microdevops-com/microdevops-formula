@@ -11,28 +11,12 @@ import logging
 import yaml
 
 from salt://appsvc/compat.py import check_compat
-from salt://appsvc/lib/core.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, merge_globals, parse_filter, select_instances, user_home
+from salt://appsvc/lib/core.py import append_at_path, collect_scrape_jobs, expand, join_args, merge, merge_args, merge_globals, parse_filter, select_instances, selected_blocks, user_home
 from salt://appsvc/lib/release.py import fetch_target, normalize_osarch, resolve_latest
 from salt://appsvc/lib/runtimes.py import runtime_paths
 from salt://appsvc/lib/systemd.py import check_unit_names, systemd_plan
 
-from salt://appsvc/blocks/install_dir.sls import install_dir
-from salt://appsvc/blocks/fetch.sls import fetch_source
-from salt://appsvc/blocks/venv.sls import python_venv
-from salt://appsvc/blocks/user_ssh.sls import user_and_ssh
-from salt://appsvc/blocks/dirs.sls import dirs
-from salt://appsvc/blocks/pyenv.sls import pyenv
-from salt://appsvc/blocks/nvm.sls import nvm
-from salt://appsvc/blocks/tools.sls import tools
-from salt://appsvc/blocks/env_sh.sls import env_sh
-from salt://appsvc/blocks/sources.sls import sources
-from salt://appsvc/blocks/config_file.sls import config_files
-from salt://appsvc/blocks/php_fpm.sls import php_fpm
-from salt://appsvc/blocks/commands.sls import run_commands
-from salt://appsvc/blocks/systemd_unit.sls import systemd_unit
-from salt://appsvc/blocks/cron.sls import cron
-from salt://appsvc/blocks/nginx_vhost.sls import nginx_vhost
-from salt://appsvc/blocks/logrotate.sls import logrotate
+from salt://appsvc/dispatch.sls import dispatch
 from salt://appsvc/utils.sls import get_salt_file
 
 log = logging.getLogger(__name__)
@@ -82,58 +66,6 @@ def resolve_latest_version(svc_settings):
     return resolve_latest(svc_settings, svc_settings.get("version_resolver", "github"), context)
 
 
-# --- building-block dispatch --------------------------------------------------
-
-
-def dispatch(prefix, settings):
-    """Run the building blocks an instance's merged settings call for, in a
-    fixed order: user/ssh, install_dir (ahead of config - a config entry with
-    makedirs would otherwise create the install dir root-owned before the
-    service user's ownership is applied), dirs (before sources, so a
-    checkout's parent exists; a dir inside a source target fails loud), sources
-    (before config, so a config entry can write into a checkout, e.g. a
-    .env.local - and such an entry `require`s its source, so a failed clone
-    never leaves a makedirs-created target behind), config, the svc fetch, venv
-    (after fetch - venv.requirements_files may point at a requirements.txt that
-    arrives inside the fetched archive), php_fpm pools, pre-systemd commands,
-    systemd units, post-systemd commands, cron, then nginx (which gets the php_fpm
-    {pool_key: socket} map), then logrotate (composed from the pool and vhost
-    logs). Source/fetch/config/venv changes
-    are wired via the `changed` requisite-list contract so systemd restarts
-    whenever the code, binary, config, or requirement set actually changed.
-    Commands with `onchanges` get the per-key source refs via `refs`."""
-
-    user_and_ssh(prefix, settings)
-    install_dir(prefix, settings)
-    dirs(prefix, settings)
-    runtime_refs = (list(pyenv(prefix, settings) or []) + list(nvm(prefix, settings) or [])
-                    + list(tools(prefix, settings) or []))
-    env_sh(prefix, settings)
-    source_refs = sources(prefix, settings)
-    changed = runtime_refs + list(source_refs.values()) + list(config_files(prefix, settings, source_refs) or [])
-
-    svc = settings.get("svc")
-    if svc:
-        changed = list(fetch_source(prefix, settings) or []) + changed
-
-    changed = list(python_venv(prefix, settings) or []) + changed
-
-    php_sockets = php_fpm(prefix, settings)
-
-    refs = {"sources": source_refs}
-    run_commands(prefix, settings, phase="pre", require=changed, refs=refs)
-
-    running = systemd_unit(prefix, settings, watch=changed)
-
-    run_commands(prefix, settings, phase="post", require=running, refs=refs)
-
-    cron(prefix, settings)
-
-    nginx_vhost(prefix, settings, php_sockets)
-
-    logrotate(prefix, settings)
-
-
 # --- main loop: merge+format every instance, then gather+dispatch the selected -
 #
 # Two passes, because cross-instance scrape collection needs every producer
@@ -164,10 +96,14 @@ PHASE2_PLACEHOLDERS = ("install_dir", "exec", "args", "user_name", "user_group",
                       "unit", "unit_name")
 
 # Optional `appsvc:filter` (operator-typed, usually on the CLI) scopes this apply
-# to a subset - e.g. pillar='{appsvc: {filter: "name: vm* *gra*"}}'. It gates the
-# expensive `latest` resolution (pass 1) and dispatch (pass 2); formatting itself
-# runs for every instance so cross-instance scrape gathering stays correct.
-selected = select_instances(instances, parse_filter(cfg("filter", "")))
+# to a subset - e.g. pillar='{appsvc: {filter: "name: vm* *gra*; block: cron"}}'.
+# name/preset gate the expensive `latest` resolution (pass 1) and dispatch
+# (pass 2); `block` limits which blocks dispatch emits for the selected
+# instances. Formatting itself runs for every instance so cross-instance scrape
+# gathering and unit-name checks stay correct.
+filter_spec = parse_filter(cfg("filter", ""))
+selected = select_instances(instances, filter_spec)
+blocks = selected_blocks(filter_spec)
 if not selected and instances:
     log.warning("appsvc:filter %r matched no instances; nothing to apply",
                 cfg("filter", ""))
@@ -270,4 +206,4 @@ for instance_name, settings in expanded.items():
         jobs = collect_scrape_jobs(expanded, instance_name)
         append_at_path(settings, settings["scrape_collect"], jobs, unique_key="job_name")
 
-    dispatch(["appsvc", instance_name], settings)
+    dispatch(["appsvc", instance_name], settings, blocks)

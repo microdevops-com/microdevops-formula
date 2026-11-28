@@ -6,6 +6,7 @@ from appsvc_lib.web import (
     nginx_template_context,
     normalize_nginx_vhosts,
     normalize_php_pools,
+    php_fpm_sockets,
     php_reload_command,
     php_reopen_command,
     render_logrotate,
@@ -244,3 +245,11 @@ def test_logrotate_rejects_bad_options(conf):
 def test_logrotate_relative_path_raises():
     with pytest.raises(ValueError, match="absolute"):
         logrotate_plan({}, [_pool("a", "8.3", "log/a.log")], [], "u", "u")
+
+
+def test_php_fpm_sockets_match_the_pools_listen():
+    settings = {"user": {"name": "web", "group": "webgrp"},
+                "php_fpm": {"pools": {"a": {"version": "8.3"}, "b": {"version": "8.1", "listen": "/run/x.sock"}}}}
+    assert php_fpm_sockets(settings, "app") == {
+        "a": [p["listen"] for p in _pools({"a": {"version": "8.3"}}, "app")][0], "b": "/run/x.sock"}
+    assert php_fpm_sockets({}, "app") == {}

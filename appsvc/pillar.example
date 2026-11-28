@@ -83,6 +83,11 @@ appsvc:
   # matches any name glob OR its preset matches any preset glob. All other
   # instances are still merged (so a selected vmagent gathers every exporter's
   # scrape job) but not dispatched. Omit to apply all instances.
+  # `block:` narrows the apply further to some blocks of the selected instances
+  # (exact names: user install_dir dirs pyenv nvm tools shell_env sources config
+  # svc venv php_fpm commands systemd cron nginx logrotate). Without name/preset
+  # it applies those blocks of every instance:
+  #   state.apply appsvc pillar='{appsvc: {filter: "name: mt-argon; block: cron"}}'
   # filter: "name: vm*"
 
   # Operator-defined placeholders shared by every instance, usable as {key} in

@@ -90,6 +90,17 @@ def normalize_php_pools(pools, instance_name, user_name, user_group):
     return result
 
 
+def php_fpm_sockets(settings, instance_name):
+    """{pool_key: socket} for the instance's pools - the same map the php_fpm
+    block returns, computed without emitting states (for a filtered apply that
+    renders nginx vhosts but skips php_fpm)."""
+    conf = settings.get("php_fpm") or {}
+    user = settings.get("user") or {}
+    user_name = user.get("name", "root")
+    pools = normalize_php_pools(conf.get("pools"), instance_name, user_name, user.get("group", user_name))
+    return {pool["key"]: pool["listen"] for pool in pools}
+
+
 def render_php_pool(pool):
     """Render one normalized pool to a pool.d file body (same shape as
     app/files/php-generic/pool.conf). error_log lines only when it is set;

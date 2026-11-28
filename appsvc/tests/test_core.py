@@ -15,6 +15,7 @@ from appsvc_lib.core import (
     parse_filter,
     parse_known_host,
     select_instances,
+    selected_blocks,
     user_home,
 )
 
@@ -235,6 +236,24 @@ def test_parse_filter_parses_clauses_and_globs():
         "name": ["vm*", "*gra*"],
         "preset": ["exporter*"],
     }
+
+
+def test_parse_filter_block_names_are_exact_and_validated():
+    assert parse_filter("name: mt-argon; block: cron nginx") == {
+        "name": ["mt-argon"], "block": ["cron", "nginx"]}
+    with pytest.raises(ValueError, match="block cronn unknown"):
+        parse_filter("block: cronn")
+    with pytest.raises(ValueError, match="block cr\\* unknown"):
+        parse_filter("block: cr*")
+
+
+def test_selected_blocks_and_block_only_filter_selects_every_instance():
+    assert selected_blocks({}) is None
+    assert selected_blocks({"name": ["a"]}) is None
+    assert selected_blocks(parse_filter("block: cron cron nginx")) == {"cron", "nginx"}
+    instances = {"a": {}, "b": {"preset": "vmagent"}}
+    assert select_instances(instances, parse_filter("block: cron")) == {"a", "b"}
+    assert select_instances(instances, parse_filter("name: a; block: cron")) == {"a"}
 
 
 def test_parse_filter_empty_and_whitespace_mean_no_filter():

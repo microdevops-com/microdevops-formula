@@ -228,6 +228,14 @@ def test_resolve_onchanges_unknown_key_and_empty_resolution_raise():
         resolve_onchanges("c", ["sources"], None)
 
 
+def test_resolve_onchanges_on_skipped_block_means_skip_the_command():
+    # appsvc:filter block: without sources - the source states are not in the
+    # run, so they cannot change; still validated (a typo still fails).
+    assert resolve_onchanges("c", ["sources:back"], {"sources": {}}, skipped={"sources"}) is None
+    with pytest.raises(ValueError, match="unknown block"):
+        resolve_onchanges("c", ["sourcez:back"], {}, skipped={"sources"})
+
+
 def test_select_commands_keeps_onchanges_entries_in_order():
     commands = OrderedDict([
         ("a", {"cmd": "a", "phase": "pre", "onchanges": ["sources:x"]}),

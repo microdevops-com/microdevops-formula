@@ -142,13 +142,22 @@ def parse_onchanges(spec):
     return parsed
 
 
-def resolve_onchanges(cmd_name, spec, refs):
+def resolve_onchanges(cmd_name, spec, refs, skipped=()):
     """Resolve a command's `onchanges` spec against `refs` ({block: {key: ref}})
     to a flat, de-duplicated list of refs. Raises ValueError for an unknown
-    key or when nothing resolves (the command could never run)."""
+    key or when nothing resolves (the command could never run).
+
+    `skipped` names blocks a filtered apply leaves out (appsvc:filter block:).
+    Entries on a skipped block are dropped: its states are not in this run, so
+    they cannot change. When every entry is dropped, returns None - the caller
+    skips the command, exactly as Salt would with no change to react to."""
     refs = refs or {}
     resolved = []
-    for block, key in parse_onchanges(spec):
+    parsed = parse_onchanges(spec)
+    parsed = [(block, key) for block, key in parsed if block not in skipped]
+    if not parsed:
+        return None
+    for block, key in parsed:
         available = refs.get(block) or {}
         if key is None:
             picked = list(available.values())
