@@ -17,7 +17,46 @@ from salt://appsvc/lib/core.py import _KEY_RE, _check_unknown_keys, check_map_ke
 # Pool files only (never PHP installation). Used by blocks/php_fpm.sls.
 
 PHP_POOL_KEYS = ("version", "name", "user", "group", "listen", "listen_owner",
-                 "listen_group", "listen_mode", "error_log", "reload", "config")
+                 "listen_group", "listen_mode", "log", "reload", "config")
+PHP_LOG_KEYS = ("error", "slow", "slow_timeout", "slow_trace_depth")
+PHP_SLOW_TIMEOUT = 10        # seconds, when log.slow is set
+PHP_SLOW_TRACE_DEPTH = 0
+_PHP_DURATION_RE = re.compile(r"^[1-9]\d*[smhd]?$")
+
+
+def _log_map(section, key, item, allowed):
+    """The entry's `log` mapping ({} when absent), unknown keys rejected."""
+    log = item.get("log")
+    if log is None:
+        return {}
+    if not isinstance(log, dict):
+        raise ValueError("{}:{}: `log` must be a mapping ({}), got {!r}".format(
+            section, key, ", ".join(allowed), log))
+    _check_unknown_keys(section, "{}.log".format(key), log, allowed)
+    return log
+
+
+def _php_slow_log(key, log):
+    """(slow_log|None, timeout|None, trace_depth|None) from a pool's `log`.
+    Timeout: positive int seconds, or a php-fpm duration string ("5s", "1m")."""
+    slow = log.get("slow") or None
+    tuning = [name for name in ("slow_timeout", "slow_trace_depth") if log.get(name) is not None]
+    if not slow:
+        if tuning:
+            raise ValueError("php_fpm.pools:{}: log.{} needs log.slow (the slowlog path)".format(
+                key, "/".join(tuning)))
+        return None, None, None
+    timeout = log.get("slow_timeout", PHP_SLOW_TIMEOUT)
+    if isinstance(timeout, bool) or not (
+            (isinstance(timeout, int) and timeout > 0)
+            or (isinstance(timeout, str) and _PHP_DURATION_RE.match(timeout))):
+        raise ValueError("php_fpm.pools:{}: log.slow_timeout must be positive seconds or a "
+                         "duration like \"5s\"/\"1m\", got {!r}".format(key, timeout))
+    depth = log.get("slow_trace_depth", PHP_SLOW_TRACE_DEPTH)
+    if isinstance(depth, bool) or not isinstance(depth, int) or depth < 0:
+        raise ValueError("php_fpm.pools:{}: log.slow_trace_depth must be an integer >= 0, "
+                         "got {!r}".format(key, depth))
+    return slow, "{}s".format(timeout) if isinstance(timeout, int) else timeout, depth
 PHP_DEFAULT_LISTEN = "/run/php/php{version}-fpm-{pool_name}.sock"
 _PHP_VERSION_RE = re.compile(r"^\d+\.\d+$")
 
@@ -25,7 +64,9 @@ _PHP_VERSION_RE = re.compile(r"^\d+\.\d+$")
 def normalize_php_pools(pools, instance_name, user_name, user_group):
     """Turn the `php_fpm.pools` keyed map into an ordered list of fully resolved
     dicts (key, name, version, user, group, listen, listen_owner, listen_group,
-    listen_mode, error_log|None, reload, config, path). `listen` may use
+    listen_mode, error_log|None, slow_log|None, slow_timeout|None,
+    slow_trace_depth|None, reload, config, path) - from pillar `log.error`,
+    `log.slow`, `log.slow_timeout`, `log.slow_trace_depth`. `listen` may use
     {version} and {pool_name}. Raises ValueError on a bad key, unknown keys, a
     `version` that is not a "N.N" string (a YAML float like 8.10 loses its
     zero), a bad `name` charset or a non-string `listen_mode`."""
@@ -66,7 +107,9 @@ def normalize_php_pools(pools, instance_name, user_name, user_group):
                              "got {!r}".format(key, listen))
         listen = listen.replace("{version}", version).replace("{pool_name}", name)
 
-        error_log = item.get("error_log") or None
+        log = _log_map("php_fpm.pools", key, item, PHP_LOG_KEYS)
+        error_log = log.get("error") or None
+        slow_log, slow_timeout, slow_trace_depth = _php_slow_log(key, log)
         config = item.get("config") or ""
         if not isinstance(config, str):
             raise ValueError("php_fpm.pools:{}: `config` must be a string of raw pool "
@@ -83,6 +126,9 @@ def normalize_php_pools(pools, instance_name, user_name, user_group):
             "listen_group": item.get("listen_group", "www-data"),
             "listen_mode": listen_mode,
             "error_log": error_log,
+            "slow_log": slow_log,
+            "slow_timeout": slow_timeout,
+            "slow_trace_depth": slow_trace_depth,
             "reload": bool(item.get("reload", True)),
             "config": config,
             "path": "/etc/php/{}/fpm/pool.d/{}.conf".format(version, name),
@@ -103,7 +149,7 @@ def php_fpm_sockets(settings, instance_name):
 
 def render_php_pool(pool):
     """Render one normalized pool to a pool.d file body (same shape as
-    app/files/php-generic/pool.conf). error_log lines only when it is set;
+    app/files/php-generic/pool.conf). error_log / slowlog lines only when set;
     `config` is appended verbatim after a blank line; ends with a newline."""
     lines = [
         "[{}]".format(pool["name"]),
@@ -119,6 +165,11 @@ def render_php_pool(pool):
         lines += ["",
                   "php_admin_value[error_log] = {}".format(pool["error_log"]),
                   "php_admin_flag[log_errors] = on"]
+    if pool["slow_log"]:
+        lines += ["",
+                  "slowlog = {}".format(pool["slow_log"]),
+                  "request_slowlog_timeout = {}".format(pool["slow_timeout"]),
+                  "request_slowlog_trace_depth = {}".format(pool["slow_trace_depth"])]
     body = "\n".join(lines) + "\n"
     if pool["config"]:
         body += "\n" + pool["config"]
@@ -138,7 +189,8 @@ def php_reload_command(version):
 
 ACME_CERT_DIR = "/opt/acme/cert"
 NGINX_VHOST_KEYS = ("name", "names", "acme_account", "ssl_cert", "ssl_key", "upstream",
-                    "template", "vars", "access_log", "error_log", "auth_basic")
+                    "template", "vars", "log", "auth_basic")
+NGINX_LOG_KEYS = ("access", "error")
 NGINX_RESERVED_CONTEXT = ("vhost_name", "domain", "names", "ssl_cert", "ssl_key",
                           "access_log", "error_log", "htpasswd_file", "php_fpm_sockets")
 
@@ -152,7 +204,8 @@ def acme_cert_paths(vhost_name, first_domain, cert_dir=ACME_CERT_DIR):
 def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
     """Validate `nginx.vhosts` (keyed map) into an ordered list of render-ready
     dicts: key, name, names, domain, tls, acme_account, ssl_cert, ssl_key,
-    upstream|None, template|None, vars, access_log, error_log, auth_basic (list),
+    upstream|None, template|None, vars, access_log, error_log (from pillar
+    `log.access` / `log.error`, default /var/log/nginx/<name>.*.log), auth_basic (list),
     htpasswd_file|None. ACME cert paths derive from `name` + the first domain.
 
     Raises ValueError on unknown keys (the pre-vhosts top-level shape is
@@ -174,6 +227,7 @@ def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
         if not isinstance(item, dict):
             raise ValueError("nginx.vhosts:{}: must be a mapping, got {!r}".format(key, item))
         _check_unknown_keys("nginx.vhosts", key, item, NGINX_VHOST_KEYS)
+        log = _log_map("nginx.vhosts", key, item, NGINX_LOG_KEYS)
 
         name = item.get("name", "{}_{}".format(instance_name, key))
         if not isinstance(name, str) or not _KEY_RE.match(name):
@@ -233,8 +287,8 @@ def normalize_nginx_vhosts(nginx, instance_name, php_sockets=None):
             "upstream": upstream,
             "template": template,
             "vars": vhost_vars,
-            "access_log": item.get("access_log", "/var/log/nginx/{}.access.log".format(name)),
-            "error_log": item.get("error_log", "/var/log/nginx/{}.error.log".format(name)),
+            "access_log": log.get("access") or "/var/log/nginx/{}.access.log".format(name),
+            "error_log": log.get("error") or "/var/log/nginx/{}.error.log".format(name),
             "auth_basic": auth_basic,
             "htpasswd_file": "/etc/nginx/htpasswd/{}".format(name) if auth_basic else None,
         }
@@ -345,7 +399,7 @@ def logrotate_plan(conf, php_pools, nginx_vhosts, user_name, user_group):
 
     by_version = {}
     for pool in php_pools or []:
-        kept = take([pool["error_log"]], "php pool " + pool["key"])
+        kept = take([pool["error_log"], pool.get("slow_log")], "php pool " + pool["key"])
         if kept:
             by_version.setdefault(pool["version"], []).extend(kept)
     for version, paths in by_version.items():

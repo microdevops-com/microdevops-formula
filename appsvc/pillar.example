@@ -456,7 +456,11 @@ appsvc:
         pools:
           mt-back:
             version: "8.3"            # a quoted string
-            error_log: "{install_dir}/log/php/mt-back/mt-back.error.log"
+            log:
+              error: "{install_dir}/log/php/mt-back/mt-back.error.log"
+              slow: "{install_dir}/log/php/mt-back/mt-back.slow.log"
+              # slow_timeout: 10        # default: seconds, or "5s"/"1m"
+              # slow_trace_depth: 0     # default
             config: |
               pm = dynamic
               pm.max_children = 20
@@ -470,7 +474,8 @@ appsvc:
             # access_log, error_log, htpasswd_file, php_fpm_sockets
             # ({pool_key: socket}) plus `vars`.
             template: salt://my-formula/nginx/mt-back.conf
-            access_log: "{install_dir}/log/nginx/mt-back/mt-back.access.log"
-            error_log: "{install_dir}/log/nginx/mt-back/mt-back.error.log"
+            log:
+              access: "{install_dir}/log/nginx/mt-back/mt-back.access.log"
+              error: "{install_dir}/log/nginx/mt-back/mt-back.error.log"
             vars: {php_version: "8.3"}
       systemd: {manage: false}

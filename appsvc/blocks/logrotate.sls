@@ -4,8 +4,8 @@
 from salt://appsvc/lib/web.py import logrotate_plan, normalize_nginx_vhosts, normalize_php_pools, render_logrotate
 
 # One /etc/logrotate.d/appsvc-<instance>, composed from the logs the pillar
-# already declares: php_fpm pool `error_log`s and nginx vhost
-# `access_log`/`error_log`s. No list of its own to keep in sync. Tunables live
+# already declares: php_fpm pool `log.error`/`log.slow` and nginx vhost
+# `log.access`/`log.error`. No list of its own to keep in sync. Tunables live
 # under `logrotate:` (see presets/generic.yaml); `logrotate.manage: false`
 # turns it off.
 

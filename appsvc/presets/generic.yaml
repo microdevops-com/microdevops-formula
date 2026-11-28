@@ -488,15 +488,16 @@ nginx:
   #     #   htpasswd_file ("" without auth_basic), php_fpm_sockets
   #     #   ({pool_key: socket} from php_fpm.pools), then `vars` on top
   #     #   (a vars key shadowing one of those names fails loud).
-  #     # access_log: /var/log/nginx/<name>.access.log   # default
-  #     # error_log: /var/log/nginx/<name>.error.log     # default
+  #     # log:                     # each one optional
+  #     #   access: /var/log/nginx/<name>.access.log    # default
+  #     #   error: /var/log/nginx/<name>.error.log      # default
   #     # auth_basic:
   #     #   - username: admin
   #     #     password: change-me
 
 # logrotate: one /etc/logrotate.d/appsvc-<instance> composed from the logs
-# declared above and below - php_fpm pool error_logs and nginx vhost
-# access/error logs. Nothing to list; these are only tunables (defaults.yaml):
+# declared above and below - php_fpm pool log.error/log.slow and nginx vhost
+# log.access/log.error. Nothing to list; these are only tunables (defaults.yaml):
 # logrotate:
 #   manage: true                 # false: don't write (or remove) the file
 #   rotate: 31
@@ -525,7 +526,11 @@ nginx:
 #       # listen_owner: www-data
 #       # listen_group: www-data
 #       # listen_mode: "0660"       # a string
-#       error_log: "{install_dir}/log/php/web.error.log"   # optional
+#       log:                        # optional, each key too
+#         error: "{install_dir}/log/php/web.error.log"     # php_admin_value[error_log]
+#         slow: "{install_dir}/log/php/web.slow.log"       # php-fpm slowlog
+#         # slow_timeout: 10          # default when slow is set: seconds, or "5s"/"1m"
+#         # slow_trace_depth: 0       # default when slow is set
 #       # reload: true              # default true
 #       config: |                   # raw lines appended verbatim
 #         pm = dynamic

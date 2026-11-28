@@ -37,7 +37,7 @@ nginx:
   manage: false
 
 # One /etc/logrotate.d/appsvc-<instance> composed from the declared php pool
-# error_logs and nginx vhost logs (blocks/logrotate.sls). Inert until one of
+# logs (log.error, log.slow) and nginx vhost logs (blocks/logrotate.sls). Inert until one of
 # those exists outside `skip`.
 logrotate:
   manage: true

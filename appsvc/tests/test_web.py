@@ -107,6 +107,19 @@ def test_nginx_vhosts_reject_bad_key_name_unknown_key_and_empty():
         normalize_nginx_vhosts({"manage": True}, "app")
 
 
+def test_nginx_vhost_log():
+    [v] = _norm({"w": _vh(log={"access": "/l/a.log", "error": "/l/e.log"})})
+    assert (v["access_log"], v["error_log"]) == ("/l/a.log", "/l/e.log")
+    [v] = _norm({"w": _vh(log={"error": "/l/e.log"})})        # access keeps its default
+    assert (v["access_log"], v["error_log"]) == ("/var/log/nginx/app_w.access.log", "/l/e.log")
+    with pytest.raises(ValueError, match="unknown key.*slow"):
+        _norm({"w": _vh(log={"slow": "/l/s.log"})})
+    with pytest.raises(ValueError, match="must be a mapping"):
+        _norm({"w": _vh(log="/l/a.log")})
+    with pytest.raises(ValueError, match="unknown key.*access_log"):
+        _norm({"w": _vh(access_log="/l/a.log")})
+
+
 def test_nginx_template_context_has_reserved_names_and_vars_on_top():
     [v] = _norm({"w": _vh(name="svc", upstream=None, template="salt://t.conf",
                           acme_account="a", vars={"port": 1})}, "app")
@@ -142,7 +155,8 @@ def test_php_pools_defaults_resolved():
         "key": "back", "name": "inst_back", "version": "8.3", "user": "web", "group": "webgrp",
         "listen": "/run/php/php8.3-fpm-inst_back.sock",
         "listen_owner": "www-data", "listen_group": "www-data", "listen_mode": "0660",
-        "error_log": None, "reload": True, "config": "",
+        "error_log": None, "slow_log": None, "slow_timeout": None, "slow_trace_depth": None,
+        "reload": True, "config": "",
         "path": "/etc/php/8.3/fpm/pool.d/inst_back.conf",
     }
 
@@ -176,7 +190,7 @@ def test_php_pools_validation():
 
 
 def test_render_php_pool_with_and_without_error_log():
-    [p] = _pools({"a": {"version": "8.3", "error_log": "/l/e.log",
+    [p] = _pools({"a": {"version": "8.3", "log": {"error": "/l/e.log"},
                         "config": "pm = dynamic\npm.max_children = 20\n"}})
     assert render_php_pool(p) == (
         "[inst_a]\nuser = web\ngroup = webgrp\n\n"
@@ -187,6 +201,40 @@ def test_render_php_pool_with_and_without_error_log():
     [q] = _pools({"a": {"version": "8.3", "config": "pm = static"}})
     out = render_php_pool(q)
     assert "error_log" not in out and out.endswith("listen.mode = 0660\n\npm = static\n")
+
+
+def test_php_slow_log():
+    [p] = _pools({"a": {"version": "8.3", "log": {"slow": "/l/s.log"}}})
+    assert (p["slow_log"], p["slow_timeout"], p["slow_trace_depth"]) == ("/l/s.log", "10s", 0)
+    assert render_php_pool(p).endswith(
+        "listen.mode = 0660\n\nslowlog = /l/s.log\nrequest_slowlog_timeout = 10s\n"
+        "request_slowlog_trace_depth = 0\n")
+    [q] = _pools({"a": {"version": "8.3", "log": {"slow": "/l/s.log", "slow_timeout": "1m",
+                                                   "slow_trace_depth": 20}}})
+    assert (q["slow_timeout"], q["slow_trace_depth"]) == ("1m", 20)
+    [r] = _pools({"a": {"version": "8.3", "log": {"slow": "/l/s.log", "slow_timeout": 3}}})
+    assert r["slow_timeout"] == "3s"
+
+
+@pytest.mark.parametrize("log, error", [
+    ({"slow_timeout": 5}, "needs log.slow"),
+    ({"error": "/e", "slow_trace_depth": 2}, "needs log.slow"),
+    ({"slow": "/s", "slow_timeout": 0}, "slow_timeout"),
+    ({"slow": "/s", "slow_timeout": "10 s"}, "slow_timeout"),
+    ({"slow": "/s", "slow_timeout": True}, "slow_timeout"),
+    ({"slow": "/s", "slow_trace_depth": -1}, "slow_trace_depth"),
+    ({"slow": "/s", "slow_trace_depth": "5"}, "slow_trace_depth"),
+    ({"access": "/a"}, "unknown key"),
+    ("/l/e.log", "must be a mapping"),
+])
+def test_php_log_validation(log, error):
+    with pytest.raises(ValueError, match=error):
+        _pools({"a": {"version": "8.3", "log": log}})
+
+
+def test_php_old_error_log_key_rejected():
+    with pytest.raises(ValueError, match="unknown key.*error_log"):
+        _pools({"a": {"version": "8.3", "error_log": "/l/e.log"}})
 
 
 def test_php_reload_command():
@@ -227,6 +275,14 @@ def test_logrotate_skips_distro_nginx_logs_and_pools_without_error_log():
                           [_vhost("w", "/var/log/nginx/w.access.log", "/var/log/nginx/w.error.log")],
                           "root", "root")
     assert plan["stanzas"] == []
+
+
+def test_logrotate_includes_php_slow_log():
+    pool = dict(_pool("a", "8.3", "/srv/log/php/a.log"), slow_log="/srv/log/php/a.slow.log")
+    plan = logrotate_plan({}, [pool, dict(_pool("b", "8.3", None), slow_log="/srv/log/php/b.slow.log")],
+                          [], "u", "u")
+    assert [s["paths"] for s in plan["stanzas"]] == [
+        ["/srv/log/php/a.log", "/srv/log/php/a.slow.log", "/srv/log/php/b.slow.log"]]
 
 
 def test_logrotate_duplicate_path_raises():

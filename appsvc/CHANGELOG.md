@@ -120,6 +120,11 @@ Also in 0.2 (additive):
   instance.
 - `nvm.build_pkgs` (default `[git, curl]`). `pyenv.build_pkgs` gained `git`,
   `curl` and `libzstd-dev`.
+- Logs moved under `log:` - `nginx.vhosts.<key>.log.{access,error}` (was
+  `access_log`/`error_log`) and `php_fpm.pools.<key>.log.error` (was
+  `error_log`). New: `log.slow` (php-fpm slowlog) with `log.slow_timeout`
+  (default 10 s) and `log.slow_trace_depth` (default 0); slow logs join the
+  logrotate file. The old keys now fail as unknown keys.
 - `install_dir` and `user.home` also take a mapping, `{name, group, mode}`
   (`install_dir` also takes `user`). A plain path string still works and
   behaves as before. Use it for per-site isolation: `750 <user>:www-data` on

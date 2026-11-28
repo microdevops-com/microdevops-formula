@@ -10,7 +10,9 @@ from salt://appsvc/lib/web.py import normalize_php_pools, render_php_pool, php_r
 #     pools:
 #       web:
 #         version: "8.3"            # required, MUST be a quoted string
-#         error_log: "{install_dir}/log/php/web.error.log"
+#         log:
+#           error: "{install_dir}/log/php/web.error.log"
+#           slow: "{install_dir}/log/php/web.slow.log"   # + slow_timeout (10), slow_trace_depth (0)
 #         config: |
 #           pm = dynamic
 #           pm.max_children = 20

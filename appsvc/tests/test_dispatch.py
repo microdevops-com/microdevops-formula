@@ -40,7 +40,8 @@ APP = {
     },
     "config": {"env_local": {"name": "/var/www/helium/crm/back/.env.local", "contents": "A=1\n"}},
     "php_fpm": {"pools": {"back": {"version": "8.3",
-                                   "error_log": "/var/www/helium/crm/log/php/back.error.log"}}},
+                                   "log": {"error": "/var/www/helium/crm/log/php/back.error.log",
+                                           "slow": "/var/www/helium/crm/log/php/back.slow.log"}}}},
     "commands": {
         "composer_install": {"cmd": "composer install", "phase": "pre", "onchanges": ["sources:back"]},
         "warmup": {"cmd": "bin/console cache:warmup"},
@@ -50,8 +51,8 @@ APP = {
     "nginx": {"manage": True, "vhosts": {"back": {
         "names": ["app.example.com"], "acme_account": "example_com",
         "template": "salt://x/back.conf",
-        "access_log": "/var/www/helium/crm/log/nginx/back.access.log",
-        "error_log": "/var/www/helium/crm/log/nginx/back.error.log"}}},
+        "log": {"access": "/var/www/helium/crm/log/nginx/back.access.log",
+                "error": "/var/www/helium/crm/log/nginx/back.error.log"}}}},
 }
 
 # A binary service from a bundled preset: svc fetch -> systemd watch.
