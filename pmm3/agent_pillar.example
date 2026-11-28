@@ -18,8 +18,13 @@ pmm3_agent:
     haproxy:
       enabled: False
       port: 8404
-    mongodb:
+    mongodb:                                  # service <node_name>-mongodb; create the MongoDB user first (README)
       enabled: False
-      #user: mongoadmin                       # optional
+      user: pmm                               # default mongoadmin (the former formula); pmm - the monitoring user (README)
       password: XXXXXXXXX
-      #cluster: clustername                   # optional
+      #host: 127.0.0.1                        # optional
+      #port: 27017                            # optional
+      query_source: none                      # none | mongolog (MongoDB 5.0+) | profiler (default, as pmm-admin)
+      #cluster: clustername                   # optional, PMM cluster label (replica set dashboards)
+      #replication_set: rs0                   # optional, replica set name
+      #environment: prod                      # optional
